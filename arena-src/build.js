@@ -1,0 +1,17 @@
+const fs=require('fs');
+const S=__dirname+'/';
+const ren=s=>s.replace(/\bburst\(/g,'burstP(').replace(/function burstP\(x,y,n,o\)/,'function burstP(x,y,n,o)');
+let art=[fs.readFileSync(S+'art/chars.js','utf8').replace('const COSMETICS={};',''), fs.readFileSync(S+'art/fxart.js','utf8'), ren(fs.readFileSync(S+'art/cosart.js','utf8')), ren(fs.readFileSync(S+'art/fxengine.js','utf8')), ren(fs.readFileSync(S+'art/sfxart.js','utf8')).replace("eff.textContent='다음 공격 '+total+(tags&&tags.length?' · '+tags.join(' · '):'');","eff.textContent=(total!=null?'다음 공격 '+total:'')+(tags&&tags.length?(total!=null?' · ':'')+tags.join(' · '):'');")].join('\n');
+const mus=n=>{try{return fs.readFileSync(S+'art/music/'+n+'.mp3').toString('base64')}catch(e){return ''}};
+art+='\n'+fs.readFileSync(S+'art/music.js','utf8').replace('@@LOBBY@@',()=>mus('lobby')).replace('@@BATTLE@@',()=>mus('battle'));
+const menucss=fs.readFileSync(S+'art/menu.css','utf8');
+let head=fs.readFileSync(S+'head.html','utf8').replace('/*@@CHARS@@*/',()=>art).replace('/*@@MENUCSS@@*/',()=>menucss);
+const src=head+'\n'+['engine.js','kits1.js','kits2.js','social.js','fx.js','preview.js','net.js','tail.js'].map(f=>fs.readFileSync(S+f,'utf8')).join('\n');
+fs.writeFileSync(process.env.OUT||require('path').join(__dirname,'..','seumarena.html'),src);
+fs.writeFileSync(require('path').join(__dirname,'t.html'),'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}[hidden]{display:none!important}</style></head><body>'+src+'</body></html>');
+// checks: syntax, and the same top-level name defined twice
+const js=src.slice(src.lastIndexOf('<script>')+8, src.lastIndexOf('</script>'));
+fs.writeFileSync(require('path').join(__dirname,'bundle.js'), js);
+const names={}; for(const m of js.matchAll(/^(?:function|const|let|var)\s+([A-Za-z_$][\w$]*)/gm)) (names[m[1]]=names[m[1]]||0, names[m[1]]++);
+const dup=Object.keys(names).filter(k=>names[k]>1);
+console.log('built',src.length,'dups:',dup.join(' ')||'none');

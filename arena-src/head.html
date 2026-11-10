@@ -1,0 +1,414 @@
+<title>SeumArena</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: Stickseum lobby (brand top centre, picked character big on the left, gold menu buttons on the right) over a blurred live match; full-bleed canvas arena with an edge-pinned HUD. Single dark look, as in Stickseum. */
+:root{
+  color-scheme: dark;
+  --bg:#0c0e13; --panel:#14171f; --panel-2:#1b1f2a; --line:#262b38;
+  --accent:#ff4d4d; --accent-2:#3fe0c5; --text:#e8eaf0; --text-dim:#8890a4;
+  --gold:#d9b95f; --gold-ink:#3b2410; --sel:#ffd34d;
+  --blue:#4d9dff; --red:#ff5d5d;
+  --font:'Rajdhani','IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent-2);outline-offset:2px}
+#game{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;background:var(--bg);transition:filter .4s}
+#game.inLobby{filter:blur(1.5px) brightness(.5) saturate(1.1)}
+
+/* ---------- lobby ---------- */
+#lobby{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;overflow-y:auto;
+  padding-block:calc(env(safe-area-inset-top,0px) + 16px) calc(env(safe-area-inset-bottom,0px) + 16px);
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.card{position:relative;z-index:1;width:min(440px,100%);background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:26px 24px 22px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:none;margin:auto}
+.card.active{display:block}
+.card h2{margin:0 0 6px;font-size:24px;font-weight:700;text-wrap:balance}
+.hint{color:var(--text-dim);font-size:14px;line-height:1.5;margin:0 0 10px}
+.backlink{position:absolute;top:14px;right:14px;background:none;border:0;color:var(--text-dim);font-weight:700;font-size:14px;cursor:pointer;padding:4px}
+.backlink:hover{color:var(--text)}
+.btn-primary{background:var(--accent-2);color:#062824;border:0;border-radius:8px;padding:12px 14px;font-weight:700;font-size:16px;cursor:pointer}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-plain{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;font-weight:700;font-size:14px;cursor:pointer}
+.btn-full{display:block;width:100%}
+.brand{display:none;flex-direction:column;align-items:center;text-align:center;position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 3%);
+  transform:translateX(-50%);width:94vw;max-width:960px;z-index:2;pointer-events:none}
+.brand.show{display:flex}
+.brand h1{font-size:clamp(40px,8vw,85px);font-weight:700;letter-spacing:.5px;margin:0;color:var(--text);line-height:1;white-space:nowrap;text-shadow:0 6px 18px rgba(0,0,0,.6)}
+.brand span{color:var(--accent)}
+.brand .ver{font-size:clamp(13px,2.2vw,22px);color:var(--text-dim);font-weight:700;margin-top:6px}
+#lobbyChar{position:fixed;left:4vw;bottom:6vh;transition:none;z-index:2;display:none;flex-direction:column;align-items:center;pointer-events:none}
+#lobbyChar.show{display:flex}
+#lobbyChar canvas{width:min(360px,34vw,56vh);height:auto;filter:drop-shadow(0 10px 18px rgba(0,0,0,.5))}
+#lobbyCharName{margin-top:-30px;font-weight:700;font-size:22px;letter-spacing:.04em;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.7)}
+#menuScreen.menu-floating{position:absolute;right:max(5vw, calc(env(safe-area-inset-right, 0px) + 24px));top:50%;transform:translateY(-50%);
+  background:none;border:none;box-shadow:none;padding:0;width:min(300px,76vw);display:none;margin:0}
+#menuScreen.menu-floating.active{display:block}
+@media (max-width:640px){#menuScreen.menu-floating{right:auto;left:50%;top:57%;transform:translate(-50%,-50%)}}
+@media (max-height:640px){.keys{display:none}}
+.menu-float-btn{display:block;width:100%;cursor:pointer}
+/*@@MENUCSS@@*/
+#lobbyPick{margin:4px 0 10px;text-align:center;font-weight:700;font-size:15px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.8)}
+#lobbyPick b{color:var(--sel)}
+.keys{margin:0;font-size:13px;line-height:1.65;color:#c9ced8;text-align:center;text-shadow:0 1px 4px rgba(0,0,0,.9);font-family:'IBM Plex Sans KR',sans-serif}
+.keys kbd{font:600 11px 'IBM Plex Sans KR',sans-serif;color:var(--text);background:rgba(20,23,31,.85);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+
+/* character screen (Stickseum's weaponScreen) */
+#weaponScreen{width:min(880px,100%)}
+#weaponSearch{display:block;margin:4px auto 8px;width:min(260px,80%);padding:7px 12px;border-radius:10px;border:1px solid #3a4150;background:#171b24;color:#fff;font-size:14px;font-family:inherit;-webkit-user-select:text;user-select:text}
+#weaponGrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;max-height:min(540px,calc(100vh - 250px));overflow-y:auto;overflow-x:hidden;padding:2px}
+@media (max-width:760px){#weaponGrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}}
+.wpnCard{position:relative;background:var(--panel-2);border:2px solid var(--line);border-radius:10px;padding:5px 3px 7px;text-align:center;cursor:pointer;color:var(--text);
+  transition:border-color .12s ease;min-width:0}
+.wpnCard:hover{border-color:var(--accent-2)}
+.wpnCard.sel{border-color:var(--sel);box-shadow:0 0 10px rgba(255,211,77,.45)}
+.wpnCard canvas{width:64px;height:64px;max-width:100%;display:block;margin:0 auto}
+.wpnCard .wn{font-weight:700;font-size:13px;line-height:1.2;overflow-wrap:anywhere}
+.wpnCard .wk{font-size:11px;color:var(--text-dim)}
+#weaponScreen.wDetail #weaponGrid,#weaponScreen.wDetail #weaponSearch{display:none}
+#weaponScreen:not(.wDetail) #weaponPortraitWrap{display:none}
+#weaponPortraitWrap{text-align:center;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;grid-template-columns:230px minmax(0,1fr);gap:8px 18px;align-items:start}
+@media (max-width:760px){#weaponPortraitWrap{grid-template-columns:minmax(0,1fr)}}
+#weaponPortraitName{font-size:22px;font-weight:700;grid-column:1/-1}
+#weaponPortraitCanvas{background:radial-gradient(circle at 50% 35%,#3a3354 0%,#1d1a2b 70%);border:1px solid #4a4266;border-radius:8px;display:block;margin:0 auto;width:200px;max-width:100%;height:auto}
+#weaponDetail{text-align:left;font-size:14px;line-height:1.55;font-family:'IBM Plex Sans KR',sans-serif;min-width:0}
+#weaponDetail p{margin:0 0 8px}
+#weaponDetail strong{color:var(--sel);margin-right:6px}
+#weaponActions{grid-column:1/-1;display:flex;flex-direction:column;gap:6px}
+
+/* map screen (Stickseum's mapCarousel) */
+#mapScreen{width:min(520px,100%)}
+#mapCarousel{display:flex;align-items:center;gap:8px;margin:10px 0}
+#mapCarousel>button{flex:none;width:40px;height:64px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font-size:20px;cursor:pointer}
+#mapCarouselBody{flex:1;min-width:0;text-align:center}
+#mapCarouselPreview{width:100%;height:auto;border-radius:8px;display:block;background:#0d0f14;aspect-ratio:25/17}
+#mapCarouselName{font-weight:700;font-size:20px;margin-top:8px}
+#mapCarouselMeta{font-size:13px;color:var(--text-dim);line-height:1.5;font-family:'IBM Plex Sans KR',sans-serif}
+#mapDots{display:flex;justify-content:center;gap:6px;margin:8px 0 12px}
+#mapDots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+#mapDots i.on{background:var(--sel)}
+
+/* matchmaking */
+#roomScreen{text-align:center}
+#roomStatus{font-family:'IBM Plex Sans KR',sans-serif;min-height:3em}
+#roomCount{font-size:64px;font-weight:700;line-height:1;color:var(--sel);font-variant-numeric:tabular-nums;min-height:64px}
+#roomSlots{display:flex;justify-content:center;gap:8px;margin:14px 0 18px;min-height:14px}
+#roomSlots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);background:var(--panel-2)}
+#roomSlots i.on{background:var(--accent-2);border-color:var(--accent-2)}
+/* account */
+#acct{position:fixed;z-index:6;top:calc(env(safe-area-inset-top,0px) + 14px);left:max(16px, env(safe-area-inset-left, 0px));display:flex;align-items:center;gap:8px;
+  background:rgba(20,22,28,.85);border:1px solid var(--line);border-radius:999px;padding:5px 6px 5px 12px;font:600 14px 'IBM Plex Sans KR',sans-serif;max-width:calc(100vw - 32px)}
+#acctIcon{color:var(--accent-2);font-size:10px}
+@media (max-width:640px){.brand{top:calc(env(safe-area-inset-top,0px) + 60px)}}
+#acctName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40vw}
+#acctBtn{border:0;border-radius:999px;padding:4px 12px;background:var(--accent-2);color:#062824;font:700 12px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
+#acctBtn:disabled{background:var(--panel-2);color:var(--text-dim);cursor:default}
+/* cosmetics */
+#cosScreen{width:min(760px,100%);max-height:calc(100vh - 32px);overflow-y:auto}
+#cosTabs{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+#cosTabs button{font:600 13px 'IBM Plex Sans KR',sans-serif;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel-2);color:var(--text-dim);cursor:pointer}
+#cosTabs button[aria-pressed="true"]{background:var(--accent-2);color:#062824;border-color:var(--accent-2)}
+#cosGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.cosCard{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:10px;border:2px solid var(--line);background:var(--panel-2);color:var(--text);cursor:pointer;font:600 12px 'IBM Plex Sans KR',sans-serif;min-width:0}
+.cosCard span{overflow-wrap:anywhere;text-align:center;line-height:1.3}
+.cosCard[aria-pressed="true"]{border-color:var(--sel);box-shadow:0 0 10px rgba(255,211,77,.4)}
+.cosPv{width:72px;height:72px;display:flex;align-items:center;justify-content:center;font-size:36px}
+.cosPv canvas{width:72px;height:72px}
+/* chat & emotes */
+.miniBtn{position:fixed;z-index:6;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(20,22,28,.85);font-size:19px;cursor:pointer;touch-action:none;
+  right:max(16px, env(safe-area-inset-right, 0px))}
+#emoteBtn{top:calc(env(safe-area-inset-top,0px) + 50px)}
+#chatBtn{top:calc(env(safe-area-inset-top,0px) + 96px)}
+#chatFeed{position:fixed;z-index:5;left:max(16px, env(safe-area-inset-left, 0px));bottom:calc(env(safe-area-inset-bottom,0px) + 70px);display:flex;flex-direction:column;gap:3px;
+  pointer-events:none;font:500 13px 'IBM Plex Sans KR',sans-serif;max-width:min(380px,60vw)}
+#chatFeed div{background:rgba(20,22,28,.78);padding:3px 9px;border-radius:8px;width:max-content;max-width:100%;overflow-wrap:anywhere}
+#chatFeed .b{color:var(--blue)} #chatFeed .r{color:var(--red)}
+#chatBar{position:fixed;z-index:8;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 20px);display:flex;gap:6px;width:min(480px,calc(100vw - 32px))}
+#chatInput{flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid var(--accent-2);background:rgba(12,14,19,.95);color:#fff;font:500 15px 'IBM Plex Sans KR',sans-serif;-webkit-user-select:text;user-select:text}
+#chatSend{border:0;border-radius:10px;padding:0 14px;background:var(--accent-2);color:#062824;font:700 14px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
+#emoteWheel{position:fixed;z-index:8;left:50%;top:50%;width:220px;height:220px;margin:-110px 0 0 -110px;border-radius:50%;background:rgba(12,14,19,.6)}
+#emoteWheel button{position:absolute;width:48px;height:48px;border-radius:50%;border:2px solid var(--line);background:var(--panel);font-size:24px;cursor:pointer}
+#emoteWheel button:hover{border-color:var(--sel)}
+#winCanvas{width:100%;max-width:520px;height:auto;display:block;margin:0 auto 6px}
+/* the gambler's card banner (from Stickseum) */
+#diceBannerContainer{position:fixed;z-index:7;left:50%;top:calc(env(safe-area-inset-top,0px) + 80px);transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;font-family:'Rajdhani','IBM Plex Sans KR',sans-serif}
+.diceBanner{ background:rgba(15,17,23,.92); border:2px solid #ffd34d; border-radius:12px; padding:8px 16px 10px; text-align:center; min-width:120px; box-shadow:0 6px 18px rgba(0,0,0,.4); opacity:0; transform:translateY(-8px); transition:opacity .18s ease, transform .18s ease; }
+.diceBanner.show{ opacity:1; transform:translateY(0); }
+.diceBanner .dbName{ font-size:12px; font-weight:700; color:var(--text-dim); margin-bottom:2px; font-family:'IBM Plex Sans KR',sans-serif }
+.diceBanner .dbEffect{ font-size:13px; font-weight:700; color:#ffd34d; margin-top:4px; min-height:14px; font-family:'IBM Plex Sans KR',sans-serif }
+.pkRow{ display:flex; gap:10px; justify-content:center; perspective:600px; }
+.diceBanner.pkBanner{ background:transparent; border:none; box-shadow:none; padding:0; }
+.diceBanner.pkBanner .dbName, .diceBanner.pkBanner .dbEffect{ text-shadow:0 2px 6px #000; }
+.diceBanner.pkBanner .dbEffect{ font-size:15px; margin-top:8px; }
+.pkCard{ width:64px; height:92px; border-radius:10px; border:3px solid #fff; box-shadow:0 6px 16px rgba(0,0,0,.55); display:flex; flex-direction:column; align-items:center; justify-content:center; font:700 32px/1 'Rajdhani',sans-serif; background:#fff; color:#15171d; }
+.pkCard.back{ background:repeating-linear-gradient(45deg,#e0283c 0 8px,#a01626 8px 16px); color:transparent; animation:pkSpin .55s linear infinite; }
+.pkCard.red{ color:#d62839; }
+.pkCard.flip{ animation:pkFlip .28s ease-out; }
+.pkCard small{ font-size:28px; margin-top:4px; }
+.pkCard .jk{ font-size:13px; font-weight:700; margin-top:3px; }
+@keyframes pkSpin{ to{ transform:rotateY(360deg); } }
+@keyframes pkFlip{ from{ transform:rotateY(90deg) scale(1.15); } to{ transform:rotateY(0) scale(1); } }
+@media (prefers-reduced-motion: reduce){ .pkCard.back{ animation:none } .pkCard.flip{ animation:none } }
+/* result */
+#overScreen{text-align:center}
+#resultText{font-size:clamp(48px,14vw,80px);font-weight:700;line-height:1;margin:0 0 6px;letter-spacing:.04em}
+#resultText.win{color:var(--sel)} #resultText.lose{color:var(--accent)} #resultText.draw{color:var(--text)}
+.final{display:flex;justify-content:center;gap:14px;align-items:center;font-size:40px;font-weight:700;font-variant-numeric:tabular-nums}
+.final .b{color:var(--blue)} .final .r{color:var(--red)}
+#mine{margin:6px 0 16px;color:var(--text-dim);font-size:15px}
+#overScreen .btn-primary{margin-bottom:8px}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;top:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none;z-index:5;
+  padding-top:calc(env(safe-area-inset-top,0px) + 10px);
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.scorebar{display:flex;align-items:center;gap:10px;font-weight:700;font-variant-numeric:tabular-nums}
+.score{min-width:60px;padding:5px 12px;border-radius:10px;font-size:26px;line-height:1;text-align:center;color:#06101f}
+.score small{display:block;font-size:11px;letter-spacing:.08em;opacity:.8;margin-bottom:2px}
+.score.b{background:var(--blue)} .score.r{background:var(--red)}
+.timer{font-size:22px;padding:6px 12px;border-radius:10px;background:rgba(20,22,28,.85);border:1px solid var(--line);min-width:66px;text-align:center}
+.timer.hot{color:var(--accent);border-color:var(--accent)}
+#feed{position:fixed;z-index:5;left:max(16px, env(safe-area-inset-left, 0px));top:calc(env(safe-area-inset-top,0px) + 72px);
+  display:flex;flex-direction:column;gap:4px;pointer-events:none;font-size:13px;font-weight:600;font-family:'IBM Plex Sans KR',sans-serif}
+#feed div{background:rgba(20,22,28,.8);padding:3px 9px;border-radius:8px;width:max-content;max-width:70vw}
+#feed .b{color:var(--blue)} #feed .r{color:var(--red)}
+#notice{position:fixed;z-index:5;left:0;right:0;top:30%;text-align:center;font-size:30px;font-weight:700;pointer-events:none;text-shadow:0 3px 8px rgba(0,0,0,.8);
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.skillBtn{position:fixed;z-index:6;border-radius:50%;border:0;padding:4px;cursor:pointer;touch-action:none;color:var(--text);
+  background:conic-gradient(var(--accent-2) calc(var(--p,0)*1%), rgba(232,234,240,.16) 0)}
+.skillBtn span{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;border-radius:50%;background:var(--panel);font-weight:700;font-size:16px;line-height:1.1}
+.skillBtn small{font-size:10px;color:var(--text-dim);font-weight:600;margin-top:2px;font-family:'IBM Plex Sans KR',sans-serif}
+.skillBtn.ready span{background:var(--accent-2);color:#062824}
+.skillBtn.ready small{color:#062824}
+#ultBtn{width:84px;height:84px;right:calc(max(16px, env(safe-area-inset-right, 0px)) + 6px);bottom:calc(env(safe-area-inset-bottom,0px) + 24px)}
+#ultBtn{background:conic-gradient(var(--sel) calc(var(--p,0)*1%), rgba(232,234,240,.16) 0)}
+#ultBtn.ready span{background:var(--sel);color:#2a1d00} #ultBtn.ready small{color:#2a1d00}
+#dashBtn{width:56px;height:56px;right:calc(max(16px, env(safe-area-inset-right, 0px)) + 20px);bottom:calc(env(safe-area-inset-bottom,0px) + 116px)}
+#dashBtn span{font-size:14px}
+#sk1Btn,#sk2Btn{width:70px;height:70px}
+#sk1Btn{right:calc(max(16px, env(safe-area-inset-right, 0px)) + 98px);bottom:calc(env(safe-area-inset-bottom,0px) + 20px)}
+#sk2Btn{right:calc(max(16px, env(safe-area-inset-right, 0px)) + 88px);bottom:calc(env(safe-area-inset-bottom,0px) + 98px)}
+.skillBtn b{font-weight:700;font-size:12px;line-height:1.1;max-width:58px;text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-family:'IBM Plex Sans KR',sans-serif;word-break:keep-all}
+#weaponLoadout{grid-column:1/-1;text-align:left;display:flex;flex-direction:column;gap:6px;font-family:'IBM Plex Sans KR',sans-serif}
+.loHead{font-size:13px;color:var(--sel);font-weight:600;line-height:1.5}
+.skRow{display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.skRow.on{border-color:var(--accent-2)}
+.skText{flex:1;min-width:0}
+.skText b{font-size:15px}
+.skText i{font-style:normal;font-size:11px;color:var(--text-dim);border:1px solid var(--line);border-radius:999px;padding:0 6px;margin-left:6px}
+.skText p{margin:3px 0 0;font-size:12.5px;line-height:1.5;color:#c9ced8}
+.skBtns{display:flex;flex-direction:column;gap:4px;flex:none}
+.skBtns button{font:600 12px 'IBM Plex Sans KR',sans-serif;padding:5px 9px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--text-dim);cursor:pointer}
+.skBtns button[aria-pressed="true"]{background:var(--accent-2);color:#062824;border-color:var(--accent-2)}
+.skBtns button:disabled{opacity:.3;cursor:not-allowed}
+#weaponScreen{max-height:calc(100vh - 32px);overflow-y:auto}
+#soundBtn{position:fixed;z-index:6;right:max(16px, env(safe-area-inset-right, 0px));top:calc(env(safe-area-inset-top,0px) + 12px);
+  background:rgba(20,22,28,.85);color:var(--text-dim);border:1px solid var(--line);border-radius:10px;padding:5px 9px;font:600 12px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
+
+/* ---- UI polish pass ---- */
+/* short landscape (phones): title moves to the left column so it never touches the buttons */
+@media (max-height:520px){
+  #menuScreen.menu-floating{right:max(5vw, calc(env(safe-area-inset-right, 0px) + 24px));left:auto;top:50%;transform:translateY(-50%)}
+  .brand{left:max(16px, env(safe-area-inset-left, 0px));top:calc(env(safe-area-inset-top,0px) + 56px);transform:none;width:auto;align-items:flex-start;text-align:left}
+  .brand h1{font-size:44px}
+  .brand .ver{font-size:12px;margin-top:2px}
+}
+@media (max-height:360px){
+  #menuScreen.menu-floating{width:min(260px,52vw)}
+  #menuScreen .menu-float-btn{padding:10px 20px;margin-bottom:10px;font-size:14px}
+  .brand h1{font-size:36px}
+}
+/* narrow screens: back link goes above the title instead of on top of it */
+@media (max-width:520px){
+  .backlink{position:static;display:block;margin:-10px -6px 4px auto}
+}
+/* character screen: confirm / back-to-list stay reachable while scrolling the skills */
+#weaponActions{flex-direction:row;position:sticky;bottom:-14px;z-index:2;margin:6px -14px -14px;padding:10px 14px 14px;background:linear-gradient(to bottom,rgba(26,29,38,0),var(--panel-2) 22%)}
+#weaponActions .btn-full{flex:1;width:auto;min-width:0;white-space:nowrap;font-size:13px;padding-left:8px;padding-right:8px}
+#weaponActions #weaponLockBtn{flex:2.1}
+/* match making: no empty gap, a spinner while there is nothing else to show */
+#roomCount:empty,#roomSlots:empty{display:none}
+#roomStatus{min-height:0}
+#roomSpin{display:none;width:34px;height:34px;margin:18px auto 22px;border-radius:50%;border:4px solid var(--line);border-top-color:var(--accent-2);animation:roomSpin 1s linear infinite}
+#roomCount:empty + #roomSlots:empty + #roomSpin{display:block}
+@keyframes roomSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){#roomSpin{animation-duration:3s}}
+/* touch devices: the chat bar sits under the score bar so it never covers the skill buttons or the soft keyboard */
+@media (pointer:coarse){
+  #chatBar{top:calc(env(safe-area-inset-top,0px) + 70px);bottom:auto;left:max(16px, env(safe-area-inset-left, 0px));right:calc(max(16px, env(safe-area-inset-right, 0px)) + 52px);transform:none;width:auto}
+}
+/* result screen on wide or short landscape screens: two columns (result + buttons | pose + table) */
+@media (min-width:700px),(max-height:520px){
+  #overScreen.active{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:0 20px;align-items:center;width:min(820px,100%);padding:16px 22px}
+  #overScreen #resultText{grid-column:1;grid-row:1;font-size:clamp(48px,9vw,72px);margin:0}
+  #overScreen .final{grid-column:1;grid-row:2;font-size:34px}
+  #overScreen #mine{grid-column:1;grid-row:3;margin:2px 0 10px;font-size:13px}
+  #overScreen #winCanvas{grid-column:2;grid-row:1 / span 2;width:100%;height:auto}
+  #overScreen #overStats{grid-column:2;grid-row:3 / span 2;margin:0}
+  #overScreen #againBtn{grid-column:1;grid-row:4;margin:0 0 8px}
+  #overScreen #lobbyBtn{grid-column:1;grid-row:5}
+}
+
+/* settings */
+#setLobbyBtn{border:0;border-radius:50%;width:26px;height:26px;padding:0;background:var(--panel-2);color:var(--text);font-size:15px;line-height:1;cursor:pointer}
+#setLobbyBtn:hover{background:var(--line)}
+#setBtn{top:calc(env(safe-area-inset-top,0px) + 142px)}
+#settings{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(6,8,12,.62);
+  padding:calc(env(safe-area-inset-top,0px) + 12px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(16px, env(safe-area-inset-left, 0px));overflow-y:auto}
+#settings[hidden]{display:none}
+.setCard{width:min(400px,100%);margin:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px 18px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.setCard h2{margin:0 0 10px;font-size:22px}
+.setRow{display:grid;grid-template-columns:92px minmax(0,1fr) 52px;align-items:center;gap:10px;min-height:50px;font:600 15px 'IBM Plex Sans KR',sans-serif}
+.setRow[hidden]{display:none}
+.setRow output{text-align:right;color:var(--sel);font-variant-numeric:tabular-nums;font-weight:700}
+.setRow input[type=range]{width:100%;height:36px;margin:0;accent-color:var(--accent-2);touch-action:pan-y}
+.setSwitch{appearance:none;-webkit-appearance:none;grid-column:3;justify-self:end;width:52px;height:30px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line);position:relative;cursor:pointer;margin:0;transition:background .15s}
+.setSwitch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#cfd3dc;transition:transform .15s}
+.setSwitch:checked{background:var(--accent-2);border-color:var(--accent-2)}
+.setSwitch:checked::after{transform:translateX(22px);background:#062824}
+.setBtns{display:flex;gap:8px;margin-top:12px}
+.setBtns button{flex:1;min-height:44px}
+.setBtns #setClose{flex:1.6}
+/* result screen: per-fighter table */
+#overStats{margin:2px 0 12px;font-family:'IBM Plex Sans KR',sans-serif;font-size:13px;text-align:left}
+#overStats:empty{display:none}
+.osHead,.osRow{display:grid;grid-template-columns:minmax(0,1fr) 52px 108px;align-items:center;gap:8px;padding:3px 8px}
+.osHead{color:var(--text-dim);font-size:11px;letter-spacing:.04em}
+.osHead span:nth-child(2),.osRow .ok{text-align:center}
+.osRow{border-left:3px solid var(--line);background:var(--panel-2);border-radius:6px;margin-bottom:3px;min-height:28px}
+.osRow.b{border-left-color:var(--blue)} .osRow.r{border-left-color:var(--red)}
+.osRow.me{box-shadow:inset 0 0 0 1px var(--sel)}
+.osRow .on{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.osRow .on small{color:var(--text-dim);font-weight:500;margin-left:5px}
+.osRow .mvp{display:inline-block;font-size:10px;font-weight:800;color:#2a1d00;background:var(--sel);border-radius:999px;padding:0 6px;margin-right:5px;vertical-align:1px}
+.osRow .ok{font-variant-numeric:tabular-nums}
+.osRow .od{position:relative;height:18px;border-radius:5px;background:rgba(232,234,240,.08);overflow:hidden}
+.osRow .od i{position:absolute;left:0;top:0;bottom:0;background:rgba(232,234,240,.2)}
+.osRow.b .od i{background:rgba(87,163,255,.45)} .osRow.r .od i{background:rgba(255,93,93,.45)}
+.osRow .od em{position:absolute;right:6px;top:0;line-height:18px;font-style:normal;font-variant-numeric:tabular-nums;font-size:12px}
+#overStats.noDmg .osHead,#overStats.noDmg .osRow{grid-template-columns:minmax(0,1fr) 52px}
+#overStats.noDmg .od,#overStats.noDmg .osHead span:nth-child(3){display:none}
+.osGap{height:6px}
+/* who got you */
+#notice .kb{display:block;margin-top:6px;font-size:16px;font-weight:600;font-family:'IBM Plex Sans KR',sans-serif}
+#notice .kb b.b{color:var(--blue)} #notice .kb b.r{color:var(--red)}
+#notice .kb small{color:var(--text-dim);font-size:14px;font-weight:500}
+</style>
+
+<canvas id="game" class="inLobby" aria-label="경기장"></canvas>
+
+<div id="hud" hidden>
+  <div class="scorebar">
+    <div class="score b"><small>블루</small><span id="sb">0</span></div>
+    <div class="timer" id="timer">2:00</div>
+    <div class="score r"><small>레드</small><span id="sr">0</span></div>
+  </div>
+</div>
+<div id="feed" hidden></div>
+<div id="notice" hidden></div>
+<button id="dashBtn" class="skillBtn" type="button" hidden aria-label="대쉬"><span>대쉬<small id="dashHint">Q</small></span></button>
+<button id="sk1Btn" class="skillBtn" type="button" hidden aria-label="1스킬"><span><b id="sk1Name"></b><small id="sk1Hint">F</small></span></button>
+<button id="sk2Btn" class="skillBtn" type="button" hidden aria-label="2스킬"><span><b id="sk2Name"></b><small id="sk2Hint">E</small></span></button>
+<button id="ultBtn" class="skillBtn" type="button" hidden aria-label="궁극기"><span><b id="ultName"></b><small id="ultHint">R</small></span></button>
+<button id="soundBtn" type="button" hidden>소리 켬</button>
+<button id="emoteBtn" class="miniBtn" type="button" hidden aria-label="이모트 (V)">😀</button>
+<button id="chatBtn" class="miniBtn" type="button" hidden aria-label="채팅 (Enter)">💬</button>
+<button id="setBtn" class="miniBtn" type="button" hidden aria-label="설정">⚙</button>
+<div id="chatFeed" hidden></div>
+<div id="chatBar" hidden><input id="chatInput" type="text" maxlength="60" autocomplete="off" placeholder="메시지 (Enter로 보내기, Esc로 닫기)"><button id="chatSend" type="button">보내기</button></div>
+<div id="emoteWheel" hidden></div>
+<div id="settings" hidden>
+  <div class="setCard" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <h2 id="setTitle">설정</h2>
+    <label class="setRow"><span>음량</span><input id="setVol" type="range" min="0" max="100" step="5"><output id="setVolV"></output></label>
+    <label class="setRow" id="setAimRow"><span>조준 감도</span><input id="setAim" type="range" min="50" max="200" step="10"><output id="setAimV"></output></label>
+    <label class="setRow"><span>효과 줄이기</span><input id="setFx" class="setSwitch" type="checkbox" role="switch"></label>
+    <div class="setBtns"><button class="btn-plain" id="setReset" type="button">기본값</button><button class="btn-primary" id="setClose" type="button">닫기</button></div>
+  </div>
+</div>
+<div id="diceBannerContainer"></div>
+
+<div id="lobby">
+  <div id="acct"><span id="acctIcon" aria-hidden="true">●</span><span id="acctName"></span><button id="acctBtn" type="button" hidden>로그인</button><button id="setLobbyBtn" type="button" aria-label="설정">⚙</button></div>
+  <div class="brand show" id="brandDisplay"><h1>Seum<span>Arena</span></h1><div class="ver">Stickseum 캐릭터 3대3 온라인 난투</div></div>
+  <div id="lobbyChar" class="show"><canvas id="lobbyCharCanvas" width="360" height="414"></canvas><div id="lobbyCharName"></div></div>
+
+  <div class="card menu-floating active" id="menuScreen">
+    <button class="menu-float-btn" id="startBtn" type="button">게임 시작</button>
+    <button class="menu-float-btn" id="goMapBtn" type="button">맵 선택</button>
+    <button class="menu-float-btn" id="goCharBtn" type="button">캐릭터</button>
+    <button class="menu-float-btn" id="goCosBtn" type="button">치장품</button>
+    <div id="lobbyPick"></div>
+    <p class="keys"><kbd>WASD</kbd> 이동 · <kbd>클릭</kbd> 공격 · <kbd>Q</kbd> 대쉬<br><kbd>F</kbd> 1스킬 · <kbd>E</kbd> 2스킬 · <kbd>R</kbd> 궁극기<br>모바일: 왼쪽 드래그 이동, 오른쪽을 끌었다 놓으면 공격</p>
+  </div>
+
+  <div class="card" id="roomScreen">
+    <h2 id="roomTitle">방 찾는 중</h2>
+    <p class="hint" id="roomStatus"></p>
+    <div id="roomCount"></div>
+    <div id="roomSlots"></div>
+    <div id="roomSpin" aria-hidden="true"></div>
+    <button class="btn-plain btn-full" id="roomCancelBtn" type="button">취소</button>
+  </div>
+
+  <div class="card" id="cosScreen">
+    <button class="backlink" id="cosBackBtn" type="button">&larr; 뒤로가기</button>
+    <h2>치장품</h2>
+    <div id="cosTabs"></div>
+    <p class="hint" id="cosHint"></p>
+    <div id="cosGrid"></div>
+  </div>
+
+  <div class="card" id="mapScreen">
+    <button class="backlink" id="mapBackBtn" type="button">&larr; 뒤로가기</button>
+    <h2>맵을 선택하세요</h2>
+    <div id="mapCarousel">
+      <button id="mapPrevBtn" type="button" aria-label="이전 맵">&lsaquo;</button>
+      <div id="mapCarouselBody">
+        <canvas id="mapCarouselPreview" width="500" height="340"></canvas>
+        <div id="mapCarouselName"></div>
+        <div id="mapCarouselMeta"></div>
+      </div>
+      <button id="mapNextBtn" type="button" aria-label="다음 맵">&rsaquo;</button>
+    </div>
+    <div id="mapDots"></div>
+    <button class="btn-primary btn-full" id="mapPickBtn" type="button">이 맵으로 하기</button>
+  </div>
+
+  <div class="card" id="weaponScreen">
+    <button class="backlink" id="weaponBrowseBackBtn" type="button">&larr; 뒤로가기</button>
+    <h2 id="weaponTitle" style="text-align:center">캐릭터를 선택하세요</h2>
+    <input id="weaponSearch" type="search" placeholder="캐릭터 검색" autocomplete="off">
+    <div id="weaponGrid"></div>
+    <div id="weaponPortraitWrap">
+      <div id="weaponPortraitName"></div>
+      <canvas id="weaponPortraitCanvas" width="400" height="460"></canvas>
+      <div id="weaponDetail"></div>
+      <div id="weaponLoadout"></div>
+      <div id="weaponActions">
+        <button class="btn-primary btn-full" id="weaponLockBtn" type="button">선택 확정</button>
+        <button class="btn-plain btn-full" id="weaponBackListBtn" type="button">&larr; 목록으로</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="overScreen">
+    <p id="resultText">승리</p>
+    <canvas id="winCanvas" width="520" height="190"></canvas>
+    <div class="final"><span class="b" id="fb">0</span><span>:</span><span class="r" id="fr">0</span></div>
+    <p id="mine"></p>
+    <div id="overStats"></div>
+    <button class="btn-primary btn-full" id="againBtn" type="button">다시 하기</button>
+    <button class="btn-plain btn-full" id="lobbyBtn" type="button">로비로</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+<script>
+(() => {
+'use strict';
+/* ===== Stickseum character art (persona heads, held weapons): taken from Stickseum by the same author ===== */
+/*@@CHARS@@*/
