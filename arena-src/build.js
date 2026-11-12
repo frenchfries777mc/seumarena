@@ -7,7 +7,7 @@ art+='\n'+fs.readFileSync(S+'art/emoji.js','utf8');
 art+='\n'+fs.readFileSync(S+'art/music.js','utf8').replace('@@LOBBY@@',()=>mus('lobby')).replace('@@BATTLE@@',()=>mus('battle'));
 const menucss=fs.readFileSync(S+'art/menu.css','utf8');
 let head=fs.readFileSync(S+'head.html','utf8').replace('/*@@CHARS@@*/',()=>art).replace('/*@@MENUCSS@@*/',()=>menucss);
-const src=head+'\n'+['engine.js','kits1.js','kits2.js','social.js','fx.js','preview.js','gardener.js','net.js','tail.js'].map(f=>fs.readFileSync(S+f,'utf8')).join('\n');
+const src=head+'\n'+['engine.js','kits1.js','kits2.js','social.js','fx.js','preview.js','gardener.js','net.js','intro.js','tail.js'].map(f=>fs.readFileSync(S+f,'utf8')).join('\n');
 fs.writeFileSync(process.env.OUT||require('path').join(__dirname,'..','seumarena.html'),src);
 fs.writeFileSync(require('path').join(__dirname,'t.html'),'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}[hidden]{display:none!important}</style></head><body>'+src+'</body></html>');
 // checks: syntax, and the same top-level name defined twice
