@@ -500,6 +500,7 @@ body.touchUi canvas{touch-action:none}
 .mPips b{display:inline-flex;gap:3px}
 .mPips i{display:block;width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(0,0,0,.4)}
 .mPips em{font:italic 700 12px 'Rajdhani',sans-serif;color:#c9ced8}
+.mPips.many{gap:3px}.mPips.many b{gap:2px}.mPips.many i{width:6px;height:6px}
 .modeCard .mRules{display:flex;flex-wrap:wrap;gap:6px}
 .mRule{display:inline-flex;align-items:center;gap:5px;font:700 13px 'IBM Plex Sans KR',sans-serif;color:var(--text);background:rgba(8,10,15,.55);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:3px 10px 3px 7px;white-space:nowrap}
 .mRule svg{width:15px;height:15px;flex:none}
@@ -528,8 +529,12 @@ body.touchUi canvas{touch-action:none}
 #modeScreen.pc .modeCard:not(:disabled):hover{transform:translateY(-6px)}
 #modeScreen.pc .modeCard[aria-pressed="true"]{transform:translateY(-14px) scale(1.04)}
 /* phones: big posters, all four on one screen without scrolling sideways */
-#modeScreen.ph #modeGrid{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(4,minmax(112px,190px));align-content:center;gap:12px;width:100%;max-width:560px;margin:0 auto;padding:14px 0 4px}
-@media (orientation:landscape){#modeScreen.ph #modeGrid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(112px,210px));max-width:960px;padding-top:8px}}
+#modeScreen.ph #modeGrid{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:minmax(92px,180px);align-content:center;gap:10px;width:100%;max-width:560px;margin:0 auto;padding:14px 0 4px}
+/* phone on its side: three cards over two (five modes), the lower two centred; with four or fewer it stays two by two */
+@media (orientation:landscape){#modeScreen.ph #modeGrid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(100px,210px);max-width:960px;padding-top:8px}
+  #modeScreen.ph #modeGrid.n5{grid-template-columns:repeat(6,minmax(0,1fr))}
+  #modeScreen.ph #modeGrid.n5 .modeCard{grid-column:span 2}
+  #modeScreen.ph #modeGrid.n5 .modeCard:nth-child(4){grid-column:2 / span 2}}
 #modeScreen.ph .modeCard{clip-path:polygon(0 0,calc(100% - 24px) 0,100% 24px,100% 100%,24px 100%,0 calc(100% - 24px))}
 #modeScreen.ph .mIn{clip-path:polygon(0 0,calc(100% - 23px) 0,100% 23px,100% 100%,23px 100%,0 calc(100% - 23px));grid-template-rows:auto auto auto 1fr;align-content:start;justify-items:start;row-gap:7px;padding:14px 16px}
 #modeScreen.ph canvas.mArt,#modeScreen.ph .mTint,#modeScreen.ph .mMark{position:absolute}
@@ -668,6 +673,7 @@ body.touchUi canvas{touch-action:none}
     <symbol id="mi-m-team" viewBox="0 0 24 24"><path d="M4 4l11 11M20 4 9 15M6.5 13.5l4 4M17.5 13.5l-4 4M5 19l2.5-2.5M19 19l-2.5-2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
     <symbol id="mi-m-last" viewBox="0 0 24 24"><path d="M4 8l4 4 4-7 4 7 4-4-1.5 10h-13z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
     <symbol id="mi-m-flag" viewBox="0 0 24 24"><path d="M6 21V4M6 5h12l-3 4 3 4H6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="mi-m-flag5" viewBox="0 0 24 24"><path d="M4 21V5M4 6h8l-2 3 2 3H4M14 21V9M14 10h7l-2 2.5 2 2.5h-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="mi-m-duel" viewBox="0 0 24 24"><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14 6l-4 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
     <symbol id="mi-m-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
     <symbol id="mi-quest" viewBox="0 0 24 24"><rect x="4.5" y="4" width="15" height="17" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="8.5" y="2" width="7" height="4" rx="1.2" fill="currentColor"/><path d="m8.3 13.2 2.6 2.6 4.8-5.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -3927,7 +3933,22 @@ const MAPS = [
   { id:'big_crater', name:'화산 분화구', desc:'용암 웅덩이가 흩어진 분화구. 바닥 틈에서 용암이 분출해요.', big:1,
     env:{ vents:1 },
     th:{ f1:'#33292b', f2:'#3b2f31', wt:'#8a6f66', ws:'#57433d', b1:'#5a4a3a', b2:'#7a6450', wa:'#e2551a', wa2:'#ffb347' },
-    rows:['###################','#..................','#..ww....#....v....','#..ww....#.........','#......v.....##....','#.##.........#...ww','#..#....ww.......ww','#.......ww..g......','#...g.......g...#..','#...g..#........#..','#......##...v......','#.w.............##.','#.w....g...........','#.w.............##.','#......##...v......','#...g..#........#..','#...g.......g...#..','#.......ww..g......','#..#....ww.......ww','#.##.........#...ww','#......v.....##....','#..ww....#.........','#..ww....#....v....','#..................','###################'] }
+    rows:['###################','#..................','#..ww....#....v....','#..ww....#.........','#......v.....##....','#.##.........#...ww','#..#....ww.......ww','#.......ww..g......','#...g.......g...#..','#...g..#........#..','#......##...v......','#.w.............##.','#.w....g...........','#.w.............##.','#......##...v......','#...g..#........#..','#...g.......g...#..','#.......ww..g......','#..#....ww.......ww','#.##.........#...ww','#......v.....##....','#..ww....#.........','#..ww....#....v....','#..................','###################'] },
+  { id:'flag_desert', name:'사막 평원', desc:'넓은 사막 평원. 가운데 물웅덩이와 가속 발판이 있어요.', big:1, flag5:1,
+    th:{'f1': '#cdbb8a', 'f2': '#d6c595', 'wt': '#8a6a44', 'ws': '#5f4529', 'b1': '#2f8f4a', 'b2': '#49b565', 'wa': '#2f8fc4', 'wa2': '#63b8e0'},
+    rows:['############################', '#...........................', '#..gg....###.......gg.......', '#..gg....#.........gg...ww..', '#..............##.......ww..', '#.....##.......#............', '#.....#....gg..#.....###....', '#..........gg...............', '#..###............##........', '#....#....p.......#....gg...', '#.........................#.', '#......gg.....###.....gg..#.', '#......gg.......#.........#.', '#...........h.......ww......', '#..##...............ww..p...', '#..........gg.....gg........', '#..##...............ww..p...', '#...........h.......ww......', '#......gg.......#.........#.', '#......gg.....###.....gg..#.', '#.........................#.', '#....#....p.......#....gg...', '#..###............##........', '#..........gg...............', '#.....#....gg..#.....###....', '#.....##.......#............', '#..............##.......ww..', '#..gg....#.........gg...ww..', '#..gg....###.......gg.......', '#...........................', '############################'] },
+  { id:'flag_snow', name:'설원 요새', desc:'빙판이 깔린 눈 덮인 요새.', big:1, flag5:1,
+    th:{'f1': '#e3ecf4', 'f2': '#eaf1f8', 'wt': '#5c6f86', 'ws': '#3c4c61', 'b1': '#2f6f5c', 'b2': '#46957d', 'wa': '#2f6fb3', 'wa2': '#5c9bd6'},
+    rows:['############################', '#...........................', '#....iiii.....####..........', '#....iiii........#....gg....', '#..##.......gg.......#gg....', '#..#........gg.......#......', '#......###........iiii......', '#........#..p.....iiii..##..', '#..gg..............gg...#...', '#..gg....iiii......gg.......', '#........iiii....#..........', '#.....#..........#...###....', '#.....#....h..........#.....', '#..........###....gg........', '#..##........#....gg..ii....', '#..........p..........ii....', '#..##........#....gg..ii....', '#..........###....gg........', '#.....#....h..........#.....', '#.....#..........#...###....', '#........iiii....#..........', '#..gg....iiii......gg.......', '#..gg..............gg...#...', '#........#..p.....iiii..##..', '#......###........iiii......', '#..#........gg.......#......', '#..##.......gg.......#gg....', '#....iiii........#....gg....', '#....iiii.....####..........', '#...........................', '############################'] },
+  { id:'flag_lava', name:'용암 협곡', desc:'용암 웅덩이와 분출구가 있는 위험한 협곡.', big:1, flag5:1, env:{ vents:1 },
+    th:{'f1': '#4a3a34', 'f2': '#52403a', 'wt': '#8a6f66', 'ws': '#57433d', 'b1': '#5a7a3a', 'b2': '#7a9a50', 'wa': '#e2551a', 'wa2': '#ffb347'},
+    rows:['############################', '#...........................', '#...ww........###.....gg....', '#...ww...gg.....#.....gg....', '#........gg.....#...........', '#..##..........v.....wwww...', '#..#.....www.........wwww...', '#........www....##..........', '#..gg..........#.....v......', '#..gg....#.....#.......gg...', '#........#..p..........gg...', '#..............www..........', '#.....##...h...www...##.....', '#......#..............#.....', '#..##.......gg....ww........', '#...........gg....ww...p....', '#..##.......gg....ww........', '#......#..............#.....', '#.....##...h...www...##.....', '#..............www..........', '#........#..p..........gg...', '#..gg....#.....#.......gg...', '#..gg..........#.....v......', '#........www....##..........', '#..#.....www.........wwww...', '#..##..........v.....wwww...', '#........gg.....#...........', '#...ww...gg.....#.....gg....', '#...ww........###.....gg....', '#...........................', '############################'] },
+  { id:'flag_forest', name:'깊은 숲', desc:'덤불이 아주 많은 숲. 숨어서 기습하기 좋아요.', big:1, flag5:1,
+    th:{'f1': '#9cc27a', 'f2': '#a6ca84', 'wt': '#5b4630', 'ws': '#3d2f20', 'b1': '#2f7a3a', 'b2': '#45984f', 'wa': '#3a8fc4', 'wa2': '#63b8e0'},
+    rows:['############################', '#...........................', '#..ggg....ggg.....ggg.......', '#..ggg....ggg.....ggg..##...', '#.............#.........#...', '#....##.......#...ggg.......', '#....#..ggg.......ggg.......', '#.......ggg...ww............', '#..gg.........ww....#..ggg..', '#..gg....##.........#..ggg..', '#.........#..p..............', '#....ggg.........ggg........', '#....ggg...h.....ggg..##....', '#.....................#.....', '#..##.....ggg...ww..........', '#.........ggg...ww....p.....', '#..##.....ggg...ww..........', '#.....................#.....', '#....ggg...h.....ggg..##....', '#....ggg.........ggg........', '#.........#..p..............', '#..gg....##.........#..ggg..', '#..gg.........ww....#..ggg..', '#.......ggg...ww............', '#....#..ggg.......ggg.......', '#....##.......#...ggg.......', '#.............#.........#...', '#..ggg....ggg.....ggg..##...', '#..ggg....ggg.....ggg.......', '#...........................', '############################'] },
+  { id:'flag_city', name:'네온 도시', desc:'벽이 많은 골목 시가전.', big:1, flag5:1,
+    th:{'f1': '#2a2f3e', 'f2': '#30364a', 'wt': '#5a6380', 'ws': '#3a4058', 'b1': '#2f8f6a', 'b2': '#45b088', 'wa': '#3a6fd4', 'wa2': '#6a9ae8'},
+    rows:['############################', '#...........................', '#..###....####....###.......', '#..#.........#......#..##...', '#..#...gg....#...gg.#..##...', '#......gg..........#........', '#..........p.......#........', '#.####.........####.........', '#.........##...........##...', '#...gg....##....gg.....##...', '#...gg..........gg..........', '#.......###...........###...', '#.......#....h..........#...', '#....p..#.......####........', '#..##...........#....gg.....', '#...........##.......gg..p..', '#..##...........#....gg.....', '#....p..#.......####........', '#.......#....h..........#...', '#.......###...........###...', '#...gg..........gg..........', '#...gg....##....gg.....##...', '#.........##...........##...', '#.####.........####.........', '#..........p.......#........', '#......gg..........#........', '#..#...gg....#...gg.#..##...', '#..#.........#......#..##...', '#..###....####....###.......', '#...........................', '############################'] }
 ];
 for (const m of MAPS) m.grid = m.rows.map(r => r + [...r.slice(0, r.length - 1)].reverse().join(''));
 let COLS = 25, ROWS = 17, WW = COLS * T, WH = ROWS * T;      // set by loadMap(): the big 원 레프트 maps are larger
@@ -3970,10 +3991,11 @@ let state = 'menu', time = 0, timeLeft = MATCH_TIME, score = [0, 0];
 const MODES = [
   { id: 'team', name: '팀 아웃', size: '3v3', teams: 2, per: 3, respawn: true, win: WIN_SCORE, time: MATCH_TIME, rounds: 0, maps: [0, 1, 2, 3, 4, 5, 6], ready: true },
   { id: 'solo', name: '원 레프트', size: '6명', teams: 6, per: 1, respawn: false, win: 1, time: 150, rounds: 0, maps: [7, 8, 9, 10], ready: true },
-  { id: 'flag', name: '캡쳐 플래그', size: '3v3', teams: 2, per: 3, respawn: true, win: 3, time: 180, rounds: 0, maps: [0, 1, 2, 3, 4, 5, 6], ready: true },
+  { id: 'flag', name: '캡쳐 플래그', size: '5v5', teams: 2, per: 5, respawn: true, win: 3, time: 240, rounds: 0, maps: [11, 12, 13, 14, 15], ready: true },      // 2026-11-12: the 3v3 version was dropped, 캡쳐 플래그 is 5v5 on the 5 big flag maps
   { id: 'duel', name: '듀얼 배틀', size: '1v1', teams: 2, per: 1, respawn: false, win: 2, time: 60, rounds: 2, maps: [0, 1, 2, 3, 4, 5, 6], ready: true }
 ];
-for (const m of MODES) m.max = m.teams * m.per;      // room size, for matchmaking
+for (const m of MODES) m.max = m.teams * m.per;
+const isFlagMode = id => id === 'flag' || id === 'flag5';      // ('flag5' kept only as an alias: 캡쳐 플래그 itself is now 5v5)      // room size, for matchmaking
 /* modeChoice: picked in the lobby (UI) · curMode: the mode of the match being played (setup() copies modeChoice; a guest gets it from the host's start message) */
 let modeChoice = 'team', curMode = 'team', RD = { n: 1, pause: 0, win: -1, out: [] };
 /* 원 레프트 safe zone: a circle that closes in on the middle of the map; standing outside it hurts */
@@ -4688,7 +4710,7 @@ function step(dt) {
     const MODE = modeNow();
     if (MODE.rounds) { roundStep(dt); return; }
     if (MODE.id === 'solo') { soloStep(dt); return; }
-    if (MODE.id === 'flag') flagStep(dt);
+    if (isFlagMode(MODE.id)) flagStep(dt);
     if (overtime) otT += dt; else timeLeft = Math.max(0, timeLeft - dt);
     if (score[0] >= MODE.win || score[1] >= MODE.win) endGame();
     else if (overtime) { if (score[0] !== score[1] || otT >= OT_MAX) endGame(); }
@@ -4722,7 +4744,7 @@ function newRound() {
    hits zero, so a match cannot outlast the clock by more than a few seconds. score[team] = that fighter's kills; RD.out = teams in the order they fell;
    RD.win = the winner (the last one standing; if the last two fall together, the one who fell last). ===== */
 function modeStart() {
-  if (curMode === 'flag') flagsReset();
+  if (isFlagMode(curMode)) flagsReset();
   if (curMode !== 'solo') return;
   const g = freeNear(WW / 2, WH / 2);
   Object.assign(SZ, { on: true, x: WW / 2, y: WH / 2, r0: Math.hypot(WW, WH) / 2, r: Math.hypot(WW, WH) / 2, gx: g.x, gy: g.y, acc: 0 });
@@ -4776,7 +4798,7 @@ function flagStep(dt) {
 /* bots and the flags: the carrier runs home; everyone hunts whoever carries their flag; a dropped own flag nearby gets picked back up; the middle slot
    guards the base and the other two go for the enemy flag. A bot in a fight (an enemy within 6 tiles) keeps fighting unless it carries the flag. */
 function flagGoal(f) {
-  if (curMode !== 'flag' || FLAGS.length !== 2 || f.dead || B(f, 'charm')) return null;
+  if (!isFlagMode(curMode) || FLAGS.length !== 2 || f.dead || B(f, 'charm')) return null;
   const mine = FLAGS[f.team], theirs = FLAGS[1 - f.team], me = fighters.indexOf(f), bd = f.ai.bd || 1e9;
   if (theirs.by === me) return pathTo(f, mine.hx, mine.hy);
   if (bd < 6 * T) return null;
@@ -5649,6 +5671,7 @@ const MODE_PAY = { team: { kk: 1, kw: 3, mm: 1 }, flag: { kk: 1, kw: 4, mm: 1.2 
    1st gets kills + the win bonus, 2nd and 3rd kills + a smaller bonus */
 function soloKarma(place, k, pm) { const n = 6; return k * pm.kk + (place >= 1 && place <= n - 3 ? [pm.kw, 4, 2][place - 1] : 0); }
 function matchPay(o) {      // o: { mode, win, draw, kills, place }
+  if (o.mode === 'flag5') o = Object.assign({}, o, { mode: 'flag' });      // capture the flag pays the same whatever the team size
   const pm = MODE_PAY[o.mode] || MODE_PAY.team, solo = o.mode === 'solo', k = Math.max(0, o.kills | 0), good = o.win ? 2 : o.draw || (solo && o.place <= 3) ? 1 : 0;
   return { gold: Math.round(([30, 40, 60][good] + 5 * Math.min(10, k)) * (o.mode === 'duel' ? .6 : 1)), karma: solo ? soloKarma(o.place, k, pm) : k * pm.kk + (o.win ? pm.kw : 0),
     mp: Math.round(([30, 42, 55][good] + 3 * Math.min(10, k)) * pm.mm), xp: [40, 55, 70][good] + 4 * Math.min(10, k) };
@@ -5766,7 +5789,7 @@ function achScan() {      // marks what has just been reached; true when somethi
 const achOpen = () => !!COS.ach && ACHS.some(a => COS.ach[a.id] === 1);
 /* a finished match: { mode, win, kills, deaths, hero, n: fighters in it } */
 function achMatch(m) {
-  const s = achSt(), k = Math.max(0, m.kills | 0);
+  const s = achSt(), k = Math.max(0, m.kills | 0); if (m.mode === 'flag5') m = Object.assign({}, m, { mode: 'flag' });      // one capture the flag count, whatever the team size
   s.g++; s.k += k; s.mk = Math.max(s.mk, k); s.mg[m.mode] = (s.mg[m.mode] | 0) + 1;
   if (m.win) { s.w++; s.mw[m.mode] = (s.mw[m.mode] | 0) + 1; if (HEROES[m.hero]) s.hw[m.hero] = 1; if (m.mode === 'team' && !m.deaths) s.nd++; if (m.mode === 'solo' && m.n > 1 && k >= m.n - 1) s.sa++; }
   if (achScan()) achSync(true);
@@ -7373,10 +7396,10 @@ const PEERJS_ICE_CONFIG = { config: { iceServers: [
 ].concat(ICE_EXTRA) } };
 const NET_BUFFS = ['ally', 'block', 'reflect', 'sand', 'inv', 'counter', 'guard', 'stealth', 'stun', 'charm', 'root', 'mute', 'blind', 'slow', 'infect', 'reveal', 'fly'];
 /* game modes: the registry (MODES, setMode / curMode, modeSnap / applyModeSnap) lives with the rules in engine.js; everything here is guarded so a build
-   without it plays the plain team match. The mode id goes into the room id, so it must stay a short lowercase word. */
+   without it plays the plain team match. The mode id goes into the room id, so it must stay a short lowercase word (digits allowed, e.g. flag5). */
 function modeEntry(id) { try { if (typeof MODES === 'undefined' || !MODES) return null; return Array.isArray(MODES) ? MODES.find(m => m && m.id === id) || null : MODES[id] || null; } catch (e) { return null; } }
 function netModeOf(v) {      // the mode actually played: unknown or not-ready ids become the default, the same way the engine's modeOf() does
-  if (typeof v !== 'string' || !/^[a-z]{2,10}$/.test(v)) v = 'team';
+  if (typeof v !== 'string' || !/^[a-z][a-z0-9]{1,9}$/.test(v)) v = 'team';
   try { if (typeof modeOf === 'function') return modeOf(v).id; } catch (e) {}
   const e = modeEntry(v); return e && e.ready !== false ? v : 'team';
 }
@@ -8258,7 +8281,7 @@ addEventListener('keydown', e => { if (setEl.hidden) return; if (e.code === 'Esc
 /* game modes: the engine's MODES registry ({id,name,size,maps,ready}) when it exists; until then the same four, with only the current rules playable */
 const MODE_FALLBACK = [{ id: 'team', name: '팀 아웃', size: '3v3' }, { id: 'solo', name: '원 레프트', size: '6명', ready: false }, { id: 'flag', name: '캡쳐 플래그', size: '3v3', ready: false }, { id: 'duel', name: '듀얼 배틀', size: '1v1', ready: false }];
 const MODE_LIST = typeof MODES !== 'undefined' && Array.isArray(MODES) && MODES.length ? MODES : MODE_FALLBACK;
-const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], duel: ['mi-m-duel', '#b48cff'] };
+const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'] };
 let modeSel = typeof modeChoice === 'string' ? modeChoice : MODE_LIST[0].id, modeView = modeSel;
 const modeOk = m => !!m && m.ready !== false;
 const modeCur = () => MODE_LIST.find(m => m.id === modeSel && modeOk(m)) || MODE_LIST.find(modeOk) || MODE_LIST[0];
@@ -8435,7 +8458,7 @@ $('mapPickBtn').addEventListener('click', () => { mapChoice = mapList[mapIdx]; s
 
 /* mode picker. PC: a row of event cards, tap one to look at it, the button below (or a double click) confirms.
    touch or small screens: big posters, a tap picks the mode right away. Each card: mode art, headcount, two rules, the mode's current map */
-const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', duel: '#47307a' };
+const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a' };
 const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1 };      // map drawn behind the figures while the mode's map is random
 const MODE_FFA = ['#4d9dff', '#ff5d5d', '#ffd34d', '#3ddbb4', '#b48cff', '#ff9a3d'];
 const RULE_ICO = {
@@ -8449,7 +8472,7 @@ const mmss = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart
 function modeRules(m) {
   const r = [], solo = m.id === 'solo' || m.id === 'last';
   if (solo) r.push(['crown', '최후 1인']);
-  else if (m.id === 'flag' && m.win) r.push(['flag', '깃발 ' + m.win + '점']);
+  else if (isFlagMode(m.id) && m.win) r.push(['flag', '깃발 ' + m.win + '점']);
   else if (m.id === 'duel' && m.win) r.push(['rounds', m.win + '선승']);
   else if (m.win) r.push(['kill', m.win + '킬']);
   if (m.time) r.push(['clock', (m.rounds ? '판당 ' : '') + mmss(m.time)]);
@@ -8487,7 +8510,7 @@ function modeScene(cv, m, mi, cx) {
     g.save(); g.beginPath(); g.rect(0, 0, w, h); g.arc(x0, h * .55, zr, 0, 7, true); g.fillStyle = 'rgba(160,40,90,.35)'; g.fill('evenodd'); g.restore();
     g.strokeStyle = '#ffd34d'; g.lineWidth = 3 * k; g.setLineDash([10 * k, 7 * k]); g.beginPath(); g.arc(x0, h * .55, zr, 0, 7); g.stroke(); g.setLineDash([]);
     ['sword', 'pistol', 'magiccard', 'kadas', 'rifle', 'shade'].forEach((id, n) => { const x = x0 + (n - 2.5) * 46 * s, y = base - (n % 2) * 22 * s; fig(id, MODE_FFA[n], x, y, s * .92, x < x0 ? 1 : -1, .3); });
-  } else if (m.id === 'flag') {
+  } else if (isFlagMode(m.id)) {
     fig('bow', B, x0 - 110 * s, base - 22 * s, s * .9, 1, .4);
     fig('sword', B, x0 - 30 * s, base, s * 1.1, 1, .2); flag(x0 - 48 * s, base - 30 * s, s * 1.05, R);
     fig('rifle', R, x0 + 70 * s, base - 14 * s, s, -1, .5); flag(x0 + 135 * s, base - 30 * s, s * .9, B);
@@ -8521,7 +8544,7 @@ function modePick() {
 }
 function showModes() {
   const scr = $('modeScreen'), g = $('modeGrid'), ph = modeTouchLayout(), NS = 'http://www.w3.org/2000/svg';
-  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = '';
+  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = ''; g.classList.toggle('n5', MODE_LIST.length === 5);
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   const icon = (d, cls) => { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); if (cls) s.setAttribute('class', cls); s.innerHTML = d; return s; };
   const arts = [];
@@ -8529,10 +8552,10 @@ function showModes() {
     const ok = modeOk(m), mi = modeMapOf(m), lk = MODE_LOOK[m.id] || ['mi-m-team', '#fff'];
     const b = el('button', 'modeCard'), inn = el('span', 'mIn'), art = el('canvas', 'mArt'), top = el('span', 'mTop'), ic = el('span', 'mIco solid'), sz = el('span', 'mSz'), rl = el('span', 'mRules'), mp = el('span', 'mMap');
     b.type = 'button'; b.dataset.mode = m.id; b.style.setProperty('--c', lk[1]); b.style.setProperty('--d', MODE_DARK[m.id] || '#2a2f3c');
-    top.append(modeIcon(ic, m), el('b', 'mN', m.name));
+    top.append(modeIcon(ic, m), el('b', 'mN', m.size && m.name.endsWith(' ' + m.size) ? m.name.slice(0, -m.size.length - 1) : m.name));      // the size has its own big label on the card
     if (m.size) sz.append(el('span', 'mSize', m.size));
     if (m.teams && m.per) {
-      const p = el('span', 'mPips'), dots = (n, col) => { const w = el('b'); for (let j = 0; j < n; j++) { const d = el('i'); d.style.background = col; w.append(d); } return w; };
+      const p = el('span', 'mPips' + (m.teams * m.per > 6 ? ' many' : '')), dots = (n, col) => { const w = el('b'); for (let j = 0; j < n; j++) { const d = el('i'); d.style.background = col; w.append(d); } return w; };
       if (m.teams === 2) p.append(dots(m.per, TEAM[0]), el('em', '', 'vs'), dots(m.per, TEAM[1]));
       else { const w = el('b'); for (let j = 0; j < m.teams * m.per; j++) { const d = el('i'); d.style.background = MODE_FFA[j % MODE_FFA.length]; w.append(d); } p.append(w); }
       sz.append(p);
