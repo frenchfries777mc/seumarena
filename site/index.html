@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SeumArena · 소개</title>
+<meta name="description" content="Stickseum의 막대인간 16명이 붙는 탑다운 온라인 난투. 캐릭터, 팁, 소식, 커뮤니티.">
+<meta property="og:title" content="SeumArena"><meta property="og:description" content="Stickseum의 막대인간 16명이 붙는 탑다운 온라인 난투"><meta property="og:type" content="website">
+<meta property="og:image" content="https://frenchfries777.com/seumarena/site/img/g_5_shade.jpg">
+<meta name="theme-color" content="#0c0e13">
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<main>
+<section class="hero">
+<img src="img/g_5_shade.jpg" alt="">
+<div class="wrap">
+<div class="txt">
+<p class="kicker">2026.11.23 정식 출시</p>
+<h1 data-name>SeumArena</h1>
+<p class="lead">Stickseum의 막대인간 16명이 한 판에 붙는 탑다운 온라인 난투예요. 캐릭터 이야기, 공략 팁, 소식, 그리고 같이 노는 사람들의 글이 여기 모여요.</p>
+</div>
+<div class="cd"><p>정식 출시까지</p><div class="g" id="cd"><div><b>-</b><small>일</small></div><div><b>-</b><small>시간</small></div><div><b>-</b><small>분</small></div><div><b>-</b><small>초</small></div></div></div>
+</div>
+</section>
+
+<div class="wrap stats">
+<div><b>16</b><span>캐릭터</span></div><div><b>4</b><span>모드</span></div><div><b>20</b><span>맵</span></div><div><b>2:30</b><span>한 판</span></div>
+</div>
+
+<section class="wrap s" id="chars">
+<div class="sh"><h2>캐릭터 도감</h2><p>눌러서 스킬을 볼 수 있어요</p></div>
+<div class="dex"><div class="big"></div><div class="grid16"></div></div>
+</section>
+
+<section class="wrap s" id="modes">
+<div class="sh"><h2>모드</h2></div>
+<div class="modes">
+<div class="card mode" style="--c:#8fc3ff"><div><h3>팀 아웃</h3><span class="num">3v3</span></div><p>먼저 10킬을 내는 팀이 이겨요. 쓰러져도 3초 뒤 다시 싸워요.</p></div>
+<div class="card mode" style="--c:#ffcc4d"><div><h3>원 레프트</h3><span class="num">6명</span></div><p>혼자서 싸우는 개인전. 부활 없이 마지막까지 남으면 승리.</p></div>
+<div class="card mode" style="--c:#ff8a98"><div><h3>캡쳐 플래그</h3><span class="num">5v5</span></div><p>상대 깃발을 3번 먼저 가져오는 팀이 이겨요.</p></div>
+<div class="card mode" style="--c:#3fe0c5"><div><h3>듀얼 배틀</h3><span class="num">1v1</span></div><p>일대일 라운드 대결. 실력만으로 붙어요.</p></div>
+</div>
+</section>
+
+<div class="wrap two">
+<section id="news">
+<div class="sh"><h2 class="big">소식</h2></div>
+<div id="newsList"><div class="card empty">소식을 불러오는 중이에요.</div></div>
+</section>
+<section>
+<div class="sh"><h2 class="big">커뮤니티 새 글</h2><a href="community.html">게시판 가기</a></div>
+<div class="card list" id="postList"><div class="empty">글을 불러오는 중이에요.</div></div>
+</section>
+</div>
+
+<section class="wrap s">
+<div class="sh"><h2>스크린샷</h2></div>
+<div class="shots">
+<img src="img/g_0_sword.jpg" alt="옥상 정원에서 싸우는 장면" loading="lazy" width="1280" height="720">
+<img src="img/g_2_kadas.jpg" alt="얼음 호수에서 궁극기를 쓰는 장면" loading="lazy" width="1280" height="720">
+<img src="img/g_8_gardener.jpg" alt="정원사가 넝쿨을 뻗는 장면" loading="lazy" width="1280" height="720">
+</div>
+</section>
+</main>
+<script src="https://frenchfries777.com/games/ff-auth.js"></script>
+<script src="site.js"></script>
+<script src="board.js"></script>
+<script>
+siteChrome('home');
+countdown(document.getElementById('cd'));
+heroDex(document.getElementById('chars'), { extra: h => '<a href="tips.html#' + h.id + '">' + esc(h.name) + ' 공략 보기</a>' });
+loadNews().then(list => {
+  const el = document.getElementById('newsList');
+  el.style.cssText = 'display:flex;flex-direction:column;gap:12px';
+  el.innerHTML = list == null ? '<div class="card empty">소식을 불러오지 못했어요.</div>' : list.length ? list.slice(0, 4).map(n => newsHtml(n, true)).join('') : '<div class="card empty">아직 소식이 없어요.</div>';
+});
+siteAuth();
+boardRecent(document.getElementById('postList'), 5);
+</script>
+</body>
+</html>
