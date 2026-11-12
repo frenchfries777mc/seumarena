@@ -35,7 +35,8 @@ function netModeOf(v) {      // the mode actually played: unknown or not-ready i
   const e = modeEntry(v); return e && e.ready !== false ? v : 'team';
 }
 const lobbyMode = () => netModeOf(typeof modeChoice === 'string' ? modeChoice : 'team');
-function modeMax(id) { const e = modeEntry(id), n = e ? e.max | 0 : 0; return n >= 2 && n <= 8 ? n : id === 'duel' ? 2 : MAX_PLAYERS; }
+function modeMax(id) { const e = modeEntry(id), n = e ? (e.max | 0) || (e.teams | 0) * (e.per | 0) : 0;      // room size: the entry's max, else every seat of every team (5v5 = 10)
+  return n >= 2 && n <= 12 ? n : id === 'duel' ? 2 : MAX_PLAYERS; }
 function useMode(id) { try { if (typeof setMode === 'function') setMode(id); else if (typeof curMode !== 'undefined') curMode = id; } catch (e) {} }
 function startMatchIn(id, humans) {      // setup() takes the lobby's modeChoice: make sure it is the room's mode while the match is made
   let keep; try { if (typeof modeChoice !== 'undefined') { keep = modeChoice; modeChoice = id; } } catch (e) {}

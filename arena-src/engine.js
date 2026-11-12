@@ -384,7 +384,7 @@ function makeFighter(team, slot, id, isPlayer, lo0, cos, nick) {
     hp: h.hp, mhp: h.hp, dead: false, respawnT: 0, inv: 1.5, lastHit: -9, lastFire: -9, lastMove: 0, fireCd: 0, ucd: 6, dcd: 0, scd: [0, 0], sk: [null, null],
     queue: [], dash: null, swing: 0, spin: 0, shield: 0, onShieldBreak: null, dots: [], recent: [], b: {}, x_: 0, st: {}, acc: 0, dealt: 0, hold: false, washold: false, tapT: 0, form: null, ghost: false,
     kos: 0, deaths: 0, taken: 0, healed: 0, killer: null, lastDmg: null, bob: Math.random() * 6, infTick: 0,
-    ai: { cool: rnd(.3, 1), strafeT: 0, sdir: Math.random() < .5 ? 1 : -1, roamT: 0, rx: 0, ry: 0, dist: null, pathNext: 0, gc: -1, gr: -1, sx: p.x, sy: p.y, stT: 0, thr: .7 } };
+    ai: { pers: pick(AI_PERS_IDS), fside: Math.random() < .5 ? 1 : -1, cool: rnd(.3, 1), strafeT: 0, sdir: Math.random() < .5 ? 1 : -1, roamT: 0, rx: 0, ry: 0, dist: null, pathNext: 0, gc: -1, gr: -1, sx: p.x, sy: p.y, stT: 0, thr: .7 } };
   const lo = lo0 ? loadoutValid(h, lo0[0], lo0[1]) : isPlayer ? loadoutOf(id) : botLoadout(h);
   f.human = !!isPlayer; f.cos = cos ? cleanCos(cos, id) : botCos(id); f.nick = nick || null;
   f.sk = lo.map(n => h.skills.find(s => s.n === n)); f.sk0 = f.sk;
@@ -505,6 +505,17 @@ function ai(f, dt) { const mv = ai0(f, dt), fl = envFlee(f) || zoneFlee(f) || fl
    corners) while still shooting, and dash away from a melee enemy that is about to land a hit */
 let AI_KITE = true;
 /* how sharp bots are (2026-11-11: a little easier than before; the old values were aim .1, lead .7, cool ranged .2-.7 / melee .05-.3, skill .05, ult .06 per frame) */
+/* bot personalities (2026-11-12): same sharpness (AI_LV), different habits, so bots do not all play alike.
+   want: preferred distance (x reach) · low: hp share where it runs home · sk: skill eagerness · flank: approaches from the side
+   ambush: waits in bushes when nobody is around · save: keeps skills for a weakened target */
+const AI_PERS = {
+  rush: { want: .45, low: .18, sk: 1.15, st: [.8, 1.8], flip: .4 },
+  careful: { want: .75, low: .36, sk: .9, st: [.5, 1.2], flip: .7 },
+  ambush: { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6, ambush: 1 },
+  flank: { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6, flank: 1 },
+  saver: { want: .6, low: .3, sk: .6, st: [.6, 1.5], flip: .6, save: 1 }
+};
+const AI_PERS_IDS = Object.keys(AI_PERS), AI_PERS0 = { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6 };      // (the old single behaviour)
 const AI_LV = { aim: .13, lead: .62, coolR: [.24, .78], coolM: [.07, .34], sk: .045, ult: .055 };
 function kiteStep(f, reach) {
   const ts = foes(f).filter(e => !e.dead && !e.minion && !B(e, 'ally') && dist(f, e) < reach * 1.2 && visibleTo(e, teamOf(f)));
@@ -526,7 +537,7 @@ function kiteStep(f, reach) {
   a.kdir = best; return [Math.cos(best), Math.sin(best)];
 }
 function ai0(f, dt) {
-  const a = f.ai, h = f.h, L = a.lv || AI_LV;
+  const a = f.ai, h = f.h, L = a.lv || AI_LV, P = AI_PERS[a.pers] || AI_PERS0;
   f.hold = false;
   a.cool -= dt; a.strafeT -= dt; a.roamT -= dt; a.stT -= dt;
   if (a.stT <= 0) { if (Math.hypot(f.x - a.sx, f.y - a.sy) < 8) { a.roamT = 0; a.sdir *= -1; } a.sx = f.x; a.sy = f.y; a.stT = .7; }
@@ -544,7 +555,7 @@ function ai0(f, dt) {
     if (see && !B(f, 'charm')) {
       const u = h.ult;
       if (f.ucd <= 0 && bd >= u.r[0] && bd <= u.r[1] && (!u.ok || u.ok(f, tgt, bd)) && Math.random() < L.ult) useUlt(f);
-      for (let i = 0; i < 2; i++) { const d = f.sk[i]; if (d && f.scd[i] <= 0 && bd >= d.r[0] && bd <= d.r[1] && (!d.ok || d.ok(f, tgt, bd)) && Math.random() < L.sk) useSkill(f, i); }
+      for (let i = 0; i < 2; i++) { const d = f.sk[i]; if (d && f.scd[i] <= 0 && bd >= d.r[0] && bd <= d.r[1] && (!d.ok || d.ok(f, tgt, bd)) && Math.random() < L.sk * (P.save ? (tgt.hp < tgt.mhp * .55 ? 2.2 : .25) : P.sk)) useSkill(f, i); }
     }
     if ((see || h.w.shape === 'bomb') && inRange) {      // bombs arc over walls, so a bomber throws at an enemy behind cover too
       if (h.fireHeld) { f.hold = h.aiHold ? h.aiHold(f, a) : true; }
@@ -553,7 +564,7 @@ function ai0(f, dt) {
         f.hold = true; a.cool = close ? rnd(L.coolM[0], L.coolM[1]) : rnd(L.coolR[0], L.coolR[1]);
       }
     }
-    const low = f.hp < f.mhp * .3 && !B(f, 'charm') && modeNow().respawn;      // (no running home in modes without respawn: nothing waits there)
+    const low = f.hp < f.mhp * P.low && !B(f, 'charm') && modeNow().respawn;      // (no running home in modes without respawn: nothing waits there)
     if (low) {
       const s = spawnPos(f.team, f.slot);
       if (Math.hypot(s.x - f.x, s.y - f.y) > 1.5 * T) { const mv = pathTo(f, s.x, s.y); if (bd < 3 * T) tryDash(f, mv[0], mv[1]); return mv; }
@@ -566,16 +577,24 @@ function ai0(f, dt) {
       }
     }
     if (!see || bd > reach * .8) {
-      const mv = pathTo(f, tgt.x, tgt.y);
+      let gx = tgt.x, gy = tgt.y;
+      if (P.flank && bd > 3 * T) { const o = 2.2 * T * a.fside, px = gx - Math.sin(ang) * o, py = gy + Math.cos(ang) * o; if (!blockedAt(px, py)) { gx = px; gy = py; } }      // flankers come in from the side
+      const mv = pathTo(f, gx, gy);
       if (close && see && bd > reach && bd < 5 * T && Math.random() < .05) tryDash(f, mv[0], mv[1]);
       return mv;
     }
-    if (a.strafeT <= 0) { a.strafeT = rnd(.6, 1.5); if (Math.random() < .6) a.sdir *= -1; }
-    const p = ang + Math.PI / 2 * a.sdir, want = reach * .6, k = bd < want * .75 ? -.8 : bd > want ? .6 : 0;
+    if (a.strafeT <= 0) { a.strafeT = rnd(P.st[0], P.st[1]); if (Math.random() < P.flip) a.sdir *= -1; }
+    const p = ang + Math.PI / 2 * a.sdir, want = reach * P.want, k = bd < want * .75 ? -.8 : bd > want ? .6 : 0;
     return norm(Math.cos(p) + Math.cos(ang) * k, Math.sin(p) + Math.sin(ang) * k);
   }
   if (h.aiIdle) h.aiIdle(f);
-  if (a.roamT <= 0 || Math.hypot(a.rx - f.x, a.ry - f.y) < T) { const r = pick(ROAM); a.rx = (r[0] + .5) * T; a.ry = (r[1] + .5) * T; a.roamT = rnd(4, 8); }
+  if (P.ambush && a.roamT <= 0) {       // ambushers pick a bush nearby and wait there a while
+    let best = null, bd2 = 9 * T;
+    for (let k = 0; k < 40; k++) { const c = Math.floor(f.x / T) + ((Math.random() * 15) | 0) - 7, r = Math.floor(f.y / T) + ((Math.random() * 11) | 0) - 5; if (c > 0 && r > 0 && c < COLS - 1 && r < ROWS - 1 && bushAt((c + .5) * T, (r + .5) * T)) { const d = Math.hypot((c + .5) * T - f.x, (r + .5) * T - f.y); if (d < bd2) { bd2 = d; best = [c, r]; } } }
+    if (best) { a.rx = (best[0] + .5) * T; a.ry = (best[1] + .5) * T; a.roamT = rnd(5, 8); a.wait = 1; }
+  }
+  if (a.wait && Math.hypot(a.rx - f.x, a.ry - f.y) < T * .5) { if (a.roamT > 0) return [0, 0]; a.wait = 0; }
+  if (a.roamT <= 0 || (!a.wait && Math.hypot(a.rx - f.x, a.ry - f.y) < T)) { const r = pick(ROAM); a.wait = 0; a.rx = (r[0] + .5) * T; a.ry = (r[1] + .5) * T; a.roamT = rnd(4, 8); }
   const mv = pathTo(f, a.rx, a.ry);
   if (mv[0] || mv[1]) { f.aim = Math.atan2(mv[1], mv[0]); f.tx = f.x + mv[0] * 200; f.ty = f.y + mv[1] * 200; }
   return mv;
@@ -727,7 +746,7 @@ function updateBullets(dt) {
       }
       for (const e of foes({ team: b.team, b: {} })) {
         if (e === b.owner || b.hit.has(e)) continue;
-        if (Math.hypot(e.x - b.x, e.y + BODY - b.y) >= 20 + b.r) continue;
+        if (Math.hypot(e.x - b.x, e.y + BODY - b.y) >= 20 + b.r + (o.pad || 0)) continue;      // o.pad: a more forgiving hitbox (군인)
         if (!e.minion) {
           if (B(e, 'sand') || e.form === 'sub') continue;
           if (B(e, 'reflect')) { b.vx = -b.vx; b.vy = -b.vy; b.ang += Math.PI; b.team = teamOf(e); b.owner = e; b.hit.clear(); b.life = Math.max(b.life, 300); b.home = null; ring(e.x, e.y + BODY, 40, '#ffffff', .2); if (e.h.onReflect) e.h.onReflect(e); break; }

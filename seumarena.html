@@ -447,6 +447,8 @@ body.touchUi canvas{touch-action:none}
 .cosCard.buy{border-color:var(--accent-2);box-shadow:0 0 10px rgba(61,219,180,.4)}
 .cosCard.buy .cosPrice{color:#062824;background:var(--accent-2);border-radius:999px;padding:1px 8px}
 .cosCard.no{animation:cosNo .3s}
+.cosCard .cosOff{order:1;font-size:11px;font-weight:700;color:#14161c;background:var(--sel);border-radius:999px;padding:2px 9px;white-space:nowrap}
+.cosCard:has(.cosOff)>span:not(.cosOff){order:2}
 @keyframes cosNo{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 @media (prefers-reduced-motion: reduce){.cosCard.no{animation:none}}
 #goldGain{margin:-4px 0 8px;font:700 16px 'IBM Plex Sans KR',sans-serif;color:var(--sel);display:flex;justify-content:center;align-items:center;gap:5px}
@@ -3176,6 +3178,7 @@ function spawnFx0(e){
       bu(x,gy,24,{a0:-3.1,a1:-0.05,s0:120,s1:560,l0:.4,l1:.9,z0:2,z1:5,colors:['#ff7ac8','#ffd34d','#ffffff'],grav:300,drag:1.3,shape:'streak'}); shakeFrom(x,gy,5*FQ,900); break; }
     case 'ultfx': {                                                        // every character's ultimate: a themed burst on top of the ability itself
       const T=ULT_THEMES[e.w]||ULT_THEMES._, c=T.c;
+      if(typeof ultPunch==='function') ultPunch(e);
       for(let r=0;r<(fxQuality>=2?2:1);r++) addP({x:x,y:y,life:.45+r*0.15,color:c[r%3],shape:'ring',r0:10,r1:170+r*70,lw:7-r*2});
       if(FQ>0.3) addP({x:x,y:y,life:.4,color:c[0],shape:'flash',size:250});
       addP({x:x,y:y,life:.3,color:'#ffffff',shape:'flash',size:150});
@@ -4257,7 +4260,7 @@ function makeFighter(team, slot, id, isPlayer, lo0, cos, nick) {
     hp: h.hp, mhp: h.hp, dead: false, respawnT: 0, inv: 1.5, lastHit: -9, lastFire: -9, lastMove: 0, fireCd: 0, ucd: 6, dcd: 0, scd: [0, 0], sk: [null, null],
     queue: [], dash: null, swing: 0, spin: 0, shield: 0, onShieldBreak: null, dots: [], recent: [], b: {}, x_: 0, st: {}, acc: 0, dealt: 0, hold: false, washold: false, tapT: 0, form: null, ghost: false,
     kos: 0, deaths: 0, taken: 0, healed: 0, killer: null, lastDmg: null, bob: Math.random() * 6, infTick: 0,
-    ai: { cool: rnd(.3, 1), strafeT: 0, sdir: Math.random() < .5 ? 1 : -1, roamT: 0, rx: 0, ry: 0, dist: null, pathNext: 0, gc: -1, gr: -1, sx: p.x, sy: p.y, stT: 0, thr: .7 } };
+    ai: { pers: pick(AI_PERS_IDS), fside: Math.random() < .5 ? 1 : -1, cool: rnd(.3, 1), strafeT: 0, sdir: Math.random() < .5 ? 1 : -1, roamT: 0, rx: 0, ry: 0, dist: null, pathNext: 0, gc: -1, gr: -1, sx: p.x, sy: p.y, stT: 0, thr: .7 } };
   const lo = lo0 ? loadoutValid(h, lo0[0], lo0[1]) : isPlayer ? loadoutOf(id) : botLoadout(h);
   f.human = !!isPlayer; f.cos = cos ? cleanCos(cos, id) : botCos(id); f.nick = nick || null;
   f.sk = lo.map(n => h.skills.find(s => s.n === n)); f.sk0 = f.sk;
@@ -4378,6 +4381,17 @@ function ai(f, dt) { const mv = ai0(f, dt), fl = envFlee(f) || zoneFlee(f) || fl
    corners) while still shooting, and dash away from a melee enemy that is about to land a hit */
 let AI_KITE = true;
 /* how sharp bots are (2026-11-11: a little easier than before; the old values were aim .1, lead .7, cool ranged .2-.7 / melee .05-.3, skill .05, ult .06 per frame) */
+/* bot personalities (2026-11-12): same sharpness (AI_LV), different habits, so bots do not all play alike.
+   want: preferred distance (x reach) · low: hp share where it runs home · sk: skill eagerness · flank: approaches from the side
+   ambush: waits in bushes when nobody is around · save: keeps skills for a weakened target */
+const AI_PERS = {
+  rush: { want: .45, low: .18, sk: 1.15, st: [.8, 1.8], flip: .4 },
+  careful: { want: .75, low: .36, sk: .9, st: [.5, 1.2], flip: .7 },
+  ambush: { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6, ambush: 1 },
+  flank: { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6, flank: 1 },
+  saver: { want: .6, low: .3, sk: .6, st: [.6, 1.5], flip: .6, save: 1 }
+};
+const AI_PERS_IDS = Object.keys(AI_PERS), AI_PERS0 = { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6 };      // (the old single behaviour)
 const AI_LV = { aim: .13, lead: .62, coolR: [.24, .78], coolM: [.07, .34], sk: .045, ult: .055 };
 function kiteStep(f, reach) {
   const ts = foes(f).filter(e => !e.dead && !e.minion && !B(e, 'ally') && dist(f, e) < reach * 1.2 && visibleTo(e, teamOf(f)));
@@ -4399,7 +4413,7 @@ function kiteStep(f, reach) {
   a.kdir = best; return [Math.cos(best), Math.sin(best)];
 }
 function ai0(f, dt) {
-  const a = f.ai, h = f.h, L = a.lv || AI_LV;
+  const a = f.ai, h = f.h, L = a.lv || AI_LV, P = AI_PERS[a.pers] || AI_PERS0;
   f.hold = false;
   a.cool -= dt; a.strafeT -= dt; a.roamT -= dt; a.stT -= dt;
   if (a.stT <= 0) { if (Math.hypot(f.x - a.sx, f.y - a.sy) < 8) { a.roamT = 0; a.sdir *= -1; } a.sx = f.x; a.sy = f.y; a.stT = .7; }
@@ -4417,7 +4431,7 @@ function ai0(f, dt) {
     if (see && !B(f, 'charm')) {
       const u = h.ult;
       if (f.ucd <= 0 && bd >= u.r[0] && bd <= u.r[1] && (!u.ok || u.ok(f, tgt, bd)) && Math.random() < L.ult) useUlt(f);
-      for (let i = 0; i < 2; i++) { const d = f.sk[i]; if (d && f.scd[i] <= 0 && bd >= d.r[0] && bd <= d.r[1] && (!d.ok || d.ok(f, tgt, bd)) && Math.random() < L.sk) useSkill(f, i); }
+      for (let i = 0; i < 2; i++) { const d = f.sk[i]; if (d && f.scd[i] <= 0 && bd >= d.r[0] && bd <= d.r[1] && (!d.ok || d.ok(f, tgt, bd)) && Math.random() < L.sk * (P.save ? (tgt.hp < tgt.mhp * .55 ? 2.2 : .25) : P.sk)) useSkill(f, i); }
     }
     if ((see || h.w.shape === 'bomb') && inRange) {      // bombs arc over walls, so a bomber throws at an enemy behind cover too
       if (h.fireHeld) { f.hold = h.aiHold ? h.aiHold(f, a) : true; }
@@ -4426,7 +4440,7 @@ function ai0(f, dt) {
         f.hold = true; a.cool = close ? rnd(L.coolM[0], L.coolM[1]) : rnd(L.coolR[0], L.coolR[1]);
       }
     }
-    const low = f.hp < f.mhp * .3 && !B(f, 'charm') && modeNow().respawn;      // (no running home in modes without respawn: nothing waits there)
+    const low = f.hp < f.mhp * P.low && !B(f, 'charm') && modeNow().respawn;      // (no running home in modes without respawn: nothing waits there)
     if (low) {
       const s = spawnPos(f.team, f.slot);
       if (Math.hypot(s.x - f.x, s.y - f.y) > 1.5 * T) { const mv = pathTo(f, s.x, s.y); if (bd < 3 * T) tryDash(f, mv[0], mv[1]); return mv; }
@@ -4439,16 +4453,24 @@ function ai0(f, dt) {
       }
     }
     if (!see || bd > reach * .8) {
-      const mv = pathTo(f, tgt.x, tgt.y);
+      let gx = tgt.x, gy = tgt.y;
+      if (P.flank && bd > 3 * T) { const o = 2.2 * T * a.fside, px = gx - Math.sin(ang) * o, py = gy + Math.cos(ang) * o; if (!blockedAt(px, py)) { gx = px; gy = py; } }      // flankers come in from the side
+      const mv = pathTo(f, gx, gy);
       if (close && see && bd > reach && bd < 5 * T && Math.random() < .05) tryDash(f, mv[0], mv[1]);
       return mv;
     }
-    if (a.strafeT <= 0) { a.strafeT = rnd(.6, 1.5); if (Math.random() < .6) a.sdir *= -1; }
-    const p = ang + Math.PI / 2 * a.sdir, want = reach * .6, k = bd < want * .75 ? -.8 : bd > want ? .6 : 0;
+    if (a.strafeT <= 0) { a.strafeT = rnd(P.st[0], P.st[1]); if (Math.random() < P.flip) a.sdir *= -1; }
+    const p = ang + Math.PI / 2 * a.sdir, want = reach * P.want, k = bd < want * .75 ? -.8 : bd > want ? .6 : 0;
     return norm(Math.cos(p) + Math.cos(ang) * k, Math.sin(p) + Math.sin(ang) * k);
   }
   if (h.aiIdle) h.aiIdle(f);
-  if (a.roamT <= 0 || Math.hypot(a.rx - f.x, a.ry - f.y) < T) { const r = pick(ROAM); a.rx = (r[0] + .5) * T; a.ry = (r[1] + .5) * T; a.roamT = rnd(4, 8); }
+  if (P.ambush && a.roamT <= 0) {       // ambushers pick a bush nearby and wait there a while
+    let best = null, bd2 = 9 * T;
+    for (let k = 0; k < 40; k++) { const c = Math.floor(f.x / T) + ((Math.random() * 15) | 0) - 7, r = Math.floor(f.y / T) + ((Math.random() * 11) | 0) - 5; if (c > 0 && r > 0 && c < COLS - 1 && r < ROWS - 1 && bushAt((c + .5) * T, (r + .5) * T)) { const d = Math.hypot((c + .5) * T - f.x, (r + .5) * T - f.y); if (d < bd2) { bd2 = d; best = [c, r]; } } }
+    if (best) { a.rx = (best[0] + .5) * T; a.ry = (best[1] + .5) * T; a.roamT = rnd(5, 8); a.wait = 1; }
+  }
+  if (a.wait && Math.hypot(a.rx - f.x, a.ry - f.y) < T * .5) { if (a.roamT > 0) return [0, 0]; a.wait = 0; }
+  if (a.roamT <= 0 || (!a.wait && Math.hypot(a.rx - f.x, a.ry - f.y) < T)) { const r = pick(ROAM); a.wait = 0; a.rx = (r[0] + .5) * T; a.ry = (r[1] + .5) * T; a.roamT = rnd(4, 8); }
   const mv = pathTo(f, a.rx, a.ry);
   if (mv[0] || mv[1]) { f.aim = Math.atan2(mv[1], mv[0]); f.tx = f.x + mv[0] * 200; f.ty = f.y + mv[1] * 200; }
   return mv;
@@ -4600,7 +4622,7 @@ function updateBullets(dt) {
       }
       for (const e of foes({ team: b.team, b: {} })) {
         if (e === b.owner || b.hit.has(e)) continue;
-        if (Math.hypot(e.x - b.x, e.y + BODY - b.y) >= 20 + b.r) continue;
+        if (Math.hypot(e.x - b.x, e.y + BODY - b.y) >= 20 + b.r + (o.pad || 0)) continue;      // o.pad: a more forgiving hitbox (군인)
         if (!e.minion) {
           if (B(e, 'sand') || e.form === 'sub') continue;
           if (B(e, 'reflect')) { b.vx = -b.vx; b.vy = -b.vy; b.ang += Math.PI; b.team = teamOf(e); b.owner = e; b.hit.clear(); b.life = Math.max(b.life, 300); b.home = null; ring(e.x, e.y + BODY, 40, '#ffffff', .2); if (e.h.onReflect) e.h.onReflect(e); break; }
@@ -5054,6 +5076,7 @@ hero('shotgun', { p: ['명사수의 위협', '알갱이를 모두 맞히면 상�
   ] });
 
 hero('rifle', { p: ['지뢰밭', '지뢰를 밟은 상대는 3초 동안 이동속도 10% 감소'],
+  pre(f, o) { o.pad = 10; return o; },      // basic shots: hit radius 25 -> 35 (the user found the rifle too fussy to land)
   ult: ['미사일 폭격', '상대 근처 랜덤 3곳에 미사일이 떨어짐 (발당 750 피해, 벽 통과, 나는 피해 없음)', [0, 12 * T], f => { const es = foes(f); seq(f, 3, .3, i => { const e = es.length ? es[i % es.length] : fwd(f, 4 * T); const x = e.x + rnd(-60, 60), y = e.y + rnd(-60, 60); fx('warn', x, y, { dur: .8 }); strike(f, x, y, 75, .8, () => boom(f, x, y, 75, 60)); }); }],
   skills: [
     [1, '지뢰 설치', 'hit', '바닥에 지뢰 2개를 설치 (최대 2개, 25초) · 밟은 적은 250 피해와 0.5초 기절 · 지뢰는 상대에게도 보임 (1스킬 칸에서는 쿨타임 2배)', [0, 6 * T], f => { for (const s of [-1, 1]) { const p = fwd(f, 44, f.aim + s * 1.2); trap(f, p.x, p.y, 25, 2, 'mine', e => { damage(e, 20, f); buff(e, 'stun', .5); buff(e, 'slow', 3, .9); }, '#ff5d5d'); } }, { cd1: 10 }],
@@ -5089,7 +5112,8 @@ hero('grenade', { p: ['폭발광', '폭발 점프로 피해를 주면 착지 때
     [1, '폭발 점프', 'move', '폭발로 조준 방향으로 높이 뛰어올라(벽도 뛰어넘음) 주변에 475 피해', [0, 110], (f, a) => { const hit = boom(f, f.x, f.y, 100, 56).length; lunge(f, a, 3 * T, .35, { fly: 2, end: g => { if (hit) circ(g, g.x, g.y, 90, 0, { kb: 420, stun: .4 }); } }); }],
     [2, '폭격', 'hit', '내 앞과 뒤로 폭탄을 2개씩 바로 발사', [0, 5 * T], (f, a) => { for (const s of [0, Math.PI]) emit(f, a + s, { count: 2, fan: .35, full: 1 }); }],
     [3, '끈끈이 폭탄', 'hit', '조준 방향으로 끈끈한 폭탄을 쏨 · 맞은 상대에게 달라붙어(130 피해) 1.5초 뒤 그 상대 자리에서 크게 터짐 (주변 595 피해, 넉백) · 붙은 동안 상대 위에 빨간 고리가 깜빡임', [0, 6 * T], (f, a) => emit(f, a, { skill: 1, dmg: 15, spd: 620, range: 6 * T, r: 9, shape: 'potion', onHit: e => { seq(f, 3, .5, () => { if (!e.dead) ring(e.x, e.y, 46, '#ff5d5d', .25); }); later(1.5, () => { const x = e.dead ? e.x : e.x, y = e.y; boom(f, x, y, 90, 70, { kb: 300 }); }); } })],
-    [4, '강력한 폭탄', 'hit', '조준한 곳으로 큰 폭탄을 던짐 (일반 공격처럼 날아가 떨어진 곳에서 터짐, 475 피해) · 터지면 근처 벽이 경기가 끝날 때까지 사라짐 (테두리 벽은 그대로)', [100, 7 * T], (f, a) => { const p = aimPt(f, 7 * T); emit(f, Math.atan2(p.y - f.y, p.x - f.x), { skill: 1, shape: 'bomb', wp: true, r: 9, dmg: 56, splash: 100, range: Math.max(T, Math.hypot(p.x - f.x, p.y - f.y)), onBoom: (x, y) => { const c0 = Math.floor(x / T), r0 = Math.floor(y / T); for (let r = r0 - 1; r <= r0 + 1; r++) for (let c = c0 - 1; c <= c0 + 1; c++) if (c > 0 && r > 0 && c < COLS - 1 && r < ROWS - 1 && MAP[r][c] === '#' && Math.hypot((c + .5) * T - x, (r + .5) * T - y) < 1.3 * T) { MAP[r][c] = '.'; NET.mapVer++; burst((c + .5) * T, (r + .5) * T, TH.wt, 14, 260); } } }); }]
+    [4, '강력한 폭탄', 'hit', '조준한 곳으로 큰 폭탄을 던짐 (일반 공격처럼 날아가 떨어진 곳에서 터짐, 475 피해) · 터지면 근처 벽과 덤불이 경기가 끝날 때까지 사라짐 (테두리 벽은 그대로)', [100, 7 * T], (f, a) => { const p = aimPt(f, 7 * T); emit(f, Math.atan2(p.y - f.y, p.x - f.x), { skill: 1, shape: 'bomb', wp: true, r: 9, dmg: 56, splash: 100, range: Math.max(T, Math.hypot(p.x - f.x, p.y - f.y)), onBoom: (x, y) => { let bz = 0; for (let r = Math.floor((y - 100) / T); r <= Math.floor((y + 100) / T); r++) for (let c = Math.floor((x - 100) / T); c <= Math.floor((x + 100) / T); c++) { if (c <= 0 || r <= 0 || c >= COLS - 1 || r >= ROWS - 1 || Math.hypot((c + .5) * T - x, (r + .5) * T - y) > 100) continue; const t = MAP[r][c]; if (t === 'G' && typeof GD !== 'undefined') { const e = GD.plants.get(c + ',' + r); if (e) e.until = time; } else if (t === 'g') { MAP[r][c] = '.'; bz = 1; burst((c + .5) * T, (r + .5) * T, '#4f8a3a', 10, 200); } } if (bz) NET.mapVer++;      // the blast burns away bushes too (the map's own for the rest of the match, planted ones wither)
+      const c0 = Math.floor(x / T), r0 = Math.floor(y / T); for (let r = r0 - 1; r <= r0 + 1; r++) for (let c = c0 - 1; c <= c0 + 1; c++) if (c > 0 && r > 0 && c < COLS - 1 && r < ROWS - 1 && MAP[r][c] === '#' && Math.hypot((c + .5) * T - x, (r + .5) * T - y) < 1.3 * T) { MAP[r][c] = '.'; NET.mapVer++; burst((c + .5) * T, (r + .5) * T, TH.wt, 14, 260); } } }); }]
   ] });
 
 hero('bazooka', { p: ['화력 집중', '스킬 로켓 3발이 모두 맞으면 그 자리에 3초 동안 화염 (닿으면 초당 30 피해)'],
@@ -5965,7 +5989,8 @@ function cosToggle(id) {
   }
   cosBuy = null;
   if (it.cat === 'skin') { if (COS.skin[it.char] === id) delete COS.skin[it.char]; else COS.skin[it.char] = id; }
-  else if (it.cat === 'emo') { const i = COS.emo.indexOf(it.emIdx); if (i >= 0) { if (COS.emo.length > 1) COS.emo.splice(i, 1); } else { if (COS.emo.length >= 8) COS.emo.shift(); COS.emo.push(it.emIdx); } }
+  else if (it.cat === 'emo') { const i = COS.emo.indexOf(it.emIdx); if (i >= 0) { if (COS.emo.length > 1) COS.emo.splice(i, 1); } else if (COS.emo.length >= 8) { try { sfx(150, .12, 'square', .04); } catch (e) {} const el = document.getElementById('cos-' + id); if (el) { el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); } return; }      // the wheel is full: take one out first
+    else COS.emo.push(it.emIdx); }
   else { const k = { bcol: 'col', name: 'name', kfx: 'kfx', pose: 'pose' }[it.cat]; COS[k] = COS[k] === id && it.cat !== 'pose' ? null : id; }
   saveCos(); renderCos(); accountUi();
 }
@@ -5989,7 +6014,7 @@ function renderCos() {
     if (it.cat === 'skin' && it.char !== grp) { grp = it.char; const hd = document.createElement('h3'); hd.className = 'cosGrp'; hd.textContent = HEROES[grp].name; grid.append(hd); }
     b.type = 'button'; b.className = 'cosCard'; b.id = 'cos-' + id; b.setAttribute('aria-pressed', String(cosEquipped(id)));
     const pv = document.createElement('div'); pv.className = 'cosPv';
-    if (it.cat === 'emo') pv.textContent = it.em;
+    if (it.cat === 'emo') { pv.textContent = it.em; if (cosEquipped(id)) { const off = document.createElement('span'); off.className = 'cosOff'; off.textContent = '선택해제'; b.append(pv, off); } }
     else if (it.cat === 'kfx' || it.cat === 'pose') pv.textContent = it.icon || '';
     else if (it.cat === 'name') { pv.textContent = 'Aa'; pv.style.color = nameColorFor(id); pv.style.fontWeight = '700'; }
     else { const cv2 = document.createElement('canvas'); try { drawItemPreview(cv2, id, performance.now()); } catch (e) {} pv.append(cv2); }
@@ -6027,16 +6052,17 @@ function hitReact(e) {
   let best = null, bd = 70;
   for (const f of fighters) { if (!f || f.dead) continue; const d = Math.hypot(f.x - e.x, f.y + BODY - e.y); if (d < bd) { bd = d; best = f; } }
   const tier = HIT_TIER(v), now = performance.now(), ang = +e.ang || 0;
-  if (best) { best.stg = { at: now, dir: Math.cos(ang) >= 0 ? 1 : -1, s: [0, .45, .75, 1][tier] }; best._hf = now; best._hfT = [0, 60, 85, 120][tier]; }
+  if (best) { best.stg = { at: now, dir: Math.cos(ang) >= 0 ? 1 : -1, s: [0, .45, .75, 1][tier], ka: ang, tier }; best._hf = now; best._hfT = [0, 90, 120, 160][tier]; }
   const meHit = best && best === player;
-  if (meHit) buzz(tier === 3 ? 45 : 22);
+  if (meHit) { buzz(tier === 3 ? 45 : 22); hurtAt = now; hurtK = [0, .5, .75, 1][tier]; }
   const mine = !meHit && player && !player.dead && e.color === TC(player.team) && Math.hypot(player.x - e.x, player.y + BODY - e.y) < 420;
   if (!NET.role && (meHit || mine)) hitStopUntil = Math.max(hitStopUntil, now + (meHit ? [0, 30, 60, 95] : [0, 0, 45, 80])[tier]);
   if (mine && typeof shakeFrom === 'function') shakeFrom(e.x, e.y, [0, 1.5, 3.5, 7][tier], 600);
-  if (mine) { try { sfx([0, 180, 140, 95][tier], [0, .06, .09, .14][tier], 'square', [0, .03, .045, .06][tier], .5); } catch (er) { } }
+  if (mine || meHit) hitSnd(tier, meHit);
+  if (!(NET.role === 'guest' && mine)) impactPop(e.x, e.y, ang, e.color || '#ffffff', tier);
   const col = e.color || '#ffffff', x = e.x, y = e.y;
   if (tier >= 2) {
-    addP({ x, y, life: tier === 3 ? .3 : .2, color: '#ffffff', shape: 'flash', size: tier === 3 ? 120 : 70 });
+    addP({ x, y, life: .12, color: '#ffffff', shape: 'flash', size: tier === 3 ? 60 : 40 });
     addP({ x, y, life: .32, color: col, shape: 'ring', r0: 6, r1: tier === 3 ? 80 : 48, lw: tier === 3 ? 6 : 4 });
     const n = lowFx() ? 3 : tier === 3 ? 9 : 5;
     for (let i = 0; i < n; i++) { const a = ang + RND(-.7, .7), sp = RND(380, 820); addP({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: 3.2, life: RND(.18, .32), size: RND(3, 5), color: i % 2 ? '#ffffff' : col, shape: 'streak' }); }
@@ -6044,10 +6070,16 @@ function hitReact(e) {
   }
 }
 function staggerAngle(f) {             // tail.js turns the figure by this; while the hit flash lasts the figure is also drawn bright (the flash ends with tail.js's own ctx.restore)
-  if (f._hf) { const a = performance.now() - f._hf; if (a < f._hfT && !lowFx()) ctx.filter = 'brightness(' + (1 + 2.2 * (1 - a / f._hfT)).toFixed(2) + ')'; else f._hf = 0; }
+  if (f._hf) { const a = performance.now() - f._hf; if (a < f._hfT && !lowFx()) ctx.filter = a < 45 ? 'brightness(0) invert(1)' : 'brightness(' + (1 + 2.2 * (1 - a / f._hfT)).toFixed(2) + ')'; else f._hf = 0; }
   atkKick(f);
   const st = f.stg; if (!st) return 0;
   const age = performance.now() - st.at; if (age > 240 || age < 0) { f.stg = null; return 0; }
+  if (!lowFx() && st.ka !== undefined) {   // the body itself is pushed along the hit and springs back, squashed flat for a blink
+    const k = age < 50 ? age / 50 : Math.max(0, 1 - (age - 50) / 150), push = [0, 5, 9, 14][st.tier || 1] * k;
+    ctx.translate(Math.cos(st.ka) * push, Math.sin(st.ka) * push * .5);
+    const q = age < 130 ? Math.sin(Math.PI * age / 130) * [0, .1, .16, .22][st.tier || 1] : 0;
+    if (q) ctx.scale(1 + q, 1 - q);
+  }
   return st.dir * .26 * st.s * Math.sin(Math.PI * age / 240);
 }
 function rotQ(q, ox, oy, c, s) {
@@ -6403,7 +6435,7 @@ function drawDarkVeil(dt) {            // trapped in an enemy's lump: the pictur
   g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(.6, 'rgba(0,0,0,.7)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(sx, sy, r, 0, 7); c.fill();
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(kdVeilCv, 0, 0); ctx.restore();
 }
-function drawScreenVeil() { const now = performance.now(), dt = Math.min(.05, (now - (drawScreenVeil.last || now)) / 1000); drawScreenVeil.last = now; drawDarkVeil(dt); }
+function drawScreenVeil() { const now = performance.now(), dt = Math.min(.05, (now - (drawScreenVeil.last || now)) / 1000); drawScreenVeil.last = now; drawDarkVeil(dt); drawHurtVignette(now); }
 function drawZoneArt(z, menu) {       // tail.js asks this for every zone first; true = drawn here
   if ((z.kind === 'sprout' || z.kind === 'vine') && typeof drawGardenZone === 'function') return drawGardenZone(z);      // (정원사: gardener.js)
   if (z.col === '#9a4cff' && !z.kind) { drawDarkLump(z); return true; }
@@ -6445,7 +6477,7 @@ function drawKanWings(now) {           // 칸's ultimate: two wings of quetzal f
 }
 function drawBuffAuras(dt) {
   const now = performance.now(), T = now / 1000, menu = state === 'menu';
-  drawMuzzles(); doveFeathers(dt); drawHaraldAxes(now); drawLeapCracks(now); bombFrame(); mkCheck(); hatPops();
+  drawMuzzles(); drawImpacts(); doveFeathers(dt); predictHits(); deathWatch(); drawHaraldAxes(now); drawLeapCracks(now); bombFrame(); mkCheck(); hatPops();
   for (const f of fighters) { if (f && !f.dead && !f.minion && f.st && f.st.pz && (menu || (visibleTo(f, VIEW) && !bushAt(f.x, f.y)))) drawPizarroAura(f, now); }
   for (const f of fighters) {
     const a = f && f.fxAura; if (!a || f.minion) continue;
@@ -6645,6 +6677,107 @@ function doveFeathers(dt) {                 // little curved feathers that drift
     ctx.beginPath(); ctx.moveTo(-6, 0); ctx.quadraticCurveTo(0, -4, 6, 0); ctx.quadraticCurveTo(0, 3, -6, 0); ctx.fill(); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(-7, .5); ctx.lineTo(6, 0); ctx.stroke(); ctx.restore();
   }
+}
+
+/* ---------- 타격감 3: real-sounding hits (noise crack + low thump instead of one beep), bullets burst where they land,
+   a kill freezes the moment, an ultimate shakes the screen, and on a guest my own shots show their impact before the server answers ---------- */
+let NOISE = null;
+function sndBus() { if (!ac || muted || state !== 'play') return null; const v = (typeof SET !== 'undefined' && SET.vol !== undefined ? SET.vol : 100) / 100; return v > 0 ? v : null; }
+function noiseBuf() { if (NOISE) return NOISE; const n = ac.sampleRate * .4 | 0, b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return NOISE = b; }
+function snd(o) {                       // one layered hit: filtered noise for the crack, a falling sine for the body
+  const v = sndBus(); if (!v) return;
+  try {
+    const t = ac.currentTime, out = ac.createGain(); out.gain.value = v; out.connect(ac.destination);
+    if (o.n) { const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = noiseBuf(); f.type = o.nt || 'bandpass'; f.frequency.value = o.nf || 1800; f.Q.value = o.nq || .9;
+      g.gain.setValueAtTime(o.n, t); g.gain.exponentialRampToValueAtTime(.0001, t + (o.nd || .08)); s.connect(f); f.connect(g); g.connect(out); s.start(t); s.stop(t + (o.nd || .08) + .02); }
+    if (o.b) { const os = ac.createOscillator(), g = ac.createGain(); os.type = o.bt || 'sine'; os.frequency.setValueAtTime(o.bf || 160, t); os.frequency.exponentialRampToValueAtTime(o.be || 45, t + (o.bd || .12));
+      g.gain.setValueAtTime(o.b, t); g.gain.exponentialRampToValueAtTime(.0001, t + (o.bd || .12)); os.connect(g); g.connect(out); os.start(t); os.stop(t + (o.bd || .12) + .02); }
+  } catch (e) { }
+}
+function hitSnd(tier, meHit) {
+  if (meHit) snd({ n: .05 + tier * .02, nf: 900, nd: .07, b: .12 + tier * .04, bf: 120, be: 40, bd: .14 });
+  else snd({ n: [0, .07, .1, .14][tier], nf: [0, 2600, 2000, 1500][tier], nd: [0, .05, .08, .12][tier], b: [0, .1, .16, .24][tier], bf: [0, 200, 170, 140][tier], be: 45, bd: [0, .08, .12, .18][tier] });
+}
+const IMPS = [];
+function impactPop(x, y, ang, col, tier) {   // a crisp comic hit: a spiky white star rimmed in the shooter's colour, thick speed wedges, chunky outlined shards that bounce
+  const n = lowFx() ? 2 : 2 + tier * 2, sh = [];
+  for (let i = 0; i < n; i++) { const a = ang + Math.PI + RND(-1.2, 1.2) + (i % 2 ? Math.PI : 0) * .35, sp = RND(110, 230) + tier * 30; sh.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 90, r: RND(0, 6), vr: RND(-14, 14), z: RND(3.5, 6) + tier, gy: y + RND(16, 30), w: i % 3 === 0 ? '#ffffff' : col }); }
+  IMPS.push({ x, y, ang, col, tier, t0: performance.now(), rot: RND(0, 6.3), sh, last: performance.now() });
+  if (IMPS.length > 40) IMPS.shift();
+}
+function drawImpacts() {
+  const now = performance.now();
+  for (let i = IMPS.length - 1; i >= 0; i--) {
+    const m = IMPS[i], a = now - m.t0, dt = Math.min(.05, (now - m.last) / 1000); m.last = now;
+    if (a > 520) { IMPS.splice(i, 1); continue; }
+    ctx.save(); ctx.lineJoin = 'round';
+    if (a < 170) {                       // the star: full size at once, holds two frames, then snaps shut
+      const k = a < 60 ? 1.15 : Math.max(0, 1 - (a - 60) / 110), R0 = (24 + m.tier * 10) * k, sp = 9;
+      ctx.translate(m.x, m.y); ctx.rotate(m.rot);
+      ctx.beginPath();
+      for (let j = 0; j < sp * 2; j++) { const rr = j % 2 ? R0 * .42 : R0 * (j % 4 ? .8 : 1); const t = j / (sp * 2) * Math.PI * 2; j ? ctx.lineTo(Math.cos(t) * rr, Math.sin(t) * rr) : ctx.moveTo(Math.cos(t) * rr, Math.sin(t) * rr); }
+      ctx.closePath(); ctx.fillStyle = a < 50 ? '#ffffff' : '#fff6c8'; ctx.fill();
+      ctx.rotate(-m.rot);
+      if (!lowFx()) {                     // thick wedges flying outward along the hit
+        const L = (30 + m.tier * 14) * (a / 170), o = R0 * .6 + 10 * (a / 170);
+        ctx.fillStyle = m.col; ctx.globalAlpha = 1 - a / 170;
+        for (let j = -2; j <= 2; j++) { const t = m.ang + j * .45, c = Math.cos(t), s2 = Math.sin(t), px = -s2, py = c, w = 4 - Math.abs(j) + m.tier;
+          ctx.beginPath(); ctx.moveTo(c * o + px * w, s2 * o + py * w); ctx.lineTo(c * (o + L), s2 * (o + L)); ctx.lineTo(c * o - px * w, s2 * o - py * w); ctx.closePath(); ctx.fill(); }
+      }
+      ctx.translate(-m.x, -m.y); ctx.globalAlpha = 1;
+    }
+    for (const q of m.sh) {               // the shards fall to the ground and hop once
+      q.vy += 1100 * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.r += q.vr * dt; q.vx *= 1 - 1.5 * dt;
+      if (q.y > q.gy && q.vy > 0) { q.y = q.gy; q.vy *= -.35; q.vx *= .6; q.vr *= .5; }
+      ctx.globalAlpha = a > 380 ? Math.max(0, 1 - (a - 380) / 140) : 1;
+      ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.r);
+      ctx.beginPath(); ctx.moveTo(q.z, 0); ctx.lineTo(-q.z * .7, q.z * .65); ctx.lineTo(-q.z * .5, -q.z * .7); ctx.closePath();
+      ctx.fillStyle = q.w; ctx.fill(); ctx.restore();
+    }
+    ctx.restore();
+  }
+}
+let hurtAt = 0, hurtK = 0;
+function drawHurtVignette(now) {        // screen space: the edges flash red for a moment when I am hit
+  const a = now - hurtAt; if (a > 320 || !player || lowFx()) return;
+  const k = hurtK * (1 - a / 320), g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .32, W / 2, H / 2, Math.max(W, H) * .72);
+  g.addColorStop(0, 'rgba(255,40,40,0)'); g.addColorStop(1, 'rgba(255,40,40,' + (.55 * k).toFixed(3) + ')');
+  ctx.save(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.restore();
+}
+const PRED = new WeakSet();
+function predictHits() {                // guest only: my bullet is drawn touching an enemy, so burst it now; the server's own hit comes a ping later
+  if (NET.role !== 'guest' || !player || player.dead) return;
+  for (const b of bullets) {
+    if (b.team !== player.team || PRED.has(b)) continue;
+    for (const f of fighters) {
+      if (!f || f.dead || f.team === player.team || f.form === 'gone') continue;
+      if (Math.hypot(f.x - b.x, f.y + BODY - b.y) < 26 + (b.r || 6)) { PRED.add(b); const a = Math.atan2(b.vy || 0, b.vx || 1); impactPop(b.x, b.y, a, TC(player.team), 1); hitSnd(1, false); f.stg = { at: performance.now(), dir: Math.cos(a) >= 0 ? 1 : -1, s: .45, ka: a, tier: 1 }; f._hf = performance.now(); f._hfT = 60; break; }
+    }
+  }
+}
+const DEADS = new WeakMap();
+function deathWatch() {                 // a kill holds the frame for a beat, rings out and booms; bigger when it is mine
+  if (state !== 'play') return;
+  for (const f of fighters) {
+    if (!f || f.minion) continue;
+    const was = DEADS.get(f); DEADS.set(f, !!f.dead);
+    if (!f.dead || was !== false) continue;
+    const near = player && Math.hypot(player.x - f.x, player.y - f.y) < 600, mine = player && f.killer === player, me = f === player;
+    if (!near && !mine && !me) continue;
+    const now = performance.now(), x = f.x, y = f.y + BODY;
+    if (!NET.role && (mine || me)) hitStopUntil = Math.max(hitStopUntil, now + 130);
+    if (typeof shakeFrom === 'function') shakeFrom(x, y, mine || me ? 10 : 4, 700);
+    addP({ x, y, life: .3, color: '#ffffff', shape: 'flash', size: 170 });
+    addP({ x, y, life: .45, color: TC(f.team), shape: 'ring', r0: 10, r1: 120, lw: 7 });
+    snd({ n: mine || me ? .16 : .08, nt: 'lowpass', nf: 900, nd: .3, b: mine || me ? .3 : .14, bf: 110, be: 32, bd: .4 });
+  }
+}
+function ultPunch(e) {                  // every ultimate: a hard shake and a deep whoomp, full size for my own, smaller for others near me
+  const mine = player && Math.hypot(player.x - e.x, player.y + BODY - e.y) < 40, near = player && Math.hypot(player.x - e.x, player.y - e.y) < 700;
+  if (!mine && !near) return;
+  if (typeof shakeFrom === 'function') shakeFrom(e.x, e.y, mine ? 9 : 4, 900);
+  snd({ n: mine ? .12 : .06, nt: 'lowpass', nf: 1200, nd: .35, b: mine ? .28 : .12, bf: 220, be: 40, bd: .45, bt: 'triangle' });
+  if (mine) buzz(40);
 }
 
 /* ---------- previews ----------
@@ -6947,12 +7080,12 @@ hero('gardener', { p: ['초록 손', '내가 심은 덤불(덤불 심기, 숲 �
     circ(f, x, y, 4 * T, 60, { root: 1, kb: 0 });
   }],
   skills: [
-    [1, '덤불 심기', 'buff', '조준한 곳(최대 5칸)에 2×2칸 덤불이 6초 동안 자라남 · 일반 풀숲처럼 숨을 수 있음 · 덤불은 2개까지 (3번째를 심으면 가장 오래된 덤불이 시듦) · 벽, 물, 용암 위에는 자라지 않음', [0, 6 * T], (f, a) => {
+    [1, '덤불 심기', 'buff', '조준한 곳(최대 5칸)에 2×2칸 덤불이 10초 동안 자라남 · 일반 풀숲처럼 숨을 수 있음 · 덤불은 2개까지 (3번째를 심으면 가장 오래된 덤불이 시듦) · 벽, 물, 용암 위에는 자라지 않음', [0, 6 * T], (f, a) => {
       const p = aimPt(f, 5 * T), cells = cellsAround(p.x, p.y, 2), keys = cells.map(([c, r]) => c + ',' + r);
       const list = f.st.bush || (f.st.bush = []);
       for (let i = list.length - 1; i >= 0; i--) if (!list[i].some(k => GD.plants.has(k))) list.splice(i, 1);
       while (list.length >= 2) gdUnplant(list.shift());
-      if (!gdPlant(cells, 6)) return false;
+      if (!gdPlant(cells, 10)) return false;
       list.push(keys);
       fxPlay('garden', 'grow', Math.round(p.x), Math.round(p.y), 2);
     }, { ok: (f, e, d) => d < 7 * T }],
@@ -7234,7 +7367,8 @@ function netModeOf(v) {      // the mode actually played: unknown or not-ready i
   const e = modeEntry(v); return e && e.ready !== false ? v : 'team';
 }
 const lobbyMode = () => netModeOf(typeof modeChoice === 'string' ? modeChoice : 'team');
-function modeMax(id) { const e = modeEntry(id), n = e ? e.max | 0 : 0; return n >= 2 && n <= 8 ? n : id === 'duel' ? 2 : MAX_PLAYERS; }
+function modeMax(id) { const e = modeEntry(id), n = e ? (e.max | 0) || (e.teams | 0) * (e.per | 0) : 0;      // room size: the entry's max, else every seat of every team (5v5 = 10)
+  return n >= 2 && n <= 12 ? n : id === 'duel' ? 2 : MAX_PLAYERS; }
 function useMode(id) { try { if (typeof setMode === 'function') setMode(id); else if (typeof curMode !== 'undefined') curMode = id; } catch (e) {} }
 function startMatchIn(id, humans) {      // setup() takes the lobby's modeChoice: make sure it is the room's mode while the match is made
   let keep; try { if (typeof modeChoice !== 'undefined') { keep = modeChoice; modeChoice = id; } } catch (e) {}
@@ -7668,6 +7802,109 @@ if (DED) {
   };
 }
 
+/* ---------- launch intro (mockup #14 "한 줄", approved 2026-11-12) ----------
+   Plays once when the page opens: black screen, one white line, a stick figure rises out of it and runs, the letters stand up
+   behind him, one red stroke colours the second half. 5 s, then it fades into the lobby. A tap / click / key skips it.
+   The title is read from the lobby brand (<h1>Seum<span>Arena</span>), so renaming the game there renames the intro too.
+   Sound only plays where the browser already allows it (no tap yet = silent; the lobby music still starts on the first tap). */
+{
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const h1 = document.querySelector('#brandDisplay h1'), sp = h1 && h1.querySelector('span');
+  const TT = sp ? [h1.textContent.slice(0, h1.textContent.length - sp.textContent.length), sp.textContent] : ['Seum', 'Arena'];
+  if (!reduce && !window.__noIntro) {
+    const DUR = 5, FADE = .45, ACC = '#ff4d4d', TF = 'Rajdhani, "Black Han Sans", "IBM Plex Sans KR", sans-serif';
+    const cvI = document.createElement('canvas'), c = cvI.getContext('2d');
+    cvI.id = 'introCv'; cvI.setAttribute('aria-label', TT.join(''));
+    cvI.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:99999;background:#060608;touch-action:none;cursor:pointer;opacity:1;transition:opacity ' + FADE + 's';
+    document.body.appendChild(cvI);
+    const cl = v => v < 0 ? 0 : v > 1 ? 1 : v, seg = (t, a, b) => cl((t - a) / (b - a)), lerp = (a, b, q) => a + (b - a) * q;
+    const eOut = q => 1 - Math.pow(1 - q, 3), eInOut = q => q < .5 ? 4 * q * q * q : 1 - Math.pow(-2 * q + 2, 3) / 2;
+    const eBack = q => { const a = 1.9, b = a + 1; return 1 + b * Math.pow(q - 1, 3) + a * Math.pow(q - 1, 2); };
+    /* sound */
+    let ac = null; try { const AC = window.AudioContext || window.webkitAudioContext; ac = new AC(); } catch (e) { }
+    const tone = (f, d, o) => {
+      if (!ac || ac.state !== 'running') return; o = o || {};
+      try {
+        const t = ac.currentTime + (o.at || 0), os = ac.createOscillator(), g = ac.createGain(), v = (o.vol || .1) * (typeof SET === 'object' ? SET.vol / 100 : 1);
+        if (v <= 0) return;
+        os.type = o.type || 'sine'; os.frequency.setValueAtTime(f, t); if (o.slide) os.frequency.exponentialRampToValueAtTime(f * o.slide, t + d);
+        g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(v, t + (o.att || .005)); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+        os.connect(g); g.connect(ac.destination); os.start(t); os.stop(t + d + .05);
+      } catch (e) { }
+    };
+    const noiseHi = (d, vol) => { if (!ac || ac.state !== 'running') return; try { const n = Math.floor(ac.sampleRate * d), b = ac.createBuffer(1, n, ac.sampleRate), x = b.getChannelData(0); for (let i = 0; i < n; i++) x[i] = (Math.random() * 2 - 1) * (1 - i / n); const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); f.type = 'highpass'; f.frequency.value = 4000; g.gain.value = vol * (typeof SET === 'object' ? SET.vol / 100 : 1); s.buffer = b; s.connect(f); f.connect(g); g.connect(ac.destination); s.start(); } catch (e) { } };
+    const RISE = .7, RUN0 = 1.1, RUN1 = 2.5, SLASH = 2.75;
+    const cues = [[.05, () => tone(440, .7, { vol: .05, att: .3 })], [RISE, () => tone(660, .25, { type: 'triangle', vol: .08, slide: 1.5 })]];
+    for (let i = 0; i < 12; i++) cues.push([RUN0 + i * .115, () => { tone(180, .03, { vol: .12 }); tone(523 * Math.pow(2, i / 12), .12, { type: 'triangle', vol: .04 }); }]);
+    cues.push([SLASH, () => { tone(2600, .5, { slide: 1.4, vol: .07 }); noiseHi(.35, .18); }]);
+    cues.push([SLASH + .25, () => [220, 330, 440, 554].forEach(f => tone(f, 2.2, { vol: .055, att: .05 }))]);
+    /* a bare stick figure */
+    const man = (x, y, s, ph, run) => {
+      c.save(); c.translate(x, y); c.scale(s, s); c.strokeStyle = c.fillStyle = '#fff'; c.lineWidth = 4.5; c.lineCap = 'round'; c.lineJoin = 'round';
+      const sw = Math.sin(ph) * run, kx = Math.cos(ph) * run; c.rotate(run * .22);
+      c.beginPath(); c.moveTo(0, -22); c.lineTo(sw * 13, -10 - Math.max(0, kx) * 4); c.lineTo(sw * 15 - 3 * run, -Math.max(0, -kx) * 7 * run); c.stroke();
+      c.beginPath(); c.moveTo(0, -22); c.lineTo(-sw * 13, -10 - Math.max(0, -kx) * 4); c.lineTo(-sw * 15 - 3 * run, -Math.max(0, kx) * 7 * run); c.stroke();
+      c.beginPath(); c.moveTo(0, -22); c.lineTo(0, -42); c.stroke();
+      c.beginPath(); c.moveTo(0, -38); c.lineTo(-sw * 12 + 3, -28); c.lineTo(-sw * 16 + 9 * run, -24 - 4 * run); c.stroke();
+      c.beginPath(); c.moveTo(0, -38); c.lineTo(sw * 12 + 3, -28); c.lineTo(sw * 16 + 9 * run, -24 - 4 * run); c.stroke();
+      c.beginPath(); c.arc(0, -52, 9, 0, 7); c.fill(); c.restore();
+    };
+    const twinkle = (x, y, r, a) => { c.save(); c.globalAlpha = a; c.fillStyle = '#fff'; c.beginPath(); c.moveTo(x, y - r); c.quadraticCurveTo(x, y, x + r, y); c.quadraticCurveTo(x, y, x, y + r); c.quadraticCurveTo(x, y, x - r, y); c.quadraticCurveTo(x, y, x, y - r); c.fill(); c.restore(); };
+    let t0 = 0, ci = 0, done = false, raf = 0;
+    const frame = now => {
+      if (done) return; raf = requestAnimationFrame(frame);
+      if (!t0) t0 = now; const t = (now - t0) / 1000;
+      while (ci < cues.length && cues[ci][0] <= t) cues[ci++][1]();
+      const dpr = Math.min(2, devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+      if (cvI.width !== Math.round(W * dpr) || cvI.height !== Math.round(H * dpr)) { cvI.width = Math.round(W * dpr); cvI.height = Math.round(H * dpr); }
+      c.setTransform(dpr, 0, 0, dpr, 0, 0); c.fillStyle = '#060608'; c.fillRect(0, 0, W, H);
+      const port = H > W * 1.05, k = port ? Math.min(W / 780, H / 620) : Math.min(W / 1000, H / 620), cx = W / 2, cy = H / 2;
+      c.font = '700 100px ' + TF; const a100 = c.measureText(TT[0]).width, w100 = a100 + c.measureText(TT[1]).width;
+      const px = Math.min(190 * k, W * (port ? .8 : .7) / (w100 / 100)), mw = w100 * px / 100, ma = a100 * px / 100, ly = cy + px * .36, ty = ly - px * .37;
+      const xs = cx - mw / 2 - 50 * k, xe = Math.min(W - 30 * k, cx + mw / 2 + 55 * k);
+      const rq = seg(t, RUN0, RUN1), rx = lerp(xs, xe, rq < .5 ? 2 * rq * rq : 1 - Math.pow(-2 * rq + 2, 2) / 2);
+      const tip = t < RISE ? lerp(0, xs, eInOut(seg(t, 0, RISE))) : t < SLASH ? Math.max(xs, rx) : lerp(xe, W, eOut(seg(t, SLASH, SLASH + .5)));
+      c.strokeStyle = '#fff'; c.lineWidth = 3 * k; c.lineCap = 'round'; c.shadowColor = '#fff'; c.shadowBlur = 8 * k;
+      c.beginPath(); c.moveTo(0, ly); c.lineTo(tip, ly); c.stroke(); c.shadowBlur = 0;
+      /* letters */
+      const red = eOut(seg(t, SLASH, SLASH + .28));
+      c.save(); c.beginPath(); c.rect(0, 0, W, ly - 1.5 * k); c.clip(); c.font = '700 ' + px + 'px ' + TF; c.textAlign = 'left'; c.textBaseline = 'middle';
+      let lx = cx - mw / 2;
+      for (let p = 0; p < 2; p++) for (const ch of TT[p]) {
+        const w = c.measureText(ch).width, q = eBack(cl((rx - lx - w * .3) / (70 * k)));
+        if (q > 0 && t >= RUN0) {
+          const y = ty + (1 - q) * px * .95; c.fillStyle = '#fff'; c.fillText(ch, lx, y);
+          if (p && red > 0) { c.save(); c.beginPath(); c.rect(lerp(cx + mw / 2, cx - mw / 2 + ma, red) - 2, 0, W, H); c.clip(); c.fillStyle = ACC; c.shadowColor = ACC; c.shadowBlur = 24 * k * (1 - seg(t, SLASH + .3, SLASH + 1.2) * .6); c.fillText(ch, lx, y); c.restore(); }
+        }
+        lx += w;
+      }
+      c.restore();
+      if (t > SLASH && t < SLASH + .6) { const a = 1 - seg(t, SLASH + .15, SLASH + .6), xa = cx + mw / 2 + 30 * k, xb = lerp(xa, cx - mw / 2 + ma - 20 * k, red); c.save(); c.globalAlpha = a; c.strokeStyle = '#ff8a8a'; c.shadowColor = ACC; c.shadowBlur = 20 * k; c.lineWidth = 6 * k; c.beginPath(); c.moveTo(xa, ty - px * .45); c.lineTo(xb, ty + px * .3); c.stroke(); c.restore(); }
+      /* the runner */
+      if (t > RISE) {
+        const ms = (port ? 1.5 : 1.9) * k, up = eBack(seg(t, RISE, RISE + .3)), running = t > RUN0 && t < RUN1, jq = seg(t, RUN1, SLASH + .1), mid = jq > 0 && jq < 1;
+        const jump = Math.sin(jq * Math.PI) * 60 * k, x = t < RUN0 ? xs : rx;
+        c.save(); c.shadowColor = '#fff'; c.shadowBlur = 10 * k; c.translate(x, ly - jump); c.scale(1, up); if (mid) c.rotate(jq * 6.283);
+        man(0, mid ? 26 * ms : 0, ms, running ? t * 17 : 0, running ? 1 : mid ? .6 : 0); c.restore();
+      }
+      if (t > 3.4) { const tw = ((t - 3.4) * .8) % 1; twinkle(cx - mw / 2 + ma * .06 + mw * tw, ty - px * .42, 12 * k * Math.sin(tw * Math.PI), Math.sin(tw * Math.PI)); }
+      if (t >= DUR) end();
+    };
+    const end = () => {
+      if (done) return; done = true; cancelAnimationFrame(raf); cvI.style.opacity = '0'; cvI.style.pointerEvents = 'none';
+      for (const ev of ['keydown']) removeEventListener(ev, skipKey, true);
+      setTimeout(() => { cvI.remove(); try { if (ac) ac.close(); } catch (e) { } }, FADE * 1000 + 50);
+    };
+    const skip = e => { e.preventDefault(); e.stopPropagation(); end(); };
+    const skipKey = e => { if (!done) { e.preventDefault(); e.stopPropagation(); end(); } };
+    cvI.addEventListener('pointerdown', skip); cvI.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+    addEventListener('keydown', skipKey, true);
+    let go = false; const start = () => { if (!go) { go = true; raf = requestAnimationFrame(frame); } };
+    try { document.fonts.load('700 100px Rajdhani').then(start, start); } catch (e) { start(); }
+    setTimeout(start, 900);
+  }
+}
+
 /* ---------- drawing ---------- */
 function drawStick(c, id, col, ang, walk, swing, t, cos) {
   const h = HEROES[id], HIP = -22, SH = -42, HEADCY = -52, HEADR = 9, face = Math.cos(ang) >= 0 ? 1 : -1;
@@ -7859,6 +8096,7 @@ function render() {
   }
   for (const s of strikes) { const k = 1 - s.t / s.max; ctx.globalAlpha = .18; ctx.fillStyle = s.col; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.3); ctx.fill(); ctx.globalAlpha = .9; ctx.strokeStyle = s.col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(s.x, s.y, s.r * k, 0, 6.3); ctx.stroke(); ctx.globalAlpha = 1; }
 
+  drawTiles(ctx, c0, c1, r0, r1, 1);      // walls go under the fighters, so a wall never covers a player
   const inBush = [];
   if (me && state === 'play') { if (!drawPreviews(me)) drawBasicGuide(me); }
   const order = fighters.filter(f => !f.dead).concat(minions.filter(m => m.kind !== 'dragon' && m.kind !== 'crow')).sort((a, b) => a.y - b.y);
@@ -7869,11 +8107,10 @@ function render() {
     drawFighter(f, B(f, 'stealth') && !menu ? .4 : 1);
   }
   drawFleet();
-  for (const b of bullets) if (!(b.shape === 'seed' && typeof drawSeedShot === 'function' && drawSeedShot(b)) && !drawShot(b)) drawBullet(b);
-  { const now = performance.now(); drawSwings(Math.min(.05, (now - (render.last || now)) / 1000)); render.last = now; }
-  drawTiles(ctx, c0, c1, r0, r1, 1);
   drawTiles(ctx, c0, c1, r0, r1, 2);
   for (const f of inBush) drawFighter(f, f.team === VIEW ? .6 : .85);
+  for (const b of bullets) if (!(b.shape === 'seed' && typeof drawSeedShot === 'function' && drawSeedShot(b)) && !drawShot(b)) drawBullet(b);      // shots and swings over walls and bushes, so nothing hides them
+  { const now = performance.now(); drawSwings(Math.min(.05, (now - (render.last || now)) / 1000)); render.last = now; }
   for (const m of minions) if (m.kind === 'dragon' || m.kind === 'crow') drawMinion(m);
   for (const p of parts) { ctx.globalAlpha = clamp(p.life / p.max, 0, 1); ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.3); ctx.fill(); }
   drawParticles();

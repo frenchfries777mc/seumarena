@@ -58,12 +58,12 @@ hero('gardener', { p: ['초록 손', '내가 심은 덤불(덤불 심기, 숲 �
     circ(f, x, y, 4 * T, 60, { root: 1, kb: 0 });
   }],
   skills: [
-    [1, '덤불 심기', 'buff', '조준한 곳(최대 5칸)에 2×2칸 덤불이 6초 동안 자라남 · 일반 풀숲처럼 숨을 수 있음 · 덤불은 2개까지 (3번째를 심으면 가장 오래된 덤불이 시듦) · 벽, 물, 용암 위에는 자라지 않음', [0, 6 * T], (f, a) => {
+    [1, '덤불 심기', 'buff', '조준한 곳(최대 5칸)에 2×2칸 덤불이 10초 동안 자라남 · 일반 풀숲처럼 숨을 수 있음 · 덤불은 2개까지 (3번째를 심으면 가장 오래된 덤불이 시듦) · 벽, 물, 용암 위에는 자라지 않음', [0, 6 * T], (f, a) => {
       const p = aimPt(f, 5 * T), cells = cellsAround(p.x, p.y, 2), keys = cells.map(([c, r]) => c + ',' + r);
       const list = f.st.bush || (f.st.bush = []);
       for (let i = list.length - 1; i >= 0; i--) if (!list[i].some(k => GD.plants.has(k))) list.splice(i, 1);
       while (list.length >= 2) gdUnplant(list.shift());
-      if (!gdPlant(cells, 6)) return false;
+      if (!gdPlant(cells, 10)) return false;
       list.push(keys);
       fxPlay('garden', 'grow', Math.round(p.x), Math.round(p.y), 2);
     }, { ok: (f, e, d) => d < 7 * T }],

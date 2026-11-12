@@ -20,16 +20,17 @@ function hitReact(e) {
   let best = null, bd = 70;
   for (const f of fighters) { if (!f || f.dead) continue; const d = Math.hypot(f.x - e.x, f.y + BODY - e.y); if (d < bd) { bd = d; best = f; } }
   const tier = HIT_TIER(v), now = performance.now(), ang = +e.ang || 0;
-  if (best) { best.stg = { at: now, dir: Math.cos(ang) >= 0 ? 1 : -1, s: [0, .45, .75, 1][tier] }; best._hf = now; best._hfT = [0, 60, 85, 120][tier]; }
+  if (best) { best.stg = { at: now, dir: Math.cos(ang) >= 0 ? 1 : -1, s: [0, .45, .75, 1][tier], ka: ang, tier }; best._hf = now; best._hfT = [0, 90, 120, 160][tier]; }
   const meHit = best && best === player;
-  if (meHit) buzz(tier === 3 ? 45 : 22);
+  if (meHit) { buzz(tier === 3 ? 45 : 22); hurtAt = now; hurtK = [0, .5, .75, 1][tier]; }
   const mine = !meHit && player && !player.dead && e.color === TC(player.team) && Math.hypot(player.x - e.x, player.y + BODY - e.y) < 420;
   if (!NET.role && (meHit || mine)) hitStopUntil = Math.max(hitStopUntil, now + (meHit ? [0, 30, 60, 95] : [0, 0, 45, 80])[tier]);
   if (mine && typeof shakeFrom === 'function') shakeFrom(e.x, e.y, [0, 1.5, 3.5, 7][tier], 600);
-  if (mine) { try { sfx([0, 180, 140, 95][tier], [0, .06, .09, .14][tier], 'square', [0, .03, .045, .06][tier], .5); } catch (er) { } }
+  if (mine || meHit) hitSnd(tier, meHit);
+  if (!(NET.role === 'guest' && mine)) impactPop(e.x, e.y, ang, e.color || '#ffffff', tier);
   const col = e.color || '#ffffff', x = e.x, y = e.y;
   if (tier >= 2) {
-    addP({ x, y, life: tier === 3 ? .3 : .2, color: '#ffffff', shape: 'flash', size: tier === 3 ? 120 : 70 });
+    addP({ x, y, life: .12, color: '#ffffff', shape: 'flash', size: tier === 3 ? 60 : 40 });
     addP({ x, y, life: .32, color: col, shape: 'ring', r0: 6, r1: tier === 3 ? 80 : 48, lw: tier === 3 ? 6 : 4 });
     const n = lowFx() ? 3 : tier === 3 ? 9 : 5;
     for (let i = 0; i < n; i++) { const a = ang + RND(-.7, .7), sp = RND(380, 820); addP({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: 3.2, life: RND(.18, .32), size: RND(3, 5), color: i % 2 ? '#ffffff' : col, shape: 'streak' }); }
@@ -37,10 +38,16 @@ function hitReact(e) {
   }
 }
 function staggerAngle(f) {             // tail.js turns the figure by this; while the hit flash lasts the figure is also drawn bright (the flash ends with tail.js's own ctx.restore)
-  if (f._hf) { const a = performance.now() - f._hf; if (a < f._hfT && !lowFx()) ctx.filter = 'brightness(' + (1 + 2.2 * (1 - a / f._hfT)).toFixed(2) + ')'; else f._hf = 0; }
+  if (f._hf) { const a = performance.now() - f._hf; if (a < f._hfT && !lowFx()) ctx.filter = a < 45 ? 'brightness(0) invert(1)' : 'brightness(' + (1 + 2.2 * (1 - a / f._hfT)).toFixed(2) + ')'; else f._hf = 0; }
   atkKick(f);
   const st = f.stg; if (!st) return 0;
   const age = performance.now() - st.at; if (age > 240 || age < 0) { f.stg = null; return 0; }
+  if (!lowFx() && st.ka !== undefined) {   // the body itself is pushed along the hit and springs back, squashed flat for a blink
+    const k = age < 50 ? age / 50 : Math.max(0, 1 - (age - 50) / 150), push = [0, 5, 9, 14][st.tier || 1] * k;
+    ctx.translate(Math.cos(st.ka) * push, Math.sin(st.ka) * push * .5);
+    const q = age < 130 ? Math.sin(Math.PI * age / 130) * [0, .1, .16, .22][st.tier || 1] : 0;
+    if (q) ctx.scale(1 + q, 1 - q);
+  }
   return st.dir * .26 * st.s * Math.sin(Math.PI * age / 240);
 }
 function rotQ(q, ox, oy, c, s) {
@@ -396,7 +403,7 @@ function drawDarkVeil(dt) {            // trapped in an enemy's lump: the pictur
   g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(.6, 'rgba(0,0,0,.7)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(sx, sy, r, 0, 7); c.fill();
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(kdVeilCv, 0, 0); ctx.restore();
 }
-function drawScreenVeil() { const now = performance.now(), dt = Math.min(.05, (now - (drawScreenVeil.last || now)) / 1000); drawScreenVeil.last = now; drawDarkVeil(dt); }
+function drawScreenVeil() { const now = performance.now(), dt = Math.min(.05, (now - (drawScreenVeil.last || now)) / 1000); drawScreenVeil.last = now; drawDarkVeil(dt); drawHurtVignette(now); }
 function drawZoneArt(z, menu) {       // tail.js asks this for every zone first; true = drawn here
   if ((z.kind === 'sprout' || z.kind === 'vine') && typeof drawGardenZone === 'function') return drawGardenZone(z);      // (정원사: gardener.js)
   if (z.col === '#9a4cff' && !z.kind) { drawDarkLump(z); return true; }
@@ -438,7 +445,7 @@ function drawKanWings(now) {           // 칸's ultimate: two wings of quetzal f
 }
 function drawBuffAuras(dt) {
   const now = performance.now(), T = now / 1000, menu = state === 'menu';
-  drawMuzzles(); doveFeathers(dt); drawHaraldAxes(now); drawLeapCracks(now); bombFrame(); mkCheck(); hatPops();
+  drawMuzzles(); drawImpacts(); doveFeathers(dt); predictHits(); deathWatch(); drawHaraldAxes(now); drawLeapCracks(now); bombFrame(); mkCheck(); hatPops();
   for (const f of fighters) { if (f && !f.dead && !f.minion && f.st && f.st.pz && (menu || (visibleTo(f, VIEW) && !bushAt(f.x, f.y)))) drawPizarroAura(f, now); }
   for (const f of fighters) {
     const a = f && f.fxAura; if (!a || f.minion) continue;
@@ -638,4 +645,105 @@ function doveFeathers(dt) {                 // little curved feathers that drift
     ctx.beginPath(); ctx.moveTo(-6, 0); ctx.quadraticCurveTo(0, -4, 6, 0); ctx.quadraticCurveTo(0, 3, -6, 0); ctx.fill(); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(-7, .5); ctx.lineTo(6, 0); ctx.stroke(); ctx.restore();
   }
+}
+
+/* ---------- 타격감 3: real-sounding hits (noise crack + low thump instead of one beep), bullets burst where they land,
+   a kill freezes the moment, an ultimate shakes the screen, and on a guest my own shots show their impact before the server answers ---------- */
+let NOISE = null;
+function sndBus() { if (!ac || muted || state !== 'play') return null; const v = (typeof SET !== 'undefined' && SET.vol !== undefined ? SET.vol : 100) / 100; return v > 0 ? v : null; }
+function noiseBuf() { if (NOISE) return NOISE; const n = ac.sampleRate * .4 | 0, b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return NOISE = b; }
+function snd(o) {                       // one layered hit: filtered noise for the crack, a falling sine for the body
+  const v = sndBus(); if (!v) return;
+  try {
+    const t = ac.currentTime, out = ac.createGain(); out.gain.value = v; out.connect(ac.destination);
+    if (o.n) { const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = noiseBuf(); f.type = o.nt || 'bandpass'; f.frequency.value = o.nf || 1800; f.Q.value = o.nq || .9;
+      g.gain.setValueAtTime(o.n, t); g.gain.exponentialRampToValueAtTime(.0001, t + (o.nd || .08)); s.connect(f); f.connect(g); g.connect(out); s.start(t); s.stop(t + (o.nd || .08) + .02); }
+    if (o.b) { const os = ac.createOscillator(), g = ac.createGain(); os.type = o.bt || 'sine'; os.frequency.setValueAtTime(o.bf || 160, t); os.frequency.exponentialRampToValueAtTime(o.be || 45, t + (o.bd || .12));
+      g.gain.setValueAtTime(o.b, t); g.gain.exponentialRampToValueAtTime(.0001, t + (o.bd || .12)); os.connect(g); g.connect(out); os.start(t); os.stop(t + (o.bd || .12) + .02); }
+  } catch (e) { }
+}
+function hitSnd(tier, meHit) {
+  if (meHit) snd({ n: .05 + tier * .02, nf: 900, nd: .07, b: .12 + tier * .04, bf: 120, be: 40, bd: .14 });
+  else snd({ n: [0, .07, .1, .14][tier], nf: [0, 2600, 2000, 1500][tier], nd: [0, .05, .08, .12][tier], b: [0, .1, .16, .24][tier], bf: [0, 200, 170, 140][tier], be: 45, bd: [0, .08, .12, .18][tier] });
+}
+const IMPS = [];
+function impactPop(x, y, ang, col, tier) {   // a crisp comic hit: a spiky white star rimmed in the shooter's colour, thick speed wedges, chunky outlined shards that bounce
+  const n = lowFx() ? 2 : 2 + tier * 2, sh = [];
+  for (let i = 0; i < n; i++) { const a = ang + Math.PI + RND(-1.2, 1.2) + (i % 2 ? Math.PI : 0) * .35, sp = RND(110, 230) + tier * 30; sh.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 90, r: RND(0, 6), vr: RND(-14, 14), z: RND(3.5, 6) + tier, gy: y + RND(16, 30), w: i % 3 === 0 ? '#ffffff' : col }); }
+  IMPS.push({ x, y, ang, col, tier, t0: performance.now(), rot: RND(0, 6.3), sh, last: performance.now() });
+  if (IMPS.length > 40) IMPS.shift();
+}
+function drawImpacts() {
+  const now = performance.now();
+  for (let i = IMPS.length - 1; i >= 0; i--) {
+    const m = IMPS[i], a = now - m.t0, dt = Math.min(.05, (now - m.last) / 1000); m.last = now;
+    if (a > 520) { IMPS.splice(i, 1); continue; }
+    ctx.save(); ctx.lineJoin = 'round';
+    if (a < 170) {                       // the star: full size at once, holds two frames, then snaps shut
+      const k = a < 60 ? 1.15 : Math.max(0, 1 - (a - 60) / 110), R0 = (24 + m.tier * 10) * k, sp = 9;
+      ctx.translate(m.x, m.y); ctx.rotate(m.rot);
+      ctx.beginPath();
+      for (let j = 0; j < sp * 2; j++) { const rr = j % 2 ? R0 * .42 : R0 * (j % 4 ? .8 : 1); const t = j / (sp * 2) * Math.PI * 2; j ? ctx.lineTo(Math.cos(t) * rr, Math.sin(t) * rr) : ctx.moveTo(Math.cos(t) * rr, Math.sin(t) * rr); }
+      ctx.closePath(); ctx.fillStyle = a < 50 ? '#ffffff' : '#fff6c8'; ctx.fill();
+      ctx.rotate(-m.rot);
+      if (!lowFx()) {                     // thick wedges flying outward along the hit
+        const L = (30 + m.tier * 14) * (a / 170), o = R0 * .6 + 10 * (a / 170);
+        ctx.fillStyle = m.col; ctx.globalAlpha = 1 - a / 170;
+        for (let j = -2; j <= 2; j++) { const t = m.ang + j * .45, c = Math.cos(t), s2 = Math.sin(t), px = -s2, py = c, w = 4 - Math.abs(j) + m.tier;
+          ctx.beginPath(); ctx.moveTo(c * o + px * w, s2 * o + py * w); ctx.lineTo(c * (o + L), s2 * (o + L)); ctx.lineTo(c * o - px * w, s2 * o - py * w); ctx.closePath(); ctx.fill(); }
+      }
+      ctx.translate(-m.x, -m.y); ctx.globalAlpha = 1;
+    }
+    for (const q of m.sh) {               // the shards fall to the ground and hop once
+      q.vy += 1100 * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.r += q.vr * dt; q.vx *= 1 - 1.5 * dt;
+      if (q.y > q.gy && q.vy > 0) { q.y = q.gy; q.vy *= -.35; q.vx *= .6; q.vr *= .5; }
+      ctx.globalAlpha = a > 380 ? Math.max(0, 1 - (a - 380) / 140) : 1;
+      ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.r);
+      ctx.beginPath(); ctx.moveTo(q.z, 0); ctx.lineTo(-q.z * .7, q.z * .65); ctx.lineTo(-q.z * .5, -q.z * .7); ctx.closePath();
+      ctx.fillStyle = q.w; ctx.fill(); ctx.restore();
+    }
+    ctx.restore();
+  }
+}
+let hurtAt = 0, hurtK = 0;
+function drawHurtVignette(now) {        // screen space: the edges flash red for a moment when I am hit
+  const a = now - hurtAt; if (a > 320 || !player || lowFx()) return;
+  const k = hurtK * (1 - a / 320), g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .32, W / 2, H / 2, Math.max(W, H) * .72);
+  g.addColorStop(0, 'rgba(255,40,40,0)'); g.addColorStop(1, 'rgba(255,40,40,' + (.55 * k).toFixed(3) + ')');
+  ctx.save(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.restore();
+}
+const PRED = new WeakSet();
+function predictHits() {                // guest only: my bullet is drawn touching an enemy, so burst it now; the server's own hit comes a ping later
+  if (NET.role !== 'guest' || !player || player.dead) return;
+  for (const b of bullets) {
+    if (b.team !== player.team || PRED.has(b)) continue;
+    for (const f of fighters) {
+      if (!f || f.dead || f.team === player.team || f.form === 'gone') continue;
+      if (Math.hypot(f.x - b.x, f.y + BODY - b.y) < 26 + (b.r || 6)) { PRED.add(b); const a = Math.atan2(b.vy || 0, b.vx || 1); impactPop(b.x, b.y, a, TC(player.team), 1); hitSnd(1, false); f.stg = { at: performance.now(), dir: Math.cos(a) >= 0 ? 1 : -1, s: .45, ka: a, tier: 1 }; f._hf = performance.now(); f._hfT = 60; break; }
+    }
+  }
+}
+const DEADS = new WeakMap();
+function deathWatch() {                 // a kill holds the frame for a beat, rings out and booms; bigger when it is mine
+  if (state !== 'play') return;
+  for (const f of fighters) {
+    if (!f || f.minion) continue;
+    const was = DEADS.get(f); DEADS.set(f, !!f.dead);
+    if (!f.dead || was !== false) continue;
+    const near = player && Math.hypot(player.x - f.x, player.y - f.y) < 600, mine = player && f.killer === player, me = f === player;
+    if (!near && !mine && !me) continue;
+    const now = performance.now(), x = f.x, y = f.y + BODY;
+    if (!NET.role && (mine || me)) hitStopUntil = Math.max(hitStopUntil, now + 130);
+    if (typeof shakeFrom === 'function') shakeFrom(x, y, mine || me ? 10 : 4, 700);
+    addP({ x, y, life: .3, color: '#ffffff', shape: 'flash', size: 170 });
+    addP({ x, y, life: .45, color: TC(f.team), shape: 'ring', r0: 10, r1: 120, lw: 7 });
+    snd({ n: mine || me ? .16 : .08, nt: 'lowpass', nf: 900, nd: .3, b: mine || me ? .3 : .14, bf: 110, be: 32, bd: .4 });
+  }
+}
+function ultPunch(e) {                  // every ultimate: a hard shake and a deep whoomp, full size for my own, smaller for others near me
+  const mine = player && Math.hypot(player.x - e.x, player.y + BODY - e.y) < 40, near = player && Math.hypot(player.x - e.x, player.y - e.y) < 700;
+  if (!mine && !near) return;
+  if (typeof shakeFrom === 'function') shakeFrom(e.x, e.y, mine ? 9 : 4, 900);
+  snd({ n: mine ? .12 : .06, nt: 'lowpass', nf: 1200, nd: .35, b: mine ? .28 : .12, bf: 220, be: 40, bd: .45, bt: 'triangle' });
+  if (mine) buzz(40);
 }
