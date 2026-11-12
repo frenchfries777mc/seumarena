@@ -342,6 +342,9 @@ body.touchUi canvas{touch-action:none}
 /* the top right corner (the design picked from the mockups): a quest tile, then the karma banner with its bar to the next step of the road */
 #topRight{position:fixed;z-index:6;top:calc(env(safe-area-inset-top,0px) + 10px);right:max(16px, env(safe-area-inset-right, 0px));display:flex;flex-direction:row-reverse;align-items:center;gap:8px;pointer-events:none}
 #topRight>*{pointer-events:auto}
+#specBack{position:fixed;z-index:8;top:calc(env(safe-area-inset-top,0px) + 12px);left:max(14px, env(safe-area-inset-left, 0px));width:48px;height:48px;border-radius:14px;border:2px solid rgba(255,255,255,.35);background:rgba(20,22,28,.8);color:#fff;display:grid;place-items:center;cursor:pointer}
+#specBack svg{width:26px;height:26px}
+#specBack[hidden],#specBtn[hidden]{display:none}
 #topRight[hidden],#streak[hidden]{display:none}
 #topRight #karma,#topRight #quest{position:relative;top:auto;right:auto;box-sizing:border-box;height:56px;margin:0;cursor:pointer;font-family:'IBM Plex Sans KR',sans-serif;font-weight:800;font-variant-numeric:tabular-nums;border-radius:14px;border:2px solid;transition:transform .08s ease}
 #topRight #karma:active,#topRight #quest:active{transform:translateY(2px)}
@@ -591,7 +594,9 @@ body.touchUi canvas{touch-action:none}
   #overScreen #overStats{grid-column:2;grid-row:3 / span 4;margin:0;align-self:start}
   #overScreen #goldGain{grid-column:1;grid-row:4;margin:0 0 10px}
   #overScreen #againBtn{grid-column:1;grid-row:5;margin:0 0 8px}
-  #overScreen #lobbyBtn{grid-column:1;grid-row:6}
+  #overScreen #specBtn{grid-column:1;grid-row:6;margin:0 0 8px}
+  #overScreen #lobbyBtn{grid-column:1;grid-row:7}
+  #overScreen #overStats{grid-row:3 / span 5}
 }
 
 /* settings */
@@ -701,6 +706,7 @@ body.touchUi canvas{touch-action:none}
 </div>
 <div id="diceBannerContainer"></div>
 
+<button id="specBack" type="button" aria-label="결과 화면" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
 <div id="lobby">
   <div id="acct"><span id="acctIcon" aria-hidden="true">●</span><span id="acctName"></span><button id="acctBtn" type="button" hidden>로그인</button><span class="goldPill" aria-label="골드"><i class="coin"></i><b class="goldN">0</b></span><button id="setLobbyBtn" type="button" aria-label="설정">⚙</button></div>
   <div id="topRight">
@@ -801,6 +807,7 @@ body.touchUi canvas{touch-action:none}
     <p id="goldGain" hidden><span id="karmaGain"><svg aria-hidden="true"><use href="#mi-karma"/></svg><b id="karmaGainN"></b></span><span><i class="coin"></i><b id="goldGainN"></b></span><span id="mpGain"><i class="rwI ic-xpC"></i><b id="mpGainN"></b></span><span id="xpGain"><i class="rwI ic-xpP"></i><b id="xpGainN"></b></span></p>
     <div id="overStats"></div>
     <button class="btn-primary btn-full" id="againBtn" type="button">다시 하기</button>
+    <button class="btn-plain btn-full" id="specBtn" type="button" style="margin-bottom:8px" hidden>관전</button>
     <button class="btn-plain btn-full" id="lobbyBtn" type="button">로비로</button>
   </div>
 </div>
@@ -3934,7 +3941,19 @@ const MAPS = [
     rows:['############################', '#...........................', '#..ggg....ggg.....ggg.......', '#..ggg....ggg.....ggg..##...', '#.............#.........#...', '#....##.......#...ggg.......', '#....#..ggg.......ggg.......', '#.......ggg...ww............', '#..gg.........ww....#..ggg..', '#..gg....##.........#..ggg..', '#.........#..p..............', '#....ggg.........ggg........', '#....ggg...h.....ggg..##....', '#.....................#.....', '#..##.....ggg...ww..........', '#.........ggg...ww....p.....', '#..##.....ggg...ww..........', '#.....................#.....', '#....ggg...h.....ggg..##....', '#....ggg.........ggg........', '#.........#..p..............', '#..gg....##.........#..ggg..', '#..gg.........ww....#..ggg..', '#.......ggg...ww............', '#....#..ggg.......ggg.......', '#....##.......#...ggg.......', '#.............#.........#...', '#..ggg....ggg.....ggg..##...', '#..ggg....ggg.....ggg.......', '#...........................', '############################'] },
   { id:'flag_city', name:'네온 도시', desc:'벽이 많은 골목 시가전.', big:1, flag5:1,
     th:{'f1': '#2a2f3e', 'f2': '#30364a', 'wt': '#5a6380', 'ws': '#3a4058', 'b1': '#2f8f6a', 'b2': '#45b088', 'wa': '#3a6fd4', 'wa2': '#6a9ae8'},
-    rows:['############################', '#...........................', '#..###....####....###.......', '#..#.........#......#..##...', '#..#...gg....#...gg.#..##...', '#......gg..........#........', '#..........p.......#........', '#.####.........####.........', '#.........##...........##...', '#...gg....##....gg.....##...', '#...gg..........gg..........', '#.......###...........###...', '#.......#....h..........#...', '#....p..#.......####........', '#..##...........#....gg.....', '#...........##.......gg..p..', '#..##...........#....gg.....', '#....p..#.......####........', '#.......#....h..........#...', '#.......###...........###...', '#...gg..........gg..........', '#...gg....##....gg.....##...', '#.........##...........##...', '#.####.........####.........', '#..........p.......#........', '#......gg..........#........', '#..#...gg....#...gg.#..##...', '#..#.........#......#..##...', '#..###....####....###.......', '#...........................', '############################'] }
+    rows:['############################', '#...........................', '#..###....####....###.......', '#..#.........#......#..##...', '#..#...gg....#...gg.#..##...', '#......gg..........#........', '#..........p.......#........', '#.####.........####.........', '#.........##...........##...', '#...gg....##....gg.....##...', '#...gg..........gg..........', '#.......###...........###...', '#.......#....h..........#...', '#....p..#.......####........', '#..##...........#....gg.....', '#...........##.......gg..p..', '#..##...........#....gg.....', '#....p..#.......####........', '#.......#....h..........#...', '#.......###...........###...', '#...gg..........gg..........', '#...gg....##....gg.....##...', '#.........##...........##...', '#.####.........####.........', '#..........p.......#........', '#......gg..........#........', '#..#...gg....#...gg.#..##...', '#..#.........#......#..##...', '#..###....####....###.......', '#...........................', '############################'] },
+  { id:'flag_castle', name:'숲 속 성채', desc:'물과 벽으로 둘러싼 두 성채 사이에 덤불 숲 두 줄이 길게 뻗은 맵. 가운데 연못 광장에서 크게 부딪혀요.', big:1, flag5:1,
+    th:{'f1': '#9cc27a', 'f2': '#a6ca84', 'wt': '#5b4630', 'ws': '#3d2f20', 'b1': '#2f7a3a', 'b2': '#45984f', 'wa': '#3a8fc4', 'wa2': '#63b8e0'},
+    rows:['############################','#ggggggggg......gggggggggg..','#ggggggggg......gggggggggg..','#ggggggggg......gggggggggg..','#...............gggggggggg..','#...............gggggggggg..','#...............ggggg.......','#www...wwww.....ggggg.......','####...###w.....ggggg.......','#........#w.....ggggg....www','#........#w.....ggggg....www','#...............ggggg....www','#...............ggggg.......','#...............ggggg.......','#........#w.....ggggg....www','#........#w.....ggggg....www','#........#w.....ggggg....www','#...............ggggg.......','#...............ggggg.......','#...............ggggg....www','#........#w.....ggggg....www','#........#w.....ggggg....www','####...###w.....ggggg.......','#www...wwww.....ggggg.......','#...............ggggg.......','#...............gggggggggg..','#...............gggggggggg..','#ggggggggg......gggggggggg..','#ggggggggg......gggggggggg..','#ggggggggg......gggggggggg..','############################'] },
+  { id:'big_swamp', name:'습지 난투', desc:'웅덩이가 곳곳에 흩어진 습지. 가운데 웅덩이 사이 좁은 길과 덤불에서 난전이 벌어져요.', big:1,
+    th:{ f1:'#d9c38a', f2:'#e0cb95', wt:'#8a6a44', ws:'#5f4529', b1:'#2f8f4a', b2:'#49b565', wa:'#2f8fc4', wa2:'#63b8e0' },
+    rows:['###################','#..................','#.www.......wwww..w','#.www.......wwww..w','#......#...........','#......#...gggggg..','#......#...gggggg..','#...####...gggggg..','#..........ggg.....','#..........ggg.www.','#..........ggg.www.','#......#.......www.','#...####...........','#......#.......www.','#..........ggg.www.','#..........ggg.www.','#..........ggg.....','#...####...gggggg..','#......#...gggggg..','#......#...gggggg..','#......#...........','#.www.......wwww..w','#.www.......wwww..w','#..................','###################'] },
+  { id:'field', name:'들판', desc:'가운데를 세로로 가르는 덤불 띠와 모서리 덤불숲. 연못과 낮은 벽 뒤에 숨으며 싸워요.',
+    th:{ f1:'#2a2850', f2:'#2f2d5b', wt:'#f4b942', ws:'#c98a1b', b1:'#1f9d78', b2:'#2fc797', wa:'#3a7fc4', wa2:'#63a4e0' },
+    rows:['#############','#ggg...ww#.gg','#ggg...ww#.gg','#ggg.......gg','####.......gg','#.....#ww..gg','#.....#ww..gg','#..........gg','#..........gg','#..........gg','#.....#ww..gg','#.....#ww..gg','####.......gg','#ggg.......gg','#ggg...ww#.gg','#ggg...ww#.gg','#############'] },
+  { id:'cross_plaza', name:'십자 광장', desc:'큰 호수 네 개가 십자 모양 길을 만든 광장. 길이 모이는 한가운데 덤불에서 자주 마주쳐요.', big:1,
+    th:{ f1:'#5a5346', f2:'#625b4d', wt:'#c9b27a', ws:'#8f7a4a', b1:'#3f7a3a', b2:'#58a04f', wa:'#3a7fc4', wa2:'#63a4e0' },
+    rows:['###################','#ggg#............gg','#ggg.............gg','#ggg#............gg','##.#wwwwwwwwwwww.gg','#...wwwwwwwwwwww.gg','#...wwwwwwwwwwww.gg','#...wwwwwwwwwwww...','#...wwwwwwwwwww....','#...wwwwwwwwww.....','#...............gg.','#gggggggggggg...gg.','#gggggggggggg......','#gggggggggggg...gg.','#...............gg.','#...wwwwwwwwww.....','#...wwwwwwwwwww....','#...wwwwwwwwwwww...','#...wwwwwwwwwwww.gg','#...wwwwwwwwwwww.gg','##.#wwwwwwwwwwww.gg','#ggg#............gg','#ggg.............gg','#ggg#............gg','###################'] }
 ];
 for (const m of MAPS) m.grid = m.rows.map(r => r + [...r.slice(0, r.length - 1)].reverse().join(''));
 let COLS = 25, ROWS = 17, WW = COLS * T, WH = ROWS * T;      // set by loadMap(): the big 원 레프트 maps are larger
@@ -3957,7 +3976,7 @@ function addText(o) { texts.push(o); evt(['t', Math.round(o.x), Math.round(o.y),
 function addPart(p) { parts.push(p); evt(['p', Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy), +p.life.toFixed(2), p.color, +(p.r || 3).toFixed(1)]); }
 const OT_MAX = 60;       // sudden-death overtime when the clock runs out level: first kill wins, a draw if nobody scores within this many seconds
 const STAT_X = 10;       // every hp and every damage/heal/shield number written in the kits is multiplied by this (damage() and heal() do it, so kit code keeps the original small numbers)
-const WIN_SCORE = 10, MATCH_TIME = 150, MAX_HP = 600, ULT_CD = 20, CD1 = 5, CD2 = 10, DASH_D = 3.2 * T, SPEED = 205;
+const WIN_SCORE = 10, MATCH_TIME = 150, MAX_HP = 600, ULT_CD = 45, CD1 = 5, CD2 = 10, DASH_D = 3.2 * T, SPEED = 205;
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -3975,10 +3994,10 @@ let state = 'menu', time = 0, timeLeft = MATCH_TIME, score = [0, 0];
    teams × per: how many sides and fighters per side · respawn: do the dead come back · win: score that ends the match · time: seconds on the clock (per round when rounds > 0)
    rounds: round wins needed (0 = no rounds). The UI sets `modeChoice` and calls setup(); the engine reads the rules with modeNow(). */
 const MODES = [
-  { id: 'team', name: '팀 아웃', size: '3v3', teams: 2, per: 3, respawn: true, win: WIN_SCORE, time: MATCH_TIME, rounds: 0, maps: [0, 1, 2, 3, 4, 5, 6], ready: true },
-  { id: 'solo', name: '원 레프트', size: '6명', teams: 6, per: 1, respawn: false, win: 1, time: 150, rounds: 0, maps: [7, 8, 9, 10], ready: true },
-  { id: 'flag', name: '캡쳐 플래그', size: '5v5', teams: 2, per: 5, respawn: true, win: 3, time: 240, rounds: 0, maps: [11, 12, 13, 14, 15], ready: true },      // 2026-11-12: the 3v3 version was dropped, 캡쳐 플래그 is 5v5 on the 5 big flag maps
-  { id: 'duel', name: '듀얼 배틀', size: '1v1', teams: 2, per: 1, respawn: false, win: 2, time: 60, rounds: 2, maps: [0, 1, 2, 3, 4, 5, 6], ready: true }
+  { id: 'team', name: '팀 아웃', size: '3v3', teams: 2, per: 3, respawn: true, win: WIN_SCORE, time: MATCH_TIME, rounds: 0, maps: [0, 1, 2, 3, 4, 5, 6, 18], ready: true },
+  { id: 'solo', name: '원 레프트', size: '6명', teams: 6, per: 1, respawn: false, win: 1, time: 150, rounds: 0, maps: [7, 8, 9, 10, 17, 19], ready: true },
+  { id: 'flag', name: '캡쳐 플래그', size: '5v5', teams: 2, per: 5, respawn: true, win: 3, time: 240, rounds: 0, maps: [11, 12, 13, 14, 15, 16], ready: true },      // 2026-11-12: the 3v3 version was dropped, 캡쳐 플래그 is 5v5 on the 5 big flag maps
+  { id: 'duel', name: '듀얼 배틀', size: '1v1', teams: 2, per: 1, respawn: false, win: 2, time: 60, rounds: 2, maps: [0, 1, 2, 3, 4, 5, 6, 18], ready: true }
 ];
 for (const m of MODES) m.max = m.teams * m.per;
 const isFlagMode = id => id === 'flag' || id === 'flag5';      // ('flag5' kept only as an alias: 캡쳐 플래그 itself is now 5v5)      // room size, for matchmaking
@@ -4188,6 +4207,29 @@ function burst(x, y, color, n, spd) {
   for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, s = rnd(.3, 1) * spd; parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: rnd(.25, .55), max: .55, color, r: rnd(2, 5) }); }
 }
 const ring = (x, y, r, color, life) => { evt(['r', Math.round(x), Math.round(y), Math.round(r), color || '#ffb347', life || .3]); rings.push({ x, y, r, life: life || .3, max: life || .3, color: color || '#ffb347' }); };
+/* 2026-11-12: ULT_CD 45 s; landing a BASIC attack on an enemy fighter refills the ult. per hit = rate * attack interval / shots per attack, rate .875 .. 2 from ultEase
+   (shots = burst x count), and one attack can never give more than rate * interval, so shotguns and multi-hit swings do not overcharge.
+   hitting every attack fills it in 45 / (1 + rate) = 24 s (easiest attack) .. 15 s (hardest), as the user asked */
+/* how hard the basic attack is to land: hard (short reach, thin shot, single target) refills more per hit, easy (long reach, wide shot,
+   piercing or exploding) refills less. 0.75 .. 1.35, cached per hero */
+function ultEase(h) {
+  if (h._ue) return h._ue;
+  let m;
+  if (h.type === 'melee') m = 1.15 * Math.pow(1.6 * T / Math.max(T, h.range || T), .3) * (h.half > 1.2 ? .9 : 1);
+  else {
+    let w = 5; try { const o = h.pre ? h.pre({ h, st: {}, b: {}, x: 0, y: 0 }, {}) : null; if (o) w = (o.r || 5) + (o.pad || 0); } catch (e) {}
+    m = Math.pow(7 * T / clamp(h.range || 500, 3 * T, 14 * T), .3) * Math.pow(5 / w, .25) * (h.pierce ? .85 : 1) * (h.splash ? .85 : 1);
+  }
+  return (h._ue = clamp(m, .75, 1.35));
+}
+function ultCharge(by, e, o) {
+  const f = by && (by.minion ? null : by);
+  if (!f || !f.h || f.dead || f.team === e.team || f.ucd <= 0 || !(o.basic || SRC === '기본 공격')) return;
+  const h = f.h, iv = cdOf(f), cap = iv * Math.min(2, .875 + (ultEase(h) - .75) * 2.96), per = cap / Math.max(1, (h.burst || 1) * (h.count || 1));
+  if (f.ucF !== f.lastFire) { f.ucF = f.lastFire; f.ucG = 0; }
+  const add = Math.min(per, cap - f.ucG); if (add <= 0) return;
+  f.ucG += add; f.ucd = Math.max(0, f.ucd - add);
+}
 function damage(e, dmg, by, o) {
   o = o || {};
   if (e.dead || !(dmg > 0)) return 0;
@@ -4200,6 +4242,7 @@ function damage(e, dmg, by, o) {
   if (e.h.resist && o.el) dmg *= .7;
   if (e.shield > 0) { const a = Math.min(e.shield, dmg); e.shield -= a; dmg -= a; if (e.shield <= 0 && e.onShieldBreak) { const fn = e.onShieldBreak; e.onShieldBreak = null; fn(e); } if (dmg <= 0) return 0; }
   e.hp -= dmg; e.lastHit = time; e.recent.push([time, dmg / STAT_X]); e.taken = (e.taken || 0) + dmg;
+  ultCharge(by, e, o);
   e.lastDmg = { src: o.src || SRC || (o.basic ? '기본 공격' : '패시브'), t: time };
   if (by && by !== e) { by.dealt = (by.dealt || 0) + dmg; if (!by.minion && by.h.onDeal) by.h.onDeal(by, e, dmg, o); }
   if (o.quiet) { e.acc += dmg; if (e.acc >= 8 * STAT_X) { addText({ x: e.x + rnd(-10, 10), y: e.y - 70, txt: String(Math.round(e.acc)), life: .6, color: '#ffb347' }); e.acc = 0; } }
@@ -7928,6 +7971,122 @@ if (DED) {
   }
 }
 
+/* ---------- news: notices the developer writes, read by every player ----------
+   The list lives in the seumarena repository as news/news.json (written with news/admin.html). The game reads it from
+   raw.githubusercontent.com (any origin may read it, and the app's service worker leaves that host alone); the copy that
+   was current at build time is baked in below, and the last list read is kept in localStorage, so news still shows offline.
+   An item: { id, kind: 공지|업데이트|이벤트|점검, date: 'YYYY-MM-DD', title, body, image?, link?: {label, url},
+   popup? (false = no pop-up on launch), pin? (kept on top), start?/end? (ISO time: shown only between them) }.
+   Players see a newspaper tile in the lobby's top right with a red dot while something is unread; unread news that
+   asks for it opens once by itself when the lobby is first shown. */
+const NEWS_BUILT = {"v":1,"updated":"2026-11-12T12:00:00+09:00","news":[{"id":"n-welcome","kind":"공지","date":"2026-11-12","title":"SeumArena 뉴스가 열렸어요","body":"업데이트, 이벤트, 점검 소식을 여기서 알려 드릴게요."}]};
+const NEWS_URL = 'https://raw.githubusercontent.com/frenchfries777mc/seumarena/main/news/news.json';
+const NEWS_KIND = { '공지': '#4d9dff', '업데이트': '#3fe0c5', '이벤트': '#ffd34d', '점검': '#ff5d5d' };
+const NEWS_SEEN_KEY = 'seumArenaNewsSeen', NEWS_CACHE_KEY = 'seumArenaNewsCache';
+let newsData = null, newsAsked = false, newsPopped = false, newsT0 = Date.now();
+function newsLoad(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+function newsSave(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function newsOk(d) { return d && Array.isArray(d.news) ? d : null; }
+/* of the baked-in list and the last one read, the newer one (by its "updated" stamp) shows until the fresh one arrives */
+{
+  const b = newsOk(NEWS_BUILT), c = newsOk(newsLoad(NEWS_CACHE_KEY, null));
+  newsData = b && c ? (String(c.updated || '') >= String(b.updated || '') ? c : b) : (c || b);
+}
+function newsLive() {
+  const now = Date.now(), t = s => { const v = Date.parse(s); return isNaN(v) ? null : v; };
+  return (newsData ? newsData.news : []).filter(n => n && n.id && n.title && !(n.start && t(n.start) > now) && !(n.end && t(n.end) <= now))
+    .sort((a, b) => (!!b.pin - !!a.pin) || String(b.date || '').localeCompare(String(a.date || '')));
+}
+function newsSeen() { const s = newsLoad(NEWS_SEEN_KEY, []); return Array.isArray(s) ? s : []; }
+function newsUnread() { const s = newsSeen(); return newsLive().filter(n => !s.includes(n.id)); }
+function newsMarkSeen() { const s = newsSeen(); for (const n of newsLive()) if (!s.includes(n.id)) s.push(n.id); newsSave(NEWS_SEEN_KEY, s.slice(-300)); }
+function newsEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+function newsUrl(u, img) { u = String(u || '').trim(); return /^https:\/\//i.test(u) || (img && /^data:image\//i.test(u)) ? u : ''; }
+function newsDate(d) { const m = /^(\d{4})-(\d\d)-(\d\d)/.exec(d || ''); return m ? m[1] + '.' + m[2] + '.' + m[3] : ''; }
+function newsItemHtml(n, unread) {
+  const c = NEWS_KIND[n.kind] || 'var(--gold)', img = newsUrl(n.image, true), lk = n.link && newsUrl(n.link.url);
+  return '<article class="nwItem" style="--c:' + c + '">' + (img ? '<img src="' + newsEsc(img) + '" alt="" loading="lazy" decoding="async">' : '') +
+    '<div class="nwBody"><div class="nwMeta">' + (n.kind ? '<span class="nwTag">' + newsEsc(n.kind) + '</span>' : '') + (n.pin ? '<svg class="nwPin" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4H6l4-4z M12 13v8" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>' : '') +
+    '<span>' + newsDate(n.date) + '</span>' + (unread ? '<i class="nwNew" aria-label="새 소식"></i>' : '') + '</div>' +
+    '<h3>' + newsEsc(n.title) + '</h3>' + (n.body ? '<p>' + newsEsc(n.body) + '</p>' : '') +
+    (lk ? '<a class="btn-primary nwLink" href="' + newsEsc(lk) + '" target="_blank" rel="noopener">' + newsEsc(n.link.label || '열기') + '</a>' : '') + '</div></article>';
+}
+const NEWS_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 5.5h13v13a2 2 0 0 0 2 2h-13a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16.5 9h4v9.5a2 2 0 0 1-4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M6.5 9h7v4h-7z" fill="currentColor"/><path d="M6.5 15.5h7M6.5 18h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+const NEWS_CSS = `
+#topRight #newsBtn{position:relative;box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:56px;height:56px;margin:0;padding:0;cursor:pointer;border-radius:14px;border:2px solid #e0a53c;color:#ffdc8c;background:linear-gradient(180deg,#46310f,#271a06);box-shadow:0 4px 0 #160e03,0 0 12px rgba(255,180,60,.18);transition:transform .08s ease}
+#topRight #newsBtn:active{transform:translateY(2px)}
+#topRight #newsBtn svg{width:30px;height:30px;display:block;filter:drop-shadow(0 0 4px rgba(255,190,80,.35))}
+#newsBtn[hidden]{display:none!important}
+#newsDot{position:absolute;top:-6px;right:-6px;width:15px;height:15px;border-radius:50%;background:var(--red);border:2px solid #14161c}
+#newsDot[hidden]{display:none}
+@media (max-width:520px){ #topRight #newsBtn{width:48px;height:48px;border-radius:12px} #topRight #newsBtn svg{width:25px;height:25px} }
+@media (max-height:560px){ #topRight #newsBtn{width:46px;height:44px;border-radius:12px;box-shadow:0 3px 0 #160e03} #topRight #newsBtn svg{width:24px;height:24px} }
+#newsWin{position:fixed;inset:0;z-index:31;display:flex;align-items:center;justify-content:center;background:rgba(6,8,12,.7);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  padding:calc(env(safe-area-inset-top,0px) + 14px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom,0px) + 14px) max(16px, env(safe-area-inset-left, 0px));box-sizing:border-box}
+#newsWin[hidden]{display:none}
+.nwCard{width:min(680px,100%);max-height:100%;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-top:3px solid #e0a53c;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.55);overflow:hidden;animation:nwIn .2s ease-out}
+@keyframes nwIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.nwCard{animation:none}}
+.nwHead{display:flex;align-items:center;gap:10px;padding:10px 12px 10px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#221c10,var(--panel))}
+.nwHead svg{width:28px;height:28px;flex:none;color:#ffcf6a}
+.nwHead h2{flex:1;margin:0;font:400 25px 'Black Han Sans','IBM Plex Sans KR',sans-serif;letter-spacing:.05em;color:#ffe3a0;text-shadow:0 2px 0 rgba(0,0,0,.45);transform:skewX(-8deg)}
+.nwX{flex:none;width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font-size:24px;line-height:1;cursor:pointer;display:grid;place-items:center}
+.nwX:hover{background:var(--line)}
+.nwList{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:14px;display:flex;flex-direction:column;gap:12px}
+.nwItem{flex:none;background:var(--panel-2);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:12px;overflow:hidden}
+.nwItem img{display:block;width:100%;height:auto;max-height:260px;object-fit:cover;background:#0b0d12}
+.nwBody{padding:12px 16px 14px}
+.nwMeta{display:flex;align-items:center;gap:8px;font:600 13px 'IBM Plex Sans KR',sans-serif;color:var(--text-dim);font-variant-numeric:tabular-nums}
+.nwTag{color:#0c0e13;background:var(--c);border-radius:999px;padding:1px 10px;font-weight:800;font-size:12.5px;line-height:1.6}
+.nwPin{width:15px;height:15px;color:var(--c)}
+.nwNew{width:10px;height:10px;border-radius:50%;background:var(--red);margin-left:auto;box-shadow:0 0 0 3px rgba(255,93,93,.18)}
+.nwItem h3{margin:7px 0 4px;font:700 19px/1.4 'IBM Plex Sans KR',sans-serif;color:var(--text);word-break:keep-all;overflow-wrap:anywhere}
+.nwItem p{margin:0;font:400 15px/1.65 'IBM Plex Sans KR',sans-serif;color:#cdd2dc;white-space:pre-line;word-break:keep-all;overflow-wrap:anywhere}
+.nwLink{display:inline-block;margin-top:12px;padding:9px 28px;font-size:16px;text-decoration:none}
+@media (max-height:560px){ .nwHead{padding:6px 10px 6px 14px} .nwHead h2{font-size:21px} .nwX{width:38px;height:38px} .nwList{padding:10px;gap:10px} .nwItem img{max-height:150px} .nwBody{padding:10px 14px 12px} .nwItem h3{font-size:17px} .nwItem p{font-size:14px} }
+`;
+const newsBtn = document.createElement('button'), newsWin = document.createElement('div');
+if (!DED) {
+  const st = document.createElement('style'); st.textContent = NEWS_CSS; document.head.appendChild(st);
+  newsBtn.id = 'newsBtn'; newsBtn.type = 'button'; newsBtn.setAttribute('aria-label', '뉴스'); newsBtn.innerHTML = NEWS_ICON + '<i id="newsDot" hidden></i>';
+  const tr = document.getElementById('topRight'), q = document.getElementById('quest');
+  if (tr) { if (q && q.parentNode === tr) q.after(newsBtn); else tr.appendChild(newsBtn); }
+  newsWin.id = 'newsWin'; newsWin.hidden = true;
+  newsWin.innerHTML = '<div class="nwCard" role="dialog" aria-modal="true" aria-labelledby="nwTitle"><div class="nwHead">' + NEWS_ICON + '<h2 id="nwTitle">뉴스</h2><button class="nwX" type="button" aria-label="닫기">&times;</button></div><div class="nwList"></div></div>';
+  document.body.appendChild(newsWin);
+  newsBtn.addEventListener('click', () => newsOpen(true));
+  newsWin.querySelector('.nwX').addEventListener('click', () => newsOpen(false));
+  newsWin.addEventListener('pointerdown', e => { e.stopPropagation(); if (e.target === newsWin) newsOpen(false); });
+  addEventListener('keydown', e => { if (newsWin.hidden) return; if (e.code === 'Escape') newsOpen(false); e.stopPropagation(); }, true);   // the game does not see keys while the window is open
+  newsWin.addEventListener('error', e => { if (e.target.tagName === 'IMG') e.target.remove(); }, true);   // a picture that cannot load (offline) is left out
+  newsPaint();
+  newsFetch();
+  setInterval(newsTick, 400);
+}
+function newsPaint() { const live = newsLive(); newsBtn.hidden = !live.length; const d = document.getElementById('newsDot'); if (d) d.hidden = !newsUnread().length; }
+function newsOpen(on) {
+  if (on) {
+    const s = newsSeen(); newsWin.querySelector('.nwList').innerHTML = newsLive().map(n => newsItemHtml(n, !s.includes(n.id))).join('');
+    newsWin.hidden = false; newsWin.querySelector('.nwList').scrollTop = 0;
+  } else if (!newsWin.hidden) { newsWin.hidden = true; newsMarkSeen(); newsPaint(); }
+}
+function newsFetch() {
+  if (newsAsked) return; newsAsked = true;
+  let ctl = null; try { ctl = new AbortController(); setTimeout(() => ctl.abort(), 8000); } catch (e) {}
+  fetch(NEWS_URL + '?t=' + Math.floor(Date.now() / 60000), { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
+    .then(r => r.ok ? r.json() : null).then(d => { d = newsOk(d); if (!d) return; newsData = d; newsSave(NEWS_CACHE_KEY, d); newsPaint(); })
+    .catch(() => {}).then(() => { newsAsked = 'done'; });
+}
+/* the one pop-up: once the intro is gone and the plain lobby menu is up (nothing else open), after the fresh list came or 4 s passed */
+function newsTick() {
+  if (newsPopped || DED) return;
+  if (newsAsked !== 'done' && Date.now() - newsT0 < 4000) return;
+  const lob = document.getElementById('lobby'), menu = document.getElementById('menuScreen'), set = document.getElementById('settings');
+  if (document.hidden || document.getElementById('introCv') || !lob || lob.hidden || !menu || !menu.classList.contains('active') || (set && !set.hidden)) return;
+  newsPopped = true;
+  if (newsUnread().some(n => n.popup !== false)) newsOpen(true);
+}
+
 /* ---------- drawing ---------- */
 function drawStick(c, id, col, ang, walk, swing, t, cos) {
   const h = HEROES[id], HIP = -22, SH = -42, HEADCY = -52, HEADR = 9, face = Math.cos(ang) >= 0 ? 1 : -1;
@@ -8156,7 +8315,7 @@ function render() {
   drawEnvOverlay();
   if (!lowFx()) drawSamScreen();
   /* phones: both sticks are always on screen at their home spots (move bottom left, attack bottom right); a held stick is drawn where the thumb grabbed it */
-  if (state === 'play' && touchUi()) {
+  if (state === 'play' && touchUi() && !soloOutShown) {      // (not while only watching after a knock-out)
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     for (const atk of [false, true]) {
       const s = atk ? stickA : stickM, hm = stickHome(atk), ox = s ? s.ox : hm.x, oy = s ? s.oy : hm.y, on = !!s;
@@ -8574,7 +8733,7 @@ $('mapBackBtn').addEventListener('click', () => showScreen('menuScreen'));
 function enterPlay() {
   { const c = document.getElementById('diceBannerContainer'); if (c) c.textContent = ''; }
   state = 'play'; feed.textContent = ''; lastHud = '';
-  soloOutAt = 0; soloOutShown = false;
+  soloOutAt = 0; soloOutShown = false; $('specBack').hidden = true;
   mouse.down = false; stickM = stickA = pendingFire = null; wantUlt = wantDash = false; wantSk = [false, false]; pvClear();
   lobby.hidden = true; cv.classList.remove('inLobby'); showPlayUi(true);
 }
@@ -8592,7 +8751,7 @@ function buildOverStats(win, draw) {
   const solo = curMode === 'solo', rank = f => f.team === RD.win ? 0 : RD.out.includes(f.team) ? fs.length - RD.out.indexOf(f.team) : 1;      // solo: one list in finishing order
   for (const team of solo ? [-1] : [VIEW, 1 - VIEW]) {
     if (!solo && team !== VIEW) box.append(el('div', 'osGap'));
-    for (const f of solo ? fs.slice().sort((a, b) => rank(a) - rank(b)) : fs.filter(f => f.team === team).sort((a, b) => val(b) - val(a))) {
+    for (const f of solo ? fs.slice().sort((a, b) => rank(a) - rank(b)).filter(f => state !== 'play' || RD.out.includes(f.team)) : fs.filter(f => f.team === team).sort((a, b) => val(b) - val(a))) {
       const r = el('div', 'osRow ' + (f.team === VIEW ? 'b' : 'r') + (f === player ? ' me' : '')), nm = el('span', 'on');
       if (solo) nm.append(el('span', 'rk', String(fs.slice().sort((a, b) => rank(a) - rank(b)).indexOf(f) + 1)));
       else if (f === mvp && val(f) > 0) nm.append(el('span', 'mvp', 'MVP'));
@@ -8610,11 +8769,15 @@ function soloOutCheck() {
   if (!soloOutAt) soloOutAt = performance.now();
   if (performance.now() - soloOutAt < 1400) return;      // long enough to see what happened
   if (fighters.filter(f => !f.dead).length < 2) return;      // the match is ending anyway
-  endGame(NET.role === 'host' && NET.members && NET.members.length > 0);
+  endGame(true);      // the match goes on (it can be watched): only this player's result is shown
 }
+/* watching on after being knocked out: the result screen is put away, the camera follows the ones still alive (render), a small button brings the result back */
+function soloWatch(on) { lobby.hidden = on; cv.classList.toggle('inLobby', !on); $('specBack').hidden = !on; if (!on) showScreen('overScreen'); }
 function endGame(keepRunning) {
   if (keepRunning !== true) { state = 'over'; if (NET.role === 'guest' && NET.stats) applyMatchStats(NET.stats); hostEnd(); }
-  if (soloOutShown) { showPlayUi(false); return; }      // this player already got the result screen when knocked out
+  if (soloOutShown) {      // this player already got the result screen (and the pay) when knocked out: now the match is really over, so the whole table is known
+    showPlayUi(false); buildOverStats(false, false); $('specBtn').hidden = true; soloWatch(false); return;
+  }
   if (curMode === 'solo' && player && player.dead) soloOutShown = true;
   showPlayUi(false);
   const oc = modeOutcome(), solo = curMode === 'solo', mine = oc.a, theirs = oc.b;
@@ -8635,6 +8798,7 @@ function endGame(keepRunning) {
       $('mpGain').style.color = masteryOf(hid).col;
     }
   }
+  $('specBtn').hidden = !(soloOutShown && state === 'play'); $('specBack').hidden = true;
   lobby.hidden = false; cv.classList.add('inLobby'); showScreen('overScreen');
   emoteWheel(false); chatOpen(false);
   winScreen(win, draw);
@@ -8643,6 +8807,8 @@ function toMenu() { netReset(); VIEW = 0; state = 'menu'; setup(false); showPlay
 $('startBtn').addEventListener('click', startOnline);
 $('againBtn').addEventListener('click', () => { netReset(); if (state !== 'menu') { VIEW = 0; state = 'menu'; setup(false); } startOnline(); });
 $('lobbyBtn').addEventListener('click', toMenu);
+$('specBtn').addEventListener('click', () => { if (state === 'play' && soloOutShown) soloWatch(true); });
+$('specBack').addEventListener('click', () => soloWatch(false));
 $('roomCancelBtn').addEventListener('click', () => { netReset(); showScreen('menuScreen'); });
 $('goCosBtn').addEventListener('click', () => { showScreen('cosScreen'); renderCos(); });
 $('cosBackBtn').addEventListener('click', () => showScreen('menuScreen'));
