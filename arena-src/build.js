@@ -7,7 +7,9 @@ art+='\n'+fs.readFileSync(S+'art/emoji.js','utf8');
 art+='\n'+fs.readFileSync(S+'art/music.js','utf8').replace('@@LOBBY@@',()=>mus('lobby')).replace('@@BATTLE@@',()=>mus('battle'));
 const menucss=fs.readFileSync(S+'art/menu.css','utf8');
 let head=fs.readFileSync(S+'head.html','utf8').replace('/*@@CHARS@@*/',()=>art).replace('/*@@MENUCSS@@*/',()=>menucss);
-const src=head+'\n'+['engine.js','kits1.js','kits2.js','social.js','fx.js','preview.js','gardener.js','net.js','intro.js','tail.js'].map(f=>fs.readFileSync(S+f,'utf8')).join('\n');
+// news: the list in ../news/news.json at build time is baked in (shown offline / where the live list cannot be read)
+const news=(()=>{try{return JSON.stringify(JSON.parse(fs.readFileSync(S+'../news/news.json','utf8'))).replace(/</g,'\\u003c')}catch(e){return 'null'}})();
+const src=head+'\n'+['engine.js','kits1.js','kits2.js','social.js','fx.js','preview.js','gardener.js','net.js','intro.js','news.js','tail.js'].map(f=>{const t=fs.readFileSync(S+f,'utf8');return f==='news.js'?t.replace('/*@@NEWS@@*/null',()=>news):t}).join('\n');
 fs.writeFileSync(process.env.OUT||require('path').join(__dirname,'..','seumarena.html'),src);
 fs.writeFileSync(require('path').join(__dirname,'t.html'),'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}[hidden]{display:none!important}</style></head><body>'+src+'</body></html>');
 // checks: syntax, and the same top-level name defined twice

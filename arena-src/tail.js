@@ -226,7 +226,7 @@ function render() {
   drawEnvOverlay();
   if (!lowFx()) drawSamScreen();
   /* phones: both sticks are always on screen at their home spots (move bottom left, attack bottom right); a held stick is drawn where the thumb grabbed it */
-  if (state === 'play' && touchUi()) {
+  if (state === 'play' && touchUi() && !soloOutShown) {      // (not while only watching after a knock-out)
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     for (const atk of [false, true]) {
       const s = atk ? stickA : stickM, hm = stickHome(atk), ox = s ? s.ox : hm.x, oy = s ? s.oy : hm.y, on = !!s;
@@ -644,7 +644,7 @@ $('mapBackBtn').addEventListener('click', () => showScreen('menuScreen'));
 function enterPlay() {
   { const c = document.getElementById('diceBannerContainer'); if (c) c.textContent = ''; }
   state = 'play'; feed.textContent = ''; lastHud = '';
-  soloOutAt = 0; soloOutShown = false;
+  soloOutAt = 0; soloOutShown = false; $('specBack').hidden = true;
   mouse.down = false; stickM = stickA = pendingFire = null; wantUlt = wantDash = false; wantSk = [false, false]; pvClear();
   lobby.hidden = true; cv.classList.remove('inLobby'); showPlayUi(true);
 }
@@ -662,7 +662,7 @@ function buildOverStats(win, draw) {
   const solo = curMode === 'solo', rank = f => f.team === RD.win ? 0 : RD.out.includes(f.team) ? fs.length - RD.out.indexOf(f.team) : 1;      // solo: one list in finishing order
   for (const team of solo ? [-1] : [VIEW, 1 - VIEW]) {
     if (!solo && team !== VIEW) box.append(el('div', 'osGap'));
-    for (const f of solo ? fs.slice().sort((a, b) => rank(a) - rank(b)) : fs.filter(f => f.team === team).sort((a, b) => val(b) - val(a))) {
+    for (const f of solo ? fs.slice().sort((a, b) => rank(a) - rank(b)).filter(f => state !== 'play' || RD.out.includes(f.team)) : fs.filter(f => f.team === team).sort((a, b) => val(b) - val(a))) {
       const r = el('div', 'osRow ' + (f.team === VIEW ? 'b' : 'r') + (f === player ? ' me' : '')), nm = el('span', 'on');
       if (solo) nm.append(el('span', 'rk', String(fs.slice().sort((a, b) => rank(a) - rank(b)).indexOf(f) + 1)));
       else if (f === mvp && val(f) > 0) nm.append(el('span', 'mvp', 'MVP'));
@@ -680,11 +680,15 @@ function soloOutCheck() {
   if (!soloOutAt) soloOutAt = performance.now();
   if (performance.now() - soloOutAt < 1400) return;      // long enough to see what happened
   if (fighters.filter(f => !f.dead).length < 2) return;      // the match is ending anyway
-  endGame(NET.role === 'host' && NET.members && NET.members.length > 0);
+  endGame(true);      // the match goes on (it can be watched): only this player's result is shown
 }
+/* watching on after being knocked out: the result screen is put away, the camera follows the ones still alive (render), a small button brings the result back */
+function soloWatch(on) { lobby.hidden = on; cv.classList.toggle('inLobby', !on); $('specBack').hidden = !on; if (!on) showScreen('overScreen'); }
 function endGame(keepRunning) {
   if (keepRunning !== true) { state = 'over'; if (NET.role === 'guest' && NET.stats) applyMatchStats(NET.stats); hostEnd(); }
-  if (soloOutShown) { showPlayUi(false); return; }      // this player already got the result screen when knocked out
+  if (soloOutShown) {      // this player already got the result screen (and the pay) when knocked out: now the match is really over, so the whole table is known
+    showPlayUi(false); buildOverStats(false, false); $('specBtn').hidden = true; soloWatch(false); return;
+  }
   if (curMode === 'solo' && player && player.dead) soloOutShown = true;
   showPlayUi(false);
   const oc = modeOutcome(), solo = curMode === 'solo', mine = oc.a, theirs = oc.b;
@@ -705,6 +709,7 @@ function endGame(keepRunning) {
       $('mpGain').style.color = masteryOf(hid).col;
     }
   }
+  $('specBtn').hidden = !(soloOutShown && state === 'play'); $('specBack').hidden = true;
   lobby.hidden = false; cv.classList.add('inLobby'); showScreen('overScreen');
   emoteWheel(false); chatOpen(false);
   winScreen(win, draw);
@@ -713,6 +718,8 @@ function toMenu() { netReset(); VIEW = 0; state = 'menu'; setup(false); showPlay
 $('startBtn').addEventListener('click', startOnline);
 $('againBtn').addEventListener('click', () => { netReset(); if (state !== 'menu') { VIEW = 0; state = 'menu'; setup(false); } startOnline(); });
 $('lobbyBtn').addEventListener('click', toMenu);
+$('specBtn').addEventListener('click', () => { if (state === 'play' && soloOutShown) soloWatch(true); });
+$('specBack').addEventListener('click', () => soloWatch(false));
 $('roomCancelBtn').addEventListener('click', () => { netReset(); showScreen('menuScreen'); });
 $('goCosBtn').addEventListener('click', () => { showScreen('cosScreen'); renderCos(); });
 $('cosBackBtn').addEventListener('click', () => showScreen('menuScreen'));
