@@ -403,6 +403,28 @@ function spawnFx0(e){
     case 'dsbreath': { playSfx('flame', x, y); if(DS_DRAGONS[e.pid]) DS_DRAGONS[e.pid].breath=performance.now(); burst(x,y,14,{a0:e.ang-0.5,a1:e.ang+0.5,s0:90,s1:330,l0:.25,l1:.5,z0:3,z1:6,colors:['#ffd34d','#ff7a2a','#ff3b1a'],drag:2}); addP({x:x,y:y,life:.35,color:'#ffb347',shape:'ring',r0:6,r1:34,lw:3}); break; }
     case 'dsswing': { const d=DS_STATE[e.pid]||(DS_STATE[e.pid]={}); d.swAt=performance.now(); break; }
     case 'dsflame': { const d=DS_STATE[e.pid]||(DS_STATE[e.pid]={}); d.flameEnd=performance.now()+(e.dur||2)*1000; break; }
+    case 'converge': {                                              // a wind-up: rings and sparks pulled in to the spot (the lead-in of a cast)
+      const R=e.r||110, c2=e.color2||'#ffffff';
+      addP({x:x,y:y,life:.32,color:col,shape:'ring',r0:R,r1:R*.18,lw:5});
+      addP({x:x,y:y,life:.24,color:c2,shape:'ring',r0:R*.7,r1:R*.1,lw:3});
+      for(let i=0;i<Math.max(4,Math.round(10*FQ));i++){ const a=i*6.283/10+RND(-.2,.2), d=R*RND(.8,1.1), s=d/.3; addP({x:x+Math.cos(a)*d,y:y+Math.sin(a)*d*.55,vx:-Math.cos(a)*s,vy:-Math.sin(a)*s*.55,life:.3,size:RND(2,3.4),color:i%2?col:c2}); }
+      addP({x:x,y:y,life:.3,color:col,shape:'flash',size:R*.55}); break; }
+    case 'fan': {                                                   // a spray of streaks along a direction (the original's 8-spark fans, with a muzzle flash)
+      const a=e.ang||0, sp=e.spread||.45, n=e.n||10, L=e.len||420;
+      bu(x,y,n,{a0:a-sp,a1:a+sp,s0:L*.5,s1:L*1.4,l0:.18,l1:.4,z0:2,z1:4.2,colors:[col,'#ffffff',e.color2||col],drag:3,shape:'streak'});
+      addP({x:x+Math.cos(a)*14,y:y+Math.sin(a)*14,life:.16,color:'#fff3b0',shape:'flash',size:64}); break; }
+    case 'column': {                                                // a column of light sparks going up
+      const Hh=e.h||90;
+      bu(x,y,16,{a0:-1.9,a1:-1.24,s0:Hh*1.2,s1:Hh*3.2,l0:.4,l1:.85,z0:2,z1:4.2,colors:[col,'#ffffff'],drag:2.2,shape:'streak'});
+      addP({x:x,y:y-Hh*.4,life:.4,color:col,shape:'flash',size:Hh}); addP({x:x,y:y,life:.5,color:col,shape:'ring',r0:6,r1:Hh*.55,lw:4}); break; }
+    case 'afterimage': {                                            // ghost cuts left behind along a dash
+      const x2=e.x2, y2=e.y2, n=4;
+      for(let i=0;i<n;i++){ const t0=i/n, t1=(i+.6)/n; addP({x:x+(x2-x)*t0,y:y+(y2-y)*t0,x2:x+(x2-x)*t1,y2:y+(y2-y)*t1,life:.2+i*.07,color:i%2?'#ffffff':col,shape:'slash',size:16-i*2}); }
+      bu(x,y,8,{a0:0,a1:6.28,s0:40,s1:180,l0:.2,l1:.4,z0:2,z1:3.4,colors:[col,'#ffffff'],drag:3}); break; }
+    case 'glyph': {                                                 // a rune circle on the ground that opens and drifts up
+      const R=e.r||80;
+      for(let r=0;r<2;r++) addP({x:x,y:y,life:.7+r*.2,color:r?'#ffffff':col,shape:'ring',r0:R*.3,r1:R*(r?1:.8),lw:3+r});
+      for(let i=0;i<8;i++){ const a=i*6.283/8; addP({x:x+Math.cos(a)*R*.8,y:y+Math.sin(a)*R*.8*.55,vx:0,vy:-60,drag:1.2,life:.9,size:3.4,color:col}); } break; }
     case 'skillring': {
       addP({x:x,y:y,life:.4,color:col,shape:'ring',r0:10,r1:(e.r||120),lw:5});
       break; }
