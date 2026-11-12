@@ -467,6 +467,7 @@ body.touchUi canvas{touch-action:none}
 .mPips b{display:inline-flex;gap:3px}
 .mPips i{display:block;width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(0,0,0,.4)}
 .mPips em{font:italic 700 12px 'Rajdhani',sans-serif;color:#c9ced8}
+.mPips.many{gap:3px}.mPips.many b{gap:2px}.mPips.many i{width:6px;height:6px}
 .modeCard .mRules{display:flex;flex-wrap:wrap;gap:6px}
 .mRule{display:inline-flex;align-items:center;gap:5px;font:700 13px 'IBM Plex Sans KR',sans-serif;color:var(--text);background:rgba(8,10,15,.55);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:3px 10px 3px 7px;white-space:nowrap}
 .mRule svg{width:15px;height:15px;flex:none}
@@ -495,8 +496,12 @@ body.touchUi canvas{touch-action:none}
 #modeScreen.pc .modeCard:not(:disabled):hover{transform:translateY(-6px)}
 #modeScreen.pc .modeCard[aria-pressed="true"]{transform:translateY(-14px) scale(1.04)}
 /* phones: big posters, all four on one screen without scrolling sideways */
-#modeScreen.ph #modeGrid{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(4,minmax(112px,190px));align-content:center;gap:12px;width:100%;max-width:560px;margin:0 auto;padding:14px 0 4px}
-@media (orientation:landscape){#modeScreen.ph #modeGrid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(112px,210px));max-width:960px;padding-top:8px}}
+#modeScreen.ph #modeGrid{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:minmax(92px,180px);align-content:center;gap:10px;width:100%;max-width:560px;margin:0 auto;padding:14px 0 4px}
+/* phone on its side: three cards over two (five modes), the lower two centred; with four or fewer it stays two by two */
+@media (orientation:landscape){#modeScreen.ph #modeGrid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(100px,210px);max-width:960px;padding-top:8px}
+  #modeScreen.ph #modeGrid.n5{grid-template-columns:repeat(6,minmax(0,1fr))}
+  #modeScreen.ph #modeGrid.n5 .modeCard{grid-column:span 2}
+  #modeScreen.ph #modeGrid.n5 .modeCard:nth-child(4){grid-column:2 / span 2}}
 #modeScreen.ph .modeCard{clip-path:polygon(0 0,calc(100% - 24px) 0,100% 24px,100% 100%,24px 100%,0 calc(100% - 24px))}
 #modeScreen.ph .mIn{clip-path:polygon(0 0,calc(100% - 23px) 0,100% 23px,100% 100%,23px 100%,0 calc(100% - 23px));grid-template-rows:auto auto auto 1fr;align-content:start;justify-items:start;row-gap:7px;padding:14px 16px}
 #modeScreen.ph canvas.mArt,#modeScreen.ph .mTint,#modeScreen.ph .mMark{position:absolute}
@@ -635,6 +640,7 @@ body.touchUi canvas{touch-action:none}
     <symbol id="mi-m-team" viewBox="0 0 24 24"><path d="M4 4l11 11M20 4 9 15M6.5 13.5l4 4M17.5 13.5l-4 4M5 19l2.5-2.5M19 19l-2.5-2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
     <symbol id="mi-m-last" viewBox="0 0 24 24"><path d="M4 8l4 4 4-7 4 7 4-4-1.5 10h-13z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
     <symbol id="mi-m-flag" viewBox="0 0 24 24"><path d="M6 21V4M6 5h12l-3 4 3 4H6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="mi-m-flag5" viewBox="0 0 24 24"><path d="M4 21V5M4 6h8l-2 3 2 3H4M14 21V9M14 10h7l-2 2.5 2 2.5h-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="mi-m-duel" viewBox="0 0 24 24"><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14 6l-4 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
     <symbol id="mi-m-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
     <symbol id="mi-quest" viewBox="0 0 24 24"><rect x="4.5" y="4" width="15" height="17" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="8.5" y="2" width="7" height="4" rx="1.2" fill="currentColor"/><path d="m8.3 13.2 2.6 2.6 4.8-5.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>

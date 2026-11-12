@@ -337,7 +337,7 @@ addEventListener('keydown', e => { if (setEl.hidden) return; if (e.code === 'Esc
 /* game modes: the engine's MODES registry ({id,name,size,maps,ready}) when it exists; until then the same four, with only the current rules playable */
 const MODE_FALLBACK = [{ id: 'team', name: '팀 아웃', size: '3v3' }, { id: 'solo', name: '원 레프트', size: '6명', ready: false }, { id: 'flag', name: '캡쳐 플래그', size: '3v3', ready: false }, { id: 'duel', name: '듀얼 배틀', size: '1v1', ready: false }];
 const MODE_LIST = typeof MODES !== 'undefined' && Array.isArray(MODES) && MODES.length ? MODES : MODE_FALLBACK;
-const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], duel: ['mi-m-duel', '#b48cff'] };
+const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'] };
 let modeSel = typeof modeChoice === 'string' ? modeChoice : MODE_LIST[0].id, modeView = modeSel;
 const modeOk = m => !!m && m.ready !== false;
 const modeCur = () => MODE_LIST.find(m => m.id === modeSel && modeOk(m)) || MODE_LIST.find(modeOk) || MODE_LIST[0];
@@ -514,7 +514,7 @@ $('mapPickBtn').addEventListener('click', () => { mapChoice = mapList[mapIdx]; s
 
 /* mode picker. PC: a row of event cards, tap one to look at it, the button below (or a double click) confirms.
    touch or small screens: big posters, a tap picks the mode right away. Each card: mode art, headcount, two rules, the mode's current map */
-const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', duel: '#47307a' };
+const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a' };
 const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1 };      // map drawn behind the figures while the mode's map is random
 const MODE_FFA = ['#4d9dff', '#ff5d5d', '#ffd34d', '#3ddbb4', '#b48cff', '#ff9a3d'];
 const RULE_ICO = {
@@ -528,7 +528,7 @@ const mmss = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart
 function modeRules(m) {
   const r = [], solo = m.id === 'solo' || m.id === 'last';
   if (solo) r.push(['crown', '최후 1인']);
-  else if (m.id === 'flag' && m.win) r.push(['flag', '깃발 ' + m.win + '점']);
+  else if (isFlagMode(m.id) && m.win) r.push(['flag', '깃발 ' + m.win + '점']);
   else if (m.id === 'duel' && m.win) r.push(['rounds', m.win + '선승']);
   else if (m.win) r.push(['kill', m.win + '킬']);
   if (m.time) r.push(['clock', (m.rounds ? '판당 ' : '') + mmss(m.time)]);
@@ -566,7 +566,7 @@ function modeScene(cv, m, mi, cx) {
     g.save(); g.beginPath(); g.rect(0, 0, w, h); g.arc(x0, h * .55, zr, 0, 7, true); g.fillStyle = 'rgba(160,40,90,.35)'; g.fill('evenodd'); g.restore();
     g.strokeStyle = '#ffd34d'; g.lineWidth = 3 * k; g.setLineDash([10 * k, 7 * k]); g.beginPath(); g.arc(x0, h * .55, zr, 0, 7); g.stroke(); g.setLineDash([]);
     ['sword', 'pistol', 'magiccard', 'kadas', 'rifle', 'shade'].forEach((id, n) => { const x = x0 + (n - 2.5) * 46 * s, y = base - (n % 2) * 22 * s; fig(id, MODE_FFA[n], x, y, s * .92, x < x0 ? 1 : -1, .3); });
-  } else if (m.id === 'flag') {
+  } else if (isFlagMode(m.id)) {
     fig('bow', B, x0 - 110 * s, base - 22 * s, s * .9, 1, .4);
     fig('sword', B, x0 - 30 * s, base, s * 1.1, 1, .2); flag(x0 - 48 * s, base - 30 * s, s * 1.05, R);
     fig('rifle', R, x0 + 70 * s, base - 14 * s, s, -1, .5); flag(x0 + 135 * s, base - 30 * s, s * .9, B);
@@ -600,7 +600,7 @@ function modePick() {
 }
 function showModes() {
   const scr = $('modeScreen'), g = $('modeGrid'), ph = modeTouchLayout(), NS = 'http://www.w3.org/2000/svg';
-  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = '';
+  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = ''; g.classList.toggle('n5', MODE_LIST.length === 5);
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   const icon = (d, cls) => { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); if (cls) s.setAttribute('class', cls); s.innerHTML = d; return s; };
   const arts = [];
@@ -608,10 +608,10 @@ function showModes() {
     const ok = modeOk(m), mi = modeMapOf(m), lk = MODE_LOOK[m.id] || ['mi-m-team', '#fff'];
     const b = el('button', 'modeCard'), inn = el('span', 'mIn'), art = el('canvas', 'mArt'), top = el('span', 'mTop'), ic = el('span', 'mIco solid'), sz = el('span', 'mSz'), rl = el('span', 'mRules'), mp = el('span', 'mMap');
     b.type = 'button'; b.dataset.mode = m.id; b.style.setProperty('--c', lk[1]); b.style.setProperty('--d', MODE_DARK[m.id] || '#2a2f3c');
-    top.append(modeIcon(ic, m), el('b', 'mN', m.name));
+    top.append(modeIcon(ic, m), el('b', 'mN', m.size && m.name.endsWith(' ' + m.size) ? m.name.slice(0, -m.size.length - 1) : m.name));      // the size has its own big label on the card
     if (m.size) sz.append(el('span', 'mSize', m.size));
     if (m.teams && m.per) {
-      const p = el('span', 'mPips'), dots = (n, col) => { const w = el('b'); for (let j = 0; j < n; j++) { const d = el('i'); d.style.background = col; w.append(d); } return w; };
+      const p = el('span', 'mPips' + (m.teams * m.per > 6 ? ' many' : '')), dots = (n, col) => { const w = el('b'); for (let j = 0; j < n; j++) { const d = el('i'); d.style.background = col; w.append(d); } return w; };
       if (m.teams === 2) p.append(dots(m.per, TEAM[0]), el('em', '', 'vs'), dots(m.per, TEAM[1]));
       else { const w = el('b'); for (let j = 0; j < m.teams * m.per; j++) { const d = el('i'); d.style.background = MODE_FFA[j % MODE_FFA.length]; w.append(d); } p.append(w); }
       sz.append(p);
