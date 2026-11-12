@@ -69,7 +69,9 @@ const SeumMusic = (() => {
       + 'font:11px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;color:rgba(255,255,255,.78);text-shadow:0 1px 3px rgba(0,0,0,.85);opacity:0;transition:opacity .6s;pointer-events:none}'
       + '#musicCredit.show{opacity:1}#musicCredit.match{left:50%;right:auto;transform:translateX(-50%);text-align:center;bottom:max(86px,env(safe-area-inset-bottom,0px))}'
       + '#musicCredit a{color:#9fd8ff;pointer-events:auto}#musicCredit.match a{pointer-events:none}'
-      + '@media (max-width:600px){#musicCredit{left:50%;transform:translateX(-50%);max-width:calc(100vw - 24px);width:max-content;font-size:9.5px;line-height:1.35;text-align:center;bottom:max(4px,env(safe-area-inset-bottom,0px))}#musicCredit.match{bottom:max(150px,env(safe-area-inset-bottom,0px))}}';
+      + '@media (max-width:600px){#musicCredit{left:50%;transform:translateX(-50%);max-width:calc(100vw - 24px);width:max-content;font-size:9.5px;line-height:1.35;text-align:center;bottom:max(4px,env(safe-area-inset-bottom,0px))}#musicCredit.match{bottom:max(150px,env(safe-area-inset-bottom,0px))}}'
+      + '@media (max-height:500px) and (orientation:landscape){#musicCredit{left:auto;right:max(8px,env(safe-area-inset-right,0px));transform:none;text-align:right;max-width:52vw;font-size:8px;line-height:1.3;bottom:3px}#musicCredit.match{bottom:max(70px,env(safe-area-inset-bottom,0px));right:50%;transform:translateX(50%);text-align:center}}'
+      + '@media (max-height:500px) and (min-width:701px) and (orientation:landscape){#musicCredit{right:auto;left:190px;text-align:left;max-width:290px;font-size:9px;bottom:4px}}';
     document.head.append(st);
     credEl = document.createElement('div'); credEl.id = 'musicCredit'; document.body.append(credEl); return credEl;
   }
@@ -106,10 +108,7 @@ const SeumMusic = (() => {
     }
     // credit text
     if (lobbyMain) { setCred('lobby'); matchCredAt = 0; }
-    else if (st === 'play') {
-      if (lastWant !== 'battle' || !matchCredAt) matchCredAt = performance.now();
-      setCred(performance.now() - matchCredAt < 9000 ? 'match' : null);
-    } else setCred(null);
+    else setCred(null);      // no credit text during a match (it stays on the lobby screen)
     lastWant = want;
   }
   arm();

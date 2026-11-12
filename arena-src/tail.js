@@ -22,9 +22,9 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   c.save(); try { if (WEAPON_PERSONA_NAME[id]) drawWeaponPersona(c, id, 0, HEADCY, HEADR, SH, tint, cp); } catch (e) {} c.restore();
   body();
   const hx = ax * reach, hy = SH + 6 + ay * reach;
-  c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(hx, hy); c.stroke();
+  if (id !== 'harald') { c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(hx, hy); c.stroke(); }      // (하랄드 draws both of his bent arms himself, in art/chars.js)
   if (id === 'kadas') { c.strokeStyle = '#c4182e'; c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(hx, hy); c.stroke(); }
-  c.save(); try { drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) {} c.restore();
+  c.save(); try { if (id === 'gardener' && typeof drawGardener === 'function') drawGardener(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP }); else drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) {} c.restore();      // (정원사's hat, slingshot and pouch: gardener.js)
   if (it && it.fx) { c.save(); try { drawSkinFx(c, lux >= 4 ? 'sparkle' : it.fx, lux >= 4 ? auroraHex(now / 1000 * .9, 1) : tint, 0, HEADCY, HEADR * 1.3, now); } catch (e) {} c.restore(); }
   if (cos && cos.col && COSMETICS[cos.col] && COSMETICS[cos.col].shine) { c.save(); try { drawShineGlints(c, now, 0); } catch (e) {} c.restore(); }
   c.restore();
@@ -32,8 +32,10 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
 }
 function drawFighter(f, alpha) {
   const st = f.st, col = B(f, 'ally') ? TC(1 - f.team) : TC(f.team);
+  if (f.form === 'gone' && typeof drawHatThrow === 'function') { drawHatThrow(f); return; }      // (fx.js: the flying top hat)
   if (f.form === 'gone') { if (st.hat) { ctx.fillStyle = '#16181f'; ctx.fillRect(st.hat.x - 10, st.hat.y - 44, 20, 16); ctx.fillRect(st.hat.x - 16, st.hat.y - 28, 32, 4); } return; }
   ctx.save(); ctx.translate(f.x, f.y + 16); { const sa = staggerAngle(f); if (sa) ctx.rotate(sa); }
+  if (f._leap && typeof leapLift === 'function') leapLift(f);      // (fx.js: a jump lifts the figure off its shadow)
   if (f.inv > 0 && Math.sin(time * 30) > 0) alpha *= .45;
   if (f.form === 'spirit') alpha *= .55;
   ctx.globalAlpha = alpha;
@@ -45,6 +47,8 @@ function drawFighter(f, alpha) {
   if (B(f, 'reflect') || B(f, 'sand') || B(f, 'inv') || B(f, 'counter') || B(f, 'guard')) { ctx.strokeStyle = B(f, 'sand') ? '#d8b46a' : '#ffffff'; ctx.globalAlpha = alpha * .6; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, -30, 38, 0, 6.3); ctx.stroke(); ctx.globalAlpha = alpha; }
   if (B(f, 'block') || st.fsh) { ctx.strokeStyle = st.fsh && !B(f, 'block') ? '#ff7a1a' : '#ffd34d'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(0, -30, 44, f.aim - 1.1, f.aim + 1.1); ctx.stroke(); }
   if (f.form === 'bat' || f.form === 'dove') {
+    if (f.form === 'dove' && typeof drawDoveFormArt === 'function') { drawDoveFormArt(ctx, col, f); ctx.restore(); ctx.globalAlpha = 1; return; }     // (fx.js: the magician's pigeon)
+    if (f.form === 'bat' && typeof drawBatFormArt === 'function') { drawBatFormArt(ctx, col); ctx.restore(); ctx.globalAlpha = 1; return; }     // (Stickseum's own bat, from fx.js)
     const w = Math.sin(time * 22) * 10; ctx.translate(0, -34); ctx.fillStyle = f.form === 'bat' ? '#2a0a14' : '#f4f4f4'; ctx.strokeStyle = col; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-26, -8 - w); ctx.lineTo(-14, 6); ctx.lineTo(0, 10); ctx.lineTo(14, 6); ctx.lineTo(26, -8 - w); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.beginPath(); ctx.arc(0, 0, 8, 0, 6.3); ctx.fill(); ctx.stroke();
@@ -52,6 +56,7 @@ function drawFighter(f, alpha) {
     ctx.restore(); ctx.globalAlpha = 1; return;
   }
   ctx.save(); ctx.scale(1.15, 1.15);
+  if (typeof haraldCtx === 'function') haraldCtx(f);
   drawStick(ctx, f.h.id, col, f.aim, f.bob, f.swing > 0 ? 1 - f.swing / .22 : 0, time, f.cos);
   ctx.restore(); ctx.globalAlpha = alpha;
   if (f.h.id === 'pel') for (let i = 0; i < st.dr; i++) { const an = time * 2 + i * 6.283 / st.dr, x = Math.cos(an) * 34, y = Math.sin(an) * 22 - 56; ctx.fillStyle = '#2b3140'; ctx.strokeStyle = '#7df0ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, 9, 5, 0, 0, 6.3); ctx.fill(); ctx.stroke(); }
@@ -68,8 +73,9 @@ function drawBars(f) {
   if (f.isPlayer) { const h = f.h.id; if (h === 'gambler') label += ' · 칩 ' + (st.chip || 0); if (h === 'vacuum') label += ' · 스택 ' + (st.stack || 0); if (h === 'pizarro') label += ' · ' + ((st.pz || 0) + 1) + '단계'; if (h === 'pel') label += ' · 드론 ' + st.dr; if (h === 'flamethrower') label += st.over > 0 ? ' · 과열' : ' · 열 ' + Math.round((st.heat || 0) / 9 * 100) + '%'; }
   ctx.strokeText(label, f.x, y - 6); ctx.fillText(label, f.x, y - 6);
   ctx.fillStyle = '#0c0e13'; ctx.beginPath(); ctx.roundRect(x - 2, y - 2, w + 4, 11, 4); ctx.fill();
+  hpGhost(f, x, y, w);      // (fx.js: white trail of the hp just lost)
   ctx.fillStyle = st.morph ? '#7ef0a8' : (B(f, 'infect') || st.pn) ? '#8dff7c' : col; ctx.beginPath(); ctx.roundRect(x, y, Math.max(0, w * f.hp / f.mhp), 7, 3); ctx.fill();
-  if (f.shield > 0) { ctx.fillStyle = '#7ef0a8'; ctx.fillRect(x, y - 4, w * Math.min(1, f.shield / 50), 2); }
+  if (f.shield > 0) { ctx.fillStyle = '#7ef0a8'; ctx.fillRect(x, y - 4, w * Math.min(1, f.shield / (50 * SX)), 2); }
   let s = '';
   if (B(f, 'stun')) s = '기절'; else if (B(f, 'charm')) s = '조종'; else if (B(f, 'root')) s = '속박'; else if (B(f, 'mute')) s = '봉인'; else if (B(f, 'blind')) s = '실명'; else if (st.pn) s = '독 ' + st.pn; else if (B(f, 'infect')) s = '감염'; else if (B(f, 'slow')) s = '둔화';
   if (s) { ctx.font = '700 12px "IBM Plex Sans KR", sans-serif'; ctx.fillStyle = '#ffd34d'; ctx.strokeText(s, f.x, y + 22); ctx.fillText(s, f.x, y + 22); }
@@ -83,6 +89,7 @@ function drawMinion(m) {
   if (k === 'guard' || k === 'clone' || k === 'body' || k === 'doll') {
     ctx.translate(0, 16); if (k === 'body') ctx.globalAlpha = .75; const sc = k === 'doll' ? .55 : k === 'guard' ? .95 : 1.15; ctx.scale(sc, sc);
     drawStick(ctx, k === 'guard' ? 'guard' : k === 'clone' ? 'tionis' : k === 'body' ? 'medium' : 'puppeteer', k === 'body' ? '#8890a4' : col, m.aim || 0, m.bob || 0, m.sw && time - m.sw < .22 ? (time - m.sw) / .22 : 0, time);
+  } else if (k === 'sunflower' && typeof drawSunflower === 'function') { drawSunflower(m);      // (정원사's turret: gardener.js)
   } else if (k === 'turret') { ctx.fillStyle = '#3a3f4a'; ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, 18, 0, 6.3); ctx.fill(); ctx.stroke(); ctx.rotate(m.aim || 0); ctx.fillStyle = '#16181f'; ctx.fillRect(0, -7, 34, 14); }
   else if (k === 'dragon' && typeof drawFireDragon === 'function') { ctx.restore(); drawDragonMinion(m); return; }
   else if (k === 'dragon') { const w = Math.sin(time * 9) * 16; ctx.fillStyle = '#b3261e'; ctx.strokeStyle = '#ffb347'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(-60, -30 - w); ctx.lineTo(-30, 10); ctx.lineTo(0, 24); ctx.lineTo(30, 10); ctx.lineTo(60, -30 - w); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.arc(0, -8, 16, 0, 6.3); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(-6, -10, 3, 0, 6.3); ctx.arc(6, -10, 3, 0, 6.3); ctx.fill(); }
@@ -124,6 +131,7 @@ function drawTiles(c, c0, c1, r0, r1, pass) {
     const t = tile(cc, r), x = cc * T, y = r * T;
     if (pass === 0) {
       c.fillStyle = (r + cc) % 2 ? TH.f1 : TH.f2; c.fillRect(x, y, T + 1, T + 1);
+      if (isSpecialTile(t)) drawSpecialTile(c, t, x, y, cc, r);
       if (t === 'w') { c.fillStyle = TH.wa; c.fillRect(x, y, T + 1, T + 1); c.strokeStyle = TH.wa2; c.lineWidth = 3; c.lineCap = 'round';
         const o = Math.sin(time * 2 + cc + r) * 5; c.beginPath(); c.moveTo(x + 12 + o, y + 22); c.lineTo(x + 30 + o, y + 22); c.moveTo(x + 32 - o, y + 44); c.lineTo(x + 52 - o, y + 44); c.stroke(); }
     } else if (pass === 1 && t === '#') {
@@ -131,6 +139,7 @@ function drawTiles(c, c0, c1, r0, r1, pass) {
       if (tile(cc, r + 1) !== '#') { c.fillStyle = tmp ? '#2b6f8a' : TH.ws; c.fillRect(x, y + T - 14, T + 1, 14); }
       c.fillStyle = tmp ? '#56b4e9' : TH.wt; c.fillRect(x, y - 14, T + 1, T);
       c.strokeStyle = tmp ? '#2b6f8a' : TH.ws; c.globalAlpha = .55; c.lineWidth = 3; c.strokeRect(x + 7, y - 7, T - 14, T - 14); c.globalAlpha = 1;
+    } else if (pass === 2 && t === 'G' && typeof drawPlantTile === 'function') { drawPlantTile(c, cc, r, x, y);      // (a bush planted by 정원사: gardener.js)
     } else if (pass === 2 && t === 'g') {
       const sd = (cc * 7 + r * 13) % 5;
       c.fillStyle = TH.b1; c.beginPath(); c.roundRect(x - 3, y - 9, T + 6, T + 6, 18); c.fill();
@@ -139,13 +148,15 @@ function drawTiles(c, c0, c1, r0, r1, pass) {
   }
 }
 function renderMapPreview(i, canvas) {
-  const c = canvas.getContext('2d'), sm = MAP, st = TH, tw = new Map(tempWalls);
+  const c = canvas.getContext('2d'), sm = MAP, st = TH, tw = new Map(tempWalls), sz = [COLS, ROWS, WW, WH];
   MAP = MAPS[i].grid; TH = MAPS[i].th; tempWalls.clear();
+  ROWS = MAP.length; COLS = MAP[0].length; WW = COLS * T; WH = ROWS * T;      // maps come in two sizes: draw with this map's own size, then put the loaded one back
   c.setTransform(canvas.width / WW, 0, 0, canvas.height / WH, 0, 0);
   for (let p = 0; p < 3; p++) drawTiles(c, 0, COLS - 1, 0, ROWS - 1, p);
-  for (let t = 0; t < 2; t++) { c.fillStyle = TC(t); c.globalAlpha = .55; c.beginPath(); c.roundRect((t ? COLS - 2 : 1) * T + 6, 6 * T, T - 12, 5 * T, 16); c.fill(); c.globalAlpha = 1; }
-  MAP = sm; TH = st; for (const [k, v] of tw) tempWalls.set(k, v);
+  if (!MAPS[i].big) for (let t = 0; t < 2; t++) { c.fillStyle = TC(t); c.globalAlpha = .55; c.beginPath(); c.roundRect((t ? COLS - 2 : 1) * T + 6, 6 * T, T - 12, 5 * T, 16); c.fill(); c.globalAlpha = 1; }
+  MAP = sm; TH = st; for (const [k, v] of tw) tempWalls.set(k, v); [COLS, ROWS, WW, WH] = sz;
 }
+let specT = null;
 function render() {
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.fillStyle = '#0c0e13'; ctx.fillRect(0, 0, W, H);
@@ -154,17 +165,24 @@ function render() {
   else {
     cam.s = Math.min(W, H) / (10.5 * T) * (H > W * 1.15 && W <= 600 ? 1.2 : 1);   // upright phone: zoom in a little so the fighters are bigger
     const hw = W / 2 / cam.s, hh = H / 2 / cam.s;
-    cam.x = WW <= hw * 2 ? WW / 2 : clamp(me.x, hw, WW - hw);
-    cam.y = WH <= hh * 2 ? WH / 2 : clamp(me.y, hh, WH - hh);
+    let ft = me;      // no respawn (solo): once I am out the camera follows somebody who is still alive
+    if (curMode === 'solo' && player.dead && state === 'play') {
+      if (!specT || specT.dead || !fighters.includes(specT)) specT = fighters.filter(f => !f.dead).sort((a, b) => Math.hypot(a.x - cam.x, a.y - cam.y) - Math.hypot(b.x - cam.x, b.y - cam.y))[0] || null;
+      if (specT) ft = specT;
+    } else specT = null;
+    if (typeof hatCamTarget === 'function') ft = hatCamTarget(ft);      // (fx.js: ride along with 마술사's thrown hat)
+    cam.x = WW <= hw * 2 ? WW / 2 : clamp(ft.x, hw, WW - hw);
+    cam.y = WH <= hh * 2 ? WH / 2 : clamp(ft.y, hh, WH - hh);
   }
   const sh = lowFx() ? 0 : shake;
   ctx.translate(W / 2 + rnd(-sh, sh), H / 2 + rnd(-sh, sh)); ctx.scale(cam.s, cam.s); ctx.translate(-cam.x, -cam.y);
   const c0 = Math.max(0, Math.floor((cam.x - W / 2 / cam.s) / T) - 1), c1 = Math.min(COLS - 1, Math.ceil((cam.x + W / 2 / cam.s) / T));
   const r0 = Math.max(0, Math.floor((cam.y - H / 2 / cam.s) / T) - 1), r1 = Math.min(ROWS - 1, Math.ceil((cam.y + H / 2 / cam.s) / T));
   drawTiles(ctx, c0, c1, r0, r1, 0);
-  for (let t = 0; t < 2; t++) { ctx.fillStyle = TC(t); ctx.globalAlpha = .18; ctx.beginPath(); ctx.roundRect((t ? COLS - 2 : 1) * T + 6, 6 * T, T - 12, 5 * T, 16); ctx.fill(); ctx.globalAlpha = 1; }
+  if (curMode !== 'solo' || menu) for (let t = 0; t < 2; t++) { ctx.fillStyle = TC(t); ctx.globalAlpha = .18; ctx.beginPath(); ctx.roundRect((t ? COLS - 2 : 1) * T + 6, 6 * T, T - 12, 5 * T, 16); ctx.fill(); ctx.globalAlpha = 1; }
   for (const z of zones) {
     if (z.hidden && z.team !== VIEW && !menu) continue;
+    if (typeof drawZoneArt === 'function' && drawZoneArt(z, menu)) continue;      // (Stickseum's own zone pictures, from fx.js)
     ctx.globalAlpha = (z.op || .28) * (z.kind === 'fire' ? .7 + Math.sin(time * 20 + z.x) * .3 : 1) * Math.min(1, z.t * 3);
     ctx.fillStyle = z.col; ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, 6.3); ctx.fill();
     ctx.globalAlpha = Math.min(1, z.t * 3) * .8; ctx.strokeStyle = z.key ? TC(z.team) : z.col; ctx.lineWidth = 2; ctx.stroke(); ctx.globalAlpha = 1;
@@ -181,7 +199,7 @@ function render() {
     drawFighter(f, B(f, 'stealth') && !menu ? .4 : 1);
   }
   drawFleet();
-  for (const b of bullets) if (!drawShot(b)) drawBullet(b);
+  for (const b of bullets) if (!(b.shape === 'seed' && typeof drawSeedShot === 'function' && drawSeedShot(b)) && !drawShot(b)) drawBullet(b);
   { const now = performance.now(); drawSwings(Math.min(.05, (now - (render.last || now)) / 1000)); render.last = now; }
   drawTiles(ctx, c0, c1, r0, r1, 1);
   drawTiles(ctx, c0, c1, r0, r1, 2);
@@ -189,13 +207,14 @@ function render() {
   for (const m of minions) if (m.kind === 'dragon' || m.kind === 'crow') drawMinion(m);
   for (const p of parts) { ctx.globalAlpha = clamp(p.life / p.max, 0, 1); ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.3); ctx.fill(); }
   drawParticles();
+  if (typeof drawGardenTop === 'function') drawGardenTop();      // (gardener.js: leaves, pollen, forest burst, vines round the feet)
   for (const g of rings) { const k = 1 - g.life / g.max; ctx.globalAlpha = 1 - k; ctx.strokeStyle = g.color; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(g.x, g.y, g.r * (.4 + .6 * k), 0, 6.3); ctx.stroke(); }
   ctx.globalAlpha = 1;
   if (!menu) {
     for (const f of fighters) if (!f.dead && visibleTo(f, VIEW)) drawBars(f);
     for (const f of fighters) if (f && !f.dead && visibleTo(f, VIEW)) { drawEmoteBubble(f); drawChatBubble(f); }
     ctx.textAlign = 'center';
-    for (const t of texts) { ctx.font = t.small ? '700 15px "IBM Plex Sans KR", sans-serif' : '700 20px Rajdhani, sans-serif'; ctx.globalAlpha = clamp(t.life / .4, 0, 1); ctx.lineWidth = 4; ctx.strokeStyle = '#0c0e13'; ctx.strokeText(t.txt, t.x, t.y); ctx.fillStyle = t.color; ctx.fillText(t.txt, t.x, t.y); }
+    for (const t of texts) { if (drawDmgText(t)) continue; ctx.font = t.small ? '700 15px "IBM Plex Sans KR", sans-serif' : '700 20px Rajdhani, sans-serif'; ctx.globalAlpha = clamp(t.life / .4, 0, 1); ctx.lineWidth = 4; ctx.strokeStyle = '#0c0e13'; ctx.strokeText(t.txt, t.x, t.y); ctx.fillStyle = t.color; ctx.fillText(t.txt, t.x, t.y); }
     ctx.globalAlpha = 1;
   }
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -203,39 +222,57 @@ function render() {
     const sx = (player.x - cam.x) * cam.s + W / 2, sy = (player.y + BODY - cam.y) * cam.s + H / 2, g = ctx.createRadialGradient(sx, sy, 60 * cam.s, sx, sy, 190 * cam.s);
     g.addColorStop(0, 'rgba(12,14,19,0)'); g.addColorStop(1, 'rgba(12,14,19,.96)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   }
+  if (typeof drawScreenVeil === 'function') drawScreenVeil();      // (fx.js: the dark picture while trapped in an enemy 카다스's lump)
+  drawEnvOverlay();
   if (!lowFx()) drawSamScreen();
-  if (state === 'play') for (const s of [stickM, stickA]) {
-    if (!s) continue;
-    ctx.fillStyle = 'rgba(232,234,240,.12)'; ctx.beginPath(); ctx.arc(s.ox, s.oy, 52, 0, 6.3); ctx.fill();
-    ctx.fillStyle = s === stickA ? 'rgba(255,211,77,.7)' : 'rgba(232,234,240,.55)'; ctx.beginPath(); ctx.arc(s.ox + s.dx * 48, s.oy + s.dy * 48, 24, 0, 6.3); ctx.fill();
+  /* phones: both sticks are always on screen at their home spots (move bottom left, attack bottom right); a held stick is drawn where the thumb grabbed it */
+  if (state === 'play' && touchUi()) {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    for (const atk of [false, true]) {
+      const s = atk ? stickA : stickM, hm = stickHome(atk), ox = s ? s.ox : hm.x, oy = s ? s.oy : hm.y, on = !!s;
+      ctx.fillStyle = on ? 'rgba(232,234,240,.16)' : 'rgba(232,234,240,.09)'; ctx.beginPath(); ctx.arc(ox, oy, STICK_R, 0, 6.3); ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = atk ? 'rgba(255,211,77,' + (on ? .7 : .4) + ')' : 'rgba(232,234,240,' + (on ? .5 : .28) + ')'; ctx.beginPath(); ctx.arc(ox, oy, STICK_R, 0, 6.3); ctx.stroke();
+      ctx.fillStyle = atk ? 'rgba(255,211,77,' + (on ? .8 : .5) + ')' : 'rgba(232,234,240,' + (on ? .6 : .36) + ')'; ctx.beginPath(); ctx.arc(ox + (s ? s.dx : 0) * 48, oy + (s ? s.dy : 0) * 48, 25, 0, 6.3); ctx.fill();
+    }
   }
 }
+/* touch layout: on when the device has a coarse pointer or a touch has been seen */
+const STICK_R = 54, coarseMq = matchMedia('(pointer:coarse)');
+let safeIn = { l: 0, r: 0, b: 0 };
+function readSafe() { const p = $('safeProbe'); if (!p) return; const cs = getComputedStyle(p); safeIn = { l: parseFloat(cs.paddingLeft) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0 }; }
+const touchUi = () => touchMode || coarseMq.matches;
+const stickHome = atk => ({ x: atk ? W - 96 - Math.max(0, safeIn.r - 8) : 96 + Math.max(0, safeIn.l - 8), y: H - 96 - safeIn.b });
+function touchUiSync() { document.body.classList.toggle('touchUi', touchUi()); }
+addEventListener('resize', () => { readSafe(); touchUiSync(); });
 
 /* ---------- HUD ---------- */
+const SX = typeof STAT_X === 'number' ? STAT_X : 1;      // the engine's multiplier for health, damage, healing and shields (1 until the engine defines it)
 const $ = id => document.getElementById(id);
 const hud = $('hud'), feed = $('feed'), notice = $('notice'), ultBtn = $('ultBtn'), dashBtn = $('dashBtn'), skBtn = [$('sk1Btn'), $('sk2Btn')], soundBtn = $('soundBtn');
 const nameOf = (d, f) => typeof d.name === 'function' ? d.name(f || { st: {} }) : d.name;
 let lastHud = '', ovtSeen = false, ovtUntil = 0;
 function updateHud() {
   const p = player; if (!p) return;
+  soloOutCheck(); if (soloOutShown) return;
   const tl = Math.max(0, Math.ceil(timeLeft)), c = cdInfo(p), pc = (v, m) => Math.round(clamp(1 - v / (m || 1), 0, 1) * 100);
   const up = pc(c.u, c.uM), dp = pc(c.d, c.dM), sp = [0, 1].map(i => pc(c.s[i], c.sM[i])), sn = c.sn;
-  const dead = p.dead ? Math.ceil(p.respawnT) : 0, mine = score[VIEW], theirs = score[1 - VIEW];
-  const ot = typeof overtime !== 'undefined' && !!overtime;
+  const oc = modeOutcome(), solo = curMode === 'solo', dead = p.dead ? Math.ceil(p.respawnT) : 0, mine = oc.a, theirs = oc.b;      // solo: my kills and how many are left
+  const ot = inOvertime();
   if (ot && !ovtSeen) ovtUntil = performance.now() + 2600; ovtSeen = ot;
-  const ovtBanner = ot && !dead && performance.now() < ovtUntil, di = dead ? deathInfo : null;
-  const key = [mine, theirs, tl, up, dp, sp, sn, c.un, dead, touchMode, ot, ovtBanner, di ? (di.by ? fighters.indexOf(di.by) : -1) + di.src : ''].join();
+  const ovtBanner = ot && !dead && performance.now() < ovtUntil, kl = dead ? p.killer : null, di = dead ? (kl ? { by: kl.i >= 0 ? fighters[kl.i] || null : null, src: kl.src || '' } : deathInfo) : null;
+  const key = [solo, mine, theirs, tl, up, dp, sp, sn, c.un, dead, touchUi(), ot, ovtBanner, di ? (di.by ? fighters.indexOf(di.by) : -1) + di.src : ''].join();
   if (key === lastHud) return; lastHud = key;
-  $('sb').textContent = mine; $('sr').textContent = theirs;
+  $('sb').textContent = mine; $('sr').textContent = theirs; $('sbL').textContent = solo ? '킬' : '블루'; $('srL').textContent = solo ? '생존' : '레드';
   $('timer').textContent = ot ? '연장전' : Math.floor(tl / 60) + ':' + String(tl % 60).padStart(2, '0');
   $('timer').classList.toggle('hot', ot || tl <= 15);
   ultBtn.style.setProperty('--p', up); ultBtn.classList.toggle('ready', up >= 100);
-  $('ultName').textContent = c.un; $('ultHint').textContent = up >= 100 ? (touchMode ? '궁극기' : 'R') : Math.ceil(c.u) + '초';
-  dashBtn.style.setProperty('--p', dp); dashBtn.classList.toggle('ready', dp >= 100); $('dashHint').textContent = touchMode ? '' : 'Q';
-  for (let i = 0; i < 2; i++) { skBtn[i].style.setProperty('--p', sp[i]); skBtn[i].classList.toggle('ready', sp[i] >= 100); $('sk' + (i + 1) + 'Name').textContent = sn[i]; $('sk' + (i + 1) + 'Hint').textContent = sp[i] >= 100 ? (touchMode ? (i + 1) + '스킬' : 'FE'[i]) : Math.ceil(c.s[i]) + '초'; }
+  $('ultName').textContent = c.un; $('ultHint').textContent = up >= 100 ? (touchUi() ? '궁극기' : 'R') : Math.ceil(c.u) + '초';
+  dashBtn.style.setProperty('--p', dp); dashBtn.classList.toggle('ready', dp >= 100); $('dashHint').textContent = touchUi() ? '' : 'Q';
+  for (let i = 0; i < 2; i++) { skBtn[i].style.setProperty('--p', sp[i]); skBtn[i].classList.toggle('ready', sp[i] >= 100); $('sk' + (i + 1) + 'Name').textContent = sn[i]; $('sk' + (i + 1) + 'Hint').textContent = sp[i] >= 100 ? (touchUi() ? (i + 1) + '스킬' : 'FE'[i]) : Math.ceil(c.s[i]) + '초'; }
   notice.hidden = !dead && !ovtBanner; notice.textContent = '';
   if (dead) {
-    notice.append(dead + '초 뒤에 다시 나갑니다');
+    const mdN = typeof modeNow === 'function' ? modeNow() : null;      // no countdown once a no-respawn match (duel) is decided
+    if (!(mdN && mdN.respawn === false && score.some(v => v >= mdN.win))) notice.append(dead + '초 뒤에 다시 나갑니다');
     if (di && (di.by || di.src)) {
       const kb = document.createElement('span'), sm = document.createElement('small'); kb.className = 'kb';
       if (di.by) { const b = document.createElement('b'); b.className = di.by.team === VIEW ? 'b' : 'r'; b.textContent = di.by.nick || di.by.h0.name; kb.append('처치 ', b); sm.textContent = [di.by.nick ? di.by.h0.name : '', di.src].filter(Boolean).map(s => ' · ' + s).join(''); }
@@ -297,22 +334,47 @@ tapBtnUi($('setBtn'), () => setOpen(true));
 addEventListener('keydown', e => { if (setEl.hidden) return; if (e.code === 'Escape') setOpen(false); e.stopPropagation(); }, true);   // the game does not see keys while the window is open
 
 /* ---------- lobby ---------- */
-try { const s = JSON.parse(localStorage.getItem('seumArena') || '{}'); if (HEROES[s.c]) chosen = s.c; if (s.m >= -1 && s.m < MAPS.length) mapChoice = s.m | 0; if (s.l && typeof s.l === 'object') loadouts = s.l; } catch (e) {}
-const savePrefs = () => { try { localStorage.setItem('seumArena', JSON.stringify({ c: chosen, m: mapChoice, l: loadouts })); } catch (e) {} };
+/* game modes: the engine's MODES registry ({id,name,size,maps,ready}) when it exists; until then the same four, with only the current rules playable */
+const MODE_FALLBACK = [{ id: 'team', name: '팀 아웃', size: '3v3' }, { id: 'solo', name: '원 레프트', size: '6명', ready: false }, { id: 'flag', name: '캡쳐 플래그', size: '3v3', ready: false }, { id: 'duel', name: '듀얼 배틀', size: '1v1', ready: false }];
+const MODE_LIST = typeof MODES !== 'undefined' && Array.isArray(MODES) && MODES.length ? MODES : MODE_FALLBACK;
+const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], duel: ['mi-m-duel', '#b48cff'] };
+let modeSel = typeof modeChoice === 'string' ? modeChoice : MODE_LIST[0].id, modeView = modeSel;
+const modeOk = m => !!m && m.ready !== false;
+const modeCur = () => MODE_LIST.find(m => m.id === modeSel && modeOk(m)) || MODE_LIST.find(modeOk) || MODE_LIST[0];
+const modeMapsOf = m => { const a = (m.maps || []).filter(i => Number.isInteger(i) && MAPS[i]); return a.length ? a : MAPS.map((x, i) => i); };
+const modeMaps = () => modeMapsOf(modeCur());
+let mapByMode = {};      // each mode remembers its own map choice (-1 = random); the current mode's is mapChoice
+const modeMapOf = m => { if (m.id === modeSel) return mapChoice; const i = mapByMode[m.id]; return Number.isInteger(i) && modeMapsOf(m).includes(i) ? i : -1; };
+function modeIcon(el, m) {
+  const lk = MODE_LOOK[m.id] || ['mi-m-team', '#fff'], NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg'), use = document.createElementNS(NS, 'use');
+  use.setAttribute('href', '#' + lk[0]); svg.setAttribute('aria-hidden', 'true'); svg.append(use);
+  el.textContent = ''; el.style.setProperty('--mc', lk[1]); el.append(svg); return el;
+}
+/* keeps the engine's choice, the stored choice and the map choice in step with the mode */
+function modeApply() {
+  modeSel = modeCur().id;
+  if (typeof modeChoice !== 'undefined') modeChoice = modeSel;
+  if (mapChoice >= 0 && !modeMaps().includes(mapChoice)) mapChoice = -1;
+}
+try { const s = JSON.parse(localStorage.getItem('seumArena') || '{}'); if (HEROES[s.c]) chosen = s.c; if (s.m >= -1 && s.m < MAPS.length) mapChoice = s.m | 0; if (s.l && typeof s.l === 'object') loadouts = s.l; if (typeof s.g === 'string') modeSel = s.g; if (s.mm && typeof s.mm === 'object') mapByMode = s.mm; } catch (e) {}
+const savePrefs = () => { mapByMode[modeSel] = mapChoice; try { localStorage.setItem('seumArena', JSON.stringify({ c: chosen, m: mapChoice, l: loadouts, g: modeSel, mm: mapByMode })); } catch (e) {} };
 const KIND_LABEL = { melee: '근접', shot: '원거리', flame: '방사', cone: '흡입' }, SK_LABEL = { hit: '공격', move: '이동', buff: '강화' };
 function attackText(h) {
+  const SX = (typeof STAT_X === 'number' ? STAT_X : 1) * (h.xm || 1), rd = v => Math.round(v);      // h.xm: this character's own damage multiplier
   const tiles = (h.range / T).toFixed(1) + '칸';
-  if (h.type === 'melee') return '데미지 ' + h.dmg + ' · 쿨타임 ' + h.cd + '초 · 근접 사거리 ' + tiles + (h.w.thrust ? ' · 앞으로 찌르기' : ' · 넓게 휘두르기') + (h.w.kbMult ? ' · 크게 밀쳐 냄' : '');
-  if (h.type === 'flame') return '누르고 있는 동안 화염 방사 · 초당 31 피해 · 사거리 ' + tiles + ' · 쏜 시간이 합쳐서 9초가 되면 2초간 과열';
-  if (h.type === 'cone') return '데미지 ' + h.dmg + ' · 쿨타임 ' + h.cd + '초 · 사거리 ' + tiles;
-  if (h.id === 'tell') return '꾹 눌렀다 놓으면 발사 · 데미지 1~64 · 최대 사거리 ' + tiles;
-  return '데미지 ' + (h.id === 'gambler' ? '4~36' : h.id === 'bow' ? '10~36' : h.dmg) + (h.count > 1 ? ' × ' + h.count + '발' : '') + (h.burst > 1 ? ' · ' + h.burst + '연발' : '') + ' · 쿨타임 ' + h.cd + '초 · 사거리 ' + tiles + (h.splash ? ' · 폭발 범위 피해' : '') + (h.pierce ? ' · 한 명 관통' : '');
+  if (h.type === 'melee') return '데미지 ' + rd(h.dmg * SX) + ' · 쿨타임 ' + h.cd + '초 · 근접 사거리 ' + tiles + (h.w.thrust ? ' · 앞으로 찌르기' : ' · 넓게 휘두르기') + (h.w.kbMult ? ' · 크게 밀쳐 냄' : '');
+  if (h.type === 'flame') return '누르고 있는 동안 화염 방사 · 초당 ' + rd(FLAME_DIRECT_DPS * SX) + ' 피해 · 사거리 ' + tiles + ' · 쏜 시간이 합쳐서 9초가 되면 2초간 과열';
+  if (h.type === 'cone') return '데미지 ' + rd(h.dmg * SX) + ' · 쿨타임 ' + h.cd + '초 · 사거리 ' + tiles;
+  if (h.id === 'tell') return '꾹 눌렀다 놓으면 발사 · 데미지 ' + rd(1 * SX) + '~' + rd(64 * SX) + ' · 최대 사거리 ' + tiles;
+  return '데미지 ' + (h.id === 'gambler' ? rd(4 * SX) + '~' + rd(36 * SX) : h.id === 'bow' ? rd(10 * SX) + '~' + rd(36 * SX) : rd(h.dmg * SX)) + (h.count > 1 ? ' × ' + h.count + '발' : '') + (h.burst > 1 ? ' · ' + h.burst + '연발' : '') + ' · 쿨타임 ' + h.cd + '초 · 사거리 ' + tiles + (h.splash ? ' · 폭발 범위 피해' : '') + (h.pierce ? ' · 한 명 관통' : '');
 }
 const lobby = $('lobby');
+modeApply();
 function showScreen(id) {
+  if (id === 'roomScreen') { const m = modeCur(), el = $('roomMode'), ic = document.createElement('span'), nm = document.createElement('span'); ic.className = 'mIco'; nm.textContent = m.name; el.textContent = ''; el.append(modeIcon(ic, m), nm); }
   for (const s of lobby.querySelectorAll('.card')) s.classList.toggle('active', s.id === id);
-  const menu = id === 'menuScreen';
-  $('brandDisplay').classList.toggle('show', menu); $('lobbyChar').classList.toggle('show', menu); $('acct').hidden = !menu;
+  const menu = id === 'menuScreen'; if (id === 'weaponScreen') markMastery();
+  $('brandDisplay').classList.toggle('show', menu); $('lobbyChar').classList.toggle('show', menu); $('acct').hidden = !menu; $('karma').hidden = !menu; $('quest').hidden = !menu; $('topRight').hidden = !menu;
   if (menu) { updatePick(); lobbyCharPlace(); }
 }
 /* the lobby figure stands on the bottom-left corner of the lowest menu button: its feet on the button's bottom edge, its body just left of the corner */
@@ -345,10 +407,12 @@ function lobbyCharPlace() {
 addEventListener('resize', () => lobbyCharPlace());
 function updatePick() {
   const el = $('lobbyPick'), h = HEROES[chosen], lo = loadoutOf(chosen); el.textContent = '';
-  const b1 = document.createElement('b'), b2 = document.createElement('b'), b3 = document.createElement('b');
-  b1.textContent = mapChoice < 0 ? '무작위' : MAPS[mapChoice].name; b2.textContent = h.name; b3.textContent = lo.map(n => nameOf(h.skills.find(s => s.n === n))).join(' / ');
-  el.append('맵 ', b1, ' · 캐릭터 ', b2, document.createElement('br'), '스킬 ', b3);
-  $('lobbyCharName').textContent = h.name;
+  const b2 = document.createElement('b'), b3 = document.createElement('b'), m = modeCur();
+  b2.textContent = h.name; b3.textContent = lo.map(n => nameOf(h.skills.find(s => s.n === n))).join(' / ');
+  el.append('캐릭터 ', b2, ' · 스킬 ', b3);
+  modeIcon($('modeChipIco'), m); $('modeChipName').textContent = m.name;
+  $('modeChipMeta').textContent = (m.size ? m.size + ' · ' : '') + (mapChoice < 0 ? '무작위 맵' : MAPS[mapChoice].name);
+  { const m = masteryOf(chosen), nm = $('lobbyCharName'), rk = document.createElement('small'); nm.textContent = h.name; rk.textContent = m.name; rk.style.color = m.col; nm.append(rk); }
 }
 function drawPortrait(canvas, id, breathe) {
   const c = canvas.getContext('2d'), k = canvas.width / 200;
@@ -371,12 +435,15 @@ function buildChars() {
     const cvs = document.createElement('canvas'); drawIcon(cvs, id);
     const n = document.createElement('div'); n.className = 'wn'; n.textContent = h.name;
     const k = document.createElement('div'); k.className = 'wk'; k.textContent = h.wname + ' · ' + KIND_LABEL[h.type];
-    b.append(cvs, n, k);
+    const m = document.createElement('div'), mb = document.createElement('span'), mf = document.createElement('i'); m.className = 'wm'; mb.className = 'wmBar'; mb.append(mf); m.append(document.createElement('b'), mb);
+    b.append(cvs, n, k, m);
     b.addEventListener('click', () => openDetail(id));
     grid.append(b);
   }
-  markSel();
+  markSel(); markMastery();
 }
+/* every card of the list: mastery rank with its bar */
+function markMastery() { for (const el of $('weaponGrid').children) { const m = masteryOf(el.dataset.wid); el.style.setProperty('--mc', m.col); el.querySelector('.wm b').textContent = m.name; el.querySelector('.wmBar i').style.width = Math.round(m.into / m.need * 100) + '%'; } }
 function markSel() { for (const el of $('weaponGrid').children) el.classList.toggle('sel', el.dataset.wid === chosen); }
 function renderLoadout(id) {
   const h = HEROES[id], box = $('weaponLoadout'), lo = loadoutOf(id); box.textContent = '';
@@ -406,8 +473,13 @@ function openDetail(id) {
   const d = $('weaponDetail'); d.textContent = '';
   const line = (label, text) => { const p = document.createElement('p'), s = document.createElement('strong'); s.textContent = label; p.append(s, text); return p; };
   d.append(line('무기', h.wname + ' · ' + attackText(h)), line('패시브', h.p[0] + ' · ' + h.p[1]), line('궁극기', h.ult.name + ' · ' + h.ult.d + (id === 'medium' ? '' : ' (쿨타임 ' + ULT_CD + '초)')), line('체력', h.hp + ' · 대쉬 쿨타임 ' + (h.dashCd ? h.dashCd({ st: {}, b: {} }) : 1.5) + '초'));
+  { /* mastery of this character: rank, bar, points */
+    const m = masteryOf(id), row = document.createElement('div'), nm = document.createElement('b'), bar = document.createElement('span'), fl = document.createElement('i'), num = document.createElement('small');
+    row.className = 'mRow'; row.style.setProperty('--mc', m.col); nm.textContent = m.name; fl.style.width = Math.round(m.into / m.need * 100) + '%'; bar.className = 'mBar'; bar.append(fl); num.textContent = m.top ? m.mp.toLocaleString('en-US') : m.into + ' / ' + m.need;
+    row.append(nm, bar, num); d.prepend(row);
+  }
   renderLoadout(id);
-  $('weaponLockBtn').textContent = id === chosen ? '확인 (스킬은 바로 저장돼요)' : '이 캐릭터로 정하기'; $('weaponLockBtn').disabled = false;
+  $('weaponLockBtn').textContent = id === chosen ? '확인' : '이 캐릭터로 정하기'; $('weaponLockBtn').disabled = false;
   $('weaponScreen').scrollTop = 0;
 }
 function closeDetail() { viewing = null; $('weaponScreen').classList.remove('wDetail'); }
@@ -420,30 +492,159 @@ $('weaponBackListBtn').addEventListener('click', closeDetail);
 $('weaponBrowseBackBtn').addEventListener('click', () => { closeDetail(); showScreen('menuScreen'); });
 $('goCharBtn').addEventListener('click', () => { showScreen('weaponScreen'); openDetail(chosen); });       // one button: the picked character's skills first, the list one tap away
 
-let mapIdx = 0;
+let mapIdx = 0, mapList = [-1];        // mapList: -1 (random) followed by the maps of the picked mode
 function showMap() {
-  const cvp = $('mapCarouselPreview'), c = cvp.getContext('2d');
+  const cvp = $('mapCarouselPreview'), c = cvp.getContext('2d'), mi = mapList[mapIdx], ms = mapList.slice(1);
   c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cvp.width, cvp.height);
-  if (mapIdx === 0) {
-    for (let i = 0; i < MAPS.length; i++) { const t = document.createElement('canvas'); t.width = 250; t.height = 170; renderMapPreview(i, t); c.drawImage(t, 0, 0, 250, 170, i * cvp.width / MAPS.length, 0, cvp.width / MAPS.length, cvp.height); }
+  if (mi < 0) {
+    ms.forEach((id, k) => { const t = document.createElement('canvas'); t.width = 250; t.height = 170; renderMapPreview(id, t); c.drawImage(t, 0, 0, 250, 170, k * cvp.width / ms.length, 0, cvp.width / ms.length, cvp.height); });
     c.fillStyle = 'rgba(12,14,19,.55)'; c.fillRect(0, 0, cvp.width, cvp.height);
     c.fillStyle = '#ffd34d'; c.font = '700 120px Rajdhani, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('?', cvp.width / 2, cvp.height / 2);
-    $('mapCarouselName').textContent = '무작위'; $('mapCarouselMeta').textContent = '판마다 다섯 맵 가운데 하나가 무작위로 나옵니다.';
-  } else { const m = MAPS[mapIdx - 1]; renderMapPreview(mapIdx - 1, cvp); $('mapCarouselName').textContent = m.name; $('mapCarouselMeta').textContent = m.desc; }
+    $('mapCarouselName').textContent = '무작위'; $('mapCarouselMeta').textContent = '판마다 맵이 무작위로 나옵니다.';
+  } else { const m = MAPS[mi]; renderMapPreview(mi, cvp); $('mapCarouselName').textContent = m.name; $('mapCarouselMeta').textContent = m.desc; }
   const dots = $('mapDots'); dots.textContent = '';
-  for (let i = 0; i <= MAPS.length; i++) { const d = document.createElement('i'); if (i === mapIdx) d.className = 'on'; dots.append(d); }
-  const cur = mapIdx - 1 === mapChoice;
+  for (let i = 0; i < mapList.length; i++) { const d = document.createElement('i'); if (i === mapIdx) d.className = 'on'; dots.append(d); }
+  const cur = mi === mapChoice;
   $('mapPickBtn').textContent = cur ? '선택됨' : '이 맵으로 하기'; $('mapPickBtn').disabled = cur;
 }
-$('goMapBtn').addEventListener('click', () => { mapIdx = mapChoice + 1; showMap(); showScreen('mapScreen'); });
-$('mapPrevBtn').addEventListener('click', () => { mapIdx = (mapIdx + MAPS.length) % (MAPS.length + 1); showMap(); });
-$('mapNextBtn').addEventListener('click', () => { mapIdx = (mapIdx + 1) % (MAPS.length + 1); showMap(); });
-$('mapPickBtn').addEventListener('click', () => { mapChoice = mapIdx - 1; savePrefs(); setup(false); showScreen('menuScreen'); });
+$('goMapBtn').addEventListener('click', () => { mapList = [-1, ...modeMaps()]; mapIdx = Math.max(0, mapList.indexOf(mapChoice)); showMap(); showScreen('mapScreen'); });
+$('mapPrevBtn').addEventListener('click', () => { mapIdx = (mapIdx + mapList.length - 1) % mapList.length; showMap(); });
+$('mapNextBtn').addEventListener('click', () => { mapIdx = (mapIdx + 1) % mapList.length; showMap(); });
+$('mapPickBtn').addEventListener('click', () => { mapChoice = mapList[mapIdx]; savePrefs(); setup(false); showScreen('menuScreen'); });
+
+/* mode picker. PC: a row of event cards, tap one to look at it, the button below (or a double click) confirms.
+   touch or small screens: big posters, a tap picks the mode right away. Each card: mode art, headcount, two rules, the mode's current map */
+const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', duel: '#47307a' };
+const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1 };      // map drawn behind the figures while the mode's map is random
+const MODE_FFA = ['#4d9dff', '#ff5d5d', '#ffd34d', '#3ddbb4', '#b48cff', '#ff9a3d'];
+const RULE_ICO = {
+  kill: '<circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>',
+  clock: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/>',
+  crown: '<path d="M4 8l4 4 4-7 4 7 4-4-1.5 10h-13z"/>',
+  flag: '<path d="M6 21V4M6 5h12l-3 4 3 4H6"/>',
+  rounds: '<circle cx="5" cy="12" r="3" fill="currentColor"/><circle cx="12" cy="12" r="3" fill="currentColor"/><circle cx="19" cy="12" r="3"/>'
+};
+const mmss = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
+function modeRules(m) {
+  const r = [], solo = m.id === 'solo' || m.id === 'last';
+  if (solo) r.push(['crown', '최후 1인']);
+  else if (m.id === 'flag' && m.win) r.push(['flag', '깃발 ' + m.win + '점']);
+  else if (m.id === 'duel' && m.win) r.push(['rounds', m.win + '선승']);
+  else if (m.win) r.push(['kill', m.win + '킬']);
+  if (m.time) r.push(['clock', (m.rounds ? '판당 ' : '') + mmss(m.time)]);
+  return r;
+}
+const modeMapCache = new Map();
+function modeMapArt(i) {      // a big drawing of one map, reused by every card
+  if (!modeMapCache.has(i)) { const c = document.createElement('canvas'); c.width = 1000; c.height = 680; renderMapPreview(i, c); modeMapCache.set(i, c); }
+  return modeMapCache.get(i);
+}
+function modeThumb(cv, m, mi) {
+  const w = cv.width = 84, h = cv.height = 56, g = cv.getContext('2d');
+  if (mi >= 0) { g.drawImage(modeMapArt(mi), 0, 0, w, h); return cv; }
+  const ids = modeMapsOf(m);
+  ids.forEach((id, k) => g.drawImage(modeMapArt(id), 240, 0, 520, 680, k * w / ids.length, 0, w / ids.length + 1, h));
+  g.fillStyle = 'rgba(12,14,19,.55)'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#ffd34d'; g.font = '700 38px Rajdhani, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('?', w / 2, h / 2 + 2);
+  return cv;
+}
+/* the mode's map with stick fighters posed for the mode (cx: where the group stands, 0..1 of the width) */
+function modeScene(cv, m, mi, cx) {
+  const r = cv.getBoundingClientRect(), k = Math.min(2, devicePixelRatio || 1), w = cv.width = Math.max(1, Math.round(r.width * k)), h = cv.height = Math.max(1, Math.round(r.height * k)), g = cv.getContext('2d');
+  const pool = modeMapsOf(m), ai = mi >= 0 ? mi : pool.includes(MODE_ART[m.id]) ? MODE_ART[m.id] : pool[0], src = modeMapArt(ai), sc = Math.max(w / 1000, h / 680) * 1.3;
+  g.drawImage(src, (w - 1000 * sc) / 2, (h - 680 * sc) / 2, 1000 * sc, 680 * sc);
+  const v = g.createLinearGradient(0, 0, 0, h); v.addColorStop(0, 'rgba(10,12,18,.15)'); v.addColorStop(1, 'rgba(10,12,18,.55)'); g.fillStyle = v; g.fillRect(0, 0, w, h);
+  const s = Math.min(h / 190, w / 300), x0 = w * cx, base = h * .8, B = TEAM[0], R = TEAM[1];
+  const fig = (id, col, x, y, sz, face, sw) => {
+    if (!HEROES[id]) return;
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(x, y + 2, 16 * sz, 5.6 * sz, 0, 0, 7); g.fill();
+    g.save(); g.translate(x, y); g.scale(sz, sz); drawStick(g, id, col, face < 0 ? Math.PI : 0, 0, sw, 1.3, null); g.restore();
+  };
+  const flag = (x, y, sz, col) => { g.save(); g.translate(x, y); g.scale(sz, sz); g.lineCap = 'round'; g.strokeStyle = '#e8eaf0'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -46); g.stroke(); g.fillStyle = col; g.beginPath(); g.moveTo(0, -46); g.lineTo(30, -38); g.lineTo(0, -28); g.closePath(); g.fill(); g.restore(); };
+  if (m.id === 'solo' || m.id === 'last') {
+    const zr = Math.min(w, h) * .62;
+    g.save(); g.beginPath(); g.rect(0, 0, w, h); g.arc(x0, h * .55, zr, 0, 7, true); g.fillStyle = 'rgba(160,40,90,.35)'; g.fill('evenodd'); g.restore();
+    g.strokeStyle = '#ffd34d'; g.lineWidth = 3 * k; g.setLineDash([10 * k, 7 * k]); g.beginPath(); g.arc(x0, h * .55, zr, 0, 7); g.stroke(); g.setLineDash([]);
+    ['sword', 'pistol', 'magiccard', 'kadas', 'rifle', 'shade'].forEach((id, n) => { const x = x0 + (n - 2.5) * 46 * s, y = base - (n % 2) * 22 * s; fig(id, MODE_FFA[n], x, y, s * .92, x < x0 ? 1 : -1, .3); });
+  } else if (m.id === 'flag') {
+    fig('bow', B, x0 - 110 * s, base - 22 * s, s * .9, 1, .4);
+    fig('sword', B, x0 - 30 * s, base, s * 1.1, 1, .2); flag(x0 - 48 * s, base - 30 * s, s * 1.05, R);
+    fig('rifle', R, x0 + 70 * s, base - 14 * s, s, -1, .5); flag(x0 + 135 * s, base - 30 * s, s * .9, B);
+  } else if (m.id === 'duel') {
+    fig('sword', B, x0 - 62 * s, base, s * 1.25, 1, .6); fig('magiccard', R, x0 + 62 * s, base, s * 1.25, -1, .6);
+    g.save(); g.translate(x0, base - 44 * s); g.globalCompositeOperation = 'lighter';
+    const rg = g.createRadialGradient(0, 0, 0, 0, 0, 30 * s); rg.addColorStop(0, 'rgba(255,240,200,.95)'); rg.addColorStop(1, 'rgba(180,140,255,0)'); g.fillStyle = rg; g.beginPath(); g.arc(0, 0, 30 * s, 0, 7); g.fill();
+    g.strokeStyle = '#fff'; g.lineWidth = 2 * k; for (let n = 0; n < 8; n++) { const a = n * Math.PI / 4 + .2, l = (n % 2 ? 18 : 26) * s; g.beginPath(); g.moveTo(Math.cos(a) * 8 * s, Math.sin(a) * 8 * s); g.lineTo(Math.cos(a) * l, Math.sin(a) * l); g.stroke(); }
+    g.restore();
+  } else {
+    [['bow', -1.55, -18], ['wizard', -.5, -26], ['sword', -1, 0]].forEach(([id, dx, dy]) => fig(id, B, x0 + dx * 60 * s, base + dy * s, s, 1, .4));
+    [['shotgun', 1.55, -18], ['shuriken', .5, -26], ['harald', 1, 0]].forEach(([id, dx, dy]) => fig(id, R, x0 + dx * 60 * s, base + dy * s, s, -1, .4));
+  }
+}
+const modeTouchLayout = () => touchUi() || innerWidth < 900 || innerHeight < 560;
+function modeMark() {      // which card is being looked at, which mode is picked, and the confirm button
+  for (const b of $('modeGrid').children) {
+    const id = b.dataset.mode; b.setAttribute('aria-pressed', id === modeView ? 'true' : 'false');
+    b.querySelector('.mTick').hidden = id !== modeSel;
+  }
+  const cur = modeView === modeSel;
+  $('modePickBtn').textContent = cur ? '선택됨' : '이 모드로 하기'; $('modePickBtn').disabled = cur;
+}
+function modePick() {
+  if (modeView !== modeSel) {
+    mapByMode[modeSel] = mapChoice; modeSel = modeView;
+    const m = modeCur(), i = mapByMode[m.id]; mapChoice = Number.isInteger(i) && modeMapsOf(m).includes(i) ? i : -1;
+    modeApply(); savePrefs(); setup(false);
+  }
+  showScreen('menuScreen');
+}
+function showModes() {
+  const scr = $('modeScreen'), g = $('modeGrid'), ph = modeTouchLayout(), NS = 'http://www.w3.org/2000/svg';
+  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = '';
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+  const icon = (d, cls) => { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); if (cls) s.setAttribute('class', cls); s.innerHTML = d; return s; };
+  const arts = [];
+  for (const m of MODE_LIST) {
+    const ok = modeOk(m), mi = modeMapOf(m), lk = MODE_LOOK[m.id] || ['mi-m-team', '#fff'];
+    const b = el('button', 'modeCard'), inn = el('span', 'mIn'), art = el('canvas', 'mArt'), top = el('span', 'mTop'), ic = el('span', 'mIco solid'), sz = el('span', 'mSz'), rl = el('span', 'mRules'), mp = el('span', 'mMap');
+    b.type = 'button'; b.dataset.mode = m.id; b.style.setProperty('--c', lk[1]); b.style.setProperty('--d', MODE_DARK[m.id] || '#2a2f3c');
+    top.append(modeIcon(ic, m), el('b', 'mN', m.name));
+    if (m.size) sz.append(el('span', 'mSize', m.size));
+    if (m.teams && m.per) {
+      const p = el('span', 'mPips'), dots = (n, col) => { const w = el('b'); for (let j = 0; j < n; j++) { const d = el('i'); d.style.background = col; w.append(d); } return w; };
+      if (m.teams === 2) p.append(dots(m.per, TEAM[0]), el('em', '', 'vs'), dots(m.per, TEAM[1]));
+      else { const w = el('b'); for (let j = 0; j < m.teams * m.per; j++) { const d = el('i'); d.style.background = MODE_FFA[j % MODE_FFA.length]; w.append(d); } p.append(w); }
+      sz.append(p);
+    }
+    for (const [k, t] of modeRules(m)) { const r = el('span', 'mRule'); const s = icon(RULE_ICO[k]); s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor'); s.setAttribute('stroke-width', '2.2'); s.setAttribute('stroke-linecap', 'round'); s.setAttribute('stroke-linejoin', 'round'); r.append(s, t); rl.append(r); }
+    mp.append(modeThumb(el('canvas'), m, mi), el('span', '', mi < 0 ? '무작위' : MAPS[mi].name));
+    const mark = icon('<use href="#' + lk[0] + '"/>', 'mMark'), tick = el('span', 'mTick'); tick.append(icon('<path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>'));
+    inn.append(art, el('span', 'mTint'), mark, top, sz, rl, mp); b.append(inn, tick);
+    b.setAttribute('aria-label', [m.name, m.size, ...modeRules(m).map(r => r[1]), mi < 0 ? '무작위 맵' : MAPS[mi].name].filter(Boolean).join(', '));
+    if (!ok) { b.disabled = true; b.setAttribute('aria-label', m.name + ' (잠김)'); const l = icon('<use href="#mi-m-lock"/>', 'mLock'); b.append(l); }
+    b.addEventListener('click', () => { if (!modeOk(m)) return; modeView = m.id; if ($('modeScreen').classList.contains('ph')) modePick(); else modeMark(); });
+    b.addEventListener('dblclick', () => { if (modeOk(m) && !$('modeScreen').classList.contains('ph')) { modeView = m.id; modePick(); } });
+    g.append(b); arts.push([art, m, mi]);
+  }
+  modeMark();
+  requestAnimationFrame(() => { for (const [cv, m, mi] of arts) modeScene(cv, m, mi, ph ? .72 : .5); });      // after layout, so each picture is drawn at its real size
+}
+let modeResizeT = 0;
+addEventListener('resize', () => { if (!$('modeScreen').classList.contains('active')) return; clearTimeout(modeResizeT); modeResizeT = setTimeout(showModes, 150); });
+$('modeChip').addEventListener('click', () => { modeView = modeSel; showScreen('modeScreen'); showModes(); });
+$('modePickBtn').addEventListener('click', modePick);
+$('modeBackBtn').addEventListener('click', () => showScreen('menuScreen'));
+$('karma').addEventListener('click', () => { showScreen('karmaScreen'); renderKarma(); });
+$('karmaBackBtn').addEventListener('click', () => showScreen('menuScreen'));
+$('quest').addEventListener('click', () => { showScreen('questScreen'); questTab(achOpen() && !dqOpen()); });
+$('qTabD').addEventListener('click', () => questTab(false)); $('qTabA').addEventListener('click', () => questTab(true));
+$('questBackBtn').addEventListener('click', () => showScreen('menuScreen'));
 $('mapBackBtn').addEventListener('click', () => showScreen('menuScreen'));
 
 function enterPlay() {
   { const c = document.getElementById('diceBannerContainer'); if (c) c.textContent = ''; }
   state = 'play'; feed.textContent = ''; lastHud = '';
+  soloOutAt = 0; soloOutShown = false;
   mouse.down = false; stickM = stickA = pendingFire = null; wantUlt = wantDash = false; wantSk = [false, false]; pvClear();
   lobby.hidden = true; cv.classList.remove('inLobby'); showPlayUi(true);
 }
@@ -452,41 +653,65 @@ function startMatch(humans) { setup(true, humans); enterPlay(); }
 function buildOverStats(win, draw) {
   const box = $('overStats'); box.textContent = ''; box.classList.remove('noDmg');
   const fs = fighters.filter(f => !f.minion && f.h0); if (fs.length < 2) return;
-  const val = f => (f.kos || 0) * 100 + (f.dealt || 0) / 10 - (f.deaths || 0) * 30;
+  const val = f => (f.kos || 0) * 100 + (f.dealt || 0) / (10 * SX) - (f.deaths || 0) * 30;
   const pool = draw ? fs : fs.filter(f => f.team === (win ? VIEW : 1 - VIEW)), mvp = pool.length ? pool.reduce((a, b) => val(b) > val(a) ? b : a) : null;
   const top = Math.max(1, ...fs.map(f => f.dealt || 0));
   box.classList.toggle('noDmg', !fs.some(f => f.dealt > 0));
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   const head = el('div', 'osHead'); head.append(el('span', '', '이름'), el('span', '', '킬/데스'), el('span', '', '딜량')); box.append(head);
-  for (const team of [VIEW, 1 - VIEW]) {
-    if (team !== VIEW) box.append(el('div', 'osGap'));
-    for (const f of fs.filter(f => f.team === team).sort((a, b) => val(b) - val(a))) {
-      const r = el('div', 'osRow ' + (team === VIEW ? 'b' : 'r') + (f === player ? ' me' : '')), nm = el('span', 'on');
-      if (f === mvp && val(f) > 0) nm.append(el('span', 'mvp', 'MVP'));
+  const solo = curMode === 'solo', rank = f => f.team === RD.win ? 0 : RD.out.includes(f.team) ? fs.length - RD.out.indexOf(f.team) : 1;      // solo: one list in finishing order
+  for (const team of solo ? [-1] : [VIEW, 1 - VIEW]) {
+    if (!solo && team !== VIEW) box.append(el('div', 'osGap'));
+    for (const f of solo ? fs.slice().sort((a, b) => rank(a) - rank(b)) : fs.filter(f => f.team === team).sort((a, b) => val(b) - val(a))) {
+      const r = el('div', 'osRow ' + (f.team === VIEW ? 'b' : 'r') + (f === player ? ' me' : '')), nm = el('span', 'on');
+      if (solo) nm.append(el('span', 'rk', String(fs.slice().sort((a, b) => rank(a) - rank(b)).indexOf(f) + 1)));
+      else if (f === mvp && val(f) > 0) nm.append(el('span', 'mvp', 'MVP'));
       nm.append(f.nick || f.h0.name); if (f.nick) nm.append(el('small', '', f.h0.name));
       const dl = el('span', 'od'), bar = el('i'); bar.style.width = Math.round((f.dealt || 0) / top * 100) + '%'; dl.append(bar, el('em', '', String(Math.round(f.dealt || 0))));
-      if (f.taken > 0) r.title = '받은 피해 ' + Math.round(f.taken);
+      if (f.taken > 0 || f.healed > 0) r.title = '받은 피해 ' + Math.round(f.taken || 0) + ' · 회복 ' + Math.round(f.healed || 0);
       r.append(nm, el('span', 'ok', (f.kos || 0) + ' / ' + (f.deaths || 0)), dl); box.append(r);
     }
   }
 }
-function endGame() {
-  state = 'over'; showPlayUi(false);
-  hostEnd();
-  const mine = score[VIEW], theirs = score[1 - VIEW];
-  const win = mine > theirs, draw = mine === theirs, rt = $('resultText');
+/* solo (원 레프트): being knocked out ends the match for that player right away as a loss. A host with other people in the room only gets the result screen laid over the match, which keeps running for them until it is really over */
+let soloOutAt = 0, soloOutShown = false;
+function soloOutCheck() {
+  if (curMode !== 'solo' || state !== 'play' || !player || !player.dead || soloOutShown) { if (!player || !player.dead) soloOutAt = 0; return; }
+  if (!soloOutAt) soloOutAt = performance.now();
+  if (performance.now() - soloOutAt < 1400) return;      // long enough to see what happened
+  if (fighters.filter(f => !f.dead).length < 2) return;      // the match is ending anyway
+  endGame(NET.role === 'host' && NET.members && NET.members.length > 0);
+}
+function endGame(keepRunning) {
+  if (keepRunning !== true) { state = 'over'; if (NET.role === 'guest' && NET.stats) applyMatchStats(NET.stats); hostEnd(); }
+  if (soloOutShown) { showPlayUi(false); return; }      // this player already got the result screen when knocked out
+  if (curMode === 'solo' && player && player.dead) soloOutShown = true;
+  showPlayUi(false);
+  const oc = modeOutcome(), solo = curMode === 'solo', mine = oc.a, theirs = oc.b;
+  const win = oc.win, draw = oc.draw, rt = $('resultText');
   rt.textContent = draw ? '무승부' : win ? '승리' : '패배';
+  document.querySelector('#overScreen .final').classList.toggle('solo', solo);
   rt.className = draw ? 'draw' : win ? 'win' : 'lose';
-  $('fb').textContent = mine; $('fr').textContent = theirs;
+  $('fb').textContent = solo ? oc.place + '등' : mine; $('fr').textContent = theirs;
   $('mine').textContent = player ? MAPS[curMap].name + ' · ' + player.h0.name + ' · ' + player.kos + '킬 ' + player.deaths + '데스' : MAPS[curMap].name;
   buildOverStats(win, draw);
+  { /* what the match pays (social.js matchPay): gold, karma, mastery points for the character played, player xp */
+    const pay = player ? matchPay({ mode: curMode, win, draw, kills: player.kos || 0, place: oc.place }) : null, hid = player ? player.h0.id : null;
+    if (pay) { const sk = streakStep(win, draw, solo ? oc.place : 0); pay.karma += sk.karma; pay.gold = Math.round(pay.gold * sk.gm); }
+    $('goldGain').hidden = !pay;
+    if (pay) {
+      COS.gold += pay.gold; COS.karma += pay.karma; COS.xp += pay.xp; addMp(hid, pay.mp); dqMatch({ mode: curMode, win, kills: player.kos || 0, place: solo ? oc.place : 0, hero: hid, dealt: player.dealt || 0 }); achMatch({ mode: curMode, win, kills: player.kos || 0, deaths: player.deaths || 0, hero: hid, n: fighters.length }); saveCos(); goldUi();
+      $('goldGainN').textContent = '+' + pay.gold; $('karmaGain').hidden = !pay.karma; $('karmaGainN').textContent = '+' + pay.karma; $('mpGainN').textContent = '+' + pay.mp; $('xpGainN').textContent = '+' + pay.xp;
+      $('mpGain').style.color = masteryOf(hid).col;
+    }
+  }
   lobby.hidden = false; cv.classList.add('inLobby'); showScreen('overScreen');
   emoteWheel(false); chatOpen(false);
   winScreen(win, draw);
 }
 function toMenu() { netReset(); VIEW = 0; state = 'menu'; setup(false); showPlayUi(false); lobby.hidden = false; cv.classList.add('inLobby'); showScreen('menuScreen'); }
 $('startBtn').addEventListener('click', startOnline);
-$('againBtn').addEventListener('click', () => { if (state !== 'menu') { VIEW = 0; state = 'menu'; setup(false); } startOnline(); });
+$('againBtn').addEventListener('click', () => { netReset(); if (state !== 'menu') { VIEW = 0; state = 'menu'; setup(false); } startOnline(); });
 $('lobbyBtn').addEventListener('click', toMenu);
 $('roomCancelBtn').addEventListener('click', () => { netReset(); showScreen('menuScreen'); });
 $('goCosBtn').addEventListener('click', () => { showScreen('cosScreen'); renderCos(); });
@@ -523,28 +748,31 @@ cv.addEventListener('pointerdown', e => {
   try { cv.setPointerCapture(e.pointerId); } catch (err) {}
   if (e.pointerType === 'touch') {
     touchMode = true;
-    const s = { id: e.pointerId, ox: e.clientX, oy: e.clientY, dx: 0, dy: 0 };
-    if (e.clientX < W / 2) { if (!stickM) stickM = s; } else if (!stickA) stickA = s;
+    const atk = e.clientX >= W / 2, hm = stickHome(atk), grab = Math.hypot(e.clientX - hm.x, e.clientY - hm.y) < STICK_R * 1.5;      // a touch on or near the drawn stick uses its centre; anywhere else on that half the stick comes to the thumb
+    const s = { id: e.pointerId, ox: grab ? hm.x : e.clientX, oy: grab ? hm.y : e.clientY, dx: 0, dy: 0, sx: e.clientX, sy: e.clientY, t0: performance.now() };
+    if (!document.body.classList.contains('touchUi')) touchUiSync();
+    if (!atk) { if (!stickM) { stickM = s; if (grab) setStick(s, e); } } else if (!stickA) stickA = s;      // the attack stick does not aim until the thumb actually moves, so an off-centre tap stays an auto-aim shot
   } else {
     touchMode = false; mouse.x = e.clientX; mouse.y = e.clientY;
-    if (e.button === 0) mouse.down = true; else if (e.button === 2) { if (pvAny()) pvCancelAll(); else wantUlt = true; }
+    if (e.button === 0) { mouse.down = true; mouseRel = false; } else if (e.button === 2) { if (mouse.down) { mouse.down = false; mouseRel = false; } else if (pvAny()) pvCancelAll(); else wantUlt = true; }      // right click while aiming a basic attack cancels it
   }
 });
 cv.addEventListener('pointermove', e => {
   if (e.pointerType === 'touch') {
     if (stickM && stickM.id === e.pointerId) setStick(stickM, e);
-    else if (stickA && stickA.id === e.pointerId) setStick(stickA, e);
-  } else { mouse.x = e.clientX; mouse.y = e.clientY; }
+    else if (stickA && stickA.id === e.pointerId) { if (!stickA.moved && Math.hypot(e.clientX - stickA.sx, e.clientY - stickA.sy) < 12) return; stickA.moved = true; setStick(stickA, e); }
+  } else { mouse.x = e.clientX; mouse.y = e.clientY; if ((e.buttons & 2) && mouse.down) { mouse.down = false; mouseRel = false; } }      // right button pressed while aiming: browsers report it as a move, cancel the shot
 });
 function pointerEnd(e) {
   if (e.pointerType === 'touch') {
     if (stickM && stickM.id === e.pointerId) stickM = null;
     else if (stickA && stickA.id === e.pointerId) {
       const l = Math.hypot(stickA.dx, stickA.dy);
-      if (state === 'play' && e.type === 'pointerup') pendingFire = l > .3 ? { ang: Math.atan2(stickA.dy, stickA.dx) } : { auto: true };
+      const tap = Math.hypot(e.clientX - stickA.sx, e.clientY - stickA.sy) < 12 && performance.now() - stickA.t0 < 300;      // a quick tap anywhere on the stick, even off its centre, is still the auto-aim shot
+      if (state === 'play' && e.type === 'pointerup') pendingFire = l > .3 && !tap ? { ang: Math.atan2(stickA.dy, stickA.dx), len: l } : { auto: true };      // len: how far a bomb goes (engine readLocal)
       stickA = null;
     }
-  } else if (e.button === 0 || e.type === 'pointercancel') mouse.down = false;
+  } else if (e.button === 0 || e.type === 'pointercancel') { if (mouse.down && e.type === 'pointerup' && e.button === 0 && state === 'play') mouseRel = true; mouse.down = false; }
 }
 cv.addEventListener('pointerup', pointerEnd); cv.addEventListener('pointercancel', pointerEnd);
 const tapBtn = (b, fn) => b.addEventListener('pointerdown', e => { e.preventDefault(); if (e.pointerType === 'touch') touchMode = true; fn(); });
@@ -554,6 +782,7 @@ for (const [b, t] of [[ultBtn, ['u']], [dashBtn, ['d']], [skBtn[0], ['s', 0]], [
 }
 soundBtn.addEventListener('click', () => { muted = !muted; soundBtn.textContent = muted ? '소리 끔' : '소리 켬'; });
 
+readSafe(); touchUiSync();
 /* ---------- loop ---------- */
 let last = performance.now();
 function frame(now) {
@@ -562,6 +791,7 @@ function frame(now) {
   if (NET.role === 'guest' && state === 'play') { if (dt > 0) guestStep(dt); }
   else if (state !== 'over' && dt > 0 && !(performance.now() < hitStopUntil)) step(dt);
   netTick(dt);
+  if (DED) { requestAnimationFrame(frame); return; }      // a dedicated host (net.js) only runs the match: nothing is drawn
   if (state === 'play') updateHud();
   render();
   if (!lobby.hidden) {
@@ -578,12 +808,12 @@ setInterval(() => {
   for (let t = el; t > 0; t -= .033) { if (state === 'play') step(Math.min(.033, t)); netTick(Math.min(.033, t)); }
 }, 50);
 addEventListener('beforeunload', () => netReset());
-buildChars(); updatePick(); setup(false); loadAccount();
+buildChars(); updatePick(); setup(false); loadAccount(); if (achScan()) saveCos(); setTimeout(() => achSync(true), 2500);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => lobbyCharPlace());
 setTimeout(lobbyCharPlace, 60);
 for (let i = 0; i < 90; i++) step(.033);
 requestAnimationFrame(frame);
-window.__arena = { get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
+window.__arena = { modes: MODE_LIST, ACHS, achMatch, achScan, achSt, renderAch, questTab, setAchRates(r) { achRates = r; }, dqList, dqMatch, dqState, renderQuests, goldUi, matchPay, masteryOf, levelOf, KARMA_ROAD, MASTERY, giveReward, COSMETICS, skinPrice, get COS() { return COS; }, get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
   setChar(id) { chosen = id; }, setMap(i) { mapChoice = i; }, auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get PV() { return { sk: PV.sk, ult: PV.ult, dash: PV.dash }; }, get bullets() { return bullets; }, offline() { netReset(); startMatch(null); } };
 })();
 </script>

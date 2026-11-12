@@ -13,7 +13,7 @@
       setTimeout(() => { if (this.destroyed) return; if (taken) { this.emit('error', { type: 'unavailable-id' }); return; } owners.set(this.id, this); this.open = true; this.emit('open', this.id); }, 200); }
     connect(to) { const cid = 'c' + (++seq) + Math.random().toString(36).slice(2, 6), c = new Conn(this, to, cid); this.conns.set(cid, c);
       bc.postMessage({ k: 'req', cid, from: this.id, to });
-      setTimeout(() => { if (!c.open && !c.closed && !this.destroyed) { this.conns.delete(cid); this.emit('error', { type: 'peer-unavailable' }); } }, 300);
+      setTimeout(() => { if (!c.open && !c.closed && !this.destroyed) { this.conns.delete(cid); this.emit('error', { type: 'peer-unavailable', message: 'Could not connect to peer ' + to }); } }, 300);
       return c; }
     destroy() { if (this.destroyed) return; this.destroyed = true; this.open = false; for (const c of this.conns.values()) c.close(); if (owners.get(this.id) === this) owners.delete(this.id); }
     reconnect() {}

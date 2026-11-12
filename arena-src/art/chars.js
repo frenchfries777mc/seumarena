@@ -599,10 +599,86 @@ function drawSpaceHeld(c, wid, ax, ay, hx, hy){
   }
   c.restore();
 }
+/* ---------- 하랄드 (ported from Stickseum's drawHaraldBody): axe in one hand, round shield in the other; the axe is thrown for the ultimate, then the shield leads the charge ---------- */
+let HD_F = null;                                       // the fighter being drawn (set by tail.js through haraldCtx just before drawStick; null for the lobby)
+function haraldCtx(f) {
+  if (f && f.h && f.h.id === 'harald') { const sw = f.swing || 0; if (sw > (f._hdSw || 0) + 1e-4) f._hdAt = performance.now(); f._hdSw = sw; HD_F = f; } else HD_F = null;
+}
+const hdLerp = (a, b, k) => a + (b - a) * k;
+function hdArm(c, sx, sy, hx, hy) {                    // a two-bone arm, the elbow bends downwards
+  const U = 14, L = 15, dx = hx - sx, dy = hy - sy; let d = Math.hypot(dx, dy) || 1; const reach = U + L - .6;
+  if (d > reach) { hx = sx + dx / d * reach; hy = sy + dy / d * reach; d = reach; }
+  const a = (U * U - L * L + d * d) / (2 * d), h = Math.sqrt(Math.max(0, U * U - a * a)), mx = sx + dx / d * a, my = sy + dy / d * a;
+  const e1x = mx - dy / d * h, e1y = my + dx / d * h, e2x = mx + dy / d * h, e2y = my - dx / d * h, lo = e1y > e2y;
+  const ex = lo ? e1x : e2x, ey = lo ? e1y : e2y;
+  c.beginPath(); c.moveTo(sx, sy); c.lineTo(ex, ey); c.lineTo(hx, hy); c.stroke();
+  return { x: hx, y: hy };
+}
+function hdAxe(c, x, y, th, f, k) {                    // handle from the hand outwards, the head at the end (the blade on the side it swings towards)
+  c.save(); c.translate(x, y); c.rotate(th); c.scale(k, k * f); c.lineCap = 'round'; c.lineJoin = 'round';
+  c.strokeStyle = '#7a4a1f'; c.lineWidth = 3.8; c.beginPath(); c.moveTo(-9, 0); c.lineTo(41, 0); c.stroke();
+  c.strokeStyle = '#4a2c10'; c.lineWidth = 1; c.beginPath(); c.moveTo(-9, -1.2); c.lineTo(41, -1.2); c.stroke();
+  c.fillStyle = '#c9ced6'; c.strokeStyle = '#59616d'; c.lineWidth = 1.4;
+  c.beginPath(); c.moveTo(30, 2); c.lineTo(32, 16); c.quadraticCurveTo(48, 12, 46, -7); c.quadraticCurveTo(41, -2, 37, -2.4); c.lineTo(30, -3); c.closePath(); c.fill(); c.stroke();
+  c.strokeStyle = '#ffffff'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(33, 15); c.quadraticCurveTo(46, 11, 45, -5); c.stroke();
+  c.restore();
+}
+function hdShield(c, x, y, rot, rx, ry, rim) {
+  c.save(); c.translate(x, y); c.rotate(rot);
+  c.fillStyle = '#8b5a2b'; c.strokeStyle = '#3a2616'; c.lineWidth = 2; c.beginPath(); c.ellipse(0, 0, rx, ry, 0, 0, 7); c.fill(); c.stroke();
+  c.strokeStyle = '#3a2616'; c.lineWidth = 1; c.beginPath(); c.moveTo(-rx * .4, -ry * .85); c.lineTo(-rx * .4, ry * .85); c.moveTo(rx * .4, -ry * .85); c.lineTo(rx * .4, ry * .85); c.stroke();
+  c.strokeStyle = rim || '#d8dde6'; c.lineWidth = 1.8; c.beginPath(); c.ellipse(0, 0, rx * .82, ry * .86, 0, 0, 7); c.stroke();
+  c.fillStyle = '#cfd5de'; c.strokeStyle = '#3a2616'; c.lineWidth = 1.2; c.beginPath(); c.arc(0, 0, Math.max(2.4, rx * .36), 0, 7); c.fill(); c.stroke();
+  c.restore();
+}
+function hdCharging(F) { return !!(F && F.dash && F.dash.stun === 1 && !F.dash.fly && F.h && F.h.id === 'harald'); }
+function drawHaraldBody(c, ax, ay) {                   // both arms, the shield and the axe (drawStick's own straight arm is skipped for him)
+  const F = HD_F; HD_F = null;
+  const SH = -42, sx = 0, sy = SH + 6, col = c.strokeStyle, A = F ? (+F.aim || 0) : Math.atan2(ay, ax), f = Math.cos(A) >= 0 ? 1 : -1;
+  const age = F && F._hdAt ? (performance.now() - F._hdAt) / 1000 : 9, charging = hdCharging(F), noAxe = charging;
+  const W = .08, S = .1, Rc = .42, ANIM = W + S + Rc;                                // (the original's swing is slower; here the blow lands at once, so the wind-up is short)
+  c.save(); c.lineCap = 'round'; c.lineJoin = 'round'; c.lineWidth = 5;
+  // the shield arm
+  let hx, hy, rx = 6.8, ry = 15, rot = .12 * f, sdx = f * .6, sdy = 0;
+  if (charging) { const dir = F.dash.dx >= 0 ? 1 : -1, a = dir > 0 ? 0 : Math.PI; hx = sx + Math.cos(a) * 24; hy = sy + Math.sin(a) * 24 + 2; rx = 8.5; ry = 23; rot = a; sdx = Math.cos(a); sdy = Math.sin(a); }
+  else { hx = sx + f * 10; hy = sy + 13; if (age > W && age < ANIM) hx -= f * 2; }
+  c.strokeStyle = col; const sh = hdArm(c, sx, sy, hx, hy);
+  hdShield(c, sh.x + sdx * 7, sh.y + sdy * 7, rot, rx, ry, col);
+  // the axe arm
+  c.strokeStyle = col; c.lineWidth = 5;
+  if (!noAxe) {
+    let phi = A + f * .2, R = 22, th = A - f * 1;
+    if (age < W) { const k = 1 - Math.pow(1 - age / W, 3); phi = hdLerp(A + f * .2, A - f * 2.3, k); R = hdLerp(22, 17, k); th = hdLerp(A - f * 1, A - f * 2.45, k); }
+    else if (age < W + S) { const k = (age - W) / S, e = k * k; phi = hdLerp(A - f * 2.3, A + f * .45, e); R = hdLerp(17, 28, e); th = hdLerp(A - f * 2.45, A + f * .7, e); }
+    else if (age < ANIM) { const k = (age - W - S) / Rc, e = k * k * (3 - 2 * k); phi = hdLerp(A + f * .45, A + f * .2, e); R = hdLerp(28, 22, e); th = hdLerp(A + f * .7, A - f * 1, e); }
+    const hnd = hdArm(c, sx, sy, sx + Math.cos(phi) * R, sy + Math.sin(phi) * R);
+    hdAxe(c, hnd.x, hnd.y, th, f, 1);
+  } else {                                                                              // the axe is stuck far away: an empty hand hangs loose
+    const hnd = hdArm(c, sx, sy, sx - f * 8, sy + 22); c.fillStyle = col; c.beginPath(); c.arc(hnd.x, hnd.y, 2.4, 0, 7); c.fill();
+  }
+  c.restore();
+}
+function drawHaraldAxes(now) {                          // the thrown axe, then stuck where the charge ends (world space)
+  for (const f of fighters) {
+    if (!f || f.dead || !hdCharging(f)) continue;
+    if (state !== 'menu' && (!visibleTo(f, VIEW) || bushAt(f.x, f.y))) continue;
+    const d = f.dash, tot = d.v * .55, ex = f.x + d.dx * d.v * d.t, ey = f.y + d.dy * d.v * d.t, el = Math.max(0, .55 - d.t);
+    const sx = ex - d.dx * tot, sy = ey - d.dy * tot, k = Math.min(1, el / .2), x = hdLerp(sx, ex, k), y = hdLerp(sy, ey, k) + BODY;
+    ctx.save();
+    if (k < 1) { hdAxe(ctx, x, y, now / 1000 * 16, 1, .9); if (!lowFx()) addP({ x, y, vx: RND(-30, 30), vy: RND(-30, 30), life: RND(.18, .34), size: RND(2, 3.4), color: '#ffd9a0', drag: 3 }); }
+    else {
+      const pulse = .5 + .5 * Math.sin(now / 220), sa = Math.atan2(d.dy, d.dx) + Math.PI / 2;      // (seen from above: the axe stands in the floor, its head turned towards him)
+      ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = hexA('#ffb347', .25 + .25 * pulse); ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, 26 + pulse * 5, 0, 7); ctx.stroke(); ctx.globalCompositeOperation = 'source-over';
+      hdAxe(ctx, x + Math.cos(sa) * 30 * .9, y + Math.sin(sa) * 30 * .9, sa + Math.PI, 1, .9);
+    }
+    ctx.restore();
+  }
+}
 function drawHeldWeapon(c, weaponId, ax, ay, hx, hy, swingProg, concept){
   if(SPACE_HELD[weaponId]){ drawSpaceHeld(c, weaponId, ax, ay, hx, hy); return; }
   if(concept==='breath' && weaponId==='flamethrower') return;      // 입냄새 학살자: nothing in the hands
   const w = WEAPONS[weaponId] || WEAPONS.pistol;
+  if(w.shape==='axe'){ drawHaraldBody(c, ax, ay); return; }
   if(w.shape==='arrow'){
     // bow: always held upright (not rotated to follow aim), but mirrors left/right so it doesn't look backwards
     const facing = ax>=0 ? 1 : -1;
