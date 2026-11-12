@@ -342,6 +342,9 @@ body.touchUi canvas{touch-action:none}
 /* the top right corner (the design picked from the mockups): a quest tile, then the karma banner with its bar to the next step of the road */
 #topRight{position:fixed;z-index:6;top:calc(env(safe-area-inset-top,0px) + 10px);right:max(16px, env(safe-area-inset-right, 0px));display:flex;flex-direction:row-reverse;align-items:center;gap:8px;pointer-events:none}
 #topRight>*{pointer-events:auto}
+#specBack{position:fixed;z-index:8;top:calc(env(safe-area-inset-top,0px) + 12px);left:max(14px, env(safe-area-inset-left, 0px));width:48px;height:48px;border-radius:14px;border:2px solid rgba(255,255,255,.35);background:rgba(20,22,28,.8);color:#fff;display:grid;place-items:center;cursor:pointer}
+#specBack svg{width:26px;height:26px}
+#specBack[hidden],#specBtn[hidden]{display:none}
 #topRight[hidden],#streak[hidden]{display:none}
 #topRight #karma,#topRight #quest{position:relative;top:auto;right:auto;box-sizing:border-box;height:56px;margin:0;cursor:pointer;font-family:'IBM Plex Sans KR',sans-serif;font-weight:800;font-variant-numeric:tabular-nums;border-radius:14px;border:2px solid;transition:transform .08s ease}
 #topRight #karma:active,#topRight #quest:active{transform:translateY(2px)}
@@ -447,6 +450,8 @@ body.touchUi canvas{touch-action:none}
 .cosCard.buy{border-color:var(--accent-2);box-shadow:0 0 10px rgba(61,219,180,.4)}
 .cosCard.buy .cosPrice{color:#062824;background:var(--accent-2);border-radius:999px;padding:1px 8px}
 .cosCard.no{animation:cosNo .3s}
+.cosCard .cosOff{order:1;font-size:11px;font-weight:700;color:#14161c;background:var(--sel);border-radius:999px;padding:2px 9px;white-space:nowrap}
+.cosCard:has(.cosOff)>span:not(.cosOff){order:2}
 @keyframes cosNo{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 @media (prefers-reduced-motion: reduce){.cosCard.no{animation:none}}
 #goldGain{margin:-4px 0 8px;font:700 16px 'IBM Plex Sans KR',sans-serif;color:var(--sel);display:flex;justify-content:center;align-items:center;gap:5px}
@@ -484,6 +489,7 @@ body.touchUi canvas{touch-action:none}
 .mPips b{display:inline-flex;gap:3px}
 .mPips i{display:block;width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(0,0,0,.4)}
 .mPips em{font:italic 700 12px 'Rajdhani',sans-serif;color:#c9ced8}
+.mPips.many{gap:3px}.mPips.many b{gap:2px}.mPips.many i{width:6px;height:6px}
 .modeCard .mRules{display:flex;flex-wrap:wrap;gap:6px}
 .mRule{display:inline-flex;align-items:center;gap:5px;font:700 13px 'IBM Plex Sans KR',sans-serif;color:var(--text);background:rgba(8,10,15,.55);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:3px 10px 3px 7px;white-space:nowrap}
 .mRule svg{width:15px;height:15px;flex:none}
@@ -512,8 +518,12 @@ body.touchUi canvas{touch-action:none}
 #modeScreen.pc .modeCard:not(:disabled):hover{transform:translateY(-6px)}
 #modeScreen.pc .modeCard[aria-pressed="true"]{transform:translateY(-14px) scale(1.04)}
 /* phones: big posters, all four on one screen without scrolling sideways */
-#modeScreen.ph #modeGrid{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(4,minmax(112px,190px));align-content:center;gap:12px;width:100%;max-width:560px;margin:0 auto;padding:14px 0 4px}
-@media (orientation:landscape){#modeScreen.ph #modeGrid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(112px,210px));max-width:960px;padding-top:8px}}
+#modeScreen.ph #modeGrid{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:minmax(92px,180px);align-content:center;gap:10px;width:100%;max-width:560px;margin:0 auto;padding:14px 0 4px}
+/* phone on its side: three cards over two (five modes), the lower two centred; with four or fewer it stays two by two */
+@media (orientation:landscape){#modeScreen.ph #modeGrid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(100px,210px);max-width:960px;padding-top:8px}
+  #modeScreen.ph #modeGrid.n5{grid-template-columns:repeat(6,minmax(0,1fr))}
+  #modeScreen.ph #modeGrid.n5 .modeCard{grid-column:span 2}
+  #modeScreen.ph #modeGrid.n5 .modeCard:nth-child(4){grid-column:2 / span 2}}
 #modeScreen.ph .modeCard{clip-path:polygon(0 0,calc(100% - 24px) 0,100% 24px,100% 100%,24px 100%,0 calc(100% - 24px))}
 #modeScreen.ph .mIn{clip-path:polygon(0 0,calc(100% - 23px) 0,100% 23px,100% 100%,23px 100%,0 calc(100% - 23px));grid-template-rows:auto auto auto 1fr;align-content:start;justify-items:start;row-gap:7px;padding:14px 16px}
 #modeScreen.ph canvas.mArt,#modeScreen.ph .mTint,#modeScreen.ph .mMark{position:absolute}
@@ -584,7 +594,9 @@ body.touchUi canvas{touch-action:none}
   #overScreen #overStats{grid-column:2;grid-row:3 / span 4;margin:0;align-self:start}
   #overScreen #goldGain{grid-column:1;grid-row:4;margin:0 0 10px}
   #overScreen #againBtn{grid-column:1;grid-row:5;margin:0 0 8px}
-  #overScreen #lobbyBtn{grid-column:1;grid-row:6}
+  #overScreen #specBtn{grid-column:1;grid-row:6;margin:0 0 8px}
+  #overScreen #lobbyBtn{grid-column:1;grid-row:7}
+  #overScreen #overStats{grid-row:3 / span 5}
 }
 
 /* settings */
@@ -652,6 +664,7 @@ body.touchUi canvas{touch-action:none}
     <symbol id="mi-m-team" viewBox="0 0 24 24"><path d="M4 4l11 11M20 4 9 15M6.5 13.5l4 4M17.5 13.5l-4 4M5 19l2.5-2.5M19 19l-2.5-2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
     <symbol id="mi-m-last" viewBox="0 0 24 24"><path d="M4 8l4 4 4-7 4 7 4-4-1.5 10h-13z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
     <symbol id="mi-m-flag" viewBox="0 0 24 24"><path d="M6 21V4M6 5h12l-3 4 3 4H6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="mi-m-flag5" viewBox="0 0 24 24"><path d="M4 21V5M4 6h8l-2 3 2 3H4M14 21V9M14 10h7l-2 2.5 2 2.5h-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="mi-m-duel" viewBox="0 0 24 24"><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14 6l-4 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
     <symbol id="mi-m-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
     <symbol id="mi-quest" viewBox="0 0 24 24"><rect x="4.5" y="4" width="15" height="17" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="8.5" y="2" width="7" height="4" rx="1.2" fill="currentColor"/><path d="m8.3 13.2 2.6 2.6 4.8-5.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -693,6 +706,7 @@ body.touchUi canvas{touch-action:none}
 </div>
 <div id="diceBannerContainer"></div>
 
+<button id="specBack" type="button" aria-label="결과 화면" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
 <div id="lobby">
   <div id="acct"><span id="acctIcon" aria-hidden="true">●</span><span id="acctName"></span><button id="acctBtn" type="button" hidden>로그인</button><span class="goldPill" aria-label="골드"><i class="coin"></i><b class="goldN">0</b></span><button id="setLobbyBtn" type="button" aria-label="설정">⚙</button></div>
   <div id="topRight">
@@ -793,6 +807,7 @@ body.touchUi canvas{touch-action:none}
     <p id="goldGain" hidden><span id="karmaGain"><svg aria-hidden="true"><use href="#mi-karma"/></svg><b id="karmaGainN"></b></span><span><i class="coin"></i><b id="goldGainN"></b></span><span id="mpGain"><i class="rwI ic-xpC"></i><b id="mpGainN"></b></span><span id="xpGain"><i class="rwI ic-xpP"></i><b id="xpGainN"></b></span></p>
     <div id="overStats"></div>
     <button class="btn-primary btn-full" id="againBtn" type="button">다시 하기</button>
+    <button class="btn-plain btn-full" id="specBtn" type="button" style="margin-bottom:8px" hidden>관전</button>
     <button class="btn-plain btn-full" id="lobbyBtn" type="button">로비로</button>
   </div>
 </div>
@@ -3176,6 +3191,7 @@ function spawnFx0(e){
       bu(x,gy,24,{a0:-3.1,a1:-0.05,s0:120,s1:560,l0:.4,l1:.9,z0:2,z1:5,colors:['#ff7ac8','#ffd34d','#ffffff'],grav:300,drag:1.3,shape:'streak'}); shakeFrom(x,gy,5*FQ,900); break; }
     case 'ultfx': {                                                        // every character's ultimate: a themed burst on top of the ability itself
       const T=ULT_THEMES[e.w]||ULT_THEMES._, c=T.c;
+      if(typeof ultPunch==='function') ultPunch(e);
       for(let r=0;r<(fxQuality>=2?2:1);r++) addP({x:x,y:y,life:.45+r*0.15,color:c[r%3],shape:'ring',r0:10,r1:170+r*70,lw:7-r*2});
       if(FQ>0.3) addP({x:x,y:y,life:.4,color:c[0],shape:'flash',size:250});
       addP({x:x,y:y,life:.3,color:'#ffffff',shape:'flash',size:150});
@@ -3910,7 +3926,34 @@ const MAPS = [
   { id:'big_crater', name:'화산 분화구', desc:'용암 웅덩이가 흩어진 분화구. 바닥 틈에서 용암이 분출해요.', big:1,
     env:{ vents:1 },
     th:{ f1:'#33292b', f2:'#3b2f31', wt:'#8a6f66', ws:'#57433d', b1:'#5a4a3a', b2:'#7a6450', wa:'#e2551a', wa2:'#ffb347' },
-    rows:['###################','#..................','#..ww....#....v....','#..ww....#.........','#......v.....##....','#.##.........#...ww','#..#....ww.......ww','#.......ww..g......','#...g.......g...#..','#...g..#........#..','#......##...v......','#.w.............##.','#.w....g...........','#.w.............##.','#......##...v......','#...g..#........#..','#...g.......g...#..','#.......ww..g......','#..#....ww.......ww','#.##.........#...ww','#......v.....##....','#..ww....#.........','#..ww....#....v....','#..................','###################'] }
+    rows:['###################','#..................','#..ww....#....v....','#..ww....#.........','#......v.....##....','#.##.........#...ww','#..#....ww.......ww','#.......ww..g......','#...g.......g...#..','#...g..#........#..','#......##...v......','#.w.............##.','#.w....g...........','#.w.............##.','#......##...v......','#...g..#........#..','#...g.......g...#..','#.......ww..g......','#..#....ww.......ww','#.##.........#...ww','#......v.....##....','#..ww....#.........','#..ww....#....v....','#..................','###################'] },
+  { id:'flag_desert', name:'사막 평원', desc:'넓은 사막 평원. 가운데 물웅덩이와 가속 발판이 있어요.', big:1, flag5:1,
+    th:{'f1': '#cdbb8a', 'f2': '#d6c595', 'wt': '#8a6a44', 'ws': '#5f4529', 'b1': '#2f8f4a', 'b2': '#49b565', 'wa': '#2f8fc4', 'wa2': '#63b8e0'},
+    rows:['############################', '#...........................', '#..gg....###.......gg.......', '#..gg....#.........gg...ww..', '#..............##.......ww..', '#.....##.......#............', '#.....#....gg..#.....###....', '#..........gg...............', '#..###............##........', '#....#....p.......#....gg...', '#.........................#.', '#......gg.....###.....gg..#.', '#......gg.......#.........#.', '#...........h.......ww......', '#..##...............ww..p...', '#..........gg.....gg........', '#..##...............ww..p...', '#...........h.......ww......', '#......gg.......#.........#.', '#......gg.....###.....gg..#.', '#.........................#.', '#....#....p.......#....gg...', '#..###............##........', '#..........gg...............', '#.....#....gg..#.....###....', '#.....##.......#............', '#..............##.......ww..', '#..gg....#.........gg...ww..', '#..gg....###.......gg.......', '#...........................', '############################'] },
+  { id:'flag_snow', name:'설원 요새', desc:'빙판이 깔린 눈 덮인 요새.', big:1, flag5:1,
+    th:{'f1': '#e3ecf4', 'f2': '#eaf1f8', 'wt': '#5c6f86', 'ws': '#3c4c61', 'b1': '#2f6f5c', 'b2': '#46957d', 'wa': '#2f6fb3', 'wa2': '#5c9bd6'},
+    rows:['############################', '#...........................', '#....iiii.....####..........', '#....iiii........#....gg....', '#..##.......gg.......#gg....', '#..#........gg.......#......', '#......###........iiii......', '#........#..p.....iiii..##..', '#..gg..............gg...#...', '#..gg....iiii......gg.......', '#........iiii....#..........', '#.....#..........#...###....', '#.....#....h..........#.....', '#..........###....gg........', '#..##........#....gg..ii....', '#..........p..........ii....', '#..##........#....gg..ii....', '#..........###....gg........', '#.....#....h..........#.....', '#.....#..........#...###....', '#........iiii....#..........', '#..gg....iiii......gg.......', '#..gg..............gg...#...', '#........#..p.....iiii..##..', '#......###........iiii......', '#..#........gg.......#......', '#..##.......gg.......#gg....', '#....iiii........#....gg....', '#....iiii.....####..........', '#...........................', '############################'] },
+  { id:'flag_lava', name:'용암 협곡', desc:'용암 웅덩이와 분출구가 있는 위험한 협곡.', big:1, flag5:1, env:{ vents:1 },
+    th:{'f1': '#4a3a34', 'f2': '#52403a', 'wt': '#8a6f66', 'ws': '#57433d', 'b1': '#5a7a3a', 'b2': '#7a9a50', 'wa': '#e2551a', 'wa2': '#ffb347'},
+    rows:['############################', '#...........................', '#...ww........###.....gg....', '#...ww...gg.....#.....gg....', '#........gg.....#...........', '#..##..........v.....wwww...', '#..#.....www.........wwww...', '#........www....##..........', '#..gg..........#.....v......', '#..gg....#.....#.......gg...', '#........#..p..........gg...', '#..............www..........', '#.....##...h...www...##.....', '#......#..............#.....', '#..##.......gg....ww........', '#...........gg....ww...p....', '#..##.......gg....ww........', '#......#..............#.....', '#.....##...h...www...##.....', '#..............www..........', '#........#..p..........gg...', '#..gg....#.....#.......gg...', '#..gg..........#.....v......', '#........www....##..........', '#..#.....www.........wwww...', '#..##..........v.....wwww...', '#........gg.....#...........', '#...ww...gg.....#.....gg....', '#...ww........###.....gg....', '#...........................', '############################'] },
+  { id:'flag_forest', name:'깊은 숲', desc:'덤불이 아주 많은 숲. 숨어서 기습하기 좋아요.', big:1, flag5:1,
+    th:{'f1': '#9cc27a', 'f2': '#a6ca84', 'wt': '#5b4630', 'ws': '#3d2f20', 'b1': '#2f7a3a', 'b2': '#45984f', 'wa': '#3a8fc4', 'wa2': '#63b8e0'},
+    rows:['############################', '#...........................', '#..ggg....ggg.....ggg.......', '#..ggg....ggg.....ggg..##...', '#.............#.........#...', '#....##.......#...ggg.......', '#....#..ggg.......ggg.......', '#.......ggg...ww............', '#..gg.........ww....#..ggg..', '#..gg....##.........#..ggg..', '#.........#..p..............', '#....ggg.........ggg........', '#....ggg...h.....ggg..##....', '#.....................#.....', '#..##.....ggg...ww..........', '#.........ggg...ww....p.....', '#..##.....ggg...ww..........', '#.....................#.....', '#....ggg...h.....ggg..##....', '#....ggg.........ggg........', '#.........#..p..............', '#..gg....##.........#..ggg..', '#..gg.........ww....#..ggg..', '#.......ggg...ww............', '#....#..ggg.......ggg.......', '#....##.......#...ggg.......', '#.............#.........#...', '#..ggg....ggg.....ggg..##...', '#..ggg....ggg.....ggg.......', '#...........................', '############################'] },
+  { id:'flag_city', name:'네온 도시', desc:'벽이 많은 골목 시가전.', big:1, flag5:1,
+    th:{'f1': '#2a2f3e', 'f2': '#30364a', 'wt': '#5a6380', 'ws': '#3a4058', 'b1': '#2f8f6a', 'b2': '#45b088', 'wa': '#3a6fd4', 'wa2': '#6a9ae8'},
+    rows:['############################', '#...........................', '#..###....####....###.......', '#..#.........#......#..##...', '#..#...gg....#...gg.#..##...', '#......gg..........#........', '#..........p.......#........', '#.####.........####.........', '#.........##...........##...', '#...gg....##....gg.....##...', '#...gg..........gg..........', '#.......###...........###...', '#.......#....h..........#...', '#....p..#.......####........', '#..##...........#....gg.....', '#...........##.......gg..p..', '#..##...........#....gg.....', '#....p..#.......####........', '#.......#....h..........#...', '#.......###...........###...', '#...gg..........gg..........', '#...gg....##....gg.....##...', '#.........##...........##...', '#.####.........####.........', '#..........p.......#........', '#......gg..........#........', '#..#...gg....#...gg.#..##...', '#..#.........#......#..##...', '#..###....####....###.......', '#...........................', '############################'] },
+  { id:'flag_castle', name:'숲 속 성채', desc:'물과 벽으로 둘러싼 두 성채 사이에 덤불 숲 두 줄이 길게 뻗은 맵. 가운데 연못 광장에서 크게 부딪혀요.', big:1, flag5:1,
+    th:{'f1': '#9cc27a', 'f2': '#a6ca84', 'wt': '#5b4630', 'ws': '#3d2f20', 'b1': '#2f7a3a', 'b2': '#45984f', 'wa': '#3a8fc4', 'wa2': '#63b8e0'},
+    rows:['############################','#ggggggggg......gggggggggg..','#ggggggggg......gggggggggg..','#ggggggggg......gggggggggg..','#...............gggggggggg..','#...............gggggggggg..','#...............ggggg.......','#www...wwww.....ggggg.......','####...###w.....ggggg.......','#........#w.....ggggg....www','#........#w.....ggggg....www','#...............ggggg....www','#...............ggggg.......','#...............ggggg.......','#........#w.....ggggg....www','#........#w.....ggggg....www','#........#w.....ggggg....www','#...............ggggg.......','#...............ggggg.......','#...............ggggg....www','#........#w.....ggggg....www','#........#w.....ggggg....www','####...###w.....ggggg.......','#www...wwww.....ggggg.......','#...............ggggg.......','#...............gggggggggg..','#...............gggggggggg..','#ggggggggg......gggggggggg..','#ggggggggg......gggggggggg..','#ggggggggg......gggggggggg..','############################'] },
+  { id:'big_swamp', name:'습지 난투', desc:'웅덩이가 곳곳에 흩어진 습지. 가운데 웅덩이 사이 좁은 길과 덤불에서 난전이 벌어져요.', big:1,
+    th:{ f1:'#d9c38a', f2:'#e0cb95', wt:'#8a6a44', ws:'#5f4529', b1:'#2f8f4a', b2:'#49b565', wa:'#2f8fc4', wa2:'#63b8e0' },
+    rows:['###################','#..................','#.www.......wwww..w','#.www.......wwww..w','#......#...........','#......#...gggggg..','#......#...gggggg..','#...####...gggggg..','#..........ggg.....','#..........ggg.www.','#..........ggg.www.','#......#.......www.','#...####...........','#......#.......www.','#..........ggg.www.','#..........ggg.www.','#..........ggg.....','#...####...gggggg..','#......#...gggggg..','#......#...gggggg..','#......#...........','#.www.......wwww..w','#.www.......wwww..w','#..................','###################'] },
+  { id:'field', name:'들판', desc:'가운데를 세로로 가르는 덤불 띠와 모서리 덤불숲. 연못과 낮은 벽 뒤에 숨으며 싸워요.',
+    th:{ f1:'#2a2850', f2:'#2f2d5b', wt:'#f4b942', ws:'#c98a1b', b1:'#1f9d78', b2:'#2fc797', wa:'#3a7fc4', wa2:'#63a4e0' },
+    rows:['#############','#ggg...ww#.gg','#ggg...ww#.gg','#ggg.......gg','####.......gg','#.....#ww..gg','#.....#ww..gg','#..........gg','#..........gg','#..........gg','#.....#ww..gg','#.....#ww..gg','####.......gg','#ggg.......gg','#ggg...ww#.gg','#ggg...ww#.gg','#############'] },
+  { id:'cross_plaza', name:'십자 광장', desc:'큰 호수 네 개가 십자 모양 길을 만든 광장. 길이 모이는 한가운데 덤불에서 자주 마주쳐요.', big:1,
+    th:{ f1:'#5a5346', f2:'#625b4d', wt:'#c9b27a', ws:'#8f7a4a', b1:'#3f7a3a', b2:'#58a04f', wa:'#3a7fc4', wa2:'#63a4e0' },
+    rows:['###################','#ggg#............gg','#ggg.............gg','#ggg#............gg','##.#wwwwwwwwwwww.gg','#...wwwwwwwwwwww.gg','#...wwwwwwwwwwww.gg','#...wwwwwwwwwwww...','#...wwwwwwwwwww....','#...wwwwwwwwww.....','#...............gg.','#gggggggggggg...gg.','#gggggggggggg......','#gggggggggggg...gg.','#...............gg.','#...wwwwwwwwww.....','#...wwwwwwwwwww....','#...wwwwwwwwwwww...','#...wwwwwwwwwwww.gg','#...wwwwwwwwwwww.gg','##.#wwwwwwwwwwww.gg','#ggg#............gg','#ggg.............gg','#ggg#............gg','###################'] }
 ];
 for (const m of MAPS) m.grid = m.rows.map(r => r + [...r.slice(0, r.length - 1)].reverse().join(''));
 let COLS = 25, ROWS = 17, WW = COLS * T, WH = ROWS * T;      // set by loadMap(): the big 원 레프트 maps are larger
@@ -3933,7 +3976,7 @@ function addText(o) { texts.push(o); evt(['t', Math.round(o.x), Math.round(o.y),
 function addPart(p) { parts.push(p); evt(['p', Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy), +p.life.toFixed(2), p.color, +(p.r || 3).toFixed(1)]); }
 const OT_MAX = 60;       // sudden-death overtime when the clock runs out level: first kill wins, a draw if nobody scores within this many seconds
 const STAT_X = 10;       // every hp and every damage/heal/shield number written in the kits is multiplied by this (damage() and heal() do it, so kit code keeps the original small numbers)
-const WIN_SCORE = 10, MATCH_TIME = 150, MAX_HP = 600, ULT_CD = 20, CD1 = 5, CD2 = 10, DASH_D = 3.2 * T, SPEED = 205;
+const WIN_SCORE = 10, MATCH_TIME = 150, MAX_HP = 600, ULT_CD = 45, CD1 = 5, CD2 = 10, DASH_D = 3.2 * T, SPEED = 205;
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -3951,12 +3994,13 @@ let state = 'menu', time = 0, timeLeft = MATCH_TIME, score = [0, 0];
    teams × per: how many sides and fighters per side · respawn: do the dead come back · win: score that ends the match · time: seconds on the clock (per round when rounds > 0)
    rounds: round wins needed (0 = no rounds). The UI sets `modeChoice` and calls setup(); the engine reads the rules with modeNow(). */
 const MODES = [
-  { id: 'team', name: '팀 아웃', size: '3v3', teams: 2, per: 3, respawn: true, win: WIN_SCORE, time: MATCH_TIME, rounds: 0, maps: [0, 1, 2, 3, 4, 5, 6], ready: true },
-  { id: 'solo', name: '원 레프트', size: '6명', teams: 6, per: 1, respawn: false, win: 1, time: 150, rounds: 0, maps: [7, 8, 9, 10], ready: true },
-  { id: 'flag', name: '캡쳐 플래그', size: '3v3', teams: 2, per: 3, respawn: true, win: 3, time: 180, rounds: 0, maps: [0, 1, 2, 3, 4, 5, 6], ready: true },
-  { id: 'duel', name: '듀얼 배틀', size: '1v1', teams: 2, per: 1, respawn: false, win: 2, time: 60, rounds: 2, maps: [0, 1, 2, 3, 4, 5, 6], ready: true }
+  { id: 'team', name: '팀 아웃', size: '3v3', teams: 2, per: 3, respawn: true, win: WIN_SCORE, time: MATCH_TIME, rounds: 0, maps: [0, 1, 2, 3, 4, 5, 6, 18], ready: true },
+  { id: 'solo', name: '원 레프트', size: '6명', teams: 6, per: 1, respawn: false, win: 1, time: 150, rounds: 0, maps: [7, 8, 9, 10, 17, 19], ready: true },
+  { id: 'flag', name: '캡쳐 플래그', size: '5v5', teams: 2, per: 5, respawn: true, win: 3, time: 240, rounds: 0, maps: [11, 12, 13, 14, 15, 16], ready: true },      // 2026-11-12: the 3v3 version was dropped, 캡쳐 플래그 is 5v5 on the 5 big flag maps
+  { id: 'duel', name: '듀얼 배틀', size: '1v1', teams: 2, per: 1, respawn: false, win: 2, time: 60, rounds: 2, maps: [0, 1, 2, 3, 4, 5, 6, 18], ready: true }
 ];
-for (const m of MODES) m.max = m.teams * m.per;      // room size, for matchmaking
+for (const m of MODES) m.max = m.teams * m.per;
+const isFlagMode = id => id === 'flag' || id === 'flag5';      // ('flag5' kept only as an alias: 캡쳐 플래그 itself is now 5v5)      // room size, for matchmaking
 /* modeChoice: picked in the lobby (UI) · curMode: the mode of the match being played (setup() copies modeChoice; a guest gets it from the host's start message) */
 let modeChoice = 'team', curMode = 'team', RD = { n: 1, pause: 0, win: -1, out: [] };
 /* 원 레프트 safe zone: a circle that closes in on the middle of the map; standing outside it hurts */
@@ -4163,6 +4207,29 @@ function burst(x, y, color, n, spd) {
   for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, s = rnd(.3, 1) * spd; parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: rnd(.25, .55), max: .55, color, r: rnd(2, 5) }); }
 }
 const ring = (x, y, r, color, life) => { evt(['r', Math.round(x), Math.round(y), Math.round(r), color || '#ffb347', life || .3]); rings.push({ x, y, r, life: life || .3, max: life || .3, color: color || '#ffb347' }); };
+/* 2026-11-12: ULT_CD 45 s; landing a BASIC attack on an enemy fighter refills the ult. per hit = rate * attack interval / shots per attack, rate .875 .. 2 from ultEase
+   (shots = burst x count), and one attack can never give more than rate * interval, so shotguns and multi-hit swings do not overcharge.
+   hitting every attack fills it in 45 / (1 + rate) = 24 s (easiest attack) .. 15 s (hardest), as the user asked */
+/* how hard the basic attack is to land: hard (short reach, thin shot, single target) refills more per hit, easy (long reach, wide shot,
+   piercing or exploding) refills less. 0.75 .. 1.35, cached per hero */
+function ultEase(h) {
+  if (h._ue) return h._ue;
+  let m;
+  if (h.type === 'melee') m = 1.15 * Math.pow(1.6 * T / Math.max(T, h.range || T), .3) * (h.half > 1.2 ? .9 : 1);
+  else {
+    let w = 5; try { const o = h.pre ? h.pre({ h, st: {}, b: {}, x: 0, y: 0 }, {}) : null; if (o) w = (o.r || 5) + (o.pad || 0); } catch (e) {}
+    m = Math.pow(7 * T / clamp(h.range || 500, 3 * T, 14 * T), .3) * Math.pow(5 / w, .25) * (h.pierce ? .85 : 1) * (h.splash ? .85 : 1);
+  }
+  return (h._ue = clamp(m, .75, 1.35));
+}
+function ultCharge(by, e, o) {
+  const f = by && (by.minion ? null : by);
+  if (!f || !f.h || f.dead || f.team === e.team || f.ucd <= 0 || !(o.basic || SRC === '기본 공격')) return;
+  const h = f.h, iv = cdOf(f), cap = iv * Math.min(2, .875 + (ultEase(h) - .75) * 2.96), per = cap / Math.max(1, (h.burst || 1) * (h.count || 1));
+  if (f.ucF !== f.lastFire) { f.ucF = f.lastFire; f.ucG = 0; }
+  const add = Math.min(per, cap - f.ucG); if (add <= 0) return;
+  f.ucG += add; f.ucd = Math.max(0, f.ucd - add);
+}
 function damage(e, dmg, by, o) {
   o = o || {};
   if (e.dead || !(dmg > 0)) return 0;
@@ -4175,6 +4242,7 @@ function damage(e, dmg, by, o) {
   if (e.h.resist && o.el) dmg *= .7;
   if (e.shield > 0) { const a = Math.min(e.shield, dmg); e.shield -= a; dmg -= a; if (e.shield <= 0 && e.onShieldBreak) { const fn = e.onShieldBreak; e.onShieldBreak = null; fn(e); } if (dmg <= 0) return 0; }
   e.hp -= dmg; e.lastHit = time; e.recent.push([time, dmg / STAT_X]); e.taken = (e.taken || 0) + dmg;
+  ultCharge(by, e, o);
   e.lastDmg = { src: o.src || SRC || (o.basic ? '기본 공격' : '패시브'), t: time };
   if (by && by !== e) { by.dealt = (by.dealt || 0) + dmg; if (!by.minion && by.h.onDeal) by.h.onDeal(by, e, dmg, o); }
   if (o.quiet) { e.acc += dmg; if (e.acc >= 8 * STAT_X) { addText({ x: e.x + rnd(-10, 10), y: e.y - 70, txt: String(Math.round(e.acc)), life: .6, color: '#ffb347' }); e.acc = 0; } }
@@ -4257,7 +4325,7 @@ function makeFighter(team, slot, id, isPlayer, lo0, cos, nick) {
     hp: h.hp, mhp: h.hp, dead: false, respawnT: 0, inv: 1.5, lastHit: -9, lastFire: -9, lastMove: 0, fireCd: 0, ucd: 6, dcd: 0, scd: [0, 0], sk: [null, null],
     queue: [], dash: null, swing: 0, spin: 0, shield: 0, onShieldBreak: null, dots: [], recent: [], b: {}, x_: 0, st: {}, acc: 0, dealt: 0, hold: false, washold: false, tapT: 0, form: null, ghost: false,
     kos: 0, deaths: 0, taken: 0, healed: 0, killer: null, lastDmg: null, bob: Math.random() * 6, infTick: 0,
-    ai: { cool: rnd(.3, 1), strafeT: 0, sdir: Math.random() < .5 ? 1 : -1, roamT: 0, rx: 0, ry: 0, dist: null, pathNext: 0, gc: -1, gr: -1, sx: p.x, sy: p.y, stT: 0, thr: .7 } };
+    ai: { pers: pick(AI_PERS_IDS), fside: Math.random() < .5 ? 1 : -1, cool: rnd(.3, 1), strafeT: 0, sdir: Math.random() < .5 ? 1 : -1, roamT: 0, rx: 0, ry: 0, dist: null, pathNext: 0, gc: -1, gr: -1, sx: p.x, sy: p.y, stT: 0, thr: .7 } };
   const lo = lo0 ? loadoutValid(h, lo0[0], lo0[1]) : isPlayer ? loadoutOf(id) : botLoadout(h);
   f.human = !!isPlayer; f.cos = cos ? cleanCos(cos, id) : botCos(id); f.nick = nick || null;
   f.sk = lo.map(n => h.skills.find(s => s.n === n)); f.sk0 = f.sk;
@@ -4378,6 +4446,17 @@ function ai(f, dt) { const mv = ai0(f, dt), fl = envFlee(f) || zoneFlee(f) || fl
    corners) while still shooting, and dash away from a melee enemy that is about to land a hit */
 let AI_KITE = true;
 /* how sharp bots are (2026-11-11: a little easier than before; the old values were aim .1, lead .7, cool ranged .2-.7 / melee .05-.3, skill .05, ult .06 per frame) */
+/* bot personalities (2026-11-12): same sharpness (AI_LV), different habits, so bots do not all play alike.
+   want: preferred distance (x reach) · low: hp share where it runs home · sk: skill eagerness · flank: approaches from the side
+   ambush: waits in bushes when nobody is around · save: keeps skills for a weakened target */
+const AI_PERS = {
+  rush: { want: .45, low: .18, sk: 1.15, st: [.8, 1.8], flip: .4 },
+  careful: { want: .75, low: .36, sk: .9, st: [.5, 1.2], flip: .7 },
+  ambush: { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6, ambush: 1 },
+  flank: { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6, flank: 1 },
+  saver: { want: .6, low: .3, sk: .6, st: [.6, 1.5], flip: .6, save: 1 }
+};
+const AI_PERS_IDS = Object.keys(AI_PERS), AI_PERS0 = { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6 };      // (the old single behaviour)
 const AI_LV = { aim: .13, lead: .62, coolR: [.24, .78], coolM: [.07, .34], sk: .045, ult: .055 };
 function kiteStep(f, reach) {
   const ts = foes(f).filter(e => !e.dead && !e.minion && !B(e, 'ally') && dist(f, e) < reach * 1.2 && visibleTo(e, teamOf(f)));
@@ -4399,7 +4478,7 @@ function kiteStep(f, reach) {
   a.kdir = best; return [Math.cos(best), Math.sin(best)];
 }
 function ai0(f, dt) {
-  const a = f.ai, h = f.h, L = a.lv || AI_LV;
+  const a = f.ai, h = f.h, L = a.lv || AI_LV, P = AI_PERS[a.pers] || AI_PERS0;
   f.hold = false;
   a.cool -= dt; a.strafeT -= dt; a.roamT -= dt; a.stT -= dt;
   if (a.stT <= 0) { if (Math.hypot(f.x - a.sx, f.y - a.sy) < 8) { a.roamT = 0; a.sdir *= -1; } a.sx = f.x; a.sy = f.y; a.stT = .7; }
@@ -4417,7 +4496,7 @@ function ai0(f, dt) {
     if (see && !B(f, 'charm')) {
       const u = h.ult;
       if (f.ucd <= 0 && bd >= u.r[0] && bd <= u.r[1] && (!u.ok || u.ok(f, tgt, bd)) && Math.random() < L.ult) useUlt(f);
-      for (let i = 0; i < 2; i++) { const d = f.sk[i]; if (d && f.scd[i] <= 0 && bd >= d.r[0] && bd <= d.r[1] && (!d.ok || d.ok(f, tgt, bd)) && Math.random() < L.sk) useSkill(f, i); }
+      for (let i = 0; i < 2; i++) { const d = f.sk[i]; if (d && f.scd[i] <= 0 && bd >= d.r[0] && bd <= d.r[1] && (!d.ok || d.ok(f, tgt, bd)) && Math.random() < L.sk * (P.save ? (tgt.hp < tgt.mhp * .55 ? 2.2 : .25) : P.sk)) useSkill(f, i); }
     }
     if ((see || h.w.shape === 'bomb') && inRange) {      // bombs arc over walls, so a bomber throws at an enemy behind cover too
       if (h.fireHeld) { f.hold = h.aiHold ? h.aiHold(f, a) : true; }
@@ -4426,7 +4505,7 @@ function ai0(f, dt) {
         f.hold = true; a.cool = close ? rnd(L.coolM[0], L.coolM[1]) : rnd(L.coolR[0], L.coolR[1]);
       }
     }
-    const low = f.hp < f.mhp * .3 && !B(f, 'charm') && modeNow().respawn;      // (no running home in modes without respawn: nothing waits there)
+    const low = f.hp < f.mhp * P.low && !B(f, 'charm') && modeNow().respawn;      // (no running home in modes without respawn: nothing waits there)
     if (low) {
       const s = spawnPos(f.team, f.slot);
       if (Math.hypot(s.x - f.x, s.y - f.y) > 1.5 * T) { const mv = pathTo(f, s.x, s.y); if (bd < 3 * T) tryDash(f, mv[0], mv[1]); return mv; }
@@ -4439,16 +4518,24 @@ function ai0(f, dt) {
       }
     }
     if (!see || bd > reach * .8) {
-      const mv = pathTo(f, tgt.x, tgt.y);
+      let gx = tgt.x, gy = tgt.y;
+      if (P.flank && bd > 3 * T) { const o = 2.2 * T * a.fside, px = gx - Math.sin(ang) * o, py = gy + Math.cos(ang) * o; if (!blockedAt(px, py)) { gx = px; gy = py; } }      // flankers come in from the side
+      const mv = pathTo(f, gx, gy);
       if (close && see && bd > reach && bd < 5 * T && Math.random() < .05) tryDash(f, mv[0], mv[1]);
       return mv;
     }
-    if (a.strafeT <= 0) { a.strafeT = rnd(.6, 1.5); if (Math.random() < .6) a.sdir *= -1; }
-    const p = ang + Math.PI / 2 * a.sdir, want = reach * .6, k = bd < want * .75 ? -.8 : bd > want ? .6 : 0;
+    if (a.strafeT <= 0) { a.strafeT = rnd(P.st[0], P.st[1]); if (Math.random() < P.flip) a.sdir *= -1; }
+    const p = ang + Math.PI / 2 * a.sdir, want = reach * P.want, k = bd < want * .75 ? -.8 : bd > want ? .6 : 0;
     return norm(Math.cos(p) + Math.cos(ang) * k, Math.sin(p) + Math.sin(ang) * k);
   }
   if (h.aiIdle) h.aiIdle(f);
-  if (a.roamT <= 0 || Math.hypot(a.rx - f.x, a.ry - f.y) < T) { const r = pick(ROAM); a.rx = (r[0] + .5) * T; a.ry = (r[1] + .5) * T; a.roamT = rnd(4, 8); }
+  if (P.ambush && a.roamT <= 0) {       // ambushers pick a bush nearby and wait there a while
+    let best = null, bd2 = 9 * T;
+    for (let k = 0; k < 40; k++) { const c = Math.floor(f.x / T) + ((Math.random() * 15) | 0) - 7, r = Math.floor(f.y / T) + ((Math.random() * 11) | 0) - 5; if (c > 0 && r > 0 && c < COLS - 1 && r < ROWS - 1 && bushAt((c + .5) * T, (r + .5) * T)) { const d = Math.hypot((c + .5) * T - f.x, (r + .5) * T - f.y); if (d < bd2) { bd2 = d; best = [c, r]; } } }
+    if (best) { a.rx = (best[0] + .5) * T; a.ry = (best[1] + .5) * T; a.roamT = rnd(5, 8); a.wait = 1; }
+  }
+  if (a.wait && Math.hypot(a.rx - f.x, a.ry - f.y) < T * .5) { if (a.roamT > 0) return [0, 0]; a.wait = 0; }
+  if (a.roamT <= 0 || (!a.wait && Math.hypot(a.rx - f.x, a.ry - f.y) < T)) { const r = pick(ROAM); a.wait = 0; a.rx = (r[0] + .5) * T; a.ry = (r[1] + .5) * T; a.roamT = rnd(4, 8); }
   const mv = pathTo(f, a.rx, a.ry);
   if (mv[0] || mv[1]) { f.aim = Math.atan2(mv[1], mv[0]); f.tx = f.x + mv[0] * 200; f.ty = f.y + mv[1] * 200; }
   return mv;
@@ -4600,7 +4687,7 @@ function updateBullets(dt) {
       }
       for (const e of foes({ team: b.team, b: {} })) {
         if (e === b.owner || b.hit.has(e)) continue;
-        if (Math.hypot(e.x - b.x, e.y + BODY - b.y) >= 20 + b.r) continue;
+        if (Math.hypot(e.x - b.x, e.y + BODY - b.y) >= 20 + b.r + (o.pad || 0)) continue;      // o.pad: a more forgiving hitbox (군인)
         if (!e.minion) {
           if (B(e, 'sand') || e.form === 'sub') continue;
           if (B(e, 'reflect')) { b.vx = -b.vx; b.vy = -b.vy; b.ang += Math.PI; b.team = teamOf(e); b.owner = e; b.hit.clear(); b.life = Math.max(b.life, 300); b.home = null; ring(e.x, e.y + BODY, 40, '#ffffff', .2); if (e.h.onReflect) e.h.onReflect(e); break; }
@@ -4652,7 +4739,7 @@ function step(dt) {
     const MODE = modeNow();
     if (MODE.rounds) { roundStep(dt); return; }
     if (MODE.id === 'solo') { soloStep(dt); return; }
-    if (MODE.id === 'flag') flagStep(dt);
+    if (isFlagMode(MODE.id)) flagStep(dt);
     if (overtime) otT += dt; else timeLeft = Math.max(0, timeLeft - dt);
     if (score[0] >= MODE.win || score[1] >= MODE.win) endGame();
     else if (overtime) { if (score[0] !== score[1] || otT >= OT_MAX) endGame(); }
@@ -4686,7 +4773,7 @@ function newRound() {
    hits zero, so a match cannot outlast the clock by more than a few seconds. score[team] = that fighter's kills; RD.out = teams in the order they fell;
    RD.win = the winner (the last one standing; if the last two fall together, the one who fell last). ===== */
 function modeStart() {
-  if (curMode === 'flag') flagsReset();
+  if (isFlagMode(curMode)) flagsReset();
   if (curMode !== 'solo') return;
   const g = freeNear(WW / 2, WH / 2);
   Object.assign(SZ, { on: true, x: WW / 2, y: WH / 2, r0: Math.hypot(WW, WH) / 2, r: Math.hypot(WW, WH) / 2, gx: g.x, gy: g.y, acc: 0 });
@@ -4740,7 +4827,7 @@ function flagStep(dt) {
 /* bots and the flags: the carrier runs home; everyone hunts whoever carries their flag; a dropped own flag nearby gets picked back up; the middle slot
    guards the base and the other two go for the enemy flag. A bot in a fight (an enemy within 6 tiles) keeps fighting unless it carries the flag. */
 function flagGoal(f) {
-  if (curMode !== 'flag' || FLAGS.length !== 2 || f.dead || B(f, 'charm')) return null;
+  if (!isFlagMode(curMode) || FLAGS.length !== 2 || f.dead || B(f, 'charm')) return null;
   const mine = FLAGS[f.team], theirs = FLAGS[1 - f.team], me = fighters.indexOf(f), bd = f.ai.bd || 1e9;
   if (theirs.by === me) return pathTo(f, mine.hx, mine.hy);
   if (bd < 6 * T) return null;
@@ -5054,6 +5141,7 @@ hero('shotgun', { p: ['명사수의 위협', '알갱이를 모두 맞히면 상�
   ] });
 
 hero('rifle', { p: ['지뢰밭', '지뢰를 밟은 상대는 3초 동안 이동속도 10% 감소'],
+  pre(f, o) { o.pad = 10; return o; },      // basic shots: hit radius 25 -> 35 (the user found the rifle too fussy to land)
   ult: ['미사일 폭격', '상대 근처 랜덤 3곳에 미사일이 떨어짐 (발당 750 피해, 벽 통과, 나는 피해 없음)', [0, 12 * T], f => { const es = foes(f); seq(f, 3, .3, i => { const e = es.length ? es[i % es.length] : fwd(f, 4 * T); const x = e.x + rnd(-60, 60), y = e.y + rnd(-60, 60); fx('warn', x, y, { dur: .8 }); strike(f, x, y, 75, .8, () => boom(f, x, y, 75, 60)); }); }],
   skills: [
     [1, '지뢰 설치', 'hit', '바닥에 지뢰 2개를 설치 (최대 2개, 25초) · 밟은 적은 250 피해와 0.5초 기절 · 지뢰는 상대에게도 보임 (1스킬 칸에서는 쿨타임 2배)', [0, 6 * T], f => { for (const s of [-1, 1]) { const p = fwd(f, 44, f.aim + s * 1.2); trap(f, p.x, p.y, 25, 2, 'mine', e => { damage(e, 20, f); buff(e, 'stun', .5); buff(e, 'slow', 3, .9); }, '#ff5d5d'); } }, { cd1: 10 }],
@@ -5089,7 +5177,8 @@ hero('grenade', { p: ['폭발광', '폭발 점프로 피해를 주면 착지 때
     [1, '폭발 점프', 'move', '폭발로 조준 방향으로 높이 뛰어올라(벽도 뛰어넘음) 주변에 475 피해', [0, 110], (f, a) => { const hit = boom(f, f.x, f.y, 100, 56).length; lunge(f, a, 3 * T, .35, { fly: 2, end: g => { if (hit) circ(g, g.x, g.y, 90, 0, { kb: 420, stun: .4 }); } }); }],
     [2, '폭격', 'hit', '내 앞과 뒤로 폭탄을 2개씩 바로 발사', [0, 5 * T], (f, a) => { for (const s of [0, Math.PI]) emit(f, a + s, { count: 2, fan: .35, full: 1 }); }],
     [3, '끈끈이 폭탄', 'hit', '조준 방향으로 끈끈한 폭탄을 쏨 · 맞은 상대에게 달라붙어(130 피해) 1.5초 뒤 그 상대 자리에서 크게 터짐 (주변 595 피해, 넉백) · 붙은 동안 상대 위에 빨간 고리가 깜빡임', [0, 6 * T], (f, a) => emit(f, a, { skill: 1, dmg: 15, spd: 620, range: 6 * T, r: 9, shape: 'potion', onHit: e => { seq(f, 3, .5, () => { if (!e.dead) ring(e.x, e.y, 46, '#ff5d5d', .25); }); later(1.5, () => { const x = e.dead ? e.x : e.x, y = e.y; boom(f, x, y, 90, 70, { kb: 300 }); }); } })],
-    [4, '강력한 폭탄', 'hit', '조준한 곳으로 큰 폭탄을 던짐 (일반 공격처럼 날아가 떨어진 곳에서 터짐, 475 피해) · 터지면 근처 벽이 경기가 끝날 때까지 사라짐 (테두리 벽은 그대로)', [100, 7 * T], (f, a) => { const p = aimPt(f, 7 * T); emit(f, Math.atan2(p.y - f.y, p.x - f.x), { skill: 1, shape: 'bomb', wp: true, r: 9, dmg: 56, splash: 100, range: Math.max(T, Math.hypot(p.x - f.x, p.y - f.y)), onBoom: (x, y) => { const c0 = Math.floor(x / T), r0 = Math.floor(y / T); for (let r = r0 - 1; r <= r0 + 1; r++) for (let c = c0 - 1; c <= c0 + 1; c++) if (c > 0 && r > 0 && c < COLS - 1 && r < ROWS - 1 && MAP[r][c] === '#' && Math.hypot((c + .5) * T - x, (r + .5) * T - y) < 1.3 * T) { MAP[r][c] = '.'; NET.mapVer++; burst((c + .5) * T, (r + .5) * T, TH.wt, 14, 260); } } }); }]
+    [4, '강력한 폭탄', 'hit', '조준한 곳으로 큰 폭탄을 던짐 (일반 공격처럼 날아가 떨어진 곳에서 터짐, 475 피해) · 터지면 근처 벽과 덤불이 경기가 끝날 때까지 사라짐 (테두리 벽은 그대로)', [100, 7 * T], (f, a) => { const p = aimPt(f, 7 * T); emit(f, Math.atan2(p.y - f.y, p.x - f.x), { skill: 1, shape: 'bomb', wp: true, r: 9, dmg: 56, splash: 100, range: Math.max(T, Math.hypot(p.x - f.x, p.y - f.y)), onBoom: (x, y) => { let bz = 0; for (let r = Math.floor((y - 100) / T); r <= Math.floor((y + 100) / T); r++) for (let c = Math.floor((x - 100) / T); c <= Math.floor((x + 100) / T); c++) { if (c <= 0 || r <= 0 || c >= COLS - 1 || r >= ROWS - 1 || Math.hypot((c + .5) * T - x, (r + .5) * T - y) > 100) continue; const t = MAP[r][c]; if (t === 'G' && typeof GD !== 'undefined') { const e = GD.plants.get(c + ',' + r); if (e) e.until = time; } else if (t === 'g') { MAP[r][c] = '.'; bz = 1; burst((c + .5) * T, (r + .5) * T, '#4f8a3a', 10, 200); } } if (bz) NET.mapVer++;      // the blast burns away bushes too (the map's own for the rest of the match, planted ones wither)
+      const c0 = Math.floor(x / T), r0 = Math.floor(y / T); for (let r = r0 - 1; r <= r0 + 1; r++) for (let c = c0 - 1; c <= c0 + 1; c++) if (c > 0 && r > 0 && c < COLS - 1 && r < ROWS - 1 && MAP[r][c] === '#' && Math.hypot((c + .5) * T - x, (r + .5) * T - y) < 1.3 * T) { MAP[r][c] = '.'; NET.mapVer++; burst((c + .5) * T, (r + .5) * T, TH.wt, 14, 260); } } }); }]
   ] });
 
 hero('bazooka', { p: ['화력 집중', '스킬 로켓 3발이 모두 맞으면 그 자리에 3초 동안 화염 (닿으면 초당 30 피해)'],
@@ -5611,6 +5700,7 @@ const MODE_PAY = { team: { kk: 1, kw: 3, mm: 1 }, flag: { kk: 1, kw: 4, mm: 1.2 
    1st gets kills + the win bonus, 2nd and 3rd kills + a smaller bonus */
 function soloKarma(place, k, pm) { const n = 6; return k * pm.kk + (place >= 1 && place <= n - 3 ? [pm.kw, 4, 2][place - 1] : 0); }
 function matchPay(o) {      // o: { mode, win, draw, kills, place }
+  if (o.mode === 'flag5') o = Object.assign({}, o, { mode: 'flag' });      // capture the flag pays the same whatever the team size
   const pm = MODE_PAY[o.mode] || MODE_PAY.team, solo = o.mode === 'solo', k = Math.max(0, o.kills | 0), good = o.win ? 2 : o.draw || (solo && o.place <= 3) ? 1 : 0;
   return { gold: Math.round(([30, 40, 60][good] + 5 * Math.min(10, k)) * (o.mode === 'duel' ? .6 : 1)), karma: solo ? soloKarma(o.place, k, pm) : k * pm.kk + (o.win ? pm.kw : 0),
     mp: Math.round(([30, 42, 55][good] + 3 * Math.min(10, k)) * pm.mm), xp: [40, 55, 70][good] + 4 * Math.min(10, k) };
@@ -5728,7 +5818,7 @@ function achScan() {      // marks what has just been reached; true when somethi
 const achOpen = () => !!COS.ach && ACHS.some(a => COS.ach[a.id] === 1);
 /* a finished match: { mode, win, kills, deaths, hero, n: fighters in it } */
 function achMatch(m) {
-  const s = achSt(), k = Math.max(0, m.kills | 0);
+  const s = achSt(), k = Math.max(0, m.kills | 0); if (m.mode === 'flag5') m = Object.assign({}, m, { mode: 'flag' });      // one capture the flag count, whatever the team size
   s.g++; s.k += k; s.mk = Math.max(s.mk, k); s.mg[m.mode] = (s.mg[m.mode] | 0) + 1;
   if (m.win) { s.w++; s.mw[m.mode] = (s.mw[m.mode] | 0) + 1; if (HEROES[m.hero]) s.hw[m.hero] = 1; if (m.mode === 'team' && !m.deaths) s.nd++; if (m.mode === 'solo' && m.n > 1 && k >= m.n - 1) s.sa++; }
   if (achScan()) achSync(true);
@@ -5965,7 +6055,8 @@ function cosToggle(id) {
   }
   cosBuy = null;
   if (it.cat === 'skin') { if (COS.skin[it.char] === id) delete COS.skin[it.char]; else COS.skin[it.char] = id; }
-  else if (it.cat === 'emo') { const i = COS.emo.indexOf(it.emIdx); if (i >= 0) { if (COS.emo.length > 1) COS.emo.splice(i, 1); } else { if (COS.emo.length >= 8) COS.emo.shift(); COS.emo.push(it.emIdx); } }
+  else if (it.cat === 'emo') { const i = COS.emo.indexOf(it.emIdx); if (i >= 0) { if (COS.emo.length > 1) COS.emo.splice(i, 1); } else if (COS.emo.length >= 8) { try { sfx(150, .12, 'square', .04); } catch (e) {} const el = document.getElementById('cos-' + id); if (el) { el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); } return; }      // the wheel is full: take one out first
+    else COS.emo.push(it.emIdx); }
   else { const k = { bcol: 'col', name: 'name', kfx: 'kfx', pose: 'pose' }[it.cat]; COS[k] = COS[k] === id && it.cat !== 'pose' ? null : id; }
   saveCos(); renderCos(); accountUi();
 }
@@ -5989,7 +6080,7 @@ function renderCos() {
     if (it.cat === 'skin' && it.char !== grp) { grp = it.char; const hd = document.createElement('h3'); hd.className = 'cosGrp'; hd.textContent = HEROES[grp].name; grid.append(hd); }
     b.type = 'button'; b.className = 'cosCard'; b.id = 'cos-' + id; b.setAttribute('aria-pressed', String(cosEquipped(id)));
     const pv = document.createElement('div'); pv.className = 'cosPv';
-    if (it.cat === 'emo') pv.textContent = it.em;
+    if (it.cat === 'emo') { pv.textContent = it.em; if (cosEquipped(id)) { const off = document.createElement('span'); off.className = 'cosOff'; off.textContent = '선택해제'; b.append(pv, off); } }
     else if (it.cat === 'kfx' || it.cat === 'pose') pv.textContent = it.icon || '';
     else if (it.cat === 'name') { pv.textContent = 'Aa'; pv.style.color = nameColorFor(id); pv.style.fontWeight = '700'; }
     else { const cv2 = document.createElement('canvas'); try { drawItemPreview(cv2, id, performance.now()); } catch (e) {} pv.append(cv2); }
@@ -6027,16 +6118,17 @@ function hitReact(e) {
   let best = null, bd = 70;
   for (const f of fighters) { if (!f || f.dead) continue; const d = Math.hypot(f.x - e.x, f.y + BODY - e.y); if (d < bd) { bd = d; best = f; } }
   const tier = HIT_TIER(v), now = performance.now(), ang = +e.ang || 0;
-  if (best) { best.stg = { at: now, dir: Math.cos(ang) >= 0 ? 1 : -1, s: [0, .45, .75, 1][tier] }; best._hf = now; best._hfT = [0, 60, 85, 120][tier]; }
+  if (best) { best.stg = { at: now, dir: Math.cos(ang) >= 0 ? 1 : -1, s: [0, .45, .75, 1][tier], ka: ang, tier }; best._hf = now; best._hfT = [0, 90, 120, 160][tier]; }
   const meHit = best && best === player;
-  if (meHit) buzz(tier === 3 ? 45 : 22);
+  if (meHit) { buzz(tier === 3 ? 45 : 22); hurtAt = now; hurtK = [0, .5, .75, 1][tier]; }
   const mine = !meHit && player && !player.dead && e.color === TC(player.team) && Math.hypot(player.x - e.x, player.y + BODY - e.y) < 420;
   if (!NET.role && (meHit || mine)) hitStopUntil = Math.max(hitStopUntil, now + (meHit ? [0, 30, 60, 95] : [0, 0, 45, 80])[tier]);
   if (mine && typeof shakeFrom === 'function') shakeFrom(e.x, e.y, [0, 1.5, 3.5, 7][tier], 600);
-  if (mine) { try { sfx([0, 180, 140, 95][tier], [0, .06, .09, .14][tier], 'square', [0, .03, .045, .06][tier], .5); } catch (er) { } }
+  if (mine || meHit) hitSnd(tier, meHit);
+  if (!(NET.role === 'guest' && mine)) impactPop(e.x, e.y, ang, e.color || '#ffffff', tier);
   const col = e.color || '#ffffff', x = e.x, y = e.y;
   if (tier >= 2) {
-    addP({ x, y, life: tier === 3 ? .3 : .2, color: '#ffffff', shape: 'flash', size: tier === 3 ? 120 : 70 });
+    addP({ x, y, life: .12, color: '#ffffff', shape: 'flash', size: tier === 3 ? 60 : 40 });
     addP({ x, y, life: .32, color: col, shape: 'ring', r0: 6, r1: tier === 3 ? 80 : 48, lw: tier === 3 ? 6 : 4 });
     const n = lowFx() ? 3 : tier === 3 ? 9 : 5;
     for (let i = 0; i < n; i++) { const a = ang + RND(-.7, .7), sp = RND(380, 820); addP({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: 3.2, life: RND(.18, .32), size: RND(3, 5), color: i % 2 ? '#ffffff' : col, shape: 'streak' }); }
@@ -6044,10 +6136,16 @@ function hitReact(e) {
   }
 }
 function staggerAngle(f) {             // tail.js turns the figure by this; while the hit flash lasts the figure is also drawn bright (the flash ends with tail.js's own ctx.restore)
-  if (f._hf) { const a = performance.now() - f._hf; if (a < f._hfT && !lowFx()) ctx.filter = 'brightness(' + (1 + 2.2 * (1 - a / f._hfT)).toFixed(2) + ')'; else f._hf = 0; }
+  if (f._hf) { const a = performance.now() - f._hf; if (a < f._hfT && !lowFx()) ctx.filter = a < 45 ? 'brightness(0) invert(1)' : 'brightness(' + (1 + 2.2 * (1 - a / f._hfT)).toFixed(2) + ')'; else f._hf = 0; }
   atkKick(f);
   const st = f.stg; if (!st) return 0;
   const age = performance.now() - st.at; if (age > 240 || age < 0) { f.stg = null; return 0; }
+  if (!lowFx() && st.ka !== undefined) {   // the body itself is pushed along the hit and springs back, squashed flat for a blink
+    const k = age < 50 ? age / 50 : Math.max(0, 1 - (age - 50) / 150), push = [0, 5, 9, 14][st.tier || 1] * k;
+    ctx.translate(Math.cos(st.ka) * push, Math.sin(st.ka) * push * .5);
+    const q = age < 130 ? Math.sin(Math.PI * age / 130) * [0, .1, .16, .22][st.tier || 1] : 0;
+    if (q) ctx.scale(1 + q, 1 - q);
+  }
   return st.dir * .26 * st.s * Math.sin(Math.PI * age / 240);
 }
 function rotQ(q, ox, oy, c, s) {
@@ -6403,7 +6501,7 @@ function drawDarkVeil(dt) {            // trapped in an enemy's lump: the pictur
   g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(.6, 'rgba(0,0,0,.7)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(sx, sy, r, 0, 7); c.fill();
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(kdVeilCv, 0, 0); ctx.restore();
 }
-function drawScreenVeil() { const now = performance.now(), dt = Math.min(.05, (now - (drawScreenVeil.last || now)) / 1000); drawScreenVeil.last = now; drawDarkVeil(dt); }
+function drawScreenVeil() { const now = performance.now(), dt = Math.min(.05, (now - (drawScreenVeil.last || now)) / 1000); drawScreenVeil.last = now; drawDarkVeil(dt); drawHurtVignette(now); }
 function drawZoneArt(z, menu) {       // tail.js asks this for every zone first; true = drawn here
   if ((z.kind === 'sprout' || z.kind === 'vine') && typeof drawGardenZone === 'function') return drawGardenZone(z);      // (정원사: gardener.js)
   if (z.col === '#9a4cff' && !z.kind) { drawDarkLump(z); return true; }
@@ -6445,7 +6543,7 @@ function drawKanWings(now) {           // 칸's ultimate: two wings of quetzal f
 }
 function drawBuffAuras(dt) {
   const now = performance.now(), T = now / 1000, menu = state === 'menu';
-  drawMuzzles(); doveFeathers(dt); drawHaraldAxes(now); drawLeapCracks(now); bombFrame(); mkCheck(); hatPops();
+  drawMuzzles(); drawImpacts(); doveFeathers(dt); predictHits(); deathWatch(); drawHaraldAxes(now); drawLeapCracks(now); bombFrame(); mkCheck(); hatPops();
   for (const f of fighters) { if (f && !f.dead && !f.minion && f.st && f.st.pz && (menu || (visibleTo(f, VIEW) && !bushAt(f.x, f.y)))) drawPizarroAura(f, now); }
   for (const f of fighters) {
     const a = f && f.fxAura; if (!a || f.minion) continue;
@@ -6645,6 +6743,107 @@ function doveFeathers(dt) {                 // little curved feathers that drift
     ctx.beginPath(); ctx.moveTo(-6, 0); ctx.quadraticCurveTo(0, -4, 6, 0); ctx.quadraticCurveTo(0, 3, -6, 0); ctx.fill(); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(-7, .5); ctx.lineTo(6, 0); ctx.stroke(); ctx.restore();
   }
+}
+
+/* ---------- 타격감 3: real-sounding hits (noise crack + low thump instead of one beep), bullets burst where they land,
+   a kill freezes the moment, an ultimate shakes the screen, and on a guest my own shots show their impact before the server answers ---------- */
+let NOISE = null;
+function sndBus() { if (!ac || muted || state !== 'play') return null; const v = (typeof SET !== 'undefined' && SET.vol !== undefined ? SET.vol : 100) / 100; return v > 0 ? v : null; }
+function noiseBuf() { if (NOISE) return NOISE; const n = ac.sampleRate * .4 | 0, b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return NOISE = b; }
+function snd(o) {                       // one layered hit: filtered noise for the crack, a falling sine for the body
+  const v = sndBus(); if (!v) return;
+  try {
+    const t = ac.currentTime, out = ac.createGain(); out.gain.value = v; out.connect(ac.destination);
+    if (o.n) { const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = noiseBuf(); f.type = o.nt || 'bandpass'; f.frequency.value = o.nf || 1800; f.Q.value = o.nq || .9;
+      g.gain.setValueAtTime(o.n, t); g.gain.exponentialRampToValueAtTime(.0001, t + (o.nd || .08)); s.connect(f); f.connect(g); g.connect(out); s.start(t); s.stop(t + (o.nd || .08) + .02); }
+    if (o.b) { const os = ac.createOscillator(), g = ac.createGain(); os.type = o.bt || 'sine'; os.frequency.setValueAtTime(o.bf || 160, t); os.frequency.exponentialRampToValueAtTime(o.be || 45, t + (o.bd || .12));
+      g.gain.setValueAtTime(o.b, t); g.gain.exponentialRampToValueAtTime(.0001, t + (o.bd || .12)); os.connect(g); g.connect(out); os.start(t); os.stop(t + (o.bd || .12) + .02); }
+  } catch (e) { }
+}
+function hitSnd(tier, meHit) {
+  if (meHit) snd({ n: .05 + tier * .02, nf: 900, nd: .07, b: .12 + tier * .04, bf: 120, be: 40, bd: .14 });
+  else snd({ n: [0, .07, .1, .14][tier], nf: [0, 2600, 2000, 1500][tier], nd: [0, .05, .08, .12][tier], b: [0, .1, .16, .24][tier], bf: [0, 200, 170, 140][tier], be: 45, bd: [0, .08, .12, .18][tier] });
+}
+const IMPS = [];
+function impactPop(x, y, ang, col, tier) {   // a crisp comic hit: a spiky white star rimmed in the shooter's colour, thick speed wedges, chunky outlined shards that bounce
+  const n = lowFx() ? 2 : 2 + tier * 2, sh = [];
+  for (let i = 0; i < n; i++) { const a = ang + Math.PI + RND(-1.2, 1.2) + (i % 2 ? Math.PI : 0) * .35, sp = RND(110, 230) + tier * 30; sh.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 90, r: RND(0, 6), vr: RND(-14, 14), z: RND(3.5, 6) + tier, gy: y + RND(16, 30), w: i % 3 === 0 ? '#ffffff' : col }); }
+  IMPS.push({ x, y, ang, col, tier, t0: performance.now(), rot: RND(0, 6.3), sh, last: performance.now() });
+  if (IMPS.length > 40) IMPS.shift();
+}
+function drawImpacts() {
+  const now = performance.now();
+  for (let i = IMPS.length - 1; i >= 0; i--) {
+    const m = IMPS[i], a = now - m.t0, dt = Math.min(.05, (now - m.last) / 1000); m.last = now;
+    if (a > 520) { IMPS.splice(i, 1); continue; }
+    ctx.save(); ctx.lineJoin = 'round';
+    if (a < 170) {                       // the star: full size at once, holds two frames, then snaps shut
+      const k = a < 60 ? 1.15 : Math.max(0, 1 - (a - 60) / 110), R0 = (24 + m.tier * 10) * k, sp = 9;
+      ctx.translate(m.x, m.y); ctx.rotate(m.rot);
+      ctx.beginPath();
+      for (let j = 0; j < sp * 2; j++) { const rr = j % 2 ? R0 * .42 : R0 * (j % 4 ? .8 : 1); const t = j / (sp * 2) * Math.PI * 2; j ? ctx.lineTo(Math.cos(t) * rr, Math.sin(t) * rr) : ctx.moveTo(Math.cos(t) * rr, Math.sin(t) * rr); }
+      ctx.closePath(); ctx.fillStyle = a < 50 ? '#ffffff' : '#fff6c8'; ctx.fill();
+      ctx.rotate(-m.rot);
+      if (!lowFx()) {                     // thick wedges flying outward along the hit
+        const L = (30 + m.tier * 14) * (a / 170), o = R0 * .6 + 10 * (a / 170);
+        ctx.fillStyle = m.col; ctx.globalAlpha = 1 - a / 170;
+        for (let j = -2; j <= 2; j++) { const t = m.ang + j * .45, c = Math.cos(t), s2 = Math.sin(t), px = -s2, py = c, w = 4 - Math.abs(j) + m.tier;
+          ctx.beginPath(); ctx.moveTo(c * o + px * w, s2 * o + py * w); ctx.lineTo(c * (o + L), s2 * (o + L)); ctx.lineTo(c * o - px * w, s2 * o - py * w); ctx.closePath(); ctx.fill(); }
+      }
+      ctx.translate(-m.x, -m.y); ctx.globalAlpha = 1;
+    }
+    for (const q of m.sh) {               // the shards fall to the ground and hop once
+      q.vy += 1100 * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.r += q.vr * dt; q.vx *= 1 - 1.5 * dt;
+      if (q.y > q.gy && q.vy > 0) { q.y = q.gy; q.vy *= -.35; q.vx *= .6; q.vr *= .5; }
+      ctx.globalAlpha = a > 380 ? Math.max(0, 1 - (a - 380) / 140) : 1;
+      ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.r);
+      ctx.beginPath(); ctx.moveTo(q.z, 0); ctx.lineTo(-q.z * .7, q.z * .65); ctx.lineTo(-q.z * .5, -q.z * .7); ctx.closePath();
+      ctx.fillStyle = q.w; ctx.fill(); ctx.restore();
+    }
+    ctx.restore();
+  }
+}
+let hurtAt = 0, hurtK = 0;
+function drawHurtVignette(now) {        // screen space: the edges flash red for a moment when I am hit
+  const a = now - hurtAt; if (a > 320 || !player || lowFx()) return;
+  const k = hurtK * (1 - a / 320), g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .32, W / 2, H / 2, Math.max(W, H) * .72);
+  g.addColorStop(0, 'rgba(255,40,40,0)'); g.addColorStop(1, 'rgba(255,40,40,' + (.55 * k).toFixed(3) + ')');
+  ctx.save(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.restore();
+}
+const PRED = new WeakSet();
+function predictHits() {                // guest only: my bullet is drawn touching an enemy, so burst it now; the server's own hit comes a ping later
+  if (NET.role !== 'guest' || !player || player.dead) return;
+  for (const b of bullets) {
+    if (b.team !== player.team || PRED.has(b)) continue;
+    for (const f of fighters) {
+      if (!f || f.dead || f.team === player.team || f.form === 'gone') continue;
+      if (Math.hypot(f.x - b.x, f.y + BODY - b.y) < 26 + (b.r || 6)) { PRED.add(b); const a = Math.atan2(b.vy || 0, b.vx || 1); impactPop(b.x, b.y, a, TC(player.team), 1); hitSnd(1, false); f.stg = { at: performance.now(), dir: Math.cos(a) >= 0 ? 1 : -1, s: .45, ka: a, tier: 1 }; f._hf = performance.now(); f._hfT = 60; break; }
+    }
+  }
+}
+const DEADS = new WeakMap();
+function deathWatch() {                 // a kill holds the frame for a beat, rings out and booms; bigger when it is mine
+  if (state !== 'play') return;
+  for (const f of fighters) {
+    if (!f || f.minion) continue;
+    const was = DEADS.get(f); DEADS.set(f, !!f.dead);
+    if (!f.dead || was !== false) continue;
+    const near = player && Math.hypot(player.x - f.x, player.y - f.y) < 600, mine = player && f.killer === player, me = f === player;
+    if (!near && !mine && !me) continue;
+    const now = performance.now(), x = f.x, y = f.y + BODY;
+    if (!NET.role && (mine || me)) hitStopUntil = Math.max(hitStopUntil, now + 130);
+    if (typeof shakeFrom === 'function') shakeFrom(x, y, mine || me ? 10 : 4, 700);
+    addP({ x, y, life: .3, color: '#ffffff', shape: 'flash', size: 170 });
+    addP({ x, y, life: .45, color: TC(f.team), shape: 'ring', r0: 10, r1: 120, lw: 7 });
+    snd({ n: mine || me ? .16 : .08, nt: 'lowpass', nf: 900, nd: .3, b: mine || me ? .3 : .14, bf: 110, be: 32, bd: .4 });
+  }
+}
+function ultPunch(e) {                  // every ultimate: a hard shake and a deep whoomp, full size for my own, smaller for others near me
+  const mine = player && Math.hypot(player.x - e.x, player.y + BODY - e.y) < 40, near = player && Math.hypot(player.x - e.x, player.y - e.y) < 700;
+  if (!mine && !near) return;
+  if (typeof shakeFrom === 'function') shakeFrom(e.x, e.y, mine ? 9 : 4, 900);
+  snd({ n: mine ? .12 : .06, nt: 'lowpass', nf: 1200, nd: .35, b: mine ? .28 : .12, bf: 220, be: 40, bd: .45, bt: 'triangle' });
+  if (mine) buzz(40);
 }
 
 /* ---------- previews ----------
@@ -6947,12 +7146,12 @@ hero('gardener', { p: ['초록 손', '내가 심은 덤불(덤불 심기, 숲 �
     circ(f, x, y, 4 * T, 60, { root: 1, kb: 0 });
   }],
   skills: [
-    [1, '덤불 심기', 'buff', '조준한 곳(최대 5칸)에 2×2칸 덤불이 6초 동안 자라남 · 일반 풀숲처럼 숨을 수 있음 · 덤불은 2개까지 (3번째를 심으면 가장 오래된 덤불이 시듦) · 벽, 물, 용암 위에는 자라지 않음', [0, 6 * T], (f, a) => {
+    [1, '덤불 심기', 'buff', '조준한 곳(최대 5칸)에 2×2칸 덤불이 10초 동안 자라남 · 일반 풀숲처럼 숨을 수 있음 · 덤불은 2개까지 (3번째를 심으면 가장 오래된 덤불이 시듦) · 벽, 물, 용암 위에는 자라지 않음', [0, 6 * T], (f, a) => {
       const p = aimPt(f, 5 * T), cells = cellsAround(p.x, p.y, 2), keys = cells.map(([c, r]) => c + ',' + r);
       const list = f.st.bush || (f.st.bush = []);
       for (let i = list.length - 1; i >= 0; i--) if (!list[i].some(k => GD.plants.has(k))) list.splice(i, 1);
       while (list.length >= 2) gdUnplant(list.shift());
-      if (!gdPlant(cells, 6)) return false;
+      if (!gdPlant(cells, 10)) return false;
       list.push(keys);
       fxPlay('garden', 'grow', Math.round(p.x), Math.round(p.y), 2);
     }, { ok: (f, e, d) => d < 7 * T }],
@@ -7226,15 +7425,16 @@ const PEERJS_ICE_CONFIG = { config: { iceServers: [
 ].concat(ICE_EXTRA) } };
 const NET_BUFFS = ['ally', 'block', 'reflect', 'sand', 'inv', 'counter', 'guard', 'stealth', 'stun', 'charm', 'root', 'mute', 'blind', 'slow', 'infect', 'reveal', 'fly'];
 /* game modes: the registry (MODES, setMode / curMode, modeSnap / applyModeSnap) lives with the rules in engine.js; everything here is guarded so a build
-   without it plays the plain team match. The mode id goes into the room id, so it must stay a short lowercase word. */
+   without it plays the plain team match. The mode id goes into the room id, so it must stay a short lowercase word (digits allowed, e.g. flag5). */
 function modeEntry(id) { try { if (typeof MODES === 'undefined' || !MODES) return null; return Array.isArray(MODES) ? MODES.find(m => m && m.id === id) || null : MODES[id] || null; } catch (e) { return null; } }
 function netModeOf(v) {      // the mode actually played: unknown or not-ready ids become the default, the same way the engine's modeOf() does
-  if (typeof v !== 'string' || !/^[a-z]{2,10}$/.test(v)) v = 'team';
+  if (typeof v !== 'string' || !/^[a-z][a-z0-9]{1,9}$/.test(v)) v = 'team';
   try { if (typeof modeOf === 'function') return modeOf(v).id; } catch (e) {}
   const e = modeEntry(v); return e && e.ready !== false ? v : 'team';
 }
 const lobbyMode = () => netModeOf(typeof modeChoice === 'string' ? modeChoice : 'team');
-function modeMax(id) { const e = modeEntry(id), n = e ? e.max | 0 : 0; return n >= 2 && n <= 8 ? n : id === 'duel' ? 2 : MAX_PLAYERS; }
+function modeMax(id) { const e = modeEntry(id), n = e ? (e.max | 0) || (e.teams | 0) * (e.per | 0) : 0;      // room size: the entry's max, else every seat of every team (5v5 = 10)
+  return n >= 2 && n <= 12 ? n : id === 'duel' ? 2 : MAX_PLAYERS; }
 function useMode(id) { try { if (typeof setMode === 'function') setMode(id); else if (typeof curMode !== 'undefined') curMode = id; } catch (e) {} }
 function startMatchIn(id, humans) {      // setup() takes the lobby's modeChoice: make sure it is the room's mode while the match is made
   let keep; try { if (typeof modeChoice !== 'undefined') { keep = modeChoice; modeChoice = id; } } catch (e) {}
@@ -7668,6 +7868,225 @@ if (DED) {
   };
 }
 
+/* ---------- launch intro (mockup #14 "한 줄", approved 2026-11-12) ----------
+   Plays once when the page opens: black screen, one white line, a stick figure rises out of it and runs, the letters stand up
+   behind him, one red stroke colours the second half. 5 s, then it fades into the lobby. A tap / click / key skips it.
+   The title is read from the lobby brand (<h1>Seum<span>Arena</span>), so renaming the game there renames the intro too.
+   Sound only plays where the browser already allows it (no tap yet = silent; the lobby music still starts on the first tap). */
+{
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const h1 = document.querySelector('#brandDisplay h1'), sp = h1 && h1.querySelector('span');
+  const TT = sp ? [h1.textContent.slice(0, h1.textContent.length - sp.textContent.length), sp.textContent] : ['Seum', 'Arena'];
+  if (!reduce && !window.__noIntro) {
+    const DUR = 5, FADE = .45, ACC = '#ff4d4d', TF = 'Rajdhani, "Black Han Sans", "IBM Plex Sans KR", sans-serif';
+    const cvI = document.createElement('canvas'), c = cvI.getContext('2d');
+    cvI.id = 'introCv'; cvI.setAttribute('aria-label', TT.join(''));
+    cvI.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:99999;background:#060608;touch-action:none;cursor:pointer;opacity:1;transition:opacity ' + FADE + 's';
+    document.body.appendChild(cvI);
+    const cl = v => v < 0 ? 0 : v > 1 ? 1 : v, seg = (t, a, b) => cl((t - a) / (b - a)), lerp = (a, b, q) => a + (b - a) * q;
+    const eOut = q => 1 - Math.pow(1 - q, 3), eInOut = q => q < .5 ? 4 * q * q * q : 1 - Math.pow(-2 * q + 2, 3) / 2;
+    const eBack = q => { const a = 1.9, b = a + 1; return 1 + b * Math.pow(q - 1, 3) + a * Math.pow(q - 1, 2); };
+    /* sound */
+    let ac = null; try { const AC = window.AudioContext || window.webkitAudioContext; ac = new AC(); } catch (e) { }
+    const tone = (f, d, o) => {
+      if (!ac || ac.state !== 'running') return; o = o || {};
+      try {
+        const t = ac.currentTime + (o.at || 0), os = ac.createOscillator(), g = ac.createGain(), v = (o.vol || .1) * (typeof SET === 'object' ? SET.vol / 100 : 1);
+        if (v <= 0) return;
+        os.type = o.type || 'sine'; os.frequency.setValueAtTime(f, t); if (o.slide) os.frequency.exponentialRampToValueAtTime(f * o.slide, t + d);
+        g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(v, t + (o.att || .005)); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+        os.connect(g); g.connect(ac.destination); os.start(t); os.stop(t + d + .05);
+      } catch (e) { }
+    };
+    const noiseHi = (d, vol) => { if (!ac || ac.state !== 'running') return; try { const n = Math.floor(ac.sampleRate * d), b = ac.createBuffer(1, n, ac.sampleRate), x = b.getChannelData(0); for (let i = 0; i < n; i++) x[i] = (Math.random() * 2 - 1) * (1 - i / n); const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); f.type = 'highpass'; f.frequency.value = 4000; g.gain.value = vol * (typeof SET === 'object' ? SET.vol / 100 : 1); s.buffer = b; s.connect(f); f.connect(g); g.connect(ac.destination); s.start(); } catch (e) { } };
+    const RISE = .7, RUN0 = 1.1, RUN1 = 2.5, SLASH = 2.75;
+    const cues = [[.05, () => tone(440, .7, { vol: .05, att: .3 })], [RISE, () => tone(660, .25, { type: 'triangle', vol: .08, slide: 1.5 })]];
+    for (let i = 0; i < 12; i++) cues.push([RUN0 + i * .115, () => { tone(180, .03, { vol: .12 }); tone(523 * Math.pow(2, i / 12), .12, { type: 'triangle', vol: .04 }); }]);
+    cues.push([SLASH, () => { tone(2600, .5, { slide: 1.4, vol: .07 }); noiseHi(.35, .18); }]);
+    cues.push([SLASH + .25, () => [220, 330, 440, 554].forEach(f => tone(f, 2.2, { vol: .055, att: .05 }))]);
+    /* a bare stick figure */
+    const man = (x, y, s, ph, run) => {
+      c.save(); c.translate(x, y); c.scale(s, s); c.strokeStyle = c.fillStyle = '#fff'; c.lineWidth = 4.5; c.lineCap = 'round'; c.lineJoin = 'round';
+      const sw = Math.sin(ph) * run, kx = Math.cos(ph) * run; c.rotate(run * .22);
+      c.beginPath(); c.moveTo(0, -22); c.lineTo(sw * 13, -10 - Math.max(0, kx) * 4); c.lineTo(sw * 15 - 3 * run, -Math.max(0, -kx) * 7 * run); c.stroke();
+      c.beginPath(); c.moveTo(0, -22); c.lineTo(-sw * 13, -10 - Math.max(0, -kx) * 4); c.lineTo(-sw * 15 - 3 * run, -Math.max(0, kx) * 7 * run); c.stroke();
+      c.beginPath(); c.moveTo(0, -22); c.lineTo(0, -42); c.stroke();
+      c.beginPath(); c.moveTo(0, -38); c.lineTo(-sw * 12 + 3, -28); c.lineTo(-sw * 16 + 9 * run, -24 - 4 * run); c.stroke();
+      c.beginPath(); c.moveTo(0, -38); c.lineTo(sw * 12 + 3, -28); c.lineTo(sw * 16 + 9 * run, -24 - 4 * run); c.stroke();
+      c.beginPath(); c.arc(0, -52, 9, 0, 7); c.fill(); c.restore();
+    };
+    const twinkle = (x, y, r, a) => { c.save(); c.globalAlpha = a; c.fillStyle = '#fff'; c.beginPath(); c.moveTo(x, y - r); c.quadraticCurveTo(x, y, x + r, y); c.quadraticCurveTo(x, y, x, y + r); c.quadraticCurveTo(x, y, x - r, y); c.quadraticCurveTo(x, y, x, y - r); c.fill(); c.restore(); };
+    let t0 = 0, ci = 0, done = false, raf = 0;
+    const frame = now => {
+      if (done) return; raf = requestAnimationFrame(frame);
+      if (!t0) t0 = now; const t = (now - t0) / 1000;
+      while (ci < cues.length && cues[ci][0] <= t) cues[ci++][1]();
+      const dpr = Math.min(2, devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+      if (cvI.width !== Math.round(W * dpr) || cvI.height !== Math.round(H * dpr)) { cvI.width = Math.round(W * dpr); cvI.height = Math.round(H * dpr); }
+      c.setTransform(dpr, 0, 0, dpr, 0, 0); c.fillStyle = '#060608'; c.fillRect(0, 0, W, H);
+      const port = H > W * 1.05, k = port ? Math.min(W / 780, H / 620) : Math.min(W / 1000, H / 620), cx = W / 2, cy = H / 2;
+      c.font = '700 100px ' + TF; const a100 = c.measureText(TT[0]).width, w100 = a100 + c.measureText(TT[1]).width;
+      const px = Math.min(190 * k, W * (port ? .8 : .7) / (w100 / 100)), mw = w100 * px / 100, ma = a100 * px / 100, ly = cy + px * .36, ty = ly - px * .37;
+      const xs = cx - mw / 2 - 50 * k, xe = Math.min(W - 30 * k, cx + mw / 2 + 55 * k);
+      const rq = seg(t, RUN0, RUN1), rx = lerp(xs, xe, rq < .5 ? 2 * rq * rq : 1 - Math.pow(-2 * rq + 2, 2) / 2);
+      const tip = t < RISE ? lerp(0, xs, eInOut(seg(t, 0, RISE))) : t < SLASH ? Math.max(xs, rx) : lerp(xe, W, eOut(seg(t, SLASH, SLASH + .5)));
+      c.strokeStyle = '#fff'; c.lineWidth = 3 * k; c.lineCap = 'round'; c.shadowColor = '#fff'; c.shadowBlur = 8 * k;
+      c.beginPath(); c.moveTo(0, ly); c.lineTo(tip, ly); c.stroke(); c.shadowBlur = 0;
+      /* letters */
+      const red = eOut(seg(t, SLASH, SLASH + .28));
+      c.save(); c.beginPath(); c.rect(0, 0, W, ly - 1.5 * k); c.clip(); c.font = '700 ' + px + 'px ' + TF; c.textAlign = 'left'; c.textBaseline = 'middle';
+      let lx = cx - mw / 2;
+      for (let p = 0; p < 2; p++) for (const ch of TT[p]) {
+        const w = c.measureText(ch).width, q = eBack(cl((rx - lx - w * .3) / (70 * k)));
+        if (q > 0 && t >= RUN0) {
+          const y = ty + (1 - q) * px * .95; c.fillStyle = '#fff'; c.fillText(ch, lx, y);
+          if (p && red > 0) { c.save(); c.beginPath(); c.rect(lerp(cx + mw / 2, cx - mw / 2 + ma, red) - 2, 0, W, H); c.clip(); c.fillStyle = ACC; c.shadowColor = ACC; c.shadowBlur = 24 * k * (1 - seg(t, SLASH + .3, SLASH + 1.2) * .6); c.fillText(ch, lx, y); c.restore(); }
+        }
+        lx += w;
+      }
+      c.restore();
+      if (t > SLASH && t < SLASH + .6) { const a = 1 - seg(t, SLASH + .15, SLASH + .6), xa = cx + mw / 2 + 30 * k, xb = lerp(xa, cx - mw / 2 + ma - 20 * k, red); c.save(); c.globalAlpha = a; c.strokeStyle = '#ff8a8a'; c.shadowColor = ACC; c.shadowBlur = 20 * k; c.lineWidth = 6 * k; c.beginPath(); c.moveTo(xa, ty - px * .45); c.lineTo(xb, ty + px * .3); c.stroke(); c.restore(); }
+      /* the runner */
+      if (t > RISE) {
+        const ms = (port ? 1.5 : 1.9) * k, up = eBack(seg(t, RISE, RISE + .3)), running = t > RUN0 && t < RUN1, jq = seg(t, RUN1, SLASH + .1), mid = jq > 0 && jq < 1;
+        const jump = Math.sin(jq * Math.PI) * 60 * k, x = t < RUN0 ? xs : rx;
+        c.save(); c.shadowColor = '#fff'; c.shadowBlur = 10 * k; c.translate(x, ly - jump); c.scale(1, up); if (mid) c.rotate(jq * 6.283);
+        man(0, mid ? 26 * ms : 0, ms, running ? t * 17 : 0, running ? 1 : mid ? .6 : 0); c.restore();
+      }
+      if (t > 3.4) { const tw = ((t - 3.4) * .8) % 1; twinkle(cx - mw / 2 + ma * .06 + mw * tw, ty - px * .42, 12 * k * Math.sin(tw * Math.PI), Math.sin(tw * Math.PI)); }
+      if (t >= DUR) end();
+    };
+    const end = () => {
+      if (done) return; done = true; cancelAnimationFrame(raf); cvI.style.opacity = '0'; cvI.style.pointerEvents = 'none';
+      for (const ev of ['keydown']) removeEventListener(ev, skipKey, true);
+      setTimeout(() => { cvI.remove(); try { if (ac) ac.close(); } catch (e) { } }, FADE * 1000 + 50);
+    };
+    const skip = e => { e.preventDefault(); e.stopPropagation(); end(); };
+    const skipKey = e => { if (!done) { e.preventDefault(); e.stopPropagation(); end(); } };
+    cvI.addEventListener('pointerdown', skip); cvI.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+    addEventListener('keydown', skipKey, true);
+    let go = false; const start = () => { if (!go) { go = true; raf = requestAnimationFrame(frame); } };
+    try { document.fonts.load('700 100px Rajdhani').then(start, start); } catch (e) { start(); }
+    setTimeout(start, 900);
+  }
+}
+
+/* ---------- news: notices the developer writes, read by every player ----------
+   The list lives in the seumarena repository as news/news.json (written with news/admin.html). The game reads it from
+   raw.githubusercontent.com (any origin may read it, and the app's service worker leaves that host alone); the copy that
+   was current at build time is baked in below, and the last list read is kept in localStorage, so news still shows offline.
+   An item: { id, kind: 공지|업데이트|이벤트|점검, date: 'YYYY-MM-DD', title, body, image?, link?: {label, url},
+   popup? (false = no pop-up on launch), pin? (kept on top), start?/end? (ISO time: shown only between them) }.
+   Players see a newspaper tile in the lobby's top right with a red dot while something is unread; unread news that
+   asks for it opens once by itself when the lobby is first shown. */
+const NEWS_BUILT = {"v":1,"updated":"2026-11-12T12:00:00+09:00","news":[{"id":"n-welcome","kind":"공지","date":"2026-11-12","title":"SeumArena 뉴스가 열렸어요","body":"업데이트, 이벤트, 점검 소식을 여기서 알려 드릴게요."}]};
+const NEWS_URL = 'https://raw.githubusercontent.com/frenchfries777mc/seumarena/main/news/news.json';
+const NEWS_KIND = { '공지': '#4d9dff', '업데이트': '#3fe0c5', '이벤트': '#ffd34d', '점검': '#ff5d5d' };
+const NEWS_SEEN_KEY = 'seumArenaNewsSeen', NEWS_CACHE_KEY = 'seumArenaNewsCache';
+let newsData = null, newsAsked = false, newsPopped = false, newsT0 = Date.now();
+function newsLoad(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+function newsSave(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function newsOk(d) { return d && Array.isArray(d.news) ? d : null; }
+/* of the baked-in list and the last one read, the newer one (by its "updated" stamp) shows until the fresh one arrives */
+{
+  const b = newsOk(NEWS_BUILT), c = newsOk(newsLoad(NEWS_CACHE_KEY, null));
+  newsData = b && c ? (String(c.updated || '') >= String(b.updated || '') ? c : b) : (c || b);
+}
+function newsLive() {
+  const now = Date.now(), t = s => { const v = Date.parse(s); return isNaN(v) ? null : v; };
+  return (newsData ? newsData.news : []).filter(n => n && n.id && n.title && !(n.start && t(n.start) > now) && !(n.end && t(n.end) <= now))
+    .sort((a, b) => (!!b.pin - !!a.pin) || String(b.date || '').localeCompare(String(a.date || '')));
+}
+function newsSeen() { const s = newsLoad(NEWS_SEEN_KEY, []); return Array.isArray(s) ? s : []; }
+function newsUnread() { const s = newsSeen(); return newsLive().filter(n => !s.includes(n.id)); }
+function newsMarkSeen() { const s = newsSeen(); for (const n of newsLive()) if (!s.includes(n.id)) s.push(n.id); newsSave(NEWS_SEEN_KEY, s.slice(-300)); }
+function newsEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+function newsUrl(u, img) { u = String(u || '').trim(); return /^https:\/\//i.test(u) || (img && /^data:image\//i.test(u)) ? u : ''; }
+function newsDate(d) { const m = /^(\d{4})-(\d\d)-(\d\d)/.exec(d || ''); return m ? m[1] + '.' + m[2] + '.' + m[3] : ''; }
+function newsItemHtml(n, unread) {
+  const c = NEWS_KIND[n.kind] || 'var(--gold)', img = newsUrl(n.image, true), lk = n.link && newsUrl(n.link.url);
+  return '<article class="nwItem" style="--c:' + c + '">' + (img ? '<img src="' + newsEsc(img) + '" alt="" loading="lazy" decoding="async">' : '') +
+    '<div class="nwBody"><div class="nwMeta">' + (n.kind ? '<span class="nwTag">' + newsEsc(n.kind) + '</span>' : '') + (n.pin ? '<svg class="nwPin" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4H6l4-4z M12 13v8" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>' : '') +
+    '<span>' + newsDate(n.date) + '</span>' + (unread ? '<i class="nwNew" aria-label="새 소식"></i>' : '') + '</div>' +
+    '<h3>' + newsEsc(n.title) + '</h3>' + (n.body ? '<p>' + newsEsc(n.body) + '</p>' : '') +
+    (lk ? '<a class="btn-primary nwLink" href="' + newsEsc(lk) + '" target="_blank" rel="noopener">' + newsEsc(n.link.label || '열기') + '</a>' : '') + '</div></article>';
+}
+const NEWS_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 5.5h13v13a2 2 0 0 0 2 2h-13a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16.5 9h4v9.5a2 2 0 0 1-4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M6.5 9h7v4h-7z" fill="currentColor"/><path d="M6.5 15.5h7M6.5 18h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+const NEWS_CSS = `
+#topRight #newsBtn{position:relative;box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:56px;height:56px;margin:0;padding:0;cursor:pointer;border-radius:14px;border:2px solid #e0a53c;color:#ffdc8c;background:linear-gradient(180deg,#46310f,#271a06);box-shadow:0 4px 0 #160e03,0 0 12px rgba(255,180,60,.18);transition:transform .08s ease}
+#topRight #newsBtn:active{transform:translateY(2px)}
+#topRight #newsBtn svg{width:30px;height:30px;display:block;filter:drop-shadow(0 0 4px rgba(255,190,80,.35))}
+#newsBtn[hidden]{display:none!important}
+#newsDot{position:absolute;top:-6px;right:-6px;width:15px;height:15px;border-radius:50%;background:var(--red);border:2px solid #14161c}
+#newsDot[hidden]{display:none}
+@media (max-width:520px){ #topRight #newsBtn{width:48px;height:48px;border-radius:12px} #topRight #newsBtn svg{width:25px;height:25px} }
+@media (max-height:560px){ #topRight #newsBtn{width:46px;height:44px;border-radius:12px;box-shadow:0 3px 0 #160e03} #topRight #newsBtn svg{width:24px;height:24px} }
+#newsWin{position:fixed;inset:0;z-index:31;display:flex;align-items:center;justify-content:center;background:rgba(6,8,12,.7);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  padding:calc(env(safe-area-inset-top,0px) + 14px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom,0px) + 14px) max(16px, env(safe-area-inset-left, 0px));box-sizing:border-box}
+#newsWin[hidden]{display:none}
+.nwCard{width:min(680px,100%);max-height:100%;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-top:3px solid #e0a53c;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.55);overflow:hidden;animation:nwIn .2s ease-out}
+@keyframes nwIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.nwCard{animation:none}}
+.nwHead{display:flex;align-items:center;gap:10px;padding:10px 12px 10px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#221c10,var(--panel))}
+.nwHead svg{width:28px;height:28px;flex:none;color:#ffcf6a}
+.nwHead h2{flex:1;margin:0;font:400 25px 'Black Han Sans','IBM Plex Sans KR',sans-serif;letter-spacing:.05em;color:#ffe3a0;text-shadow:0 2px 0 rgba(0,0,0,.45);transform:skewX(-8deg)}
+.nwX{flex:none;width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font-size:24px;line-height:1;cursor:pointer;display:grid;place-items:center}
+.nwX:hover{background:var(--line)}
+.nwList{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:14px;display:flex;flex-direction:column;gap:12px}
+.nwItem{flex:none;background:var(--panel-2);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:12px;overflow:hidden}
+.nwItem img{display:block;width:100%;height:auto;max-height:260px;object-fit:cover;background:#0b0d12}
+.nwBody{padding:12px 16px 14px}
+.nwMeta{display:flex;align-items:center;gap:8px;font:600 13px 'IBM Plex Sans KR',sans-serif;color:var(--text-dim);font-variant-numeric:tabular-nums}
+.nwTag{color:#0c0e13;background:var(--c);border-radius:999px;padding:1px 10px;font-weight:800;font-size:12.5px;line-height:1.6}
+.nwPin{width:15px;height:15px;color:var(--c)}
+.nwNew{width:10px;height:10px;border-radius:50%;background:var(--red);margin-left:auto;box-shadow:0 0 0 3px rgba(255,93,93,.18)}
+.nwItem h3{margin:7px 0 4px;font:700 19px/1.4 'IBM Plex Sans KR',sans-serif;color:var(--text);word-break:keep-all;overflow-wrap:anywhere}
+.nwItem p{margin:0;font:400 15px/1.65 'IBM Plex Sans KR',sans-serif;color:#cdd2dc;white-space:pre-line;word-break:keep-all;overflow-wrap:anywhere}
+.nwLink{display:inline-block;margin-top:12px;padding:9px 28px;font-size:16px;text-decoration:none}
+@media (max-height:560px){ .nwHead{padding:6px 10px 6px 14px} .nwHead h2{font-size:21px} .nwX{width:38px;height:38px} .nwList{padding:10px;gap:10px} .nwItem img{max-height:150px} .nwBody{padding:10px 14px 12px} .nwItem h3{font-size:17px} .nwItem p{font-size:14px} }
+`;
+const newsBtn = document.createElement('button'), newsWin = document.createElement('div');
+if (!DED) {
+  const st = document.createElement('style'); st.textContent = NEWS_CSS; document.head.appendChild(st);
+  newsBtn.id = 'newsBtn'; newsBtn.type = 'button'; newsBtn.setAttribute('aria-label', '뉴스'); newsBtn.innerHTML = NEWS_ICON + '<i id="newsDot" hidden></i>';
+  const tr = document.getElementById('topRight'), q = document.getElementById('quest');
+  if (tr) { if (q && q.parentNode === tr) q.after(newsBtn); else tr.appendChild(newsBtn); }
+  newsWin.id = 'newsWin'; newsWin.hidden = true;
+  newsWin.innerHTML = '<div class="nwCard" role="dialog" aria-modal="true" aria-labelledby="nwTitle"><div class="nwHead">' + NEWS_ICON + '<h2 id="nwTitle">뉴스</h2><button class="nwX" type="button" aria-label="닫기">&times;</button></div><div class="nwList"></div></div>';
+  document.body.appendChild(newsWin);
+  newsBtn.addEventListener('click', () => newsOpen(true));
+  newsWin.querySelector('.nwX').addEventListener('click', () => newsOpen(false));
+  newsWin.addEventListener('pointerdown', e => { e.stopPropagation(); if (e.target === newsWin) newsOpen(false); });
+  addEventListener('keydown', e => { if (newsWin.hidden) return; if (e.code === 'Escape') newsOpen(false); e.stopPropagation(); }, true);   // the game does not see keys while the window is open
+  newsWin.addEventListener('error', e => { if (e.target.tagName === 'IMG') e.target.remove(); }, true);   // a picture that cannot load (offline) is left out
+  newsPaint();
+  newsFetch();
+  setInterval(newsTick, 400);
+}
+function newsPaint() { const live = newsLive(); newsBtn.hidden = !live.length; const d = document.getElementById('newsDot'); if (d) d.hidden = !newsUnread().length; }
+function newsOpen(on) {
+  if (on) {
+    const s = newsSeen(); newsWin.querySelector('.nwList').innerHTML = newsLive().map(n => newsItemHtml(n, !s.includes(n.id))).join('');
+    newsWin.hidden = false; newsWin.querySelector('.nwList').scrollTop = 0;
+  } else if (!newsWin.hidden) { newsWin.hidden = true; newsMarkSeen(); newsPaint(); }
+}
+function newsFetch() {
+  if (newsAsked) return; newsAsked = true;
+  let ctl = null; try { ctl = new AbortController(); setTimeout(() => ctl.abort(), 8000); } catch (e) {}
+  fetch(NEWS_URL + '?t=' + Math.floor(Date.now() / 60000), { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
+    .then(r => r.ok ? r.json() : null).then(d => { d = newsOk(d); if (!d) return; newsData = d; newsSave(NEWS_CACHE_KEY, d); newsPaint(); })
+    .catch(() => {}).then(() => { newsAsked = 'done'; });
+}
+/* the one pop-up: once the intro is gone and the plain lobby menu is up (nothing else open), after the fresh list came or 4 s passed */
+function newsTick() {
+  if (newsPopped || DED) return;
+  if (newsAsked !== 'done' && Date.now() - newsT0 < 4000) return;
+  const lob = document.getElementById('lobby'), menu = document.getElementById('menuScreen'), set = document.getElementById('settings');
+  if (document.hidden || document.getElementById('introCv') || !lob || lob.hidden || !menu || !menu.classList.contains('active') || (set && !set.hidden)) return;
+  newsPopped = true;
+  if (newsUnread().some(n => n.popup !== false)) newsOpen(true);
+}
+
 /* ---------- drawing ---------- */
 function drawStick(c, id, col, ang, walk, swing, t, cos) {
   const h = HEROES[id], HIP = -22, SH = -42, HEADCY = -52, HEADR = 9, face = Math.cos(ang) >= 0 ? 1 : -1;
@@ -7859,6 +8278,7 @@ function render() {
   }
   for (const s of strikes) { const k = 1 - s.t / s.max; ctx.globalAlpha = .18; ctx.fillStyle = s.col; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.3); ctx.fill(); ctx.globalAlpha = .9; ctx.strokeStyle = s.col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(s.x, s.y, s.r * k, 0, 6.3); ctx.stroke(); ctx.globalAlpha = 1; }
 
+  drawTiles(ctx, c0, c1, r0, r1, 1);      // walls go under the fighters, so a wall never covers a player
   const inBush = [];
   if (me && state === 'play') { if (!drawPreviews(me)) drawBasicGuide(me); }
   const order = fighters.filter(f => !f.dead).concat(minions.filter(m => m.kind !== 'dragon' && m.kind !== 'crow')).sort((a, b) => a.y - b.y);
@@ -7869,11 +8289,10 @@ function render() {
     drawFighter(f, B(f, 'stealth') && !menu ? .4 : 1);
   }
   drawFleet();
-  for (const b of bullets) if (!(b.shape === 'seed' && typeof drawSeedShot === 'function' && drawSeedShot(b)) && !drawShot(b)) drawBullet(b);
-  { const now = performance.now(); drawSwings(Math.min(.05, (now - (render.last || now)) / 1000)); render.last = now; }
-  drawTiles(ctx, c0, c1, r0, r1, 1);
   drawTiles(ctx, c0, c1, r0, r1, 2);
   for (const f of inBush) drawFighter(f, f.team === VIEW ? .6 : .85);
+  for (const b of bullets) if (!(b.shape === 'seed' && typeof drawSeedShot === 'function' && drawSeedShot(b)) && !drawShot(b)) drawBullet(b);      // shots and swings over walls and bushes, so nothing hides them
+  { const now = performance.now(); drawSwings(Math.min(.05, (now - (render.last || now)) / 1000)); render.last = now; }
   for (const m of minions) if (m.kind === 'dragon' || m.kind === 'crow') drawMinion(m);
   for (const p of parts) { ctx.globalAlpha = clamp(p.life / p.max, 0, 1); ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.3); ctx.fill(); }
   drawParticles();
@@ -7896,7 +8315,7 @@ function render() {
   drawEnvOverlay();
   if (!lowFx()) drawSamScreen();
   /* phones: both sticks are always on screen at their home spots (move bottom left, attack bottom right); a held stick is drawn where the thumb grabbed it */
-  if (state === 'play' && touchUi()) {
+  if (state === 'play' && touchUi() && !soloOutShown) {      // (not while only watching after a knock-out)
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     for (const atk of [false, true]) {
       const s = atk ? stickA : stickM, hm = stickHome(atk), ox = s ? s.ox : hm.x, oy = s ? s.oy : hm.y, on = !!s;
@@ -8007,7 +8426,7 @@ addEventListener('keydown', e => { if (setEl.hidden) return; if (e.code === 'Esc
 /* game modes: the engine's MODES registry ({id,name,size,maps,ready}) when it exists; until then the same four, with only the current rules playable */
 const MODE_FALLBACK = [{ id: 'team', name: '팀 아웃', size: '3v3' }, { id: 'solo', name: '원 레프트', size: '6명', ready: false }, { id: 'flag', name: '캡쳐 플래그', size: '3v3', ready: false }, { id: 'duel', name: '듀얼 배틀', size: '1v1', ready: false }];
 const MODE_LIST = typeof MODES !== 'undefined' && Array.isArray(MODES) && MODES.length ? MODES : MODE_FALLBACK;
-const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], duel: ['mi-m-duel', '#b48cff'] };
+const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'] };
 let modeSel = typeof modeChoice === 'string' ? modeChoice : MODE_LIST[0].id, modeView = modeSel;
 const modeOk = m => !!m && m.ready !== false;
 const modeCur = () => MODE_LIST.find(m => m.id === modeSel && modeOk(m)) || MODE_LIST.find(modeOk) || MODE_LIST[0];
@@ -8184,7 +8603,7 @@ $('mapPickBtn').addEventListener('click', () => { mapChoice = mapList[mapIdx]; s
 
 /* mode picker. PC: a row of event cards, tap one to look at it, the button below (or a double click) confirms.
    touch or small screens: big posters, a tap picks the mode right away. Each card: mode art, headcount, two rules, the mode's current map */
-const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', duel: '#47307a' };
+const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a' };
 const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1 };      // map drawn behind the figures while the mode's map is random
 const MODE_FFA = ['#4d9dff', '#ff5d5d', '#ffd34d', '#3ddbb4', '#b48cff', '#ff9a3d'];
 const RULE_ICO = {
@@ -8198,7 +8617,7 @@ const mmss = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart
 function modeRules(m) {
   const r = [], solo = m.id === 'solo' || m.id === 'last';
   if (solo) r.push(['crown', '최후 1인']);
-  else if (m.id === 'flag' && m.win) r.push(['flag', '깃발 ' + m.win + '점']);
+  else if (isFlagMode(m.id) && m.win) r.push(['flag', '깃발 ' + m.win + '점']);
   else if (m.id === 'duel' && m.win) r.push(['rounds', m.win + '선승']);
   else if (m.win) r.push(['kill', m.win + '킬']);
   if (m.time) r.push(['clock', (m.rounds ? '판당 ' : '') + mmss(m.time)]);
@@ -8236,7 +8655,7 @@ function modeScene(cv, m, mi, cx) {
     g.save(); g.beginPath(); g.rect(0, 0, w, h); g.arc(x0, h * .55, zr, 0, 7, true); g.fillStyle = 'rgba(160,40,90,.35)'; g.fill('evenodd'); g.restore();
     g.strokeStyle = '#ffd34d'; g.lineWidth = 3 * k; g.setLineDash([10 * k, 7 * k]); g.beginPath(); g.arc(x0, h * .55, zr, 0, 7); g.stroke(); g.setLineDash([]);
     ['sword', 'pistol', 'magiccard', 'kadas', 'rifle', 'shade'].forEach((id, n) => { const x = x0 + (n - 2.5) * 46 * s, y = base - (n % 2) * 22 * s; fig(id, MODE_FFA[n], x, y, s * .92, x < x0 ? 1 : -1, .3); });
-  } else if (m.id === 'flag') {
+  } else if (isFlagMode(m.id)) {
     fig('bow', B, x0 - 110 * s, base - 22 * s, s * .9, 1, .4);
     fig('sword', B, x0 - 30 * s, base, s * 1.1, 1, .2); flag(x0 - 48 * s, base - 30 * s, s * 1.05, R);
     fig('rifle', R, x0 + 70 * s, base - 14 * s, s, -1, .5); flag(x0 + 135 * s, base - 30 * s, s * .9, B);
@@ -8270,7 +8689,7 @@ function modePick() {
 }
 function showModes() {
   const scr = $('modeScreen'), g = $('modeGrid'), ph = modeTouchLayout(), NS = 'http://www.w3.org/2000/svg';
-  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = '';
+  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = ''; g.classList.toggle('n5', MODE_LIST.length === 5);
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   const icon = (d, cls) => { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); if (cls) s.setAttribute('class', cls); s.innerHTML = d; return s; };
   const arts = [];
@@ -8278,10 +8697,10 @@ function showModes() {
     const ok = modeOk(m), mi = modeMapOf(m), lk = MODE_LOOK[m.id] || ['mi-m-team', '#fff'];
     const b = el('button', 'modeCard'), inn = el('span', 'mIn'), art = el('canvas', 'mArt'), top = el('span', 'mTop'), ic = el('span', 'mIco solid'), sz = el('span', 'mSz'), rl = el('span', 'mRules'), mp = el('span', 'mMap');
     b.type = 'button'; b.dataset.mode = m.id; b.style.setProperty('--c', lk[1]); b.style.setProperty('--d', MODE_DARK[m.id] || '#2a2f3c');
-    top.append(modeIcon(ic, m), el('b', 'mN', m.name));
+    top.append(modeIcon(ic, m), el('b', 'mN', m.size && m.name.endsWith(' ' + m.size) ? m.name.slice(0, -m.size.length - 1) : m.name));      // the size has its own big label on the card
     if (m.size) sz.append(el('span', 'mSize', m.size));
     if (m.teams && m.per) {
-      const p = el('span', 'mPips'), dots = (n, col) => { const w = el('b'); for (let j = 0; j < n; j++) { const d = el('i'); d.style.background = col; w.append(d); } return w; };
+      const p = el('span', 'mPips' + (m.teams * m.per > 6 ? ' many' : '')), dots = (n, col) => { const w = el('b'); for (let j = 0; j < n; j++) { const d = el('i'); d.style.background = col; w.append(d); } return w; };
       if (m.teams === 2) p.append(dots(m.per, TEAM[0]), el('em', '', 'vs'), dots(m.per, TEAM[1]));
       else { const w = el('b'); for (let j = 0; j < m.teams * m.per; j++) { const d = el('i'); d.style.background = MODE_FFA[j % MODE_FFA.length]; w.append(d); } p.append(w); }
       sz.append(p);
@@ -8314,7 +8733,7 @@ $('mapBackBtn').addEventListener('click', () => showScreen('menuScreen'));
 function enterPlay() {
   { const c = document.getElementById('diceBannerContainer'); if (c) c.textContent = ''; }
   state = 'play'; feed.textContent = ''; lastHud = '';
-  soloOutAt = 0; soloOutShown = false;
+  soloOutAt = 0; soloOutShown = false; $('specBack').hidden = true;
   mouse.down = false; stickM = stickA = pendingFire = null; wantUlt = wantDash = false; wantSk = [false, false]; pvClear();
   lobby.hidden = true; cv.classList.remove('inLobby'); showPlayUi(true);
 }
@@ -8332,7 +8751,7 @@ function buildOverStats(win, draw) {
   const solo = curMode === 'solo', rank = f => f.team === RD.win ? 0 : RD.out.includes(f.team) ? fs.length - RD.out.indexOf(f.team) : 1;      // solo: one list in finishing order
   for (const team of solo ? [-1] : [VIEW, 1 - VIEW]) {
     if (!solo && team !== VIEW) box.append(el('div', 'osGap'));
-    for (const f of solo ? fs.slice().sort((a, b) => rank(a) - rank(b)) : fs.filter(f => f.team === team).sort((a, b) => val(b) - val(a))) {
+    for (const f of solo ? fs.slice().sort((a, b) => rank(a) - rank(b)).filter(f => state !== 'play' || RD.out.includes(f.team)) : fs.filter(f => f.team === team).sort((a, b) => val(b) - val(a))) {
       const r = el('div', 'osRow ' + (f.team === VIEW ? 'b' : 'r') + (f === player ? ' me' : '')), nm = el('span', 'on');
       if (solo) nm.append(el('span', 'rk', String(fs.slice().sort((a, b) => rank(a) - rank(b)).indexOf(f) + 1)));
       else if (f === mvp && val(f) > 0) nm.append(el('span', 'mvp', 'MVP'));
@@ -8350,11 +8769,15 @@ function soloOutCheck() {
   if (!soloOutAt) soloOutAt = performance.now();
   if (performance.now() - soloOutAt < 1400) return;      // long enough to see what happened
   if (fighters.filter(f => !f.dead).length < 2) return;      // the match is ending anyway
-  endGame(NET.role === 'host' && NET.members && NET.members.length > 0);
+  endGame(true);      // the match goes on (it can be watched): only this player's result is shown
 }
+/* watching on after being knocked out: the result screen is put away, the camera follows the ones still alive (render), a small button brings the result back */
+function soloWatch(on) { lobby.hidden = on; cv.classList.toggle('inLobby', !on); $('specBack').hidden = !on; if (!on) showScreen('overScreen'); }
 function endGame(keepRunning) {
   if (keepRunning !== true) { state = 'over'; if (NET.role === 'guest' && NET.stats) applyMatchStats(NET.stats); hostEnd(); }
-  if (soloOutShown) { showPlayUi(false); return; }      // this player already got the result screen when knocked out
+  if (soloOutShown) {      // this player already got the result screen (and the pay) when knocked out: now the match is really over, so the whole table is known
+    showPlayUi(false); buildOverStats(false, false); $('specBtn').hidden = true; soloWatch(false); return;
+  }
   if (curMode === 'solo' && player && player.dead) soloOutShown = true;
   showPlayUi(false);
   const oc = modeOutcome(), solo = curMode === 'solo', mine = oc.a, theirs = oc.b;
@@ -8375,6 +8798,7 @@ function endGame(keepRunning) {
       $('mpGain').style.color = masteryOf(hid).col;
     }
   }
+  $('specBtn').hidden = !(soloOutShown && state === 'play'); $('specBack').hidden = true;
   lobby.hidden = false; cv.classList.add('inLobby'); showScreen('overScreen');
   emoteWheel(false); chatOpen(false);
   winScreen(win, draw);
@@ -8383,6 +8807,8 @@ function toMenu() { netReset(); VIEW = 0; state = 'menu'; setup(false); showPlay
 $('startBtn').addEventListener('click', startOnline);
 $('againBtn').addEventListener('click', () => { netReset(); if (state !== 'menu') { VIEW = 0; state = 'menu'; setup(false); } startOnline(); });
 $('lobbyBtn').addEventListener('click', toMenu);
+$('specBtn').addEventListener('click', () => { if (state === 'play' && soloOutShown) soloWatch(true); });
+$('specBack').addEventListener('click', () => soloWatch(false));
 $('roomCancelBtn').addEventListener('click', () => { netReset(); showScreen('menuScreen'); });
 $('goCosBtn').addEventListener('click', () => { showScreen('cosScreen'); renderCos(); });
 $('cosBackBtn').addEventListener('click', () => showScreen('menuScreen'));

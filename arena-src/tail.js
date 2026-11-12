@@ -189,6 +189,7 @@ function render() {
   }
   for (const s of strikes) { const k = 1 - s.t / s.max; ctx.globalAlpha = .18; ctx.fillStyle = s.col; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.3); ctx.fill(); ctx.globalAlpha = .9; ctx.strokeStyle = s.col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(s.x, s.y, s.r * k, 0, 6.3); ctx.stroke(); ctx.globalAlpha = 1; }
 
+  drawTiles(ctx, c0, c1, r0, r1, 1);      // walls go under the fighters, so a wall never covers a player
   const inBush = [];
   if (me && state === 'play') { if (!drawPreviews(me)) drawBasicGuide(me); }
   const order = fighters.filter(f => !f.dead).concat(minions.filter(m => m.kind !== 'dragon' && m.kind !== 'crow')).sort((a, b) => a.y - b.y);
@@ -199,11 +200,10 @@ function render() {
     drawFighter(f, B(f, 'stealth') && !menu ? .4 : 1);
   }
   drawFleet();
-  for (const b of bullets) if (!(b.shape === 'seed' && typeof drawSeedShot === 'function' && drawSeedShot(b)) && !drawShot(b)) drawBullet(b);
-  { const now = performance.now(); drawSwings(Math.min(.05, (now - (render.last || now)) / 1000)); render.last = now; }
-  drawTiles(ctx, c0, c1, r0, r1, 1);
   drawTiles(ctx, c0, c1, r0, r1, 2);
   for (const f of inBush) drawFighter(f, f.team === VIEW ? .6 : .85);
+  for (const b of bullets) if (!(b.shape === 'seed' && typeof drawSeedShot === 'function' && drawSeedShot(b)) && !drawShot(b)) drawBullet(b);      // shots and swings over walls and bushes, so nothing hides them
+  { const now = performance.now(); drawSwings(Math.min(.05, (now - (render.last || now)) / 1000)); render.last = now; }
   for (const m of minions) if (m.kind === 'dragon' || m.kind === 'crow') drawMinion(m);
   for (const p of parts) { ctx.globalAlpha = clamp(p.life / p.max, 0, 1); ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.3); ctx.fill(); }
   drawParticles();
@@ -226,7 +226,7 @@ function render() {
   drawEnvOverlay();
   if (!lowFx()) drawSamScreen();
   /* phones: both sticks are always on screen at their home spots (move bottom left, attack bottom right); a held stick is drawn where the thumb grabbed it */
-  if (state === 'play' && touchUi()) {
+  if (state === 'play' && touchUi() && !soloOutShown) {      // (not while only watching after a knock-out)
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     for (const atk of [false, true]) {
       const s = atk ? stickA : stickM, hm = stickHome(atk), ox = s ? s.ox : hm.x, oy = s ? s.oy : hm.y, on = !!s;
@@ -337,7 +337,7 @@ addEventListener('keydown', e => { if (setEl.hidden) return; if (e.code === 'Esc
 /* game modes: the engine's MODES registry ({id,name,size,maps,ready}) when it exists; until then the same four, with only the current rules playable */
 const MODE_FALLBACK = [{ id: 'team', name: '팀 아웃', size: '3v3' }, { id: 'solo', name: '원 레프트', size: '6명', ready: false }, { id: 'flag', name: '캡쳐 플래그', size: '3v3', ready: false }, { id: 'duel', name: '듀얼 배틀', size: '1v1', ready: false }];
 const MODE_LIST = typeof MODES !== 'undefined' && Array.isArray(MODES) && MODES.length ? MODES : MODE_FALLBACK;
-const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], duel: ['mi-m-duel', '#b48cff'] };
+const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'] };
 let modeSel = typeof modeChoice === 'string' ? modeChoice : MODE_LIST[0].id, modeView = modeSel;
 const modeOk = m => !!m && m.ready !== false;
 const modeCur = () => MODE_LIST.find(m => m.id === modeSel && modeOk(m)) || MODE_LIST.find(modeOk) || MODE_LIST[0];
@@ -514,7 +514,7 @@ $('mapPickBtn').addEventListener('click', () => { mapChoice = mapList[mapIdx]; s
 
 /* mode picker. PC: a row of event cards, tap one to look at it, the button below (or a double click) confirms.
    touch or small screens: big posters, a tap picks the mode right away. Each card: mode art, headcount, two rules, the mode's current map */
-const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', duel: '#47307a' };
+const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a' };
 const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1 };      // map drawn behind the figures while the mode's map is random
 const MODE_FFA = ['#4d9dff', '#ff5d5d', '#ffd34d', '#3ddbb4', '#b48cff', '#ff9a3d'];
 const RULE_ICO = {
@@ -528,7 +528,7 @@ const mmss = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart
 function modeRules(m) {
   const r = [], solo = m.id === 'solo' || m.id === 'last';
   if (solo) r.push(['crown', '최후 1인']);
-  else if (m.id === 'flag' && m.win) r.push(['flag', '깃발 ' + m.win + '점']);
+  else if (isFlagMode(m.id) && m.win) r.push(['flag', '깃발 ' + m.win + '점']);
   else if (m.id === 'duel' && m.win) r.push(['rounds', m.win + '선승']);
   else if (m.win) r.push(['kill', m.win + '킬']);
   if (m.time) r.push(['clock', (m.rounds ? '판당 ' : '') + mmss(m.time)]);
@@ -566,7 +566,7 @@ function modeScene(cv, m, mi, cx) {
     g.save(); g.beginPath(); g.rect(0, 0, w, h); g.arc(x0, h * .55, zr, 0, 7, true); g.fillStyle = 'rgba(160,40,90,.35)'; g.fill('evenodd'); g.restore();
     g.strokeStyle = '#ffd34d'; g.lineWidth = 3 * k; g.setLineDash([10 * k, 7 * k]); g.beginPath(); g.arc(x0, h * .55, zr, 0, 7); g.stroke(); g.setLineDash([]);
     ['sword', 'pistol', 'magiccard', 'kadas', 'rifle', 'shade'].forEach((id, n) => { const x = x0 + (n - 2.5) * 46 * s, y = base - (n % 2) * 22 * s; fig(id, MODE_FFA[n], x, y, s * .92, x < x0 ? 1 : -1, .3); });
-  } else if (m.id === 'flag') {
+  } else if (isFlagMode(m.id)) {
     fig('bow', B, x0 - 110 * s, base - 22 * s, s * .9, 1, .4);
     fig('sword', B, x0 - 30 * s, base, s * 1.1, 1, .2); flag(x0 - 48 * s, base - 30 * s, s * 1.05, R);
     fig('rifle', R, x0 + 70 * s, base - 14 * s, s, -1, .5); flag(x0 + 135 * s, base - 30 * s, s * .9, B);
@@ -600,7 +600,7 @@ function modePick() {
 }
 function showModes() {
   const scr = $('modeScreen'), g = $('modeGrid'), ph = modeTouchLayout(), NS = 'http://www.w3.org/2000/svg';
-  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = '';
+  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = ''; g.classList.toggle('n5', MODE_LIST.length === 5);
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   const icon = (d, cls) => { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); if (cls) s.setAttribute('class', cls); s.innerHTML = d; return s; };
   const arts = [];
@@ -608,10 +608,10 @@ function showModes() {
     const ok = modeOk(m), mi = modeMapOf(m), lk = MODE_LOOK[m.id] || ['mi-m-team', '#fff'];
     const b = el('button', 'modeCard'), inn = el('span', 'mIn'), art = el('canvas', 'mArt'), top = el('span', 'mTop'), ic = el('span', 'mIco solid'), sz = el('span', 'mSz'), rl = el('span', 'mRules'), mp = el('span', 'mMap');
     b.type = 'button'; b.dataset.mode = m.id; b.style.setProperty('--c', lk[1]); b.style.setProperty('--d', MODE_DARK[m.id] || '#2a2f3c');
-    top.append(modeIcon(ic, m), el('b', 'mN', m.name));
+    top.append(modeIcon(ic, m), el('b', 'mN', m.size && m.name.endsWith(' ' + m.size) ? m.name.slice(0, -m.size.length - 1) : m.name));      // the size has its own big label on the card
     if (m.size) sz.append(el('span', 'mSize', m.size));
     if (m.teams && m.per) {
-      const p = el('span', 'mPips'), dots = (n, col) => { const w = el('b'); for (let j = 0; j < n; j++) { const d = el('i'); d.style.background = col; w.append(d); } return w; };
+      const p = el('span', 'mPips' + (m.teams * m.per > 6 ? ' many' : '')), dots = (n, col) => { const w = el('b'); for (let j = 0; j < n; j++) { const d = el('i'); d.style.background = col; w.append(d); } return w; };
       if (m.teams === 2) p.append(dots(m.per, TEAM[0]), el('em', '', 'vs'), dots(m.per, TEAM[1]));
       else { const w = el('b'); for (let j = 0; j < m.teams * m.per; j++) { const d = el('i'); d.style.background = MODE_FFA[j % MODE_FFA.length]; w.append(d); } p.append(w); }
       sz.append(p);
@@ -644,7 +644,7 @@ $('mapBackBtn').addEventListener('click', () => showScreen('menuScreen'));
 function enterPlay() {
   { const c = document.getElementById('diceBannerContainer'); if (c) c.textContent = ''; }
   state = 'play'; feed.textContent = ''; lastHud = '';
-  soloOutAt = 0; soloOutShown = false;
+  soloOutAt = 0; soloOutShown = false; $('specBack').hidden = true;
   mouse.down = false; stickM = stickA = pendingFire = null; wantUlt = wantDash = false; wantSk = [false, false]; pvClear();
   lobby.hidden = true; cv.classList.remove('inLobby'); showPlayUi(true);
 }
@@ -662,7 +662,7 @@ function buildOverStats(win, draw) {
   const solo = curMode === 'solo', rank = f => f.team === RD.win ? 0 : RD.out.includes(f.team) ? fs.length - RD.out.indexOf(f.team) : 1;      // solo: one list in finishing order
   for (const team of solo ? [-1] : [VIEW, 1 - VIEW]) {
     if (!solo && team !== VIEW) box.append(el('div', 'osGap'));
-    for (const f of solo ? fs.slice().sort((a, b) => rank(a) - rank(b)) : fs.filter(f => f.team === team).sort((a, b) => val(b) - val(a))) {
+    for (const f of solo ? fs.slice().sort((a, b) => rank(a) - rank(b)).filter(f => state !== 'play' || RD.out.includes(f.team)) : fs.filter(f => f.team === team).sort((a, b) => val(b) - val(a))) {
       const r = el('div', 'osRow ' + (f.team === VIEW ? 'b' : 'r') + (f === player ? ' me' : '')), nm = el('span', 'on');
       if (solo) nm.append(el('span', 'rk', String(fs.slice().sort((a, b) => rank(a) - rank(b)).indexOf(f) + 1)));
       else if (f === mvp && val(f) > 0) nm.append(el('span', 'mvp', 'MVP'));
@@ -680,11 +680,15 @@ function soloOutCheck() {
   if (!soloOutAt) soloOutAt = performance.now();
   if (performance.now() - soloOutAt < 1400) return;      // long enough to see what happened
   if (fighters.filter(f => !f.dead).length < 2) return;      // the match is ending anyway
-  endGame(NET.role === 'host' && NET.members && NET.members.length > 0);
+  endGame(true);      // the match goes on (it can be watched): only this player's result is shown
 }
+/* watching on after being knocked out: the result screen is put away, the camera follows the ones still alive (render), a small button brings the result back */
+function soloWatch(on) { lobby.hidden = on; cv.classList.toggle('inLobby', !on); $('specBack').hidden = !on; if (!on) showScreen('overScreen'); }
 function endGame(keepRunning) {
   if (keepRunning !== true) { state = 'over'; if (NET.role === 'guest' && NET.stats) applyMatchStats(NET.stats); hostEnd(); }
-  if (soloOutShown) { showPlayUi(false); return; }      // this player already got the result screen when knocked out
+  if (soloOutShown) {      // this player already got the result screen (and the pay) when knocked out: now the match is really over, so the whole table is known
+    showPlayUi(false); buildOverStats(false, false); $('specBtn').hidden = true; soloWatch(false); return;
+  }
   if (curMode === 'solo' && player && player.dead) soloOutShown = true;
   showPlayUi(false);
   const oc = modeOutcome(), solo = curMode === 'solo', mine = oc.a, theirs = oc.b;
@@ -705,6 +709,7 @@ function endGame(keepRunning) {
       $('mpGain').style.color = masteryOf(hid).col;
     }
   }
+  $('specBtn').hidden = !(soloOutShown && state === 'play'); $('specBack').hidden = true;
   lobby.hidden = false; cv.classList.add('inLobby'); showScreen('overScreen');
   emoteWheel(false); chatOpen(false);
   winScreen(win, draw);
@@ -713,6 +718,8 @@ function toMenu() { netReset(); VIEW = 0; state = 'menu'; setup(false); showPlay
 $('startBtn').addEventListener('click', startOnline);
 $('againBtn').addEventListener('click', () => { netReset(); if (state !== 'menu') { VIEW = 0; state = 'menu'; setup(false); } startOnline(); });
 $('lobbyBtn').addEventListener('click', toMenu);
+$('specBtn').addEventListener('click', () => { if (state === 'play' && soloOutShown) soloWatch(true); });
+$('specBack').addEventListener('click', () => soloWatch(false));
 $('roomCancelBtn').addEventListener('click', () => { netReset(); showScreen('menuScreen'); });
 $('goCosBtn').addEventListener('click', () => { showScreen('cosScreen'); renderCos(); });
 $('cosBackBtn').addEventListener('click', () => showScreen('menuScreen'));
