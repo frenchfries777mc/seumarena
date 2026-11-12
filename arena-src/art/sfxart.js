@@ -95,6 +95,7 @@ function spawnFx0(e){
       bu(x,gy,24,{a0:-3.1,a1:-0.05,s0:120,s1:560,l0:.4,l1:.9,z0:2,z1:5,colors:['#ff7ac8','#ffd34d','#ffffff'],grav:300,drag:1.3,shape:'streak'}); shakeFrom(x,gy,5*FQ,900); break; }
     case 'ultfx': {                                                        // every character's ultimate: a themed burst on top of the ability itself
       const T=ULT_THEMES[e.w]||ULT_THEMES._, c=T.c;
+      if(typeof ultPunch==='function') ultPunch(e);
       for(let r=0;r<(fxQuality>=2?2:1);r++) addP({x:x,y:y,life:.45+r*0.15,color:c[r%3],shape:'ring',r0:10,r1:170+r*70,lw:7-r*2});
       if(FQ>0.3) addP({x:x,y:y,life:.4,color:c[0],shape:'flash',size:250});
       addP({x:x,y:y,life:.3,color:'#ffffff',shape:'flash',size:150});

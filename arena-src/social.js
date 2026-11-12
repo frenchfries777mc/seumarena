@@ -112,6 +112,7 @@ const MODE_PAY = { team: { kk: 1, kw: 3, mm: 1 }, flag: { kk: 1, kw: 4, mm: 1.2 
    1st gets kills + the win bonus, 2nd and 3rd kills + a smaller bonus */
 function soloKarma(place, k, pm) { const n = 6; return k * pm.kk + (place >= 1 && place <= n - 3 ? [pm.kw, 4, 2][place - 1] : 0); }
 function matchPay(o) {      // o: { mode, win, draw, kills, place }
+  if (o.mode === 'flag5') o = Object.assign({}, o, { mode: 'flag' });      // capture the flag pays the same whatever the team size
   const pm = MODE_PAY[o.mode] || MODE_PAY.team, solo = o.mode === 'solo', k = Math.max(0, o.kills | 0), good = o.win ? 2 : o.draw || (solo && o.place <= 3) ? 1 : 0;
   return { gold: Math.round(([30, 40, 60][good] + 5 * Math.min(10, k)) * (o.mode === 'duel' ? .6 : 1)), karma: solo ? soloKarma(o.place, k, pm) : k * pm.kk + (o.win ? pm.kw : 0),
     mp: Math.round(([30, 42, 55][good] + 3 * Math.min(10, k)) * pm.mm), xp: [40, 55, 70][good] + 4 * Math.min(10, k) };
@@ -229,7 +230,7 @@ function achScan() {      // marks what has just been reached; true when somethi
 const achOpen = () => !!COS.ach && ACHS.some(a => COS.ach[a.id] === 1);
 /* a finished match: { mode, win, kills, deaths, hero, n: fighters in it } */
 function achMatch(m) {
-  const s = achSt(), k = Math.max(0, m.kills | 0);
+  const s = achSt(), k = Math.max(0, m.kills | 0); if (m.mode === 'flag5') m = Object.assign({}, m, { mode: 'flag' });      // one capture the flag count, whatever the team size
   s.g++; s.k += k; s.mk = Math.max(s.mk, k); s.mg[m.mode] = (s.mg[m.mode] | 0) + 1;
   if (m.win) { s.w++; s.mw[m.mode] = (s.mw[m.mode] | 0) + 1; if (HEROES[m.hero]) s.hw[m.hero] = 1; if (m.mode === 'team' && !m.deaths) s.nd++; if (m.mode === 'solo' && m.n > 1 && k >= m.n - 1) s.sa++; }
   if (achScan()) achSync(true);
@@ -466,7 +467,8 @@ function cosToggle(id) {
   }
   cosBuy = null;
   if (it.cat === 'skin') { if (COS.skin[it.char] === id) delete COS.skin[it.char]; else COS.skin[it.char] = id; }
-  else if (it.cat === 'emo') { const i = COS.emo.indexOf(it.emIdx); if (i >= 0) { if (COS.emo.length > 1) COS.emo.splice(i, 1); } else { if (COS.emo.length >= 8) COS.emo.shift(); COS.emo.push(it.emIdx); } }
+  else if (it.cat === 'emo') { const i = COS.emo.indexOf(it.emIdx); if (i >= 0) { if (COS.emo.length > 1) COS.emo.splice(i, 1); } else if (COS.emo.length >= 8) { try { sfx(150, .12, 'square', .04); } catch (e) {} const el = document.getElementById('cos-' + id); if (el) { el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); } return; }      // the wheel is full: take one out first
+    else COS.emo.push(it.emIdx); }
   else { const k = { bcol: 'col', name: 'name', kfx: 'kfx', pose: 'pose' }[it.cat]; COS[k] = COS[k] === id && it.cat !== 'pose' ? null : id; }
   saveCos(); renderCos(); accountUi();
 }
@@ -490,7 +492,7 @@ function renderCos() {
     if (it.cat === 'skin' && it.char !== grp) { grp = it.char; const hd = document.createElement('h3'); hd.className = 'cosGrp'; hd.textContent = HEROES[grp].name; grid.append(hd); }
     b.type = 'button'; b.className = 'cosCard'; b.id = 'cos-' + id; b.setAttribute('aria-pressed', String(cosEquipped(id)));
     const pv = document.createElement('div'); pv.className = 'cosPv';
-    if (it.cat === 'emo') pv.textContent = it.em;
+    if (it.cat === 'emo') { pv.textContent = it.em; if (cosEquipped(id)) { const off = document.createElement('span'); off.className = 'cosOff'; off.textContent = '선택해제'; b.append(pv, off); } }
     else if (it.cat === 'kfx' || it.cat === 'pose') pv.textContent = it.icon || '';
     else if (it.cat === 'name') { pv.textContent = 'Aa'; pv.style.color = nameColorFor(id); pv.style.fontWeight = '700'; }
     else { const cv2 = document.createElement('canvas'); try { drawItemPreview(cv2, id, performance.now()); } catch (e) {} pv.append(cv2); }
