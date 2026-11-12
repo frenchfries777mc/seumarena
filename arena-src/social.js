@@ -35,6 +35,7 @@ function syncAccount() {
   if (u) { PROF.guest = false; PROF.uid = u.id; PROF.name = cleanName(A.nickname && A.nickname()) || PROF.name; }
   else { PROF.guest = true; PROF.uid = null; PROF.name = guestName(); }
   accountUi(); if (typeof updatePick === 'function') updatePick();
+  if (typeof cloudAuth === 'function') cloudAuth();
 }
 function loadAccount() {
   accountUi();
@@ -59,14 +60,19 @@ function accountUi() {
 
 /* cosmetics: everything the original game sells or gives is free to wear here */
 const COS_KEY = 'seumArenaCos';
-let COS = { skin: {}, col: null, name: null, kfx: null, pose: 'pose_cheer', emo: [0, 1, 2, 3, 4, 5, 6, 7], gold: 500, own: null, v: 0 };
+const cosDefault = () => ({ skin: {}, col: null, name: null, kfx: null, pose: 'pose_cheer', emo: [0, 1, 2, 3, 4, 5, 6, 7], gold: 500, own: null, v: 0 });
+function cosNorm(C) {      // the save-version fixes, run on this browser's save and on one that comes from the account (cloud.js)
+  if (!Array.isArray(C.own) || !(C.v >= 2)) { C.own = []; C.skin = {}; C.gold = Math.max(500, +C.gold || 0); C.v = 2; }      // skins worn before gold existed are not owned: they have to be bought (v2 also takes back the ones an earlier build handed out)
+  C.gold = Math.max(0, Math.floor(+C.gold || 0)); C.karma = Math.max(0, Math.floor(+C.karma || 0)); if (!Array.isArray(C.kr) || C.v < 3) C.kr = [];
+  if (C.v < 4) for (const k of ['col', 'name', 'kfx']) if (C[k] && !C.own.includes(C[k])) C[k] = null;      // v4: character colours, name colours and kill effects are bought with gold too
+  C.v = 4;      // v3: the road got new steps, nothing on it is taken yet
+  C.xp = Math.max(0, Math.floor(+C.xp || 0)); if (!C.mp || typeof C.mp !== 'object') C.mp = {};
+  return C;
+}
+let COS = cosDefault();
 try { const s = JSON.parse(localStorage.getItem(COS_KEY) || 'null'); if (s && typeof s === 'object') COS = Object.assign(COS, s); } catch (e) {}
-if (!Array.isArray(COS.own) || !(COS.v >= 2)) { COS.own = []; COS.skin = {}; COS.gold = Math.max(500, +COS.gold || 0); COS.v = 2; }      // skins worn before gold existed are not owned: they have to be bought (v2 also takes back the ones an earlier build handed out)
-COS.gold = Math.max(0, Math.floor(+COS.gold || 0)); COS.karma = Math.max(0, Math.floor(+COS.karma || 0)); if (!Array.isArray(COS.kr) || COS.v < 3) COS.kr = [];
-if (COS.v < 4) for (const k of ['col', 'name', 'kfx']) if (COS[k] && !COS.own.includes(COS[k])) COS[k] = null;      // v4: character colours, name colours and kill effects are bought with gold too
-COS.v = 4;      // v3: the road got new steps, nothing on it is taken yet
-COS.xp = Math.max(0, Math.floor(+COS.xp || 0)); if (!COS.mp || typeof COS.mp !== 'object') COS.mp = {};
-const saveCos = () => { try { localStorage.setItem(COS_KEY, JSON.stringify(COS)); } catch (e) {} };
+cosNorm(COS);
+const saveCos = () => { try { localStorage.setItem(COS_KEY, JSON.stringify(COS)); } catch (e) {} if (typeof cloudMark === 'function') cloudMark(); };
 /* gold: earned by playing, spent on skins. Prices only follow how cheap or dear the skin is in Stickseum (its gold price, rank reward, soul or season skin), on this game's own scale */
 function skinPrice(id) {
   const it = COSMETICS[id]; if (!it) return 0;
