@@ -69,7 +69,15 @@ const KFX={
   kfx_ice:{icon:'❄️',name:'얼음 파편',price:0,season:true},
   kfx_split:{icon:'🦴',name:'몸 분리',price:700},
   kfx_blackhole:{icon:'🌀',name:'블랙홀',price:0,season:true},
-  kfx_phoenix:{icon:'🪶',name:'불사조 승천',price:0,season:true}
+  kfx_phoenix:{icon:'🪶',name:'불사조 승천',price:0,season:true},
+  kfx_petals:{icon:'🌸',name:'벚꽃 흩날림',price:500},
+  kfx_bats:{icon:'🦇',name:'박쥐 떼',price:600},
+  kfx_poison:{icon:'☠️',name:'독 구름',price:600},
+  kfx_slash:{icon:'⚔️',name:'십자 베기',price:700},
+  kfx_pixel:{icon:'👾',name:'픽셀 분해',price:800},
+  kfx_ghost:{icon:'👻',name:'유령 승천',price:900},
+  kfx_tornado:{icon:'🌪️',name:'회오리',price:1000},
+  kfx_firework:{icon:'🎆',name:'불꽃놀이',price:1200}
 };
 for(const id in KFX){ const k=KFX[id]; COSMETICS[id]={cat:'kfx', name:k.name, price:k.price, icon:k.icon, seasonOnly:!!k.season}; }
 /* ===== 승리 포즈 =====
@@ -234,6 +242,32 @@ function spawnKillEffect(e, x, y, addP, burst, shakeFrom){
   else if(k==='kfx_split'){ const vc=e.vc||'#ffffff'; const part=(dx,dy,vx,vy,len,head)=>addP({x:x+dx,y:y+dy,vx:vx+(R()-.5)*60,vy:vy,grav:1500,drag:.5,life:1.5+R()*.4,size:len,color:vc,shape:'limb',head:!!head,add:false,rot:R()*6.28,vr:(R()-.5)*16});
     part(0,-24,(R()-.5)*160,-520,11,true); part(0,-4,(R()-.5)*120,-300,26); part(-8,-8,-330,-420,20); part(8,-8,330,-420,20); part(-5,14,-180,-260,22); part(5,14,180,-260,22);
     burst(x,y,16,{a0:0,a1:6.28,s0:120,s1:420,l0:.4,l1:.8,z0:2,z1:4,colors:['#d62839','#ff5f5f',vc],grav:900,drag:1,add:false}); }
+  else if(k==='kfx_petals'){ floaters('🌸',9,'#ffb3d1','#7a1d4a'); addP({x:x,y:y,life:.5,color:'#ffc4dd',shape:'ring',r0:8,r1:150,lw:5});
+    for(let i=0;i<34;i++){ const a=R()*6.28, sp=60+R()*260; addP({x:x,y:y,vx:Math.cos(a)*sp+90,vy:Math.sin(a)*sp*.7-60,grav:160,drag:1.6,life:1.1+R()*.9,size:4+R()*4,color:['#ffb3d1','#ffd9e8','#ff8fb8','#ffffff'][i%4],shape:'square',add:false,rot:R()*6,vr:(R()-.5)*10}); } }
+  else if(k==='kfx_bats'){ floaters('🦇',9,'#b388ff','#1a0b2e'); addP({x:x,y:y,life:.5,color:'#1a0b2e',shape:'flash',size:150,add:false}); addP({x:x,y:y,life:.55,color:'#b388ff',shape:'ring',r0:8,r1:170,lw:5});
+    for(let i=0;i<10;i++){ const a=-3.14*R(), sp=260+R()*320; addP({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,drag:1.2,life:.8+R()*.5,size:16+R()*8,color:'#b388ff',outline:'#1a0b2e',shape:'text',add:false,text:'🦇'}); }
+    burst(x,y,18,{a0:0,a1:6.28,s0:80,s1:300,l0:.6,l1:1.1,z0:8,z1:16,colors:['#2a1146','#4a2a7a'],grav:-40,drag:1.5,shape:'smoke',add:false}); }
+  else if(k==='kfx_poison'){ floaters('☠️',3,'#c6ff3d','#1c2a05'); addP({x:x,y:y,life:.6,color:'#8dff7c',shape:'ring',r0:8,r1:190,lw:6});
+    burst(x,y,26,{a0:0,a1:6.28,s0:40,s1:230,l0:1.0,l1:1.9,z0:12,z1:26,colors:['#5fbf3a','#8dff7c','#3d7a22'],grav:-30,drag:1.5,shape:'smoke',add:false});
+    burst(x,y,22,{a0:-2.9,a1:-0.24,s0:120,s1:420,l0:.6,l1:1.2,z0:3,z1:6,colors:['#c6ff3d','#8dff7c'],grav:520,drag:.8}); }
+  else if(k==='kfx_slash'){ addP({x:x,y:y,life:.3,color:'#ffffff',shape:'flash',size:230});
+    for(const [dx,dy] of [[1,1],[1,-1]]) addP({x:x-dx*150,y:y-dy*110,x2:x+dx*150,y2:y+dy*110,life:.32,color:'#ffffff',shape:'slash',size:9});
+    setTimeout(()=>{ for(const [dx,dy] of [[1,1],[1,-1]]) addP({x:x-dx*170,y:y-dy*125,x2:x+dx*170,y2:y+dy*125,life:.4,color:'#ff5d5d',shape:'slash',size:5}); burst(x,y,34,{a0:0,a1:6.28,s0:300,s1:900,l0:.3,l1:.6,z0:2,z1:4,colors:['#ffffff','#ff5d5d','#ffd34d'],drag:2,shape:'streak'}); shakeFrom(x,y,10,500); },110); }
+  else if(k==='kfx_pixel'){ const vc=e.vc||'#4dd9ff'; addP({x:x,y:y,life:.5,color:'#4dd9ff',shape:'ring',r0:8,r1:160,lw:5});
+    for(let i=0;i<46;i++){ const gx=((i%6)-2.5)*9, gy=-Math.floor(i/6)*9; addP({x:x+gx,y:y+gy+20,vx:gx*(6+R()*8),vy:-140-R()*260+gy*2,grav:620,drag:.7,life:.9+R()*.7,size:7,color:[vc,'#4dd9ff','#c17bff','#5fff8a','#ffffff'][i%5],shape:'square',add:false,rot:0,vr:0}); } }
+  else if(k==='kfx_ghost'){ addP({x:x,y:y,life:.4,color:'#e8f4ff',shape:'flash',size:190}); addP({x:x,y:y,life:1.2,color:'#cfe6ff',shape:'pillar'});
+    addP({x:x,y:y-10,vx:0,vy:-120,drag:.5,life:1.7,size:46,color:'#ffffff',outline:'#3a4a66',shape:'text',add:false,text:'👻'});
+    for(let i=0;i<4;i++) addP({x:x+(R()-.5)*90,y:y+(R()-.5)*30,vx:(R()-.5)*70,vy:-80-R()*90,drag:.6,life:1.2+R()*.5,size:16+R()*8,color:'#ffffff',outline:'#3a4a66',shape:'text',add:false,text:'👻'});
+    burst(x,y,22,{a0:-2.6,a1:-0.54,s0:40,s1:200,l0:.9,l1:1.6,z0:8,z1:18,colors:['#cfe6ff','#ffffff','#9fc2ff'],grav:-90,drag:1.4,shape:'smoke'}); }
+  else if(k==='kfx_tornado'){ addP({x:x,y:y,life:.6,color:'#dfe9f5',shape:'ring',r0:8,r1:200,lw:6});
+    for(let j=0;j<5;j++) setTimeout(()=>{ for(let i=0;i<12;i++){ const a=i/12*6.28+j*.7, rr=18+j*13, sp=260+j*50; addP({x:x+Math.cos(a)*rr,y:y-j*22+Math.sin(a)*rr*.35,vx:-Math.sin(a)*sp,vy:Math.cos(a)*sp*.35-90,drag:2.2,life:.45+R()*.25,size:2.5+R()*2,color:i%3?'#dfe9f5':'#9fb4cc',shape:'streak'}); }
+      addP({x:x,y:y-j*22,life:.4,color:'#dfe9f5',shape:'ring',r0:6,r1:30+j*16,lw:3}); },j*70);
+    burst(x,y,14,{a0:-2.8,a1:-0.34,s0:60,s1:220,l0:.7,l1:1.2,z0:8,z1:16,colors:['#b9c4d4','#8794a8'],grav:-60,drag:1.5,shape:'smoke',add:false}); shakeFrom(x,y,8,450); }
+  else if(k==='kfx_firework'){ const cols=[['#ff5f5f','#ffd34d'],['#4dd9ff','#ffffff'],['#c17bff','#ff8fd9'],['#5fff8a','#ffd34d']];
+    addP({x:x,y:y,vx:0,vy:-520,drag:1.6,life:.32,size:4,color:'#fff3b0',shape:'streak'});
+    [[0,-130,320],[-90,-70,480],[95,-85,620],[10,-170,800]].forEach(([dx,dy,ms],i)=>setTimeout(()=>{ const c=cols[i%cols.length];
+      addP({x:x+dx,y:y+dy,life:.25,color:'#ffffff',shape:'flash',size:150}); addP({x:x+dx,y:y+dy,life:.6,color:c[0],shape:'ring',r0:6,r1:150,lw:5});
+      burst(x+dx,y+dy,36,{a0:0,a1:6.28,s0:160,s1:520,l0:.7,l1:1.3,z0:2,z1:4,colors:[c[0],c[1],'#ffffff'],grav:260,drag:1.7,shape:'streak'}); if(i===3) shakeFrom(x,y,8,500); },ms)); }
   else if(k==='kfx_blackhole'){        // 블랙홀: a ring and streaks are sucked into a dark core, then it bursts
     addP({x:x,y:y,life:.9,color:'#12041f',shape:'flash',size:130,add:false});
     for(let i=0;i<34;i++){ const a=R()*6.28, d=140+R()*130, sp=d/0.5; addP({x:x+Math.cos(a)*d,y:y+Math.sin(a)*d,vx:-Math.cos(a)*sp,vy:-Math.sin(a)*sp,life:.5,size:2.5+R()*3,color:['#b388ff','#7a5cff','#ff8fd9','#ffffff'][i%4],shape:'streak'}); }
@@ -521,6 +555,12 @@ const SHOP_EMOTES=[
   ['😜','메롱',500]
 ];
 EMOTES.forEach((em,i)=>{ COSMETICS['emo_'+i]={cat:'emo', name:'기본 이모트 '+(i+1), price:0, free:true, em, emIdx:i}; });
+/* more emotes for the shop (the UI thread adds them to EMOTES at the end, after its own; never in the middle: emotes travel as numbers) */
+const MORE_EMOTES=[
+  ['👏','박수',300], ['🤝','악수',300], ['🙏','부탁해요',300], ['🤔','흠',300], ['😴','쿨쿨',300],
+  ['😱','깜짝',500], ['🥺','제발',500], ['😤','흥',500], ['🤫','쉿',500], ['👀','지켜본다',500],
+  ['🏳','항복',800], ['🍀','행운',800], ['💔','하트 브레이크',800]
+];
 /* the season-pass emotes: animated bubbles (never sold; the pass gives them) - appended at the END as always, and put into the pass at tiers 23 and 43 */
 function skinIsSpecial(sid){ const it=sid && COSMETICS[sid]; return !!(it && it.cat==='skin' && ((it.price||0)>=2000 || (it.lux||0)>=3)); }
 function shiftHex(hex, deg){            // the same colour turned round the colour wheel (for the second colour of a legendary skin)

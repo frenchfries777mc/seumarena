@@ -11,7 +11,7 @@ const PI = Math.PI;
 /* one picture per skill / ultimate: t = shape, sizes in pixels (T = 64 per tile) */
 const R = (t, o) => Object.assign({ t }, o);
 const PVS = {
-  'sword:1': R('dash', { len: 320, w: 50 }), 'sword:2': R('dashEnd', { len: 160, r: 70 }), 'sword:3': R('self', { r: 118 }), 'sword:u': R('ground', { max: 6 * T, r: 80 }),
+  'sword:1': R('dash', { len: 320, w: 50 }), 'sword:2': R('dashEnd', { len: 160, r: 70 }), 'sword:3': R('self', { r: 118 }), 'sword:5': R('dash', { len: 256, w: 40 }), 'sword:u': R('ground', { max: 6 * T, r: 80 }),
   'pistol:2': R('line', { len: 576, w: 26 }), 'pistol:5': R('line', { len: 704, w: 28 }), 'pistol:u': R('line', { len: 704, w: 50 }),
   'bow:1': R('line', { len: 512, w: 26 }), 'bow:2': R('ground', { max: 512, r: 110 }), 'bow:3': R('lob', { len: 576, r: 70 }), 'bow:4': R('lineTo', { max: 512, r: 26 }), 'bow:u': R('fan', { len: 576, half: .15, n: 3 }),
   'bat:1': R('self', { r: 90 }), 'bat:2': R('line', { len: 512, w: 26 }), 'bat:3': R('dash', { len: 410, w: 44 }),
@@ -20,7 +20,8 @@ const PVS = {
   'rifle:1': R('pts', { pts: [[44, 1.2], [44, -1.2]], r: 26 }), 'rifle:2': R('ground', { max: 448, r: 80 }), 'rifle:4': R('ground', { max: 576, r: 66 }), 'rifle:5': R('self', { r: 110 }),
   'smg:1': R('ground', { max: 448, r: 100 }), 'smg:2': R('ground', { max: 448, r: 120 }), 'smg:3': R('dash', { len: 141, w: 44 }), 'smg:u': R('wall', { d: 102, w: 192, th: 64 }),
   'gloves:1': R('arc', { len: 90, half: 1.2 }), 'gloves:3': R('arc', { len: 80, half: 1 }), 'gloves:4': R('arc', { len: 90, half: 1.4 }),
-  'grenade:1': R('dashEnd', { len: 192, r: 90 }), 'grenade:2': R('fan2', { len: 320, half: .175, n: 2 }), 'grenade:3': R('pts', { pts: [[141, PI / 2], [141, -PI / 2], [282, PI / 2], [282, -PI / 2]], r: 87 }), 'grenade:4': R('ground', { max: 448, r: 100 }), 'grenade:u': R('fan', { len: 384, half: .5, n: 5 }),
+  'portalgun:1': R('ring'), 'portalgun:2': R('ground', { max: 320, r: 40 }), 'portalgun:3': R('bounce', { len: 1024, n: 6, w: 24 }), 'portalgun:4': R('ground', { max: 384, r: 95 }), 'portalgun:5': R('ring'), 'portalgun:u': R('ground', { max: 576, r: 34 }),
+  'grenade:1': R('dashEnd', { len: 192, r: 90 }), 'grenade:2': R('fan2', { len: 320, half: .175, n: 2, over: 1 }), 'grenade:3': R('line', { len: 384, w: 26 }), 'grenade:4': R('ground', { max: 448, r: 100 }), 'grenade:u': R('fan', { over: 1, len: 384, half: .5, n: 5 }),
   'bazooka:1': R('line', { len: 512, w: 28 }), 'bazooka:2': R('lob', { len: 512, r: 40 }), 'bazooka:3': R('lob', { len: 512, r: 80 }), 'bazooka:4': R('lob', { len: 512, r: 80 }), 'bazooka:u': R('line', { len: 640, w: 28 }),
   'dagger:1': R('self', { r: 384, faint: 1 }), 'dagger:2': R('dash', { len: 717, w: 60 }), 'dagger:4': R('dash', { len: 205, w: 44, back: 1 }),
   'dracula:2': R('dash', { len: 256, w: 60 }),
@@ -40,7 +41,7 @@ const PVS = {
   'plague:3': R('ground', { max: 384, r: 90 }), 'plague:4': R('ground', { max: 384, r: 90 }),
   'dragonslayer:2': R('arc', { len: 64, half: 1.3 }), 'dragonslayer:3': R('arc', { len: 80, half: 1.2 }), 'dragonslayer:4': R('line', { len: 448, w: 30 }),
   'shade:1': R('line', { len: 448, w: 40 }), 'shade:4': R('arc', { len: 140, half: .8 }), 'shade:u': R('line', { len: 372, w: 124 }),
-  'kadas:1': R('line', { len: 320, w: 26 }), 'kadas:u': R('ground', { max: 448, r: 80 }),
+  'kadas:1': R('line', { len: 320, w: 26 }), 'kadas:2': R('dash', { len: 192, w: 40 }), 'kadas:4': R('line', { len: 512, w: 30 }), 'kadas:5': R('self', { r: 70 }), 'kadas:u': R('ground', { max: 448, r: 80 }),
   'kan:1': R('ground', { max: 480, r: 30 }), 'kan:2': R('arc', { len: 90, half: .6 }), 'kan:3': R('line', { len: 576, w: 26 }), 'kan:5': R('dashEnd', { len: 192, r: 80 }),
   'puppeteer:1': R('line', { len: 512, w: 26 }), 'puppeteer:2': R('self', { r: 390, faint: 1 }), 'puppeteer:4': R('line', { len: 512, w: 26 }), 'puppeteer:u': R('line', { len: 512, w: 26 }),
   'tell:1': R('line', { len: 640, w: 26 }), 'tell:2': R('dash', { len: 410, w: 44 }),
@@ -71,8 +72,9 @@ function basicSpec(f) {
   if (h.type === 'cone') return R('arc', { len: h.range, half: h.half, suck: 1 });
   if (h.id === 'tell') return R('line', { len: h.range * (.4 + .6 * (f.st.g || 0)), w: 26 });
   if (h.id === 'pel') return R('multi', { len: h.range, n: Math.max(1, f.st.dr || 1), w: 22 });
+  if (w.bounces) return R('bounce', { len: h.range, n: w.bounces, w: 14 });      // 차원 여행자: the path with its wall bounces
   if (h.boom) return R('boom', { len: h.range, w: 26 });
-  if (h.splash) return R('lob', { len: h.range, r: h.splash });
+  if (h.splash) return R('lob', { len: h.range * (w.shape === 'bomb' ? bombFrac(f) : 1), r: h.splash, over: h.w && h.w.shape === 'bomb' ? 1 : 0 });      // over: thrown bombs fly over walls
   if (h.count > 1) return R('fan', { len: h.range, half: h.fan / 2, n: h.count });
   if (h.burst > 1) return R('line', { len: h.range, w: 26, dots: h.burst });
   return R('line', { len: h.range, w: 26 });
@@ -121,13 +123,26 @@ function drawSpec(f, s, a, tx, ty, col, ready, move) {
     }
     case 'fan': case 'fan2': {
       for (const o of (s.t === 'fan2' ? [0, PI] : [0])) {
-        const aa = a + o, d = Math.min(s.len, rayLen(x, y, aa, s.len) + 40);
+        const aa = a + o, d = s.over ? s.len : Math.min(s.len, rayLen(x, y, aa, s.len) + 40);
         sector(x, y, aa, d, s.half);
         ctx.beginPath(); for (let i = 0; i < s.n; i++) { const t = s.n === 1 ? 0 : (i / (s.n - 1) - .5) * 2 * s.half; ctx.moveTo(x + Math.cos(aa + t) * 24, y + Math.sin(aa + t) * 24); ctx.lineTo(x + Math.cos(aa + t) * d, y + Math.sin(aa + t) * d); } ctx.stroke();
       }
       break;
     }
-    case 'lob': { const d = rayLen(x, y, a, s.len); capsule(x, y, a, 20, d, 10); circle(x + Math.cos(a) * d, y + Math.sin(a) * d, s.r); break; }
+    case 'bounce': {      // a ray that mirrors off walls like the shot does (same rule as updateBullets)
+      let px = x, py = y, vx = Math.cos(a), vy = Math.sin(a), left = s.len, n = s.n; const st = 8;
+      ctx.beginPath(); ctx.moveTo(px + vx * 20, py + vy * 20); ctx.lineWidth = s.w; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      const sw = ctx.strokeStyle; ctx.strokeStyle = ctx.fillStyle; const marks = [];
+      for (let d = 20; d < left; d += st) {
+        const nx = px + vx * st, ny = py + vy * st;
+        if (solidAt(nx, ny)) { if (n <= 0) break; const hx = solidAt(nx, py), hy = solidAt(px, ny); if (hx || !hy) vx = -vx; if (hy || !hx) vy = -vy; n--; marks.push([px, py]); ctx.lineTo(px, py); continue; }
+        px = nx; py = ny;
+      }
+      ctx.lineTo(px, py); ctx.stroke(); ctx.strokeStyle = sw; ctx.lineWidth = 2;
+      for (const m of marks) { ctx.beginPath(); ctx.arc(m[0], m[1], 7, 0, 6.3); ctx.stroke(); }
+      break;
+    }
+    case 'lob': { const d = s.over ? s.len : rayLen(x, y, a, s.len); capsule(x, y, a, 20, d, 10); circle(x + Math.cos(a) * d, y + Math.sin(a) * d, s.r); break; }
     case 'lineTo': { const dd = Math.min(s.max, Math.hypot(tx - f.x, ty - y)), d = rayLen(x, y, a, Math.max(40, dd)); capsule(x, y, a, 20, d, 12); circle(x + Math.cos(a) * d, y + Math.sin(a) * d, s.r); break; }
     case 'ground': {
       let dx = tx - f.x, dy = ty - (f.y + BODY); const d = Math.hypot(dx, dy) || 1, m = Math.min(d, s.max);
@@ -163,7 +178,9 @@ function drawPreviews(f) {
   return any;
 }
 function drawBasicGuide(f) {
-  if (f.dead || (touchMode && !stickA) || f.form) return;
+  if (f.dead || f.form) return;
+  if (touchMode) { if (!stickA || Math.hypot(stickA.dx, stickA.dy) <= .3) return; }      // phone: only while dragging
+  else if (!mouse.down) return;      // PC: only while the button is held (release fires)
   drawSpec(f, basicSpec(f), f.aim, 0, 0, '255,255,255', true, null);
 }
 
@@ -171,9 +188,15 @@ function drawBasicGuide(f) {
 const PV_KEYS = { KeyF: ['s', 0], KeyE: ['s', 1], KeyR: ['u'], Space: ['u'], KeyQ: ['d'], ShiftLeft: ['d'], ShiftRight: ['d'] };
 function pvSet(t, v) { if (t[0] === 's') PV.sk[t[1]] = v; else PV[t[0] === 'u' ? 'ult' : 'dash'] = v; }
 function pvFire(t) { if (t[0] === 's') wantSk[t[1]] = true; else if (t[0] === 'u') wantUlt = true; else wantDash = true; }
-function pvRecount() { PV.sk = [0, 0]; PV.ult = 0; PV.dash = 0; for (const c in PV.codes) pvSet(PV.codes[c].t, 1); if (PV.touch) pvSet(PV.touch.t, 1); }
+function pvRecount() { PV.sk = [0, 0]; PV.ult = 0; PV.dash = 0; for (const c in PV.codes) if (!PV.codes[c].done) pvSet(PV.codes[c].t, 1); if (PV.touch) pvSet(PV.touch.t, 1); }
+function pvInstant(t) {       // 기사 '베기' is a timing press: it goes out the moment the key / button goes down (on release the bar would already have moved on)
+  const f = typeof driven === 'function' ? driven() : player;
+  if (state !== 'play' || t[0] !== 's' || !f || f.dead || !f.st || !f.st.neck || !f.sk || !f.sk[t[1]] || !f.sk[t[1]].neck) return false;
+  const ph = ((time - f.st.neck) * 1.8) % 2; neckNp = ph < 1 ? ph : 2 - ph; wantSk[t[1]] = true; return true;
+}
 function pvKeyDown(code) {
   const t = PV_KEYS[code]; if (!t || PV.codes[code]) return false;
+  if (pvInstant(t)) { PV.codes[code] = { t, cancel: true, done: true }; return true; }
   PV.codes[code] = { t, cancel: false }; pvRecount(); return true;
 }
 function pvKeyUp(code) {
@@ -186,6 +209,7 @@ function pvCancelAll() { for (const c in PV.codes) PV.codes[c].cancel = true; if
 function pvClear() { PV.codes = {}; PV.touch = null; PV.manual = null; pvRecount(); }
 /* touch: a skill button held down looks, dragging aims (far away cancels), letting go fires */
 function pvTouchStart(t, btn, e) {
+  if (pvInstant(t)) return;
   PV.touch = { t, btn, id: e.pointerId, ox: e.clientX, oy: e.clientY, dx: 0, dy: 0, moved: false, cancel: false };
   try { btn.setPointerCapture(e.pointerId); } catch (er) {}
   pvRecount();
@@ -209,3 +233,7 @@ function pvOverride(f, inp) {       // called from readLocal: a drag on a touch 
   if (p && p.moved) { inp.aim = Math.atan2(p.dy, p.dx); const far = clamp(Math.hypot(p.dx, p.dy) / 120, .2, 1.4) * 8 * T; inp.tx = f.x + Math.cos(inp.aim) * far; inp.ty = f.y + BODY + Math.sin(inp.aim) * far; }
   if (mn) { inp.aim = mn.aim; inp.tx = f.x + Math.cos(mn.aim) * mn.dist; inp.ty = f.y + BODY + Math.sin(mn.aim) * mn.dist; inp.manual = true; PV.manual = null; }
 }
+
+/* events that guests replay (fxPlay → 'x'): who killed me and with what, sand wind */
+FXF.killinfo = (vi, ki, src) => { const v = fighters[vi]; if (v) v.killer = { i: ki, src }; };
+FXF.gale = (d, a) => { GALE.until = time + d; GALE.dur = d; GALE.ang = a; };
