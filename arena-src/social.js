@@ -466,7 +466,8 @@ function cosToggle(id) {
   }
   cosBuy = null;
   if (it.cat === 'skin') { if (COS.skin[it.char] === id) delete COS.skin[it.char]; else COS.skin[it.char] = id; }
-  else if (it.cat === 'emo') { const i = COS.emo.indexOf(it.emIdx); if (i >= 0) { if (COS.emo.length > 1) COS.emo.splice(i, 1); } else { if (COS.emo.length >= 8) COS.emo.shift(); COS.emo.push(it.emIdx); } }
+  else if (it.cat === 'emo') { const i = COS.emo.indexOf(it.emIdx); if (i >= 0) { if (COS.emo.length > 1) COS.emo.splice(i, 1); } else if (COS.emo.length >= 8) { try { sfx(150, .12, 'square', .04); } catch (e) {} const el = document.getElementById('cos-' + id); if (el) { el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); } return; }      // the wheel is full: take one out first
+    else COS.emo.push(it.emIdx); }
   else { const k = { bcol: 'col', name: 'name', kfx: 'kfx', pose: 'pose' }[it.cat]; COS[k] = COS[k] === id && it.cat !== 'pose' ? null : id; }
   saveCos(); renderCos(); accountUi();
 }
@@ -490,7 +491,7 @@ function renderCos() {
     if (it.cat === 'skin' && it.char !== grp) { grp = it.char; const hd = document.createElement('h3'); hd.className = 'cosGrp'; hd.textContent = HEROES[grp].name; grid.append(hd); }
     b.type = 'button'; b.className = 'cosCard'; b.id = 'cos-' + id; b.setAttribute('aria-pressed', String(cosEquipped(id)));
     const pv = document.createElement('div'); pv.className = 'cosPv';
-    if (it.cat === 'emo') pv.textContent = it.em;
+    if (it.cat === 'emo') { pv.textContent = it.em; if (cosEquipped(id)) { const off = document.createElement('span'); off.className = 'cosOff'; off.textContent = '선택해제'; b.append(pv, off); } }
     else if (it.cat === 'kfx' || it.cat === 'pose') pv.textContent = it.icon || '';
     else if (it.cat === 'name') { pv.textContent = 'Aa'; pv.style.color = nameColorFor(id); pv.style.fontWeight = '700'; }
     else { const cv2 = document.createElement('canvas'); try { drawItemPreview(cv2, id, performance.now()); } catch (e) {} pv.append(cv2); }

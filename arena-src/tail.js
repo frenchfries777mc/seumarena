@@ -189,6 +189,7 @@ function render() {
   }
   for (const s of strikes) { const k = 1 - s.t / s.max; ctx.globalAlpha = .18; ctx.fillStyle = s.col; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.3); ctx.fill(); ctx.globalAlpha = .9; ctx.strokeStyle = s.col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(s.x, s.y, s.r * k, 0, 6.3); ctx.stroke(); ctx.globalAlpha = 1; }
 
+  drawTiles(ctx, c0, c1, r0, r1, 1);      // walls go under the fighters, so a wall never covers a player
   const inBush = [];
   if (me && state === 'play') { if (!drawPreviews(me)) drawBasicGuide(me); }
   const order = fighters.filter(f => !f.dead).concat(minions.filter(m => m.kind !== 'dragon' && m.kind !== 'crow')).sort((a, b) => a.y - b.y);
@@ -199,11 +200,10 @@ function render() {
     drawFighter(f, B(f, 'stealth') && !menu ? .4 : 1);
   }
   drawFleet();
-  for (const b of bullets) if (!(b.shape === 'seed' && typeof drawSeedShot === 'function' && drawSeedShot(b)) && !drawShot(b)) drawBullet(b);
-  { const now = performance.now(); drawSwings(Math.min(.05, (now - (render.last || now)) / 1000)); render.last = now; }
-  drawTiles(ctx, c0, c1, r0, r1, 1);
   drawTiles(ctx, c0, c1, r0, r1, 2);
   for (const f of inBush) drawFighter(f, f.team === VIEW ? .6 : .85);
+  for (const b of bullets) if (!(b.shape === 'seed' && typeof drawSeedShot === 'function' && drawSeedShot(b)) && !drawShot(b)) drawBullet(b);      // shots and swings over walls and bushes, so nothing hides them
+  { const now = performance.now(); drawSwings(Math.min(.05, (now - (render.last || now)) / 1000)); render.last = now; }
   for (const m of minions) if (m.kind === 'dragon' || m.kind === 'crow') drawMinion(m);
   for (const p of parts) { ctx.globalAlpha = clamp(p.life / p.max, 0, 1); ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.3); ctx.fill(); }
   drawParticles();
