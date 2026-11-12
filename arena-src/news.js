@@ -3,7 +3,8 @@
    may write it, with news/admin.html. The copy in news/news.json at build time is baked in below, and the last list read
    is kept in localStorage, so news still shows offline (and in the claude.ai preview, where Supabase cannot be reached).
    An item: { id, kind: 공지|업데이트|이벤트|점검, date: 'YYYY-MM-DD', title, body, image?, link?: {label, url},
-   popup? (false = no pop-up on launch), pin? (kept on top), start?/end? (ISO time: shown only between them) }.
+   popup? (false = no pop-up on launch), pin? (kept on top), start?/end? (ISO time: shown only between them),
+   poll?: {o: [2-6 options], close?: ISO time} (the title is the question; signed-in players vote once, see newsPoll*) }.
    Players see a newspaper tile in the lobby's top right with a red dot while something is unread; unread news that
    asks for it opens once by itself when the lobby is first shown. */
 const NEWS_BUILT = /*@@NEWS@@*/null;
@@ -37,6 +38,7 @@ function newsItemHtml(n, unread) {
     '<div class="nwBody"><div class="nwMeta">' + (n.kind ? '<span class="nwTag">' + newsEsc(n.kind) + '</span>' : '') + (n.pin ? '<svg class="nwPin" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4H6l4-4z M12 13v8" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>' : '') +
     '<span>' + newsDate(n.date) + '</span>' + (unread ? '<i class="nwNew" aria-label="새 소식"></i>' : '') + '</div>' +
     '<h3>' + newsEsc(n.title) + '</h3>' + (n.body ? '<p>' + newsEsc(n.body) + '</p>' : '') +
+    (n.poll && Array.isArray(n.poll.o) ? '<div class="nwPoll" data-id="' + newsEsc(n.id) + '">' + n.poll.o.map((o, i) => '<button type="button" class="nwOpt" data-i="' + i + '"><i></i><span>' + newsEsc(o) + '</span><b></b></button>').join('') + '<small class="nwVotes"></small></div>' : '') +
     (lk ? '<a class="btn-primary nwLink" href="' + newsEsc(lk) + '" target="_blank" rel="noopener">' + newsEsc(n.link.label || '열기') + '</a>' : '') + '</div></article>';
 }
 const NEWS_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 5.5h13v13a2 2 0 0 0 2 2h-13a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16.5 9h4v9.5a2 2 0 0 1-4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M6.5 9h7v4h-7z" fill="currentColor"/><path d="M6.5 15.5h7M6.5 18h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
@@ -73,6 +75,18 @@ const NEWS_CSS = `
 .nwNew{width:10px;height:10px;border-radius:50%;background:var(--red);margin-left:auto;box-shadow:0 0 0 3px rgba(255,93,93,.18)}
 .nwItem h3{margin:7px 0 4px;font:700 19px/1.4 'IBM Plex Sans KR',sans-serif;color:var(--text);word-break:keep-all;overflow-wrap:anywhere}
 .nwItem p{margin:0;font:400 15px/1.65 'IBM Plex Sans KR',sans-serif;color:#cdd2dc;white-space:pre-line;word-break:keep-all;overflow-wrap:anywhere}
+.nwPoll{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.nwOpt{position:relative;overflow:hidden;display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 14px;border-radius:10px;border:1.5px solid var(--line);background:#11141b;color:var(--text);font:600 15px/1.35 'IBM Plex Sans KR',sans-serif;text-align:left;cursor:pointer;transition:border-color .12s,transform .08s}
+.nwOpt:hover{border-color:var(--c)} .nwOpt:active{transform:scale(.99)}
+.nwOpt i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--c);opacity:.2;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.nwOpt span{position:relative;flex:1;min-width:0;overflow-wrap:anywhere}
+.nwOpt b{position:relative;display:none;font-variant-numeric:tabular-nums;font-weight:800;color:var(--text-dim)}
+.nwPoll.show .nwOpt{cursor:default} .nwPoll.show .nwOpt:hover{border-color:var(--line)} .nwPoll.show .nwOpt:active{transform:none} .nwPoll.show .nwOpt b{display:block}
+.nwPoll.show .nwOpt.mine{border-color:var(--c)} .nwPoll.show .nwOpt.mine i{opacity:.34} .nwPoll.show .nwOpt.mine b{color:var(--text)}
+.nwOpt.mine span::after{content:'';display:inline-block;width:11px;height:6px;margin-left:8px;border-left:2.5px solid var(--c);border-bottom:2.5px solid var(--c);transform:rotate(-45deg) translateY(-3px)}
+.nwPoll.busy{opacity:.6;pointer-events:none}
+.nwVotes{align-self:flex-end;font:600 12.5px 'IBM Plex Sans KR',sans-serif;color:var(--text-dim);font-variant-numeric:tabular-nums}
+.nwVotes:empty{display:none}
 .nwLink{display:inline-block;margin-top:12px;padding:9px 28px;font-size:16px;text-decoration:none}
 @media (max-height:560px){ .nwHead{padding:6px 10px 6px 14px} .nwHead h2{font-size:21px} .nwX{width:38px;height:38px} .nwList{padding:10px;gap:10px} .nwItem img{max-height:150px} .nwBody{padding:10px 14px 12px} .nwItem h3{font-size:17px} .nwItem p{font-size:14px} }
 `;
@@ -98,7 +112,7 @@ function newsPaint() { const live = newsLive(); newsBtn.hidden = !live.length; c
 function newsOpen(on) {
   if (on) {
     const s = newsSeen(); newsWin.querySelector('.nwList').innerHTML = newsLive().map(n => newsItemHtml(n, !s.includes(n.id))).join('');
-    newsWin.hidden = false; newsWin.querySelector('.nwList').scrollTop = 0; newsOwnerCheck();
+    newsWin.hidden = false; newsWin.querySelector('.nwList').scrollTop = 0; newsOwnerCheck(); newsPollLoad();
   } else if (!newsWin.hidden) { newsWin.hidden = true; newsMarkSeen(); newsPaint(); }
 }
 /* a table row -> the item shape used here (and in news/news.json) */
@@ -108,6 +122,7 @@ function newsFromRows(rows) {
     const n = { id: r.id, kind: r.kind, date: r.date, title: r.title };
     if (r.body) n.body = r.body; if (r.image) n.image = r.image; if (r.link_url) n.link = { label: r.link_label || '', url: r.link_url };
     if (r.popup === false) n.popup = false; if (r.pin) n.pin = true; if (r.start_at) n.start = r.start_at; if (r.end_at) n.end = r.end_at;
+    if (Array.isArray(r.poll_options)) { n.poll = { o: r.poll_options.map(String) }; if (r.poll_close_at) n.poll.close = r.poll_close_at; }
     return n;
   });
   return { v: 1, updated: rows.reduce((m, r) => String(r.updated_at || '') > m ? String(r.updated_at) : m, ''), news };
@@ -128,6 +143,37 @@ function newsOwnerCheck() {
   newsOwner = { uid: u.id, ok: false };
   try { sb.from('ff_devs').select('role').eq('user_id', u.id).maybeSingle().then(r => { const ok = !!(r && r.data && r.data.role === 'owner'); if (newsOwner && newsOwner.uid === u.id) newsOwner.ok = ok; ed.hidden = !ok; }, () => {}); } catch (e) {}
 }
+/* polls: counts come from seumarena_poll_counts (public), a vote goes through seumarena_poll_vote (signed in, once).
+   The options stay plain buttons until the player has voted or the poll is closed; then they turn into result bars. */
+function newsSbCall(fn, args) {
+  const A = window.FFAuth, sb = A && A.client && A.client();
+  if (sb && sb.rpc) return sb.rpc(fn, args).then(r => { if (r.error) throw r.error; return r.data; });
+  return fetch(NEWS_SB + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: ACH_KEY }, body: JSON.stringify(args) }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+}
+function newsPollPaint(el, rows) {
+  const n = newsLive().find(x => x.id === el.dataset.id); if (!n || !n.poll) return;
+  const cnt = n.poll.o.map(() => 0); let mine = -1;
+  for (const r of rows || []) if (r.news_id === n.id && r.choice >= 0 && r.choice < cnt.length) { cnt[r.choice] = +r.n || 0; if (r.mine) mine = r.choice; }
+  const tot = cnt.reduce((a, b) => a + b, 0), closed = !!(n.poll.close && Date.parse(n.poll.close) <= Date.now()), show = mine >= 0 || closed;
+  el.classList.toggle('show', show); el.classList.remove('busy');
+  el.querySelectorAll('.nwOpt').forEach((b, i) => {
+    const pc = tot ? Math.round(cnt[i] / tot * 100) : 0;
+    b.classList.toggle('mine', i === mine); b.querySelector('b').textContent = pc + '%';
+    b.querySelector('i').style.width = show ? pc + '%' : '0';
+  });
+  el.querySelector('.nwVotes').textContent = show ? tot + '표' : '';
+}
+function newsPollLoad() {
+  const els = [...newsWin.querySelectorAll('.nwPoll')]; if (!els.length) return;
+  newsSbCall('seumarena_poll_counts', { p_ids: els.map(e => e.dataset.id) }).then(rows => els.forEach(e => newsPollPaint(e, rows)), () => {});
+}
+if (!DED) newsWin.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('.nwOpt'), el = b && b.closest('.nwPoll'); if (!el || el.classList.contains('show')) return;
+  const A = window.FFAuth, u = A && A.user && A.user();
+  if (!u) { try { if (A && A.openLogin) A.openLogin(); } catch (err) {} return; }
+  el.classList.add('busy');
+  newsSbCall('seumarena_poll_vote', { p_news: el.dataset.id, p_choice: +b.dataset.i }).then(() => newsPollLoad(), () => el.classList.remove('busy'));
+});
 /* the one pop-up: once the intro is gone and the plain lobby menu is up (nothing else open), after the fresh list came or 4 s passed */
 function newsTick() {
   if (newsPopped || DED) return;
