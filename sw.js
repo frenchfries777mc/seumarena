@@ -46,5 +46,6 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (req.mode === 'navigate' && url.origin === self.location.origin) { e.respondWith(page(req)); return; }
+  if (url.origin === self.location.origin && url.pathname.includes('/news/')) return;   // the news list and its pictures always come from the network
   if (url.origin === self.location.origin || RUNTIME_HOSTS.includes(url.hostname)) e.respondWith(cacheFirst(req));
 });

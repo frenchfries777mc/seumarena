@@ -52,7 +52,19 @@ const MAPS = [
     rows:['############################', '#...........................', '#..ggg....ggg.....ggg.......', '#..ggg....ggg.....ggg..##...', '#.............#.........#...', '#....##.......#...ggg.......', '#....#..ggg.......ggg.......', '#.......ggg...ww............', '#..gg.........ww....#..ggg..', '#..gg....##.........#..ggg..', '#.........#..p..............', '#....ggg.........ggg........', '#....ggg...h.....ggg..##....', '#.....................#.....', '#..##.....ggg...ww..........', '#.........ggg...ww....p.....', '#..##.....ggg...ww..........', '#.....................#.....', '#....ggg...h.....ggg..##....', '#....ggg.........ggg........', '#.........#..p..............', '#..gg....##.........#..ggg..', '#..gg.........ww....#..ggg..', '#.......ggg...ww............', '#....#..ggg.......ggg.......', '#....##.......#...ggg.......', '#.............#.........#...', '#..ggg....ggg.....ggg..##...', '#..ggg....ggg.....ggg.......', '#...........................', '############################'] },
   { id:'flag_city', name:'네온 도시', desc:'벽이 많은 골목 시가전.', big:1, flag5:1,
     th:{'f1': '#2a2f3e', 'f2': '#30364a', 'wt': '#5a6380', 'ws': '#3a4058', 'b1': '#2f8f6a', 'b2': '#45b088', 'wa': '#3a6fd4', 'wa2': '#6a9ae8'},
-    rows:['############################', '#...........................', '#..###....####....###.......', '#..#.........#......#..##...', '#..#...gg....#...gg.#..##...', '#......gg..........#........', '#..........p.......#........', '#.####.........####.........', '#.........##...........##...', '#...gg....##....gg.....##...', '#...gg..........gg..........', '#.......###...........###...', '#.......#....h..........#...', '#....p..#.......####........', '#..##...........#....gg.....', '#...........##.......gg..p..', '#..##...........#....gg.....', '#....p..#.......####........', '#.......#....h..........#...', '#.......###...........###...', '#...gg..........gg..........', '#...gg....##....gg.....##...', '#.........##...........##...', '#.####.........####.........', '#..........p.......#........', '#......gg..........#........', '#..#...gg....#...gg.#..##...', '#..#.........#......#..##...', '#..###....####....###.......', '#...........................', '############################'] }
+    rows:['############################', '#...........................', '#..###....####....###.......', '#..#.........#......#..##...', '#..#...gg....#...gg.#..##...', '#......gg..........#........', '#..........p.......#........', '#.####.........####.........', '#.........##...........##...', '#...gg....##....gg.....##...', '#...gg..........gg..........', '#.......###...........###...', '#.......#....h..........#...', '#....p..#.......####........', '#..##...........#....gg.....', '#...........##.......gg..p..', '#..##...........#....gg.....', '#....p..#.......####........', '#.......#....h..........#...', '#.......###...........###...', '#...gg..........gg..........', '#...gg....##....gg.....##...', '#.........##...........##...', '#.####.........####.........', '#..........p.......#........', '#......gg..........#........', '#..#...gg....#...gg.#..##...', '#..#.........#......#..##...', '#..###....####....###.......', '#...........................', '############################'] },
+  { id:'flag_castle', name:'숲 속 성채', desc:'물과 벽으로 둘러싼 두 성채 사이에 덤불 숲 두 줄이 길게 뻗은 맵. 가운데 연못 광장에서 크게 부딪혀요.', big:1, flag5:1,
+    th:{'f1': '#9cc27a', 'f2': '#a6ca84', 'wt': '#5b4630', 'ws': '#3d2f20', 'b1': '#2f7a3a', 'b2': '#45984f', 'wa': '#3a8fc4', 'wa2': '#63b8e0'},
+    rows:['############################','#ggggggggg......gggggggggg..','#ggggggggg......gggggggggg..','#ggggggggg......gggggggggg..','#...............gggggggggg..','#...............gggggggggg..','#...............ggggg.......','#www...wwww.....ggggg.......','####...###w.....ggggg.......','#........#w.....ggggg....www','#........#w.....ggggg....www','#...............ggggg....www','#...............ggggg.......','#...............ggggg.......','#........#w.....ggggg....www','#........#w.....ggggg....www','#........#w.....ggggg....www','#...............ggggg.......','#...............ggggg.......','#...............ggggg....www','#........#w.....ggggg....www','#........#w.....ggggg....www','####...###w.....ggggg.......','#www...wwww.....ggggg.......','#...............ggggg.......','#...............gggggggggg..','#...............gggggggggg..','#ggggggggg......gggggggggg..','#ggggggggg......gggggggggg..','#ggggggggg......gggggggggg..','############################'] },
+  { id:'big_swamp', name:'습지 난투', desc:'웅덩이가 곳곳에 흩어진 습지. 가운데 웅덩이 사이 좁은 길과 덤불에서 난전이 벌어져요.', big:1,
+    th:{ f1:'#d9c38a', f2:'#e0cb95', wt:'#8a6a44', ws:'#5f4529', b1:'#2f8f4a', b2:'#49b565', wa:'#2f8fc4', wa2:'#63b8e0' },
+    rows:['###################','#..................','#.www.......wwww..w','#.www.......wwww..w','#......#...........','#......#...gggggg..','#......#...gggggg..','#...####...gggggg..','#..........ggg.....','#..........ggg.www.','#..........ggg.www.','#......#.......www.','#...####...........','#......#.......www.','#..........ggg.www.','#..........ggg.www.','#..........ggg.....','#...####...gggggg..','#......#...gggggg..','#......#...gggggg..','#......#...........','#.www.......wwww..w','#.www.......wwww..w','#..................','###################'] },
+  { id:'field', name:'들판', desc:'가운데를 세로로 가르는 덤불 띠와 모서리 덤불숲. 연못과 낮은 벽 뒤에 숨으며 싸워요.',
+    th:{ f1:'#2a2850', f2:'#2f2d5b', wt:'#f4b942', ws:'#c98a1b', b1:'#1f9d78', b2:'#2fc797', wa:'#3a7fc4', wa2:'#63a4e0' },
+    rows:['#############','#ggg...ww#.gg','#ggg...ww#.gg','#ggg.......gg','####.......gg','#.....#ww..gg','#.....#ww..gg','#..........gg','#..........gg','#..........gg','#.....#ww..gg','#.....#ww..gg','####.......gg','#ggg.......gg','#ggg...ww#.gg','#ggg...ww#.gg','#############'] },
+  { id:'cross_plaza', name:'십자 광장', desc:'큰 호수 네 개가 십자 모양 길을 만든 광장. 길이 모이는 한가운데 덤불에서 자주 마주쳐요.', big:1,
+    th:{ f1:'#5a5346', f2:'#625b4d', wt:'#c9b27a', ws:'#8f7a4a', b1:'#3f7a3a', b2:'#58a04f', wa:'#3a7fc4', wa2:'#63a4e0' },
+    rows:['###################','#ggg#............gg','#ggg.............gg','#ggg#............gg','##.#wwwwwwwwwwww.gg','#...wwwwwwwwwwww.gg','#...wwwwwwwwwwww.gg','#...wwwwwwwwwwww...','#...wwwwwwwwwww....','#...wwwwwwwwww.....','#...............gg.','#gggggggggggg...gg.','#gggggggggggg......','#gggggggggggg...gg.','#...............gg.','#...wwwwwwwwww.....','#...wwwwwwwwwww....','#...wwwwwwwwwwww...','#...wwwwwwwwwwww.gg','#...wwwwwwwwwwww.gg','##.#wwwwwwwwwwww.gg','#ggg#............gg','#ggg.............gg','#ggg#............gg','###################'] }
 ];
 for (const m of MAPS) m.grid = m.rows.map(r => r + [...r.slice(0, r.length - 1)].reverse().join(''));
 let COLS = 25, ROWS = 17, WW = COLS * T, WH = ROWS * T;      // set by loadMap(): the big 원 레프트 maps are larger
@@ -75,7 +87,7 @@ function addText(o) { texts.push(o); evt(['t', Math.round(o.x), Math.round(o.y),
 function addPart(p) { parts.push(p); evt(['p', Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy), +p.life.toFixed(2), p.color, +(p.r || 3).toFixed(1)]); }
 const OT_MAX = 60;       // sudden-death overtime when the clock runs out level: first kill wins, a draw if nobody scores within this many seconds
 const STAT_X = 10;       // every hp and every damage/heal/shield number written in the kits is multiplied by this (damage() and heal() do it, so kit code keeps the original small numbers)
-const WIN_SCORE = 10, MATCH_TIME = 150, MAX_HP = 600, ULT_CD = 20, CD1 = 5, CD2 = 10, DASH_D = 3.2 * T, SPEED = 205;
+const WIN_SCORE = 10, MATCH_TIME = 150, MAX_HP = 600, ULT_CD = 45, CD1 = 5, CD2 = 10, DASH_D = 3.2 * T, SPEED = 205;
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -93,10 +105,10 @@ let state = 'menu', time = 0, timeLeft = MATCH_TIME, score = [0, 0];
    teams × per: how many sides and fighters per side · respawn: do the dead come back · win: score that ends the match · time: seconds on the clock (per round when rounds > 0)
    rounds: round wins needed (0 = no rounds). The UI sets `modeChoice` and calls setup(); the engine reads the rules with modeNow(). */
 const MODES = [
-  { id: 'team', name: '팀 아웃', size: '3v3', teams: 2, per: 3, respawn: true, win: WIN_SCORE, time: MATCH_TIME, rounds: 0, maps: [0, 1, 2, 3, 4, 5, 6], ready: true },
-  { id: 'solo', name: '원 레프트', size: '6명', teams: 6, per: 1, respawn: false, win: 1, time: 150, rounds: 0, maps: [7, 8, 9, 10], ready: true },
-  { id: 'flag', name: '캡쳐 플래그', size: '5v5', teams: 2, per: 5, respawn: true, win: 3, time: 240, rounds: 0, maps: [11, 12, 13, 14, 15], ready: true },      // 2026-11-12: the 3v3 version was dropped, 캡쳐 플래그 is 5v5 on the 5 big flag maps
-  { id: 'duel', name: '듀얼 배틀', size: '1v1', teams: 2, per: 1, respawn: false, win: 2, time: 60, rounds: 2, maps: [0, 1, 2, 3, 4, 5, 6], ready: true }
+  { id: 'team', name: '팀 아웃', size: '3v3', teams: 2, per: 3, respawn: true, win: WIN_SCORE, time: MATCH_TIME, rounds: 0, maps: [0, 1, 2, 3, 4, 5, 6, 18], ready: true },
+  { id: 'solo', name: '원 레프트', size: '6명', teams: 6, per: 1, respawn: false, win: 1, time: 150, rounds: 0, maps: [7, 8, 9, 10, 17, 19], ready: true },
+  { id: 'flag', name: '캡쳐 플래그', size: '5v5', teams: 2, per: 5, respawn: true, win: 3, time: 240, rounds: 0, maps: [11, 12, 13, 14, 15, 16], ready: true },      // 2026-11-12: the 3v3 version was dropped, 캡쳐 플래그 is 5v5 on the 5 big flag maps
+  { id: 'duel', name: '듀얼 배틀', size: '1v1', teams: 2, per: 1, respawn: false, win: 2, time: 60, rounds: 2, maps: [0, 1, 2, 3, 4, 5, 6, 18], ready: true }
 ];
 for (const m of MODES) m.max = m.teams * m.per;
 const isFlagMode = id => id === 'flag' || id === 'flag5';      // ('flag5' kept only as an alias: 캡쳐 플래그 itself is now 5v5)      // room size, for matchmaking
@@ -306,6 +318,29 @@ function burst(x, y, color, n, spd) {
   for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, s = rnd(.3, 1) * spd; parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: rnd(.25, .55), max: .55, color, r: rnd(2, 5) }); }
 }
 const ring = (x, y, r, color, life) => { evt(['r', Math.round(x), Math.round(y), Math.round(r), color || '#ffb347', life || .3]); rings.push({ x, y, r, life: life || .3, max: life || .3, color: color || '#ffb347' }); };
+/* 2026-11-12: ULT_CD 45 s; landing a BASIC attack on an enemy fighter refills the ult. per hit = rate * attack interval / shots per attack, rate .875 .. 2 from ultEase
+   (shots = burst x count), and one attack can never give more than rate * interval, so shotguns and multi-hit swings do not overcharge.
+   hitting every attack fills it in 45 / (1 + rate) = 24 s (easiest attack) .. 15 s (hardest), as the user asked */
+/* how hard the basic attack is to land: hard (short reach, thin shot, single target) refills more per hit, easy (long reach, wide shot,
+   piercing or exploding) refills less. 0.75 .. 1.35, cached per hero */
+function ultEase(h) {
+  if (h._ue) return h._ue;
+  let m;
+  if (h.type === 'melee') m = 1.15 * Math.pow(1.6 * T / Math.max(T, h.range || T), .3) * (h.half > 1.2 ? .9 : 1);
+  else {
+    let w = 5; try { const o = h.pre ? h.pre({ h, st: {}, b: {}, x: 0, y: 0 }, {}) : null; if (o) w = (o.r || 5) + (o.pad || 0); } catch (e) {}
+    m = Math.pow(7 * T / clamp(h.range || 500, 3 * T, 14 * T), .3) * Math.pow(5 / w, .25) * (h.pierce ? .85 : 1) * (h.splash ? .85 : 1);
+  }
+  return (h._ue = clamp(m, .75, 1.35));
+}
+function ultCharge(by, e, o) {
+  const f = by && (by.minion ? null : by);
+  if (!f || !f.h || f.dead || f.team === e.team || f.ucd <= 0 || !(o.basic || SRC === '기본 공격')) return;
+  const h = f.h, iv = cdOf(f), cap = iv * Math.min(2, .875 + (ultEase(h) - .75) * 2.96), per = cap / Math.max(1, (h.burst || 1) * (h.count || 1));
+  if (f.ucF !== f.lastFire) { f.ucF = f.lastFire; f.ucG = 0; }
+  const add = Math.min(per, cap - f.ucG); if (add <= 0) return;
+  f.ucG += add; f.ucd = Math.max(0, f.ucd - add);
+}
 function damage(e, dmg, by, o) {
   o = o || {};
   if (e.dead || !(dmg > 0)) return 0;
@@ -318,6 +353,7 @@ function damage(e, dmg, by, o) {
   if (e.h.resist && o.el) dmg *= .7;
   if (e.shield > 0) { const a = Math.min(e.shield, dmg); e.shield -= a; dmg -= a; if (e.shield <= 0 && e.onShieldBreak) { const fn = e.onShieldBreak; e.onShieldBreak = null; fn(e); } if (dmg <= 0) return 0; }
   e.hp -= dmg; e.lastHit = time; e.recent.push([time, dmg / STAT_X]); e.taken = (e.taken || 0) + dmg;
+  ultCharge(by, e, o);
   e.lastDmg = { src: o.src || SRC || (o.basic ? '기본 공격' : '패시브'), t: time };
   if (by && by !== e) { by.dealt = (by.dealt || 0) + dmg; if (!by.minion && by.h.onDeal) by.h.onDeal(by, e, dmg, o); }
   if (o.quiet) { e.acc += dmg; if (e.acc >= 8 * STAT_X) { addText({ x: e.x + rnd(-10, 10), y: e.y - 70, txt: String(Math.round(e.acc)), life: .6, color: '#ffb347' }); e.acc = 0; } }
