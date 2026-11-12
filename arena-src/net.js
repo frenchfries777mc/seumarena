@@ -27,10 +27,10 @@ const PEERJS_ICE_CONFIG = { config: { iceServers: [
 ].concat(ICE_EXTRA) } };
 const NET_BUFFS = ['ally', 'block', 'reflect', 'sand', 'inv', 'counter', 'guard', 'stealth', 'stun', 'charm', 'root', 'mute', 'blind', 'slow', 'infect', 'reveal', 'fly'];
 /* game modes: the registry (MODES, setMode / curMode, modeSnap / applyModeSnap) lives with the rules in engine.js; everything here is guarded so a build
-   without it plays the plain team match. The mode id goes into the room id, so it must stay a short lowercase word. */
+   without it plays the plain team match. The mode id goes into the room id, so it must stay a short lowercase word (digits allowed, e.g. flag5). */
 function modeEntry(id) { try { if (typeof MODES === 'undefined' || !MODES) return null; return Array.isArray(MODES) ? MODES.find(m => m && m.id === id) || null : MODES[id] || null; } catch (e) { return null; } }
 function netModeOf(v) {      // the mode actually played: unknown or not-ready ids become the default, the same way the engine's modeOf() does
-  if (typeof v !== 'string' || !/^[a-z]{2,10}$/.test(v)) v = 'team';
+  if (typeof v !== 'string' || !/^[a-z][a-z0-9]{1,9}$/.test(v)) v = 'team';
   try { if (typeof modeOf === 'function') return modeOf(v).id; } catch (e) {}
   const e = modeEntry(v); return e && e.ready !== false ? v : 'team';
 }
