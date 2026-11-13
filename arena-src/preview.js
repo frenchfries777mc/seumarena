@@ -173,8 +173,8 @@ function drawPreviews(f) {
   let any = false;
   const mv = inp && Math.hypot(inp.mx, inp.my) > .15 ? [inp.mx, inp.my] : null;
   if (PV.dash) { drawSpec(f, pvSpec(f, 'd'), a, tx, ty, cancel ? '255,93,93' : MINT, f.dcd <= 0, mv || [Math.cos(a), Math.sin(a)]); any = true; }
-  for (let i = 0; i < 2; i++) if (PV.sk[i] && f.sk[i]) { drawSpec(f, pvSpec(f, 's', i), a, tx, ty, cancel ? '255,93,93' : MINT, f.scd[i] <= 0, mv); any = true; }
-  if (PV.ult) { drawSpec(f, pvSpec(f, 'u'), a, tx, ty, cancel ? '255,93,93' : MINT, f.ucd <= 0, mv); any = true; }
+  for (let i = 0; i < 2; i++) if (PV.sk[i] && f.sk[i]) { drawSpec(f, pvSpec(f, 's', i), a, tx, ty, cancel ? '255,93,93' : MINT, f.scd[i] <= 0, null); any = true; }
+  if (PV.ult) { drawSpec(f, pvSpec(f, 'u'), a, tx, ty, cancel ? '255,93,93' : MINT, f.ucd <= 0, null); any = true; }
   return any;
 }
 function drawBasicGuide(f) {
