@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SeumArena · 커뮤니티</title>
+<meta name="description" content="SeumArena 플레이어들의 자유 글, 팁, 자랑, 버그 제보.">
+<meta name="theme-color" content="#0c0e13">
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<main class="wrap board">
+<div class="main">
+<div class="sh"><h1 style="margin:0;font-size:clamp(34px,5vw,48px);font-weight:900">커뮤니티</h1><button type="button" class="slant" id="writeBtn">글쓰기</button></div>
+<form class="card write" id="write" hidden>
+<div class="r">
+<label class="sr" for="wc">분류</label>
+<select id="wc" style="flex:0 0 auto"><option value="자유">자유</option><option value="팁">팁</option><option value="자랑">자랑</option><option value="버그">버그 제보</option></select>
+<label class="sr" for="wt">제목</label><input id="wt" maxlength="70" placeholder="제목">
+</div>
+<label class="sr" for="wb">내용</label><textarea id="wb" maxlength="4000" placeholder="내용"></textarea>
+<div class="r" style="justify-content:space-between;align-items:center"><p class="msg" id="wm"></p><button type="submit" class="slant">올리기</button></div>
+</form>
+<div id="view" hidden></div>
+<div class="pills" id="cats" aria-label="분류"></div>
+<form class="search" id="search" role="search"><label class="sr" for="q">글 검색</label><input id="q" type="search" placeholder="글 검색"></form>
+<div class="card list" id="list"><div class="empty">글을 불러오는 중이에요.</div></div>
+<button type="button" class="pill" id="more" hidden>더 보기</button>
+</div>
+<aside>
+<section class="card box"><h2 style="font-size:18px">글 쓰기 전에</h2><p style="margin:0;color:var(--soft);line-height:1.7;font-size:14.5px">Frenchfries777 계정으로 글과 댓글을 쓸 수 있어요. 여기 쓴 글은 허브 커뮤니티에도 함께 보여요.</p><a href="https://frenchfries777.com/community/">허브 커뮤니티 가기</a></section>
+</aside>
+</main>
+<script src="https://frenchfries777.com/games/ff-auth.js"></script>
+<script src="site.js"></script>
+<script src="board.js"></script>
+<script>siteChrome('community'); boardPage();</script>
+</body>
+</html>
