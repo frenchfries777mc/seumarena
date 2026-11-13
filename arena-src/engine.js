@@ -64,7 +64,25 @@ const MAPS = [
     rows:['#############','#ggg...ww#.gg','#ggg...ww#.gg','#ggg.......gg','####.......gg','#.....#ww..gg','#.....#ww..gg','#..........gg','#..........gg','#..........gg','#.....#ww..gg','#.....#ww..gg','####.......gg','#ggg.......gg','#ggg...ww#.gg','#ggg...ww#.gg','#############'] },
   { id:'cross_plaza', name:'십자 광장', desc:'큰 호수 네 개가 십자 모양 길을 만든 광장. 길이 모이는 한가운데 덤불에서 자주 마주쳐요.', big:1,
     th:{ f1:'#5a5346', f2:'#625b4d', wt:'#c9b27a', ws:'#8f7a4a', b1:'#3f7a3a', b2:'#58a04f', wa:'#3a7fc4', wa2:'#63a4e0' },
-    rows:['###################','#ggg#............gg','#ggg.............gg','#ggg#............gg','##.#wwwwwwwwwwww.gg','#...wwwwwwwwwwww.gg','#...wwwwwwwwwwww.gg','#...wwwwwwwwwwww...','#...wwwwwwwwwww....','#...wwwwwwwwww.....','#...............gg.','#gggggggggggg...gg.','#gggggggggggg......','#gggggggggggg...gg.','#...............gg.','#...wwwwwwwwww.....','#...wwwwwwwwwww....','#...wwwwwwwwwwww...','#...wwwwwwwwwwww.gg','#...wwwwwwwwwwww.gg','##.#wwwwwwwwwwww.gg','#ggg#............gg','#ggg.............gg','#ggg#............gg','###################'] }
+    rows:['###################','#ggg#............gg','#ggg.............gg','#ggg#............gg','##.#wwwwwwwwwwww.gg','#...wwwwwwwwwwww.gg','#...wwwwwwwwwwww.gg','#...wwwwwwwwwwww...','#...wwwwwwwwwww....','#...wwwwwwwwww.....','#...............gg.','#gggggggggggg...gg.','#gggggggggggg......','#gggggggggggg...gg.','#...............gg.','#...wwwwwwwwww.....','#...wwwwwwwwwww....','#...wwwwwwwwwwww...','#...wwwwwwwwwwww.gg','#...wwwwwwwwwwww.gg','##.#wwwwwwwwwwww.gg','#ggg#............gg','#ggg.............gg','#ggg#............gg','###################'] },
+  { id:'hot_twoside', name:'양면 전쟁', desc:'네 모서리 덤불 방에서 출발해 가운데 핫존으로 모여요. 핫존 한복판에 회복 발판이 있고, 가속 발판 길이 원으로 곧장 이어져요. 원 둘레의 꺾인 벽과 덤불 뒤에서 기회를 노려요.', big:1, hot:1,
+    th:{ f1:'#3d4a5c', f2:'#435163', wt:'#d9b36c', ws:'#9a7640', b1:'#2f8a4a', b2:'#46b064', wa:'#2f8fc4', wa2:'#63b8e0' },
+    rows:['###################','#ggggg#wwwwwwwwwwww','#g...g#w...........','#g...g#w...........','#g.................','#ggg...........#...','####...........#..p','#www........ggg#..p','#w..........ggg#..p','#w..........ggg#..p','#w........######...','#w........#ggg.....','#w.....ggg#ggg.....','#w.....ggg#ggg.....','#w.....ggg#........','#w...######........','#w.................','#w.................','#w....pppp........h','#w.................','#w.................','#w...######........','#w.....ggg#........','#w.....ggg#ggg.....','#w.....ggg#ggg.....','#w........#ggg.....','#w........######...','#w..........ggg#..p','#w..........ggg#..p','#www........ggg#..p','####...........#..p','#ggg...........#...','#g.................','#g...g#w...........','#g...g#w...........','#ggggg#wwwwwwwwwwww','###################'] },
+  { id:'hot_jungle', name:'정글 사원', desc:'두꺼운 덤불 띠가 테두리를 감싼 사원. 가운데 마당의 핫존을 꺾인 벽과 물길이 둘러싸고, 테두리 덤불을 타고 몰래 돌아 들어갈 수 있어요.', big:1, hot:1,
+    th:{ f1:'#3f4a33', f2:'#46523a', wt:'#a89a6a', ws:'#6f6440', b1:'#2a7d3e', b2:'#3fa055', wa:'#2f8fc4', wa2:'#63b8e0' },
+    rows:['###################','#gggggggggggggggggg','#g....ggggggggggggg','#g....ggggggggggggg','#g....###...####...','#g.................','#ggg#..............','#ggg#..##...####...','#ggg#..#...........','#ggg...............','#ggg........wwwww..','#ggg...............','#ggg#..#..w........','#ggg#..#..w..###...','#ggg#..#..w..#.....','#ggg#..#..w..#.....','#ggg...#..w........','#ggg...............','#ggg...............','#ggg...............','#ggg...#..w........','#ggg#..#..w..#.....','#ggg#..#..w..#.....','#ggg#..#..w..###...','#ggg#..#..w........','#ggg...............','#ggg........wwwww..','#ggg...............','#ggg#..#...........','#ggg#..##...####...','#ggg#..............','#g.................','#g....###...####...','#g....ggggggggggggg','#g....ggggggggggggg','#gggggggggggggggggg','###################'] },
+  { id:'hot_highway', name:'고속도로', desc:'가속 발판 도로가 맵을 십자로 가르고 테두리를 한 바퀴 돌아요. 도로가 핫존 한가운데를 지나 빨리 드나들 수 있고, 도로 사이 덤불 칸은 숨어서 기다리기 좋아요.', big:1, hot:1,
+    th:{ f1:'#3a3d44', f2:'#40434b', wt:'#e8c547', ws:'#a88a2a', b1:'#2f8a4a', b2:'#46b064', wa:'#2f8fc4', wa2:'#63b8e0' },
+    rows:['###################','#......gggggggggggg','#......gppppppppppp','#......gppppppppppp','#......gppppppppppp','#......g#########p.','#......ggggggggg#p.','#gggggg........g#p.','#gppp#g..........p.','#gppp#g..........p.','#gppp#g..........p.','#gppp#g........g#p.','#gppp#g........g#p.','#gppp#g........g#p.','#gppp#g..........p.','#gppp#gg...ggg...p.','#gppp###...###...p.','#gpppppppppppppppp.','#gppp..............','#gpppppppppppppppp.','#gppp###...###...p.','#gppp#gg...ggg...p.','#gppp#g..........p.','#gppp#g........g#p.','#gppp#g........g#p.','#gppp#g........g#p.','#gppp#g..........p.','#gppp#g..........p.','#gppp#g..........p.','#gggggg........g#p.','#......ggggggggg#p.','#......g#########p.','#......gppppppppppp','#......gppppppppppp','#......gppppppppppp','#......gggggggggggg','###################'] },
+  { id:'canal', name:'운하', desc:'가운데를 가로로 흐르는 넓은 운하가 맵을 위아래로 갈라요. 운하 양 끝 좁은 둑길로만 건너갈 수 있고, 운하를 따라 늘어선 덤불 줄과 가운데 벽 뒤에 숨어 싸워요.',
+    th:{ f1:'#b7ab95', f2:'#c1b59f', wt:'#b8673f', ws:'#7c3f22', b1:'#3f7f3a', b2:'#58a04f', wa:'#2a7fa8', wa2:'#62b5d8' },
+    rows:['#############','#..ggggggggg#','#............','#............','#............','#..ggggggggg#','#..ggggggggg#','#..wwwwwwwwww','#..wwwwwwwwww','#..wwwwwwwwww','#..ggggggggg#','#..ggggggggg#','#............','#............','#............','#..ggggggggg#','#############'] },
+  { id:'tournament', name:'토너먼트', desc:'네 모서리 방과 위아래 덤불 방에서 여섯 명이 따로 출발해요. 방마다 좁은 문 하나로 가운데 긴 복도와 이어지고, 복도 한가운데 연못 둘레에서 마지막 승부가 나요.', big:1,
+    th:{ f1:'#c9a46e', f2:'#d1ad78', wt:'#a85a3c', ws:'#6e3420', b1:'#3f7a3a', b2:'#58a04f', wa:'#2f8fc4', wa2:'#63b8e0' },
+    rows:['###################','#wwwwwww#ggg.......','#w......#ggg.......','#w......#ggg.......','#w......#ggg.......','#w......#ggg.......','#w......#gggggg#...','#w......#gggggg#...','#w......#gggggg#...','###...##########...','#g.................','#g...............ww','#g...............ww','#g...............ww','#g.................','###...##########...','#w......#gggggg#...','#w......#gggggg#...','#w......#gggggg#...','#w......#ggg.......','#w......#ggg.......','#w......#ggg.......','#w......#ggg.......','#wwwwwww#ggg.......','###################'] },
+  { id:'flag_canal', name:'대운하', desc:'맵 가운데를 큰 운하가 가로지르고, 한가운데 다리 하나와 양 끝 둑길로만 건널 수 있어요. 깃발은 운하 양 끝 둑에 있고, 위아래 길의 가속 발판을 타면 상대 진영까지 빠르게 돌아 들어가요.', big:1, flag5:1,
+    th:{ f1:'#4b5563', f2:'#525c6b', wt:'#c9a46e', ws:'#8f7347', b1:'#2f7a3a', b2:'#45984f', wa:'#1f6fa8', wa2:'#4fa3d9' },
+    rows:['############################','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','#ggg#.................####..','#ggg#.......................','#ggg#..ppppppppppppp........','#####.......................','#...........................','#.....................####..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#.....................####..','#...........................','#####.......................','#ggg#..ppppppppppppp........','#ggg#.......................','#ggg#.................####..','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','############################'] }
 ];
 for (const m of MAPS) m.grid = m.rows.map(r => r + [...r.slice(0, r.length - 1)].reverse().join(''));
 let COLS = 25, ROWS = 17, WW = COLS * T, WH = ROWS * T;      // set by loadMap(): the big 원 레프트 maps are larger
@@ -77,11 +95,11 @@ const blocked = (c, r) => { const t = tile(c, r); return t === '#' || t === 'w';
 const solidAt = (x, y) => solid(Math.floor(x / T), Math.floor(y / T));
 const blockedAt = (x, y) => blocked(Math.floor(x / T), Math.floor(y / T));
 const bushAt = (x, y) => { const t = tile(Math.floor(x / T), Math.floor(y / T)); return t === 'g' || t === 'G'; };      // 'G' = a bush planted by 정원사 (gardener.js)
-const TEAM = ['#4d9dff', '#ff5d5d'];
+const TEAM = ['#4d9dff', '#ff5d5d', '#3fcf5a', '#ffd23f'];      // blue, red; 4팀 핫존 adds green, yellow
 /* online state (net.js): the host runs the match, guests draw what it sends */
 const NET = { role: null, peer: null, conns: [], hostConn: null, members: [], phase: 'idle', rec: false, evs: [], room: -1, me: -1, mapVer: 0 };
 let VIEW = 0;      // the team this screen plays for: drawn blue, its score on the left
-const TC = t => TEAM[t === VIEW ? 0 : 1];
+const TC = t => TEAM[t === VIEW ? 0 : curMode === 'hot4' && t >= 0 && t < 4 ? (t < VIEW ? t + 1 : t) : 1];      // 4팀 핫존: me blue, the other three teams red, green, yellow in team order
 const evt = a => { if (NET.rec) NET.evs.push(a); };
 function addText(o) { texts.push(o); evt(['t', Math.round(o.x), Math.round(o.y), o.txt, o.color, o.small ? 1 : 0, o.life]); }
 function addPart(p) { parts.push(p); evt(['p', Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy), +p.life.toFixed(2), p.color, +(p.r || 3).toFixed(1)]); }
@@ -106,10 +124,11 @@ let state = 'menu', time = 0, timeLeft = MATCH_TIME, score = [0, 0];
    teams × per: how many sides and fighters per side · respawn: do the dead come back · win: score that ends the match · time: seconds on the clock (per round when rounds > 0)
    rounds: round wins needed (0 = no rounds). The UI sets `modeChoice` and calls setup(); the engine reads the rules with modeNow(). */
 const MODES = [
-  { id: 'team', name: '팀 아웃', size: '3v3', teams: 2, per: 3, respawn: true, win: WIN_SCORE, time: MATCH_TIME, rounds: 0, maps: [0, 1, 2, 3, 4, 5, 6, 18], ready: true },
-  { id: 'solo', name: '원 레프트', size: '6명', teams: 6, per: 1, respawn: false, win: 1, time: 150, rounds: 0, maps: [7, 8, 9, 10, 17, 19], ready: true },
-  { id: 'flag', name: '캡쳐 플래그', size: '5v5', teams: 2, per: 5, respawn: true, win: 3, time: 240, rounds: 0, maps: [11, 12, 13, 14, 15, 16], ready: true },      // 2026-11-12: the 3v3 version was dropped, 캡쳐 플래그 is 5v5 on the 5 big flag maps
-  { id: 'duel', name: '듀얼 배틀', size: '1v1', teams: 2, per: 1, respawn: false, win: 2, time: 60, rounds: 2, maps: [0, 1, 2, 3, 4, 5, 6, 18], ready: true }
+  { id: 'team', name: '팀 아웃', size: '3v3', teams: 2, per: 3, respawn: true, win: WIN_SCORE, time: MATCH_TIME, rounds: 0, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true },
+  { id: 'solo', name: '원 레프트', size: '6명', teams: 6, per: 1, respawn: false, win: 1, time: 150, rounds: 0, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },
+  { id: 'flag', name: '캡쳐 플래그', size: '5v5', teams: 2, per: 5, respawn: true, win: 3, time: 240, rounds: 0, maps: [11, 12, 13, 14, 15, 16, 25], ready: true },      // 2026-11-12: the 3v3 version was dropped, 캡쳐 플래그 is 5v5 on the 5 big flag maps
+  { id: 'duel', name: '듀얼 배틀', size: '1v1', teams: 2, per: 1, respawn: false, win: 2, time: 60, rounds: 2, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true },      // 듀얼 배틀 and 팀 아웃 share one map list (user 2026-11-13): keep the two lists the same
+  { id: 'hot4', name: '핫존', size: '4팀', teams: 4, per: 3, respawn: true, win: 100, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.hot ? i : -1).filter(i => i >= 0), ready: true }      // 2026-11-13 (developer): 3 x 4 teams around one circle; maps = every MAPS entry with hot:1
 ];
 for (const m of MODES) m.max = m.teams * m.per;
 const isFlagMode = id => id === 'flag' || id === 'flag5';      // ('flag5' kept only as an alias: 캡쳐 플래그 itself is now 5v5)      // room size, for matchmaking
@@ -120,14 +139,18 @@ let modeChoice = 'team', curMode = 'team', RD = { n: 1, pause: 0, win: -1, out: 
 let FLAGS = [];
 const FLAG_BACK = 8, FLAG_R = 38;
 const SZ = { on: false, x: 0, y: 0, r: 0, r0: 0, gx: 0, gy: 0, acc: 0 }, SZ_WAIT = 12, SZ_MIN = 2.2 * T;
+/* 4팀 핫존: one circle in the middle of the map. The team with the most fighters in it fills its bar (HZ.p, 0..100; score[t] = the whole percent); two or more teams in it = nobody fills.
+   own: -1 empty, -2 contested, else the team filling. n: fighters of each team inside. SP: three spawn spots per corner (team 0 top left, 1 top right, 2 bottom left, 3 bottom right) */
+const HZ = { on: false, x: 0, y: 0, r: 0, own: -1, p: [0, 0, 0, 0], n: [0, 0, 0, 0], SP: [] }, HZ_RATE = 2;      // percent a second for the one team in the circle (alone the whole time: 50 s to win)
 const modeOf = id => MODES.find(m => m.id === id && m.ready) || MODES[0];
 const modeNow = () => modeOf(curMode);
 /* the small mode state that rides in every snapshot (net.js: `md`) so guests can draw it: round number, and later the flags / safe zone */
-function modeSnap() { const o = { rn: RD.n, rp: RD.pause > 0 ? 1 : 0 }; if (SZ.on) { o.z = [Math.round(SZ.x), Math.round(SZ.y), Math.round(SZ.r)]; o.w = RD.win; o.o = RD.out; } if (FLAGS.length) o.f = FLAGS.map(g => [Math.round(g.x), Math.round(g.y), g.by, g.home ? 1 : 0, Math.round(g.back * 10) / 10]); return o; }
+function modeSnap() { const o = { rn: RD.n, rp: RD.pause > 0 ? 1 : 0 }; if (SZ.on) { o.z = [Math.round(SZ.x), Math.round(SZ.y), Math.round(SZ.r)]; o.w = RD.win; o.o = RD.out; } if (FLAGS.length) o.f = FLAGS.map(g => [Math.round(g.x), Math.round(g.y), g.by, g.home ? 1 : 0, Math.round(g.back * 10) / 10]); if (HZ.on) o.h = [HZ.own, Math.round(HZ.x), Math.round(HZ.y), Math.round(HZ.r)]; return o; }
 function applyModeSnap(o) {
   if (!o || typeof o !== 'object') return;
   if (o.rn > 0) RD.n = o.rn | 0; RD.pause = o.rp ? 1 : 0;
   SZ.on = Array.isArray(o.z) && o.z.length === 3;
+  HZ.on = Array.isArray(o.h) && o.h.length === 4; if (HZ.on) { HZ.own = clamp(o.h[0] | 0, -2, 3); HZ.x = +o.h[1] || 0; HZ.y = +o.h[2] || 0; HZ.r = Math.max(0, +o.h[3] || 0); }
   if (Array.isArray(o.f) && o.f.length === 2) { if (FLAGS.length !== 2) flagsReset(); o.f.forEach((v, t) => { if (!Array.isArray(v)) return; const g = FLAGS[t]; g.x = +v[0] || 0; g.y = +v[1] || 0; g.by = v[2] | 0; g.home = !!v[3]; g.back = +v[4] || 0; }); } else FLAGS = [];
   if (SZ.on) { SZ.x = +o.z[0] || 0; SZ.y = +o.z[1] || 0; SZ.r = Math.max(0, +o.z[2] || 0); RD.win = o.w | 0; RD.out = Array.isArray(o.o) ? o.o.slice(0, 8).map(v => v | 0) : []; }
 }
@@ -136,6 +159,10 @@ function modeOutcome() {
   if (curMode === 'solo') {
     const left = fighters.filter(f => !f.dead).length, oi = RD.out.indexOf(VIEW);
     return { a: score[VIEW] | 0, b: left, win: RD.win === VIEW, draw: RD.win < 0 && oi < 0, place: RD.win === VIEW ? 1 : oi < 0 ? left : fighters.length - oi };
+  }
+  if (curMode === 'hot4') {      // b = the best other team; place = 1 + teams ahead of mine; a tie at the top is a draw for the tied teams
+    const a = score[VIEW] | 0, o = score.filter((v, t) => t !== VIEW).map(v => v | 0), b = o.length ? Math.max(...o) : 0, place = 1 + o.filter(v => v > a).length;
+    return { a, b, win: a > b, draw: a === b, place };
   }
   const a = score[VIEW] | 0, b = score[1 - VIEW] | 0;
   return { a, b, win: a > b, draw: a === b, place: 0 };
@@ -155,14 +182,31 @@ let DEVICE = ''; try { const v = localStorage.getItem('seum_device'); if (v === 
 const devMq = matchMedia('(pointer:coarse)'), deviceGuess = () => devMq.matches ? 'mobile' : 'pc';
 const mobileMode = () => (DEVICE || deviceGuess()) === 'mobile';
 let RSCALE = 1.25;
+/* pc quality (2026-11-13, user: tune a computer too, by how strong it is): PCQ 'auto' | 'high' | 'low' in localStorage seum_pcq (settings row 화질).
+   auto starts from what the machine looks like (few cores or little memory: 1.5 instead of 2) and from what the last session settled on (seum_pcauto),
+   then tail.js rsWatch steps the pixel ratio down while frames are slow (2 > 1.5 > 1.25 > 1); still slow at 1 = pcLite: the phone's light effects (fewer bits, no blur).
+   high = always 2 and full effects, low = 1 and light effects */
+const PC_STEPS = [2, 1.5, 1.25, 1];
+let PCQ = 'auto'; try { const v = localStorage.getItem('seum_pcq'); if (v === 'high' || v === 'low') PCQ = v; } catch (e) {}
+const pcWeak = () => (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
+let PCSCALE = 2, pcLite = false;
+function pcInit() {
+  if (PCQ === 'high') { PCSCALE = 2; pcLite = false; return; }
+  if (PCQ === 'low') { PCSCALE = 1; pcLite = true; return; }
+  PCSCALE = pcWeak() ? 1.5 : 2; pcLite = false;
+  try { const o = JSON.parse(localStorage.getItem('seum_pcauto') || 'null'); if (o && PC_STEPS.includes(o.s)) { PCSCALE = o.s; pcLite = !!o.l; } } catch (e) {}
+}
+function pcSave() { if (PCQ === 'auto') try { localStorage.setItem('seum_pcauto', JSON.stringify({ s: PCSCALE, l: pcLite })); } catch (e) {} }
+pcInit();
+const liteMode = () => mobileMode() || pcLite;      // light effects: a phone, or a computer that could not keep up
 function resize() {
-  DPR = Math.min(window.devicePixelRatio || 1, mobileMode() ? RSCALE : 2);
+  DPR = Math.min(window.devicePixelRatio || 1, mobileMode() ? RSCALE : PCSCALE);
   W = window.innerWidth; H = window.innerHeight;
   cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
 }
 addEventListener('resize', resize); resize();
 { const d = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'shadowBlur');      // mobile: blurred glows are the most expensive thing a phone can be asked to draw, so the game canvas ignores them
-  if (d && d.set && d.get) try { Object.defineProperty(ctx, 'shadowBlur', { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, mobileMode() ? 0 : v); } }); } catch (e) {} }
+  if (d && d.set && d.get) try { Object.defineProperty(ctx, 'shadowBlur', { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, liteMode() ? 0 : v); } }); } catch (e) {} }
 
 let ac = null, muted = false;
 function sfx(freq, dur, type, vol, slide) {
@@ -212,7 +256,7 @@ function later(t, fn, f) { timers.push({ t, fn, f, src: SRC }); }
 function seq(f, n, gap, fn) { for (let i = 0; i < n; i++) later(i * gap, () => fn(i), f); }
 
 /* ---------- world helpers ---------- */
-const spawnPos = (team, slot) => curMode === 'solo' && SOLO_SP[team] ? SOLO_SP[team] : ({ x: (team === 0 ? 1.5 : COLS - 1.5) * T, y: (ROWS / 2 - 2 + slot * 2) * T });
+const spawnPos = (team, slot) => curMode === 'solo' && SOLO_SP[team] ? SOLO_SP[team] : curMode === 'hot4' && HZ.SP[team] ? HZ.SP[team][slot % 3] : ({ x: (team === 0 ? 1.5 : COLS - 1.5) * T, y: (ROWS / 2 - 2 + slot * 2) * T });
 function los(ax, ay, bx, by, walk) {
   const d = Math.hypot(bx - ax, by - ay), n = Math.ceil(d / 14), test = walk ? blockedAt : solidAt;
   for (let i = 1; i < n; i++) { const t = i / n; if (test(ax + (bx - ax) * t, ay + (by - ay) * t)) return false; }
@@ -468,10 +512,12 @@ function loadMap(i) {
   const d = bfs(1, ROWS >> 1); ROAM = [];
   SOLO_SP = []; for (let k = 0; k < 6; k++) { const a = (k + .5) * Math.PI / 3; SOLO_SP.push(freeNear(WW / 2 + Math.cos(a) * (WW / 2 - 2.5 * T), WH / 2 + Math.sin(a) * (WH / 2 - 2.5 * T))); }
   for (let r = 1; r < ROWS - 1; r += 2) for (let c = 4; c < COLS - 4; c += 2) if (!blocked(c, r) && d[c + r * COLS] > 0) ROAM.push([c, r]);
+  HZ.SP = [];      // 4팀 핫존 corners, the same spots the map maker marks (mirrored for each corner so every team starts alike)
+  if (MAPS[i].hot) for (const [sx, sy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) { const cx = sx > 0 ? 3 : COLS - 4, cy = sy > 0 ? 3 : ROWS - 4; HZ.SP.push([[0, 0], [1, -1], [-1, 1]].map(([dx, dy]) => freeNear((cx + dx * sx + .5) * T, (cy + dy * sy + .5) * T))); }
 }
 /* humans: [{ hero, lo, local } | { hero, lo, remote }]; they take turns blue / red, the middle slot first; bots fill the rest */
 function setup(withPlayer, humans) {
-  curMode = modeOf(modeChoice).id; const MODE = modeNow(); RD = { n: 1, pause: 0, win: -1, out: [] }; SZ.on = false; FLAGS = [];
+  curMode = modeOf(modeChoice).id; const MODE = modeNow(); RD = { n: 1, pause: 0, win: -1, out: [] }; SZ.on = false; FLAGS = []; HZ.on = false;
   loadMap(mapChoice < 0 || !MODE.maps.includes(mapChoice) ? pick(MODE.maps) : mapChoice);
   fighters = []; bullets = []; parts = []; texts = []; rings = []; zones = []; minions = []; timers = []; strikes = []; score = new Array(MODE.teams).fill(0); timeLeft = MODE.time; overtime = false; otT = 0; player = null; VIEW = 0;
   humans = humans || (withPlayer ? [{ hero: chosen, lo: loadoutOf(chosen), local: true, cos: myCos(chosen), name: PROF.name }] : []);
@@ -569,7 +615,7 @@ function respawn(f) {
 }
 
 /* ---------- AI ---------- */
-function ai(f, dt) { const mv = ai0(f, dt), fl = envFlee(f) || zoneFlee(f) || flagGoal(f); return fl || mv; }
+function ai(f, dt) { const mv = ai0(f, dt), fl = envFlee(f) || zoneFlee(f) || flagGoal(f) || hotGoal(f, mv); return fl || mv; }
 /* ranged bots kite: when an enemy gets close they back off along the safest open direction (away from every nearby enemy, not into walls or
    corners) while still shooting, and dash away from a melee enemy that is about to land a hit */
 let AI_KITE = true;
@@ -885,6 +931,7 @@ function step(dt) {
     const MODE = modeNow();
     if (MODE.rounds) { roundStep(dt); return; }
     if (MODE.id === 'solo') { soloStep(dt); return; }
+    if (MODE.id === 'hot4') { hotStep(dt); return; }
     if (isFlagMode(MODE.id)) flagStep(dt);
     if (overtime) otT += dt; else timeLeft = Math.max(0, timeLeft - dt);
     if (score[0] >= MODE.win || score[1] >= MODE.win) endGame();
@@ -920,6 +967,7 @@ function newRound() {
    RD.win = the winner (the last one standing; if the last two fall together, the one who fell last). ===== */
 function modeStart() {
   if (isFlagMode(curMode)) flagsReset();
+  if (curMode === 'hot4') Object.assign(HZ, { on: true, x: WW / 2, y: WH / 2, r: (MAPS[curMap].hz || 4) * T, own: -1, p: [0, 0, 0, 0], n: [0, 0, 0, 0] });
   if (curMode !== 'solo') return;
   const g = freeNear(WW / 2, WH / 2);
   Object.assign(SZ, { on: true, x: WW / 2, y: WH / 2, r0: Math.hypot(WW, WH) / 2, r: Math.hypot(WW, WH) / 2, gx: g.x, gy: g.y, acc: 0 });
@@ -1048,6 +1096,67 @@ function drawFlags() {       // screen space
   }
   ctx.restore();
 }
+/* ===== 4팀 핫존 (2026-11-13, developer): four teams of three start in the four corners and fight over one circle in the middle. Only a team standing
+   in it alone fills its bar (HZ_RATE % a second); with two or more teams inside nobody fills. The first to 100 %, or the highest when the clock runs out,
+   wins; a tie at the top goes to overtime (the first to pull ahead wins, a draw after OT_MAX). Kills give no points; the dead come back in their corner. ===== */
+const inHot = f => !f.dead && !f.minion && !f.ghost && f.form !== 'gone' && f.form !== 'sub' && Math.hypot(f.x - HZ.x, f.y - HZ.y) <= HZ.r;
+function hotCount() {
+  HZ.n = [0, 0, 0, 0]; for (const f of fighters) if (f.team >= 0 && f.team < 4 && inHot(f)) HZ.n[f.team]++;
+  const mx = Math.max(...HZ.n), tie = HZ.n.filter(v => v === mx).length > 1;      // 2026-11-13 (developer): the team with the most fighters inside fills; a tie for most = nobody
+  HZ.own = mx === 0 ? -1 : tie ? -2 : HZ.n.indexOf(mx);
+}
+const hotTop = () => score.indexOf(Math.max(...score));      // the leading team (the first of them on a tie)
+function hotStep(dt) {
+  const MODE = modeNow();
+  hotCount();
+  if (HZ.own >= 0) { HZ.p[HZ.own] = Math.min(MODE.win, HZ.p[HZ.own] + HZ_RATE * dt); score[HZ.own] = Math.floor(HZ.p[HZ.own] + 1e-6); }
+  if (overtime) otT += dt; else timeLeft = Math.max(0, timeLeft - dt);
+  const top = Math.max(...score), alone = score.filter(v => v === top).length === 1;
+  if (top >= MODE.win) endGame();
+  else if (overtime) { if (alone || otT >= OT_MAX) endGame(); }
+  else if (timeLeft <= 0) { if (alone) endGame(); else startOvertime(); }
+}
+/* bots and the circle: go in when it is empty, when one other team fills it (to stop them) or when my own team holds it; while two or more other teams
+   brawl inside, wait at the edge, shoot in, and walk in once only one team is left. Inside, fight from where they stand but never get pulled out.
+   Hurt bots still run home (ai0); a bot in a close fight outside finishes it unless another team is filling. */
+function hotGoal(f, mv) {
+  if (!HZ.on || curMode !== 'hot4' || f.dead || B(f, 'charm') || f.minion) return null;
+  const a = f.ai, P = AI_PERS[a.pers] || AI_PERS0;
+  if (f.hp < f.mhp * P.low && (a.bd || 1e9) < 9 * T) return null;      // hurt with an enemy near: ai0 takes it home
+  if (!a.hzT || time > a.hzT) { const ang = Math.random() * Math.PI * 2, rr = Math.sqrt(Math.random()) * HZ.r * .6, x = HZ.x + Math.cos(ang) * rr, y = HZ.y + Math.sin(ang) * rr; if (!blockedAt(x, y)) { a.hx = x; a.hy = y; } else { a.hx = HZ.x; a.hy = HZ.y; } a.hzT = time + rnd(3, 6); }
+  const d = Math.hypot(f.x - HZ.x, f.y - HZ.y), bd = a.bd || 1e9, reach = f.h.rangef ? f.h.rangef(f) : f.h.range;
+  let others = 0, filling = -1; HZ.n.forEach((n, t) => { if (n && t !== f.team) { others++; filling = t; } });
+  if (d <= HZ.r) {
+    if (bd > 9 * T) return Math.hypot(a.hx - f.x, a.hy - f.y) > T * .6 ? pathTo(f, a.hx, a.hy) : [0, 0];      // nobody to fight: take a spot in the circle
+    const nx = f.x + mv[0] * T, ny = f.y + mv[1] * T, nd = Math.hypot(nx - HZ.x, ny - HZ.y);
+    if (nd > HZ.r * .85 && nd > d) { const cx = (HZ.x - f.x) / (d || 1), cy = (HZ.y - f.y) / (d || 1); return norm(cx + mv[0] * .35 - cy * .5 * a.sdir, cy + mv[1] * .35 + cx * .5 * a.sdir); }      // the fight would pull me out: slide along the inside of the rim
+    return null;
+  }
+  const wait = others >= 2 && a.pers !== 'rush';
+  if (!wait && others === 0 && bd < 4 * T) return null;      // nobody else in it: finish a close fight first
+  if (wait) {      // two or more other teams in there: stand just outside, on my side, and pick at them
+    if (d < HZ.r + 2.6 * T && bd < reach * 1.05) return null;
+    const ang = Math.atan2(f.y - HZ.y, f.x - HZ.x), ex = HZ.x + Math.cos(ang) * (HZ.r + 1.6 * T), ey = HZ.y + Math.sin(ang) * (HZ.r + 1.6 * T);
+    return Math.hypot(ex - f.x, ey - f.y) > T * .6 ? pathTo(f, ex, ey) : [0, 0];
+  }
+  if (others === 1 && d < HZ.r + 3 * T && f.dcd <= 0 && filling >= 0 && Math.random() < .02) { const g = norm(HZ.x - f.x, HZ.y - f.y); tryDash(f, g[0], g[1]); }      // another team is filling: hurry in
+  return pathTo(f, a.hx, a.hy);
+}
+/* the circle and the corner pads, in world space under the fighters (tail.js render, right after the floor). Empty: gold rim; one team: that team's
+   colour, filled and pulsing; contested: the rim flashes through the colours of the teams inside. Light on phones: no gradients, no particles */
+function drawHotZone(c) {
+  if (!HZ.on) return;
+  c.save();
+  for (let t = 0; t < 4; t++) { const sp = HZ.SP[t]; if (!sp) continue; const x = (sp[0].x + sp[1].x + sp[2].x) / 3, y = (sp[0].y + sp[1].y + sp[2].y) / 3; c.globalAlpha = .2; c.fillStyle = TC(t); c.beginPath(); c.arc(x, y, 1.45 * T, 0, 7); c.fill(); }
+  const own = HZ.own, pul = .5 + .5 * Math.sin(time * 4), ins = HZ.n.map((n, t) => n ? t : -1).filter(t => t >= 0);
+  const col = own >= 0 ? TC(own) : own === -2 && ins.length ? TC(ins[Math.floor(time * 4) % ins.length]) : '#ffd34d';
+  c.globalAlpha = own >= 0 ? .16 + .1 * pul : own === -2 ? .1 : .07; c.fillStyle = own === -2 ? '#ffffff' : col; c.beginPath(); c.arc(HZ.x, HZ.y, HZ.r, 0, 7); c.fill();
+  c.globalAlpha = .9; c.strokeStyle = col; c.lineWidth = 6; c.setLineDash([26, 14]); c.lineDashOffset = -time * 24; c.beginPath(); c.arc(HZ.x, HZ.y, HZ.r - 3, 0, 7); c.stroke(); c.setLineDash([]);
+  c.globalAlpha = .35; c.lineWidth = 2; c.beginPath(); c.arc(HZ.x, HZ.y, HZ.r * (own >= 0 ? .55 + .4 * ((time * .6) % 1) : .62), 0, 7); c.stroke();
+  c.restore();
+}
+/* HUD for 4팀 핫존 (tail.js): my team first, then the other three in team order, so the chips read blue, red, green, yellow like the fighters */
+function hotHud() { const ord = [VIEW].concat([0, 1, 2, 3].filter(t => t !== VIEW)); return { ord, v: ord.map(t => score[t] | 0), own: HZ.own }; }
 /* 차원 여행자's portals and rifts (zones of kind 'portal' / 'rift'), drawn in screen space: a swirling purple and cyan gate, a dark spiral that pulls */
 function drawPortals() {
   if (state !== 'play' && state !== 'over') return;
@@ -1096,7 +1205,7 @@ function drawSafeZone() {       // screen space
 const inOvertime = () => state === 'play' && timeLeft <= 0;       // true on host and guests: the clock sits at 0 only while sudden death runs
 function startOvertime() {
   overtime = true; otT = 0; timeLeft = 0;
-  for (const f of fighters) if (!f.dead) say(f, '연장전! 먼저 잡으면 승리', '#ffd34d');
+  for (const f of fighters) if (!f.dead) say(f, curMode === 'hot4' ? '연장전!' : '연장전! 먼저 잡으면 승리', '#ffd34d');
   sfx(330, .5, 'sawtooth', .07, 2);
 }
 /* kos, deaths, damage dealt, damage taken, healing: one row per fighter in `fighters` order (JSON-safe, rides along with the end-of-match message) */

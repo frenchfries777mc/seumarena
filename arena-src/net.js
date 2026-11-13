@@ -333,7 +333,7 @@ function becomeGuest(c, k, m) {
 }
 function guestMsg(m) {
   NET.heard = performance.now();
-  if (m.t === 'lobby' && NET.phase === 'joined') { if (m.max >= 2 && m.max <= 8) NET.max = m.max | 0; roomUi('방에 들어왔어요', m.n + ' / ' + NET.max + '명 · ' + m.left + '초 뒤에 시작해요. 빈자리는 봇이 채워요.', m.n, m.left); }
+  if (m.t === 'lobby' && NET.phase === 'joined') { if (m.max >= 2 && m.max <= 12) NET.max = m.max | 0; roomUi('방에 들어왔어요', m.n + ' / ' + NET.max + '명 · ' + m.left + '초 뒤에 시작해요. 빈자리는 봇이 채워요.', m.n, m.left); }
   else if (m.t === 'pong') { if (typeof m.ts === 'number') { const r = performance.now() - m.ts; NET.rtt = NET.rtt ? NET.rtt * .7 + r * .3 : r; } }
   else if (m.t === 'start') guestStart(m);
   else if (m.t === 's' && state === 'play' && NET.phase === 'play') applySnap(m);
