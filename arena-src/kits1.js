@@ -114,7 +114,7 @@ hero('smg', { p: ['일제사격', '연발을 8발 이상 맞히면 주위 상대
   skills: [
     [1, '연막탄', 'hit', '조준한 곳으로 연막탄을 던짐 · 떨어진 자리에 2.5초 동안 짙은 연기 · 안에 있는 사람은 이동 속도가 절반으로 느려지고 시야가 가려짐', [100, 7 * T], f => { const p = aimPt(f, 7 * T); strike(f, p.x, p.y, 100, .4, () => (fx('smokeland', p.x, p.y), smoke(f, p.x, p.y, 100, 2.5)), '#9aa3b8'); }],
     [2, '섬광탄', 'hit', '던진 곳에서 0.5초 뒤 터져 범위 안 적을 1.2초 동안 실명', [100, 7 * T], f => { const p = aimPt(f, 7 * T); strike(f, p.x, p.y, 120, .5, () => { fx('flashbang', p.x, p.y); circ(f, p.x, p.y, 120, 0, { fn: e => buff(e, 'blind', 1.2) }); }, '#ffffff'); }],
-    [3, '전술 구르기', 'move', '0.5초 동안 무적 상태로 짧게 구름', [0, 6 * T], (f, a) => { const m = (f.mv[0] || f.mv[1]) ? Math.atan2(f.mv[1], f.mv[0]) : a; f.inv = Math.max(f.inv, .5); lunge(f, m, 2.2 * T, .3, {}); }]
+    [3, '전술 구르기', 'move', '0.5초 동안 무적 상태로 짧게 구름', [0, 6 * T], (f, a) => { const m = a; f.inv = Math.max(f.inv, .5); lunge(f, m, 2.2 * T, .3, {}); }]
   ] });
 
 hero('gloves', { p: ['맷집', '피격마다 받는 피해가 1%씩 줄고, 10%가 되면 초기화되며 2.5초 동안 이동속도 1.5배와 공격 피해 1.25배'],
