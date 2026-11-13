@@ -97,7 +97,8 @@ const angTo = (a, b) => Math.atan2(b.y - a.y, b.x - a.x);
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- state ---------- */
-const cv = document.getElementById('game'), ctx = cv.getContext('2d');
+const cv = document.getElementById('game');
+let ctx = cv.getContext('2d');      // (let: tail.js drawFighter points it at a small canvas for a moment while a hit figure flashes)
 let W = 0, H = 0, DPR = 1;
 let state = 'menu', time = 0, timeLeft = MATCH_TIME, score = [0, 0];
 /* ===== game modes =====
@@ -147,8 +148,15 @@ const cam = { x: WW / 2, y: WH / 2, s: 1 };
 const keys = {}, mouse = { x: 0, y: 0, down: false };
 let touchMode = false, mouseRel = false, stickM = null, stickA = null, pendingFire = null, wantUlt = false, wantDash = false, wantSk = [false, false];
 
+/* device: 'mobile' or 'pc', picked on the first start (tail.js) and changed in the settings; net.js reads the same key. Until it is picked, a phone or tablet
+   (coarse pointer) counts as mobile. Mobile draws the canvas at a lower pixel ratio (RSCALE: 1.5, lowered to 1.25 / 1 by tail.js rsWatch while a phone
+   can not keep up) and thins the effects (social.js); pc stays as it was */
+let DEVICE = ''; try { const v = localStorage.getItem('seum_device'); if (v === 'mobile' || v === 'pc') DEVICE = v; } catch (e) {}
+const devMq = matchMedia('(pointer:coarse)'), deviceGuess = () => devMq.matches ? 'mobile' : 'pc';
+const mobileMode = () => (DEVICE || deviceGuess()) === 'mobile';
+let RSCALE = 1.5;
 function resize() {
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  DPR = Math.min(window.devicePixelRatio || 1, mobileMode() ? RSCALE : 2);
   W = window.innerWidth; H = window.innerHeight;
   cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
 }
@@ -231,19 +239,21 @@ function freeNear(x, y) {
   for (let r = 1; r < ROWS - 1; r++) for (let c = 1; c < COLS - 1; c++) { if (MAP[r][c] !== '.') continue; const d = Math.hypot((c + .5) * T - x, (r + .5) * T - y); if (d < bd) { bd = d; best = { x: (c + .5) * T, y: (r + .5) * T }; } }
   return best || { x, y };
 }
+/* distance field to a goal tile (bots' pathTo). Same result as a plain BFS; faster: a typed queue, no little arrays per step, and bots heading
+   for the same tile in the same tick (a flag, the same enemy) share one field (read only) */
+let bfsQ = null, bfsMemo = new Map(), bfsMemoT = -1, bfsMemoMap = null;
+function bfsStep(d, q, tl, nc, nr, nd) { if (blocked(nc, nr)) return tl; const ni = nc + nr * COLS; if (d[ni] < 0) { d[ni] = nd; q[tl++] = ni; } return tl; }
 function bfs(gc, gr) {
-  const d = new Int16Array(COLS * ROWS).fill(-1), q = [gc + gr * COLS];
-  d[q[0]] = 0;
-  for (let i = 0; i < q.length; i++) {
-    const cur = q[i], c = cur % COLS, r = (cur / COLS) | 0;
-    for (const [dc, dr] of [[1,0],[-1,0],[0,1],[0,-1]]) {
-      const nc = c + dc, nr = r + dr;
-      if (blocked(nc, nr)) continue;
-      const ni = nc + nr * COLS;
-      if (d[ni] < 0) { d[ni] = d[cur] + 1; q.push(ni); }
-    }
+  const N = COLS * ROWS, k0 = gc + gr * COLS;
+  if (bfsMemoT !== time || bfsMemoMap !== MAP || bfsMemo.size > 24) { bfsMemo.clear(); bfsMemoT = time; bfsMemoMap = MAP; }
+  const hit = bfsMemo.get(k0); if (hit && hit.length === N) return hit;
+  const d = new Int16Array(N).fill(-1); if (!bfsQ || bfsQ.length < N) bfsQ = new Int32Array(N);
+  const q = bfsQ; let hd = 0, tl = 0; q[tl++] = k0; d[k0] = 0;
+  while (hd < tl) {
+    const cur = q[hd++], c = cur % COLS, r = (cur / COLS) | 0, nd = d[cur] + 1;
+    tl = bfsStep(d, q, tl, c + 1, r, nd); tl = bfsStep(d, q, tl, c - 1, r, nd); tl = bfsStep(d, q, tl, c, r + 1, nd); tl = bfsStep(d, q, tl, c, r - 1, nd);
   }
-  return d;
+  bfsMemo.set(k0, d); return d;
 }
 const norm = (x, y) => { const d = Math.hypot(x, y); return d > 1e-4 ? [x / d, y / d] : [0, 0]; };
 function pathTo(f, gx, gy) {

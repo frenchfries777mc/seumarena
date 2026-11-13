@@ -109,8 +109,7 @@ function drawProjectileBase(b){
       ctx.fillStyle='#d62839'; drawCardHeart(ctx,0,0,2.3);
       break;
     case 'pellet':
-      ctx.fillStyle=b.color; ctx.shadowColor=b.color; ctx.shadowBlur=5;
-      ctx.beginPath(); ctx.arc(0,0,3,0,7); ctx.fill(); ctx.shadowBlur=0;
+      glowDot(ctx,3,b.color,b.color,5);
       break;
     case 'fireball':
       ctx.save(); ctx.globalCompositeOperation='lighter';
@@ -264,10 +263,22 @@ function drawProjectileBase(b){
         ctx.fillStyle='#ffb3a8'; ctx.beginPath(); ctx.arc(0,0,r*0.55,0,7); ctx.fill(); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-r*0.1,0,r*0.25,0,7); ctx.fill();
         ctx.strokeStyle='#fff'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(0,0,r+1,0,7); ctx.stroke(); break;
       }
-      ctx.beginPath(); ctx.arc(0,0,BULLET_R,0,7);
-      ctx.shadowColor=b.color; ctx.shadowBlur=8; ctx.fill(); ctx.shadowBlur=0;
+      glowDot(ctx,BULLET_R,ctx.fillStyle,b.color,8);
   }
   ctx.restore();
+}
+/* a round bullet with a soft glow (shadowBlur): drawn once per colour, size and zoom into a small canvas and stamped from there
+   (a blurred shadow on every bullet every frame was slow on phones). Same picture: the blur is in screen pixels either way */
+const glowSpr=new Map(); let glowK=0;
+function glowDot(c,r,fill,glow,blur){
+  const m=c.getTransform(), k=Math.round(Math.hypot(m.a,m.b)*20)/20;
+  if(typeof fill!=='string' || !(k>0.05 && k<8)){ c.beginPath(); c.arc(0,0,r,0,7); c.fillStyle=fill; c.shadowColor=glow; c.shadowBlur=blur; c.fill(); c.shadowBlur=0; return; }
+  if(k!==glowK){ glowSpr.clear(); glowK=k; }
+  const key=r+'|'+fill+'|'+glow+'|'+blur; let s=glowSpr.get(key);
+  if(!s){ const n=Math.ceil((r*k+blur*1.5+2)*2); s=document.createElement('canvas'); s.width=s.height=n; const g=s.getContext('2d');
+    g.translate(n/2,n/2); g.scale(k,k); g.beginPath(); g.arc(0,0,r,0,7); g.fillStyle=fill; g.shadowColor=glow; g.shadowBlur=blur; g.fill();
+    if(glowSpr.size>60) glowSpr.delete(glowSpr.keys().next().value); glowSpr.set(key,s); }
+  const w=s.width/k; c.drawImage(s,-w/2,-w/2,w,w);
 }
 function drawTrail(b){
   if(b.swingAngle!==undefined || b.dmgless) return;
