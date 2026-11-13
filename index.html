@@ -7942,7 +7942,7 @@ function roomUi(title, status, n, left) {
 function startOnline() {
   if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
   if (ac && ac.state === 'suspended') ac.resume();
-  netReset(); netClaimTries = 0; netBad = new Set();
+  netReset(); netClaimTries = 0; netBad = new Set(); NET.searchUntil = 0;
   NET.mode = lobbyMode(); NET.max = modeMax(NET.mode); useMode(NET.mode);      // also what a fallback bot match plays
   showScreen('roomScreen');
   netSearch();
@@ -7987,8 +7987,7 @@ function netProbeAll(tok) {
     const free = R.findIndex((r, k) => r.s === 'free' && !netBad.has(k));
     if (R.some(r => r.s === 'pend') && !hard && !(soft && free >= 0)) return;
     const k = free >= 0 ? free : R.findIndex((r, k) => r.s === 'pend' && hard && !netBad.has(k));      // no answer at all by the deadline: try to take it, the server decides
-    if (k >= 0) return finish(() => { closeAll(-1); netClaim(k); });
-    finish(() => netFallback('모든 방이 차 있어요.'));
+    finish(() => { closeAll(-1); netRetry(); });      // players never host: every online match runs in a server room (sa-host); none free yet -> look again
   }
   const ts = setTimeout(() => { soft = true; decide(); }, SOFT), th = setTimeout(() => { hard = true; decide(); }, HARD);
   NET.onRoomGone = k => { if (!alive() || k < 0 || k >= NET_ROOMS || R[k].s !== 'pend') return; R[k].s = 'free'; try { R[k].c.close(); } catch (e) {} status(); decide(); };
@@ -8027,6 +8026,14 @@ function netClaim(k) {
     if (NET.phase === 'claim') { clearTimeout(to); netFallback('온라인 연결에 실패했어요 (' + e.type + ').'); }
   });
   p.on('connection', c => hostAccept(c, tok));
+}
+/* no free server room right now: the server opens a new one within seconds after a room starts, so look again for up to 15 s */
+function netRetry() {
+  const now = performance.now(); if (!NET.searchUntil) NET.searchUntil = now + 15000;
+  if (now > NET.searchUntil) { NET.searchUntil = 0; return netFallback('서버 방이 모두 차 있어요.'); }
+  const tok = netToken; try { NET.peer && NET.peer.destroy(); } catch (e) {} NET.peer = null; NET.phase = 'search';
+  roomUi('방 찾는 중', '서버 방이 열리기를 기다리고 있어요');
+  setTimeout(() => { if (tok === netToken && NET.phase === 'search') { netToken++; netSearch(); } }, 1500);
 }
 function netFallback(why) {
   netReset(); NET.phase = 'fallback'; const tok = netToken;
@@ -8180,7 +8187,7 @@ function hostEnd() {
 /* guest */
 function becomeGuest(c, k, m) {
   Object.assign(NET, { role: 'guest', hostConn: c, room: k, phase: 'joined', tok: m && typeof m.tok === 'string' ? m.tok : null, rc: null });
-  roomUi('방에 들어왔어요', (k + 1) + '번 방 · 방장이 경기를 시작하기를 기다리고 있어요');
+  roomUi('방에 들어왔어요', (k + 1) + '번 방 · 다른 사람을 기다리고 있어요');
 }
 function guestMsg(m) {
   NET.heard = performance.now();
@@ -8229,7 +8236,7 @@ function hostLost() {
   NET.rc = null; netBadge(false);
   const was = NET.phase; netReset();
   if (was === 'play' && state === 'play' && NET.mode === 'solo') endGame();      // 원 레프트: the result as it stands (the host's tab went away without a word)
-  else if (was === 'play' && state === 'play') { state = 'over'; notice.hidden = false; notice.textContent = '방장이 나가서 경기가 끝났어요'; setTimeout(() => { if (state === 'over' && !NET.role) toMenu(); }, 2200); }
+  else if (was === 'play' && state === 'play') { state = 'over'; notice.hidden = false; notice.textContent = '서버와 연결이 끊겨 경기가 끝났어요'; setTimeout(() => { if (state === 'over' && !NET.role) toMenu(); }, 2200); }
   else if (was === 'joined') { netSearch(); }
 }
 function guestStart(m) {
