@@ -91,14 +91,36 @@ pre.json{max-height:50vh;overflow:auto;background:#0f1218;border:1px solid var(-
 .nwItem p{margin:0;font:400 15px/1.65 'IBM Plex Sans KR',sans-serif;color:#cdd2dc;white-space:pre-line;word-break:keep-all;overflow-wrap:anywhere}
 .nwLink{display:inline-block;margin-top:12px;padding:9px 28px;font-size:16px;text-decoration:none;color:#fff;font-family:'Black Han Sans','IBM Plex Sans KR',sans-serif;letter-spacing:.05em;background:linear-gradient(105deg,var(--blue),#8a5cf0 52%,var(--red));clip-path:polygon(14px 0,100% 0,calc(100% - 14px) 100%,0 100%);text-shadow:0 2px 0 rgba(0,0,0,.3)}
 .nwItem.out{opacity:.45}
+.nwPoll{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.nwOpt{position:relative;overflow:hidden;display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 14px;border-radius:10px;border:1.5px solid var(--line);background:#11141b;color:var(--text);font:600 15px/1.35 'IBM Plex Sans KR',sans-serif;text-align:left}
+.nwOpt i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--c);opacity:.2}
+.nwOpt span{position:relative;flex:1;min-width:0;overflow-wrap:anywhere}
+.nwOpt b{position:relative;font-variant-numeric:tabular-nums;font-weight:800;color:var(--text-dim)}
+.nwVotes{align-self:flex-end;font:600 12.5px 'IBM Plex Sans KR',sans-serif;color:var(--text-dim)}
+.pollBox{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;padding:12px;border:1px dashed var(--line);border-radius:12px}
+.pollBox .ck{flex-direction:row;align-items:center;gap:8px;color:var(--text);font-size:14.5px;cursor:pointer}
+.pollBox .ck input{width:20px;height:20px;accent-color:var(--accent-2)}
+#pollOpts{display:flex;flex-direction:column;gap:6px}
+.optRow{display:flex;gap:8px;align-items:center}
+.optRow input{flex:1;min-width:0}
+.optRow .n{width:22px;text-align:center;color:var(--text-dim);font-weight:700;font-variant-numeric:tabular-nums}
+.optRow .x{width:38px;min-height:38px;padding:0;font-size:18px}
+.pollCnt{font-size:12.5px;color:var(--sel);font-weight:600}
 .nwOut{font-size:11.5px;font-weight:700;color:var(--sel);border:1px solid #6b5a1e;border-radius:999px;padding:0 7px}
+.who{display:flex;align-items:center;gap:8px}
+.gate{max-width:1240px;margin:0 auto 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:12px;border:1px solid #6b5a1e;background:#1d1a10;color:#ffe3a0;font-weight:600}
+.gate span{flex:1;min-width:200px}
+body.ro #addBtn,body.ro #upBtn,body.ro #delBtn,body.ro #dupBtn,body.ro #pubBtn{display:none}
+body.ro form input,body.ro form select,body.ro form textarea{pointer-events:none;opacity:.7}
 </style>
+<script src="https://frenchfries777.com/games/ff-auth.js"></script>
 </head>
-<body>
+<body class="ro">
 <header class="top">
   <h1>Seum<b>Arena</b> 뉴스</h1>
-  <button class="chip" id="tokChip" type="button"><i></i><span>토큰 없음</span></button>
+  <span class="who"><button class="chip" id="whoChip" type="button"><i></i><span>확인 중…</span></button></span>
 </header>
+<div class="gate" id="gate" hidden><span id="gateText"></span><button class="btn pri sm" id="loginBtn" type="button">로그인</button></div>
 
 <main class="wrap">
   <section>
@@ -111,15 +133,21 @@ pre.json{max-height:50vh;overflow:auto;background:#0f1218;border:1px solid var(-
       <form id="form" autocomplete="off" onsubmit="return false">
         <label>분류<select name="kind"><option>공지</option><option>업데이트</option><option>이벤트</option><option>점검</option></select></label>
         <label>날짜<input type="date" name="date" required></label>
-        <label class="w">제목<input type="text" name="title" maxlength="80" required></label>
-        <label class="w">본문<textarea name="body" maxlength="2000"></textarea></label>
+        <label class="w">제목<input type="text" name="title" maxlength="120" required></label>
+        <label class="w">본문<textarea name="body" maxlength="4000"></textarea></label>
         <label class="w">이미지 주소 (https)
           <span class="imgRow"><input type="url" name="image" placeholder="https://..."><button class="btn sm" id="upBtn" type="button">사진 올리기</button><input type="file" id="upFile" accept="image/*" hidden></span>
         </label>
-        <label>버튼 글자<input type="text" name="linkLabel" maxlength="20" placeholder="자세히 보기"></label>
-        <label>버튼 링크 (https)<input type="url" name="linkUrl" placeholder="https://..."></label>
-        <label>공개 시작 (비우면 바로)<input type="datetime-local" name="start"></label>
-        <label>공개 끝 (비우면 계속)<input type="datetime-local" name="end"></label>
+        <label>버튼 글자<input type="text" name="link_label" maxlength="30" placeholder="자세히 보기"></label>
+        <label>버튼 링크 (https)<input type="url" name="link_url" placeholder="https://..."></label>
+        <label>공개 시작 (비우면 바로)<input type="datetime-local" name="start_at"></label>
+        <label>공개 끝 (비우면 계속)<input type="datetime-local" name="end_at"></label>
+        <div class="pollBox" id="pollBox">
+          <label class="ck"><input type="checkbox" name="poll_on">투표 넣기 (제목이 질문이 돼요)</label>
+          <div id="pollOpts"></div>
+          <div class="optRow" id="pollMore"><button class="btn sm" id="optAdd" type="button">+ 보기 추가</button><span class="pollCnt" id="pollCnt"></span></div>
+          <label id="pollCloseL">투표 마감 (비우면 계속)<input type="datetime-local" name="poll_close_at"></label>
+        </div>
         <div class="checks">
           <label><input type="checkbox" name="popup" checked>접속하면 팝업으로 띄우기</label>
           <label><input type="checkbox" name="pin">맨 위에 고정</label>
@@ -139,40 +167,13 @@ pre.json{max-height:50vh;overflow:auto;background:#0f1218;border:1px solid var(-
 
 <div class="bar">
   <span class="st" id="status">불러오는 중…</span>
-  <button class="btn sm" id="jsonBtn" type="button">JSON</button>
   <button class="btn pri" id="pubBtn" type="button" disabled>게시하기</button>
-</div>
-
-<div class="dlg" id="tokDlg" hidden>
-  <div class="box">
-    <h2>깃허브 토큰</h2>
-    <p>"게시하기"로 바로 올리려면 seumarena 저장소에 쓸 수 있는 토큰이 필요해요. 토큰은 이 기기의 브라우저에만 저장돼요.</p>
-    <ol>
-      <li><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">새 fine-grained 토큰 만들기</a></li>
-      <li>Repository access: <b>Only select repositories</b> → <b>seumarena</b></li>
-      <li>Permissions → Repository → <b>Contents: Read and write</b></li>
-      <li>만든 토큰(github_pat_…)을 아래에 붙여 넣기</li>
-    </ol>
-    <label>토큰<input type="password" id="tokIn" placeholder="github_pat_..." autocomplete="off"></label>
-    <div class="err" id="tokErr"></div>
-    <div class="acts"><button class="btn warn sm" id="tokDel" type="button">토큰 지우기</button><button class="btn sm" id="tokCancel" type="button">닫기</button><button class="btn pri sm" id="tokSave" type="button">확인하고 저장</button></div>
-  </div>
-</div>
-
-<div class="dlg" id="jsonDlg" hidden>
-  <div class="box">
-    <h2>news.json</h2>
-    <p>토큰 없이 올릴 때는 이 내용을 복사해서 Claude에게 주거나, 저장소의 news/news.json에 붙여 넣으면 돼요.</p>
-    <pre class="json" id="jsonPre"></pre>
-    <div class="acts"><button class="btn sm" id="jsonDl" type="button">파일로 받기</button><button class="btn sm" id="jsonClose" type="button">닫기</button><button class="btn pri sm" id="jsonCopy" type="button">복사</button></div>
-  </div>
 </div>
 
 <div class="dlg" id="pubDlg" hidden>
   <div class="box">
     <h2>게시할까요?</h2>
     <p id="pubSum"></p>
-    <label>커밋 메시지<input type="text" id="pubMsg" maxlength="100"></label>
     <div class="err" id="pubErr"></div>
     <div class="acts"><button class="btn sm" id="pubCancel" type="button">취소</button><button class="btn pri sm" id="pubGo" type="button">게시하기</button></div>
   </div>
@@ -183,80 +184,126 @@ pre.json{max-height:50vh;overflow:auto;background:#0f1218;border:1px solid var(-
 <script>
 (() => {
 'use strict';
-const OWNER = 'frenchfries777mc', REPO = 'seumarena', BRANCH = 'main', PATH = 'news/news.json', IMG_DIR = 'news/img/';
-const RAW = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/`;
-const API = `https://api.github.com/repos/${OWNER}/${REPO}/contents/`;
+/* news rows live in the Supabase table seumarena_news. Everyone can read; only the lead developer (ff_devs role 'owner') can write.
+   Signing in is the Frenchfries777 account (ff-auth.js). Pictures go to the public ff-images bucket, in the writer's own folder. */
+const SB = 'https://kebsbuvuutilitwlvxzv.supabase.co', KEY = 'sb_publishable_4Egu0zm3p6cxWGvP_-GlIw_mlCpO1Nf', T = 'seumarena_news';
+const COLS = ['id', 'kind', 'date', 'title', 'body', 'image', 'link_label', 'link_url', 'popup', 'pin', 'start_at', 'end_at', 'poll_options', 'poll_close_at'];
 const KIND = { '공지': '#4d9dff', '업데이트': '#3fe0c5', '이벤트': '#ffd34d', '점검': '#ff5d5d' };
-const TOK_KEY = 'seumNewsAdminToken', DRAFT_KEY = 'seumNewsAdminDraft';
+const DRAFT_KEY = 'seumNewsAdminDraft2';
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-const okUrl = (u, img) => { u = String(u || '').trim(); return /^https:\/\//i.test(u) || (img && /^data:image\//i.test(u)) ? u : ''; };
+const okUrl = u => { u = String(u || '').trim(); return /^https:\/\//i.test(u) ? u : ''; };
 const ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 5.5h13v13a2 2 0 0 0 2 2h-13a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16.5 9h4v9.5a2 2 0 0 1-4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M6.5 9h7v4h-7z" fill="currentColor"/><path d="M6.5 15.5h7M6.5 18h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
 $('pvHead').insertAdjacentHTML('afterbegin', ICON);
 
-let token = ''; try { token = localStorage.getItem(TOK_KEY) || ''; } catch (e) {}
-let sha = null, base = '[]', news = [], sel = null, loaded = false;
-
+let sb = null, me = null, owner = false, base = '[]', news = [], sel = null, loaded = false;
 function toast(t) { const el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => el.hidden = true, 2600); }
-const b64 = s => { const u = new TextEncoder().encode(s); let b = ''; for (let i = 0; i < u.length; i += 0x8000) b += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(b); };
-const unb64 = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g, '')), c => c.charCodeAt(0)));
 const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
-function isoLocal(v) { if (!v) return ''; const d = new Date(v); if (isNaN(d)) return ''; const o = -d.getTimezoneOffset(), s = o >= 0 ? '+' : '-', a = Math.abs(o); return v.length === 16 ? v + ':00' + s + String(a / 60 | 0).padStart(2, '0') + ':' + String(a % 60).padStart(2, '0') : v; }
+const toIso = v => { if (!v) return null; const d = new Date(v); return isNaN(d) ? null : d.toISOString(); };
 function toLocalInput(iso) { if (!iso) return ''; const d = new Date(iso); if (isNaN(d)) return ''; const p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()); }
-function gh(path, opt = {}) {
-  return fetch(API + path + (opt.method ? '' : '?ref=' + BRANCH + '&t=' + Date.now()), { method: opt.method || 'GET', cache: 'no-store',
-    headers: Object.assign({ Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }, token ? { Authorization: 'Bearer ' + token } : {}, opt.body ? { 'Content-Type': 'application/json' } : {}),
-    body: opt.body ? JSON.stringify(opt.body) : undefined });
+const clean = r => { const o = {}; for (const k of COLS) o[k] = r[k] === undefined || r[k] === '' ? null : r[k]; o.popup = r.popup !== false; o.pin = !!r.pin; return o; };
+const sameTime = (a, b) => (a ? Date.parse(a) : 0) === (b ? Date.parse(b) : 0);
+const rowKey = r => JSON.stringify(Object.assign(clean(r), { start_at: r.start_at ? Date.parse(r.start_at) : null, end_at: r.end_at ? Date.parse(r.end_at) : null, poll_close_at: r.poll_close_at ? Date.parse(r.poll_close_at) : null }));
+let counts = {};   // news id -> [votes per option]
+const votesOf = id => (counts[id] || []).reduce((a, b) => a + b, 0);
+
+/* ---- account ---- */
+function setWho() {
+  const ch = $('whoChip'), g = $('gate');
+  ch.className = 'chip ' + (owner ? 'ok' : me ? 'bad' : '');
+  ch.querySelector('span').textContent = owner ? '총괄 개발자' : me ? '읽기 전용' : '로그인 안 됨';
+  document.body.classList.toggle('ro', !owner);
+  g.hidden = owner;
+  $('gateText').textContent = !window.FFAuth ? '로그인 도구를 불러오지 못했어요. 읽기만 할 수 있어요.' : me ? '총괄 개발자 계정만 뉴스를 쓸 수 있어요. 지금은 읽기만 돼요.' : '뉴스를 쓰려면 총괄 개발자 계정으로 로그인해 주세요.';
+  $('loginBtn').hidden = !window.FFAuth || !!me;
 }
+async function account() {
+  const A = window.FFAuth;
+  if (!A) { me = null; owner = false; setWho(); return; }
+  try { await A.ready; } catch (e) {}
+  sb = A.client && A.client(); me = A.user && A.user(); owner = false;
+  if (me && sb) { try { const r = await sb.from('ff_devs').select('role').eq('user_id', me.id).maybeSingle(); owner = !!(r.data && r.data.role === 'owner'); } catch (e) {} }
+  setWho(); paintAll();
+}
+$('loginBtn').onclick = () => { try { window.FFAuth.openLogin(); } catch (e) { toast('로그인 창을 열지 못했어요'); } };
+$('whoChip').onclick = () => { if (!me && window.FFAuth) $('loginBtn').click(); else if (window.FFAuth && FFAuth.openProfile) FFAuth.openProfile(); };
+
 /* ---- load ---- */
+async function fetchRows() {
+  if (sb) { const r = await sb.from(T).select(COLS.join(',') + ',created_at').order('pin', { ascending: false }).order('date', { ascending: false }).order('created_at', { ascending: false }); if (r.error) throw r.error; return r.data; }
+  const r = await fetch(SB + '/rest/v1/' + T + '?select=' + COLS.join(',') + ',created_at&order=pin.desc,date.desc,created_at.desc', { headers: { apikey: KEY }, cache: 'no-store' });
+  if (!r.ok) throw new Error('불러오기 실패 ' + r.status); return r.json();
+}
 async function load() {
-  setStatus('불러오는 중…'); loaded = false; paintBar();
-  let d = null, err = '';
+  $('status').textContent = '불러오는 중…'; loaded = false; paintBar();
+  try { news = (await fetchRows()).map(clean); }
+  catch (e) { $('status').textContent = '불러오지 못했어요 (' + (e.message || e) + ')'; return; }
+  base = JSON.stringify(news.map(rowKey)); loaded = true;
+  const dr = draft(); if (dr && dr.base === base && Array.isArray(dr.news) && JSON.stringify(dr.news.map(rowKey)) !== base) { news = dr.news.map(clean); toast('게시 안 한 편집을 이어서 열었어요'); }
+  sel = null; $('editBox').hidden = true; paintAll(); loadCounts();
+}
+async function loadCounts() {
+  const ids = news.filter(n => n.poll_options).map(n => n.id); counts = {}; if (!ids.length) return;
   try {
-    if (token) {
-      const r = await gh(PATH);
-      if (r.status === 404) { d = { v: 1, news: [] }; sha = null; }
-      else if (r.ok) { const j = await r.json(); sha = j.sha; d = JSON.parse(unb64(j.content)); }
-      else err = r.status === 401 ? '토큰이 맞지 않아요' : '깃허브 오류 ' + r.status;
-    }
-    if (!d) { const r = await fetch(RAW + PATH + '?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) d = await r.json(); else if (r.status === 404) d = { v: 1, news: [] }; else err = err || '불러오기 실패 ' + r.status; }
-  } catch (e) { err = err || '인터넷 연결을 확인해 주세요'; }
-  if (!d) { setStatus(err || '불러오지 못했어요'); return; }
-  news = Array.isArray(d.news) ? d.news : []; base = JSON.stringify(news); loaded = true;
-  const dr = draft(); if (dr && dr.base === base && dr.news && JSON.stringify(dr.news) !== base) { news = dr.news; toast('저장 안 한 편집을 이어서 열었어요'); }
-  sel = null; paintAll(); if (err) toast(err);
+    const rows = sb ? (await sb.rpc('seumarena_poll_counts', { p_ids: ids })).data : await (await fetch(SB + '/rest/v1/rpc/seumarena_poll_counts', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: KEY }, body: JSON.stringify({ p_ids: ids }) })).json();
+    for (const r of rows || []) { (counts[r.news_id] = counts[r.news_id] || [])[r.choice] = +r.n || 0; }
+  } catch (e) {}
+  paintPreview(); if (sel) pollUi(news.find(x => x.id === sel));
 }
 function draft(v) { try { if (v === undefined) return JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); if (v === null) localStorage.removeItem(DRAFT_KEY); else localStorage.setItem(DRAFT_KEY, JSON.stringify(v)); } catch (e) {} return null; }
-const dirty = () => loaded && JSON.stringify(news) !== base;
 function changes() {
-  const old = JSON.parse(base), om = new Map(old.map(n => [n.id, JSON.stringify(n)])), nm = new Map(news.map(n => [n.id, JSON.stringify(n)]));
-  let add = 0, mod = 0, del = 0; for (const [id, s] of nm) { if (!om.has(id)) add++; else if (om.get(id) !== s) mod++; } for (const id of om.keys()) if (!nm.has(id)) del++;
+  const old = JSON.parse(base).map(s => JSON.parse(s)), om = new Map(old.map(r => [r.id, JSON.stringify(r)])), nm = new Map(news.map(r => [r.id, rowKey(r)]));
+  const add = [], mod = [], del = [];
+  for (const [id, s] of nm) { if (!om.has(id)) add.push(id); else if (om.get(id) !== s) mod.push(id); }
+  for (const id of om.keys()) if (!nm.has(id)) del.push(id);
   return { add, mod, del };
 }
-function setStatus(t) { $('status').innerHTML = t; }
+const dirty = () => { if (!loaded) return false; const c = changes(); return !!(c.add.length + c.mod.length + c.del.length); };
 function paintBar() {
-  const c = loaded ? changes() : null, n = c ? c.add + c.mod + c.del : 0;
-  setStatus(!loaded ? $('status').innerHTML : n ? '바뀐 뉴스 <b>' + n + '건</b>' + (c.add ? ' · 추가 ' + c.add : '') + (c.mod ? ' · 수정 ' + c.mod : '') + (c.del ? ' · 삭제 ' + c.del : '') : '게시된 상태와 같아요 · 뉴스 ' + news.length + '개');
-  $('pubBtn').disabled = !n;
-  const ch = $('tokChip'); ch.className = 'chip ' + (token ? 'ok' : 'bad'); ch.querySelector('span').textContent = token ? '토큰 연결됨' : '토큰 없음';
-  if (loaded) draft(n ? { base, news } : null);
+  if (!loaded) { $('pubBtn').disabled = true; return; }
+  const c = changes(), n = c.add.length + c.mod.length + c.del.length;
+  $('status').innerHTML = n ? '바뀐 뉴스 <b>' + n + '건</b>' + (c.add.length ? ' · 추가 ' + c.add.length : '') + (c.mod.length ? ' · 수정 ' + c.mod.length : '') + (c.del.length ? ' · 삭제 ' + c.del.length : '') : '게시된 상태와 같아요 · 뉴스 ' + news.length + '개';
+  $('pubBtn').disabled = !n || !owner;
+  draft(n ? { base, news } : null);
 }
 /* ---- list + preview ---- */
-const live = (n, now) => { const t = s => { const v = Date.parse(s); return isNaN(v) ? null : v; }; return !(n.start && t(n.start) > now) && !(n.end && t(n.end) <= now); };
+const live = (n, now) => !(n.start_at && Date.parse(n.start_at) > now) && !(n.end_at && Date.parse(n.end_at) <= now);
 const sorted = l => l.slice().sort((a, b) => (!!b.pin - !!a.pin) || String(b.date || '').localeCompare(String(a.date || '')));
 function paintList() {
   const now = Date.now(), l = sorted(news);
   $('list').innerHTML = l.length ? l.map(n => '<button type="button" class="row' + (n.id === sel ? ' on' : '') + '" data-id="' + esc(n.id) + '" style="--c:' + (KIND[n.kind] || '#d9b95f') + '"><span class="tagDot"></span><span class="t">' + esc(n.title || '(제목 없음)') + '</span><span class="f">' +
-    (n.pin ? '<span class="flag">고정</span>' : '') + (n.popup === false ? '<span class="flag off">팝업</span>' : '') + (!live(n, now) ? '<span class="flag">' + (n.start && Date.parse(n.start) > now ? '예약' : '끝남') + '</span>' : '') + '<span class="d">' + esc(n.date || '') + '</span></span></button>').join('') : '<div class="empty">아직 뉴스가 없어요</div>';
+    (n.pin ? '<span class="flag">고정</span>' : '') + (Array.isArray(n.poll_options) ? '<span class="flag">투표</span>' : '') + (n.popup === false ? '<span class="flag off">팝업</span>' : '') + (!live(n, now) ? '<span class="flag">' + (n.start_at && Date.parse(n.start_at) > now ? '예약' : '끝남') + '</span>' : '') + '<span class="d">' + esc(n.date || '') + '</span></span></button>').join('') : '<div class="empty">' + (loaded ? '아직 뉴스가 없어요' : '…') + '</div>';
   for (const b of $('list').querySelectorAll('.row')) b.onclick = () => edit(b.dataset.id);
 }
 function itemHtml(n, out) {
-  const c = KIND[n.kind] || 'var(--gold)', img = okUrl(n.image, true), lk = n.link && okUrl(n.link.url);
+  const c = KIND[n.kind] || 'var(--gold)', img = okUrl(n.image), lk = okUrl(n.link_url);
   return '<article class="nwItem' + (out ? ' out' : '') + '" style="--c:' + c + '">' + (img ? '<img src="' + esc(img) + '" alt="" onerror="this.remove()">' : '') +
     '<div class="nwBody"><div class="nwMeta">' + (n.kind ? '<span class="nwTag">' + esc(n.kind) + '</span>' : '') + (n.pin ? '<svg class="nwPin" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4H6l4-4z M12 13v8" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>' : '') +
-    '<span>' + esc(String(n.date || '').replace(/-/g, '.')) + '</span>' + (out ? '<span class="nwOut">' + (n.start && Date.parse(n.start) > Date.now() ? '예약' : '끝남') + '</span>' : '') + '</div>' +
-    '<h3>' + esc(n.title || '') + '</h3>' + (n.body ? '<p>' + esc(n.body) + '</p>' : '') + (lk ? '<a class="nwLink" href="' + esc(lk) + '" target="_blank" rel="noopener">' + esc(n.link.label || '열기') + '</a>' : '') + '</div></article>';
+    '<span>' + esc(String(n.date || '').replace(/-/g, '.')) + '</span>' + (out ? '<span class="nwOut">' + (n.start_at && Date.parse(n.start_at) > Date.now() ? '예약' : '끝남') + '</span>' : '') + '</div>' +
+    '<h3>' + esc(n.title || '') + '</h3>' + (n.body ? '<p>' + esc(n.body) + '</p>' : '') + pollHtml(n) + (lk ? '<a class="nwLink" href="' + esc(lk) + '" target="_blank" rel="noopener">' + esc(n.link_label || '자세히 보기') + '</a>' : '') + '</div></article>';
 }
+function pollHtml(n) {
+  if (!Array.isArray(n.poll_options)) return '';
+  const c = counts[n.id] || [], tot = votesOf(n.id);
+  return '<div class="nwPoll">' + n.poll_options.map((o, i) => { const pc = tot ? Math.round((c[i] || 0) / tot * 100) : 0; return '<div class="nwOpt"><i style="width:' + pc + '%"></i><span>' + esc(o || '(빈 보기)') + '</span><b>' + pc + '%</b></div>'; }).join('') +
+    '<small class="nwVotes">' + tot + '표' + (n.poll_close_at ? ' · ' + (Date.parse(n.poll_close_at) <= Date.now() ? '마감됨' : esc(toLocalInput(n.poll_close_at).replace('T', ' ')) + ' 마감') : '') + '</small></div>';
+}
+function pollUi(n) {
+  const on = !!(n && Array.isArray(n.poll_options)), v = n ? votesOf(n.id) : 0, opts = on ? n.poll_options : [];
+  F.poll_on.checked = on; $('pollOpts').hidden = $('pollMore').hidden = $('pollCloseL').hidden = !on;
+  if (!on) return;
+  const box = $('pollOpts'), keep = document.activeElement && box.contains(document.activeElement) ? +document.activeElement.dataset.i : -1;
+  if (box.children.length !== opts.length) {
+    box.innerHTML = opts.map((o, i) => '<div class="optRow"><span class="n">' + (i + 1) + '</span><input type="text" class="opt" data-i="' + i + '" maxlength="60" placeholder="보기 ' + (i + 1) + '"><button class="btn sm x" type="button" data-x="' + i + '" aria-label="보기 지우기">&times;</button></div>').join('');
+    box.querySelectorAll('.opt').forEach((el, i) => { el.value = opts[i] || ''; });
+    if (keep >= 0 && box.querySelectorAll('.opt')[keep]) box.querySelectorAll('.opt')[keep].focus();
+  }
+  box.querySelectorAll('.x').forEach(b => b.hidden = v > 0 || opts.length <= 2);
+  $('optAdd').hidden = v > 0 || opts.length >= 6;
+  $('pollCnt').textContent = v ? v + '표가 모였어요 · 보기 개수는 바꿀 수 없어요' : '';
+  F.poll_close_at.value = toLocalInput(n.poll_close_at);
+}
+function pollEdit(fn) { const i = news.findIndex(x => x.id === sel); if (i < 0 || !owner) return; const n = Object.assign({}, news[i]); fn(n); news[i] = clean(n); $('pollOpts').innerHTML = ''; pollUi(news[i]); check(news[i]); paintAll(); }
 function paintPreview() {
   const now = Date.now(), all = $('pvAll').checked, l = sorted(news).filter(n => all || live(n, now));
   $('pvList').innerHTML = l.length ? l.map(n => itemHtml(n, !live(n, now))).join('') : '<div class="empty">보여 줄 뉴스가 없어요 (게임에서는 신문 버튼이 숨겨져요)</div>';
@@ -267,100 +314,87 @@ $('pvAll').onchange = paintPreview;
 const F = $('form');
 function edit(id) {
   sel = id; const n = news.find(x => x.id === id); if (!n) { sel = null; $('editBox').hidden = true; paintAll(); return; }
-  $('editBox').hidden = false; $('editTitle').textContent = '뉴스 편집';
+  $('editBox').hidden = false; $('editTitle').textContent = owner ? '뉴스 편집' : '뉴스 보기';
   F.kind.value = KIND[n.kind] ? n.kind : '공지'; F.date.value = n.date || ''; F.title.value = n.title || ''; F.body.value = n.body || ''; F.image.value = n.image || '';
-  F.linkLabel.value = (n.link && n.link.label) || ''; F.linkUrl.value = (n.link && n.link.url) || ''; F.start.value = toLocalInput(n.start); F.end.value = toLocalInput(n.end);
-  F.popup.checked = n.popup !== false; F.pin.checked = !!n.pin; check(n); paintAll();
+  F.link_label.value = n.link_label || ''; F.link_url.value = n.link_url || ''; F.start_at.value = toLocalInput(n.start_at); F.end_at.value = toLocalInput(n.end_at);
+  F.popup.checked = n.popup !== false; F.pin.checked = !!n.pin; $('pollOpts').innerHTML = ''; pollUi(n); check(n); paintAll();
   if (innerWidth <= 900) $('editBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 function check(n) {
   const e = [];
   if (!n.title) e.push('제목을 넣어 주세요');
   if (!/^\d{4}-\d\d-\d\d$/.test(n.date || '')) e.push('날짜를 넣어 주세요');
-  if (F.image.value.trim() && !okUrl(F.image.value, true)) e.push('이미지 주소는 https로 시작해야 해요');
-  if (F.linkUrl.value.trim() && !okUrl(F.linkUrl.value)) e.push('버튼 링크는 https로 시작해야 해요');
-  if (n.start && n.end && Date.parse(n.end) <= Date.parse(n.start)) e.push('공개 끝이 시작보다 늦어야 해요');
+  if (F.image.value.trim() && !okUrl(F.image.value)) e.push('이미지 주소는 https로 시작해야 해요');
+  if (F.link_url.value.trim() && !okUrl(F.link_url.value)) e.push('버튼 링크는 https로 시작해야 해요');
+  if (n.start_at && n.end_at && Date.parse(n.end_at) <= Date.parse(n.start_at)) e.push('공개 끝이 시작보다 늦어야 해요');
+  if (Array.isArray(n.poll_options) && (n.poll_options.length < 2 || n.poll_options.some(o => !String(o).trim()))) e.push('투표 보기를 2개 이상 채워 주세요');
   $('formErr').textContent = e.join(' · '); return !e.length;
 }
 function fromForm() {
-  const i = news.findIndex(x => x.id === sel); if (i < 0) return;
-  const n = { id: sel, kind: F.kind.value, date: F.date.value, title: F.title.value.trim(), body: F.body.value.replace(/\s+$/, '') };
-  const img = okUrl(F.image.value, true); if (img) n.image = img;
-  const lu = okUrl(F.linkUrl.value); if (lu) n.link = { label: F.linkLabel.value.trim() || '자세히 보기', url: lu };
-  const s = isoLocal(F.start.value), e = isoLocal(F.end.value); if (s) n.start = s; if (e) n.end = e;
-  if (!F.popup.checked) n.popup = false; if (F.pin.checked) n.pin = true;
-  if (!n.body) delete n.body;
+  if (!owner) return; const i = news.findIndex(x => x.id === sel); if (i < 0) return;
+  const old = news[i], s = toIso(F.start_at.value), e = toIso(F.end_at.value);
+  const n = clean({ id: sel, kind: F.kind.value, date: F.date.value, title: F.title.value.trim(), body: F.body.value.replace(/\s+$/, ''),
+    image: okUrl(F.image.value), link_url: okUrl(F.link_url.value), link_label: okUrl(F.link_url.value) ? (F.link_label.value.trim() || '자세히 보기') : null,
+    start_at: s && sameTime(s, old.start_at) ? old.start_at : s, end_at: e && sameTime(e, old.end_at) ? old.end_at : e, popup: F.popup.checked, pin: F.pin.checked,
+    poll_options: !Array.isArray(old.poll_options) ? null : F.poll_on.checked ? [...$('pollOpts').querySelectorAll('.opt')].map(el => el.value.trim()) : old.poll_options,
+    poll_close_at: !Array.isArray(old.poll_options) ? null : !F.poll_on.checked ? old.poll_close_at : (() => { const c = toIso(F.poll_close_at.value); return c && sameTime(c, old.poll_close_at) ? old.poll_close_at : c; })() });
   news[i] = n; check(n); paintAll();
 }
 F.addEventListener('input', fromForm); F.addEventListener('change', fromForm);
-$('addBtn').onclick = () => { if (!loaded) return; const id = 'n-' + Date.now().toString(36); news.unshift({ id, kind: '공지', date: today(), title: '' }); edit(id); $('editTitle').textContent = '새 뉴스'; F.title.focus(); };
-$('dupBtn').onclick = () => { const n = news.find(x => x.id === sel); if (!n) return; const id = 'n-' + Date.now().toString(36); news.unshift(Object.assign(JSON.parse(JSON.stringify(n)), { id, date: today() })); edit(id); toast('복제했어요'); };
+F.poll_on.addEventListener('change', e => { e.stopPropagation(); pollEdit(n => { if (F.poll_on.checked) { if (!Array.isArray(n.poll_options) || !n.poll_options.length) n.poll_options = ['', '']; } else { if (votesOf(n.id) && !confirm('모인 표가 있어요. 투표를 빼면 결과가 사라져요. 뺄까요?')) { F.poll_on.checked = true; return; } n.poll_options = null; n.poll_close_at = null; } }); });
+$('optAdd').onclick = () => pollEdit(n => { if (n.poll_options.length < 6) n.poll_options = n.poll_options.concat(['']); });
+$('pollOpts').addEventListener('click', e => { const x = e.target.closest('[data-x]'); if (!x) return; const k = +x.dataset.x; pollEdit(n => { n.poll_options = n.poll_options.filter((_, i) => i !== k); }); });
+const newId = () => 'n-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+$('addBtn').onclick = () => { if (!loaded || !owner) return; const id = newId(); news.unshift(clean({ id, kind: '공지', date: today(), title: '' })); edit(id); $('editTitle').textContent = '새 뉴스'; F.title.focus(); };
+$('dupBtn').onclick = () => { const n = news.find(x => x.id === sel); if (!n || !owner) return; const id = newId(); news.unshift(clean(Object.assign({}, n, { id, date: today() }))); edit(id); toast('복제했어요'); };
 $('delBtn').onclick = () => { const n = news.find(x => x.id === sel); if (!n || !confirm('"' + (n.title || '제목 없음') + '" 뉴스를 지울까요? (게시하기 전까지는 다시 불러오기로 되돌릴 수 있어요)')) return; news = news.filter(x => x.id !== sel); sel = null; $('editBox').hidden = true; paintAll(); };
 $('doneBtn').onclick = () => { sel = null; $('editBox').hidden = true; paintAll(); };
 $('reloadBtn').onclick = () => { if (dirty() && !confirm('게시하지 않은 편집이 사라져요. 다시 불러올까요?')) return; draft(null); load(); };
-/* ---- pictures: shrunk to at most 1280 px wide, then put in news/img/ of the repository ---- */
-$('upBtn').onclick = () => { if (!token) { toast('사진 올리기는 토큰이 있어야 해요'); openTok(); return; } $('upFile').click(); };
+/* ---- pictures: shrunk to at most 1280 px wide (JPEG), then put in ff-images/<my id>/seumarena-news/ ---- */
+$('upBtn').onclick = () => { if (owner && sel) $('upFile').click(); };
 $('upFile').onchange = async e => {
-  const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f || !sel) return;
+  const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f || !sel || !owner) return;
   try {
     toast('사진 줄이는 중…');
-    const bmp = await new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = URL.createObjectURL(f); });
-    const k = Math.min(1, 1280 / bmp.naturalWidth), cv = document.createElement('canvas'); cv.width = Math.round(bmp.naturalWidth * k); cv.height = Math.round(bmp.naturalHeight * k);
-    const g = cv.getContext('2d'); g.fillStyle = '#0c0e13'; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(bmp, 0, 0, cv.width, cv.height);
-    const data = cv.toDataURL('image/jpeg', .86).split(',')[1];
-    const d = new Date(), name = IMG_DIR + d.toISOString().replace(/[-:T]/g, '').slice(0, 14) + '-' + Math.random().toString(36).slice(2, 6) + '.jpg';
+    const im = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = URL.createObjectURL(f); });
+    const k = Math.min(1, 1280 / im.naturalWidth), cv = document.createElement('canvas'); cv.width = Math.round(im.naturalWidth * k); cv.height = Math.round(im.naturalHeight * k);
+    const g = cv.getContext('2d'); g.fillStyle = '#0c0e13'; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(im, 0, 0, cv.width, cv.height);
+    const blob = await new Promise(ok => cv.toBlob(ok, 'image/jpeg', .86));
+    const path = me.id + '/seumarena-news/' + new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 14) + '-' + Math.random().toString(36).slice(2, 6) + '.jpg';
     toast('사진 올리는 중…');
-    const r = await gh(name, { method: 'PUT', body: { message: '뉴스 사진 추가', content: data, branch: BRANCH } });
-    if (!r.ok) throw new Error('깃허브 오류 ' + r.status);
-    F.image.value = RAW + name; fromForm(); toast('사진을 올렸어요');
+    const r = await sb.storage.from('ff-images').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+    if (r.error) throw r.error;
+    F.image.value = sb.storage.from('ff-images').getPublicUrl(path).data.publicUrl; fromForm(); toast('사진을 올렸어요');
   } catch (err) { toast('사진을 올리지 못했어요 (' + (err.message || err) + ')'); }
 };
-/* ---- json ---- */
-function outJson() { return JSON.stringify({ v: 1, updated: new Date().toISOString(), news }, null, 2) + '\n'; }
-$('jsonBtn').onclick = () => { $('jsonPre').textContent = outJson(); $('jsonDlg').hidden = false; };
-$('jsonClose').onclick = () => $('jsonDlg').hidden = true;
-$('jsonCopy').onclick = async () => { try { await navigator.clipboard.writeText($('jsonPre').textContent); toast('복사했어요'); } catch (e) { const r = document.createRange(); r.selectNodeContents($('jsonPre')); getSelection().removeAllRanges(); getSelection().addRange(r); toast('길게 눌러 복사해 주세요'); } };
-$('jsonDl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([$('jsonPre').textContent], { type: 'application/json' })); a.download = 'news.json'; a.click(); };
-/* ---- publish ---- */
+/* ---- publish: upsert what was added or changed, delete what was removed ---- */
 $('pubBtn').onclick = () => {
-  const bad = news.find(n => !n.title || !/^\d{4}-\d\d-\d\d$/.test(n.date || '')); if (bad) { edit(bad.id); toast('제목과 날짜가 빠진 뉴스가 있어요'); return; }
-  if (!token) { toast('바로 게시하려면 토큰이 필요해요. JSON으로 복사해서 보내 주셔도 돼요'); openTok(); return; }
-  const c = changes(), om = new Set(JSON.parse(base).map(n => n.id)), first = news.find(n => !om.has(n.id)) || news.find(n => n.id === sel) || news[0];
-  $('pubSum').textContent = '추가 ' + c.add + ' · 수정 ' + c.mod + ' · 삭제 ' + c.del + '. 게시하면 1~5분 안에 게임에 보여요.';
-  $('pubMsg').value = c.add && first ? '뉴스: ' + first.title : '뉴스 갱신'; $('pubErr').textContent = ''; $('pubDlg').hidden = false;
+  if (!owner) return;
+  const bad = news.find(n => !n.title || !/^\d{4}-\d\d-\d\d$/.test(n.date || '') || (Array.isArray(n.poll_options) && (n.poll_options.length < 2 || n.poll_options.some(o => !String(o).trim())))); if (bad) { edit(bad.id); toast('제목, 날짜, 투표 보기가 빠진 뉴스가 있어요'); return; }
+  const c = changes();
+  $('pubSum').textContent = '추가 ' + c.add.length + ' · 수정 ' + c.mod.length + ' · 삭제 ' + c.del.length + '. 게시하면 다음에 게임을 켜는 사람부터 보여요.';
+  $('pubErr').textContent = ''; $('pubDlg').hidden = false;
 };
 $('pubCancel').onclick = () => $('pubDlg').hidden = true;
 $('pubGo').onclick = async () => {
   const go = $('pubGo'); go.disabled = true; $('pubErr').textContent = '';
   try {
-    const r = await gh(PATH, { method: 'PUT', body: Object.assign({ message: $('pubMsg').value.trim() || '뉴스 갱신', content: b64(outJson()), branch: BRANCH }, sha ? { sha } : {}) });
-    if (r.status === 409 || r.status === 422) throw new Error('그사이 다른 곳에서 바뀌었어요. 다시 불러온 뒤 게시해 주세요');
-    if (r.status === 401 || r.status === 403) throw new Error('토큰에 쓰기 권한이 없어요 (Contents: Read and write)');
-    if (!r.ok) throw new Error('깃허브 오류 ' + r.status);
-    const j = await r.json(); sha = j.content && j.content.sha; base = JSON.stringify(news); draft(null);
-    $('pubDlg').hidden = true; paintAll(); toast('게시했어요!');
-  } catch (e) { $('pubErr').textContent = e.message || String(e); }
+    const now = JSON.stringify((await fetchRows()).map(clean).map(rowKey));
+    if (now !== base) throw new Error('그사이 다른 곳에서 바뀌었어요. 다시 불러온 뒤 게시해 주세요');
+    const c = changes(), up = news.filter(n => c.add.includes(n.id) || c.mod.includes(n.id)).map(clean);
+    if (up.length) { const r = await sb.from(T).upsert(up, { onConflict: 'id' }); if (r.error) throw r.error; }
+    if (c.del.length) { const r = await sb.from(T).delete().in('id', c.del); if (r.error) throw r.error; }
+    draft(null); $('pubDlg').hidden = true; toast('게시했어요!'); await load();
+  } catch (e) { $('pubErr').textContent = /row-level security|permission/i.test(e.message || '') ? '총괄 개발자 계정만 게시할 수 있어요' : (e.message || String(e)); }
   go.disabled = false;
-};
-/* ---- token ---- */
-function openTok() { $('tokIn').value = token; $('tokErr').textContent = ''; $('tokDlg').hidden = false; }
-$('tokChip').onclick = openTok;
-$('tokCancel').onclick = () => $('tokDlg').hidden = true;
-$('tokDel').onclick = () => { token = ''; try { localStorage.removeItem(TOK_KEY); } catch (e) {} $('tokDlg').hidden = true; sha = null; paintBar(); toast('토큰을 지웠어요'); };
-$('tokSave').onclick = async () => {
-  const t = $('tokIn').value.trim(); if (!t) return; $('tokErr').textContent = '확인 중…';
-  try {
-    const r = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}`, { headers: { Accept: 'application/vnd.github+json', Authorization: 'Bearer ' + t }, cache: 'no-store' });
-    if (!r.ok) throw new Error(r.status === 401 ? '토큰이 맞지 않아요' : r.status === 404 ? '이 토큰으로 seumarena 저장소가 안 보여요' : '깃허브 오류 ' + r.status);
-    const j = await r.json(); if (j.permissions && !j.permissions.push) throw new Error('쓰기 권한이 없어요 (Contents: Read and write)');
-    token = t; try { localStorage.setItem(TOK_KEY, t); } catch (e) {}
-    $('tokDlg').hidden = true; toast('토큰을 저장했어요');
-    if (!dirty()) load(); else { const r2 = await gh(PATH); if (r2.ok) sha = (await r2.json()).sha; paintBar(); }
-  } catch (e) { $('tokErr').textContent = e.message || String(e); }
 };
 for (const d of document.querySelectorAll('.dlg')) d.addEventListener('click', e => { if (e.target === d) d.hidden = true; });
 addEventListener('beforeunload', e => { if (dirty()) { e.preventDefault(); e.returnValue = ''; } });
-load();
+(async () => {
+  setWho(); paintAll();
+  if (window.FFAuth) { try { FFAuth.onChange(async () => { const was = me && me.id; await account(); if ((me && me.id) !== was) load(); }); } catch (e) {} }
+  await account(); await load();
+})();
 })();
 </script>
 </body>
