@@ -3,6 +3,9 @@
 const CACHE = 'seumarena-v1';
 const PAGE = new URL('./', self.location).href;
 const CORE = [PAGE, 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png'];
+const SCOPE_PATH = new URL('./', self.location).pathname;
+const GAME_PATHS = [SCOPE_PATH, SCOPE_PATH + 'index.html'];   // only the game page is the app page; other pages are not stored as it
+const SITE_PATH = SCOPE_PATH + 'site/';
 const RUNTIME_HOSTS = ['cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', e => {
@@ -45,7 +48,8 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  if (req.mode === 'navigate' && url.origin === self.location.origin) { e.respondWith(page(req)); return; }
+  if (url.origin === self.location.origin && url.pathname.startsWith(SITE_PATH)) return;   // the site (intro/tips/community) always comes from the network
+  if (req.mode === 'navigate' && url.origin === self.location.origin) { if (GAME_PATHS.includes(url.pathname)) e.respondWith(page(req)); return; }
   if (url.origin === self.location.origin && url.pathname.includes('/news/')) return;   // the news list and its pictures always come from the network
   if (url.origin === self.location.origin || RUNTIME_HOSTS.includes(url.hostname)) e.respondWith(cacheFirst(req));
 });

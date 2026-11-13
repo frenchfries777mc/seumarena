@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SeumArena · 팁</title>
+<meta name="description" content="SeumArena 조작법, 기초 팁, 모드와 캐릭터 공략.">
+<meta name="theme-color" content="#0c0e13">
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<main class="wrap" style="padding-top:40px;padding-bottom:20px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<h1 style="margin:0;font-size:clamp(34px,5vw,48px);font-weight:900">팁 · 공략</h1>
+<p style="margin:0;color:#b7bfcd;font-size:17px">처음이라면 기초부터, 익숙해졌다면 캐릭터별 공략을 보세요.</p>
+</div>
+<div class="pills" role="tablist" aria-label="공략 분류">
+<button type="button" class="pill on" role="tab" aria-selected="true" data-t="basic">기초</button>
+<button type="button" class="pill" role="tab" aria-selected="false" data-t="mode">모드별</button>
+<button type="button" class="pill" role="tab" aria-selected="false" data-t="hero">캐릭터별</button>
+</div>
+
+<div data-p="basic" style="display:flex;flex-direction:column;gap:16px">
+<div class="flex">
+<section class="card box"><h2>PC 조작</h2><div class="keys">
+<span><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></span><span>이동</span>
+<span><kbd>클릭</kbd></span><span>마우스 방향으로 공격</span>
+<span><kbd>F</kbd> <kbd>E</kbd></span><span>1스킬, 2스킬 (누르면 조준, 떼면 발동)</span>
+<span><kbd>R</kbd> <kbd>Space</kbd></span><span>궁극기</span>
+<span><kbd>Q</kbd> <kbd>Shift</kbd></span><span>대쉬</span>
+<span><kbd>Esc</kbd> <kbd>우클릭</kbd></span><span>조준 취소</span>
+<span><kbd>V</kbd> <kbd>Enter</kbd></span><span>이모트, 채팅</span>
+</div></section>
+<section class="card box"><h2>휴대폰 조작</h2><ul>
+<li>왼쪽을 끌어서 이동해요.</li>
+<li>오른쪽을 끌었다 놓으면 그 방향으로 공격해요.</li>
+<li>스킬 버튼을 누른 채 끌면 조준, 떼면 발동해요.</li>
+<li>멀리 끌어서 놓으면 취소돼요.</li>
+</ul></section>
+</div>
+<section class="card box"><h2>꼭 알아 둘 것</h2><div class="facts">
+<div><b style="color:#3fe0c5">잠깐 빠지면 회복</b><span>3초 동안 싸우지 않으면 체력이 차올라요.</span></div>
+<div><b style="color:#ffcc4d">궁극기는 공격으로 빨리</b><span>적을 맞히고 쓰러뜨릴수록 궁극기가 빨리 돌아와요.</span></div>
+<div><b style="color:#8fc3ff">풀숲에 숨기</b><span>풀숲 안에 있으면 가까이 온 적만 나를 볼 수 있어요.</span></div>
+<div><b style="color:#ff8a98">물과 용암</b><span>걸어서는 못 지나가지만 총알과 투사체는 지나가요.</span></div>
+</div></section>
+</div>
+
+<div data-p="mode" hidden class="modes">
+<section class="card mode" style="--c:#8fc3ff"><div><h3>팀 아웃</h3><span class="num">3v3</span></div><p class="soon">공략을 준비하고 있어요.</p></section>
+<section class="card mode" style="--c:#ffcc4d"><div><h3>원 레프트</h3><span class="num">6명</span></div><p class="soon">공략을 준비하고 있어요.</p></section>
+<section class="card mode" style="--c:#ff8a98"><div><h3>캡쳐 플래그</h3><span class="num">5v5</span></div><p class="soon">공략을 준비하고 있어요.</p></section>
+<section class="card mode" style="--c:#3fe0c5"><div><h3>듀얼 배틀</h3><span class="num">1v1</span></div><p class="soon">공략을 준비하고 있어요.</p></section>
+</div>
+
+<div data-p="hero" hidden class="dex" id="dex"><div class="big"></div><div class="grid16"></div></div>
+</main>
+<script src="https://frenchfries777.com/games/ff-auth.js"></script>
+<script src="site.js"></script>
+<script>
+siteChrome('tips'); siteAuth();
+/* the developer's guide text for each character goes here: TIPS.sword = '...' */
+const TIPS = {};
+const tabs = document.querySelectorAll('[role=tab]');
+function show(t) {
+  tabs.forEach(b => { const on = b.dataset.t === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+  document.querySelectorAll('[data-p]').forEach(p => { p.hidden = p.dataset.p !== t; });
+}
+tabs.forEach(b => b.onclick = () => show(b.dataset.t));
+const want = location.hash.slice(1);
+heroDex(document.getElementById('dex'), {
+  first: HEROES.some(h => h.id === want) ? want : 'sword',
+  extra: h => '<p style="margin:6px 0 0;line-height:1.7;color:' + (TIPS[h.id] ? '#dfe3ea' : '#9aa3b5') + '">' + esc(TIPS[h.id] || '공략을 준비하고 있어요.') + '</p>' +
+    '<a href="community.html">커뮤니티에서 다른 플레이어 팁 보기</a>'
+});
+if (HEROES.some(h => h.id === want)) show('hero');
+</script>
+</body>
+</html>
