@@ -388,7 +388,23 @@ Object.assign(COSMETICS.skin_pistol_new, {name:'바나나 제임스', price:1500
 /* 별빛 사과 skins (owner 11-02, an apology gift for one account): never sold, only given as a gift (gifts row). Drawn from a few cached little pictures, so it costs far less than the 그랜드 마스터 show. */
 const STAR_TINT='#ff9ad5';
 COSMETICS.skin_pistol_apology={cat:'skin', char:'pistol', name:'(한정판) 별빛 사과 제임스', price:0, tint:STAR_TINT, fx:'sparkle', lux:3, exclusive:true, concept:'starlight'};
-COSMETICS.skin_wizard_apology={cat:'skin', char:'wizard', name:'(한정판) 별빛 사과 마법사', price:0, tint:STAR_TINT, fx:'sparkle', lux:3, exclusive:true, concept:'starlight'};
+/* filling the skin list of the characters that had few (2026-11-13): every playable character now has at least six */
+for(const [id,ch,nm,price,tint,fx,x] of [
+  ['skin_gardener','gardener','해바라기 밀짚모자',800,'#f2b81f'], ['skin_gardener_c','gardener','새싹 밀짚모자',300,'#7cc96a'],
+  ['skin_gardener_new','gardener','벚꽃 정원 모자',2000,'#ff9ecb','sparkle',{isNew:true}], ['skin_gardener_p','gardener','황금 장미 정원사 모자',4000,'#ff4d6d','crown',{lux:3,premium:true}],
+  ['skin_harald','harald','강철 늑대 투구',1000,'#4f5964'], ['skin_harald_c','harald','청동 바이킹 투구',300,'#b0793a'],
+  ['skin_harald_new','harald','서리 거인 투구',2000,'#aee6ff','frost',{isNew:true}],
+  ['skin_tionis','tionis','진홍 광대 조끼',1000,'#d0303a'], ['skin_tionis_c','tionis','풀빛 광대 조끼',300,'#3f9a3a'],
+  ['skin_tionis_new','tionis','별밤 광대 조끼',2000,'#5c6bff','sparkle',{isNew:true}],
+  ['skin_shade_c','shade','레몬 네온',300,'#ffe14d'], ['skin_kadas_c','kadas','잿빛 악마',300,'#8a8f9c'],
+  ['skin_portalgun_m','portalgun','진홍 차원 고글',900,'#d0303a']
+]) COSMETICS[id]=Object.assign({cat:'skin', char:ch, name:nm, price, tint}, fx?{fx}:{}, x||{});
+for(const [ch,a,b] of [['gardener',['서리꽃 밀짚모자','#9fe8ff','frost'],['오로라 정원사 모자','#5cffb8','sparkle']],
+  ['harald',['수정 전사 투구','#7bf3ff','sparkle'],['오로라 발할라 투구','#9a8cff','sparkle']],
+  ['tionis',['수정 광대 조끼','#7bf3ff','sparkle'],['오로라 광대 조끼','#ff8cf0','sparkle']],
+  ['shade',['수정 네온','#7bf3ff','sparkle'],['오로라 네온','#5cffb8','sparkle']],
+  ['kadas',['자수정 악마','#b47bff','void'],['오로라 악마','#5cf0ff','sparkle']]])
+  [a,b].forEach((s,i)=>{ COSMETICS['skin_'+ch+'_t'+(i+1)]={cat:'skin', char:ch, name:s[0], price:0, tint:s[1], fx:s[2], tier:TIER_SKIN_TIERS[i], lux:(i===1?4:1)}; });
 /* ===== the character's own color in a match: plain colors are free, the shiny ones are bought (cat 'bcol', equipped as saveData.equipped.bcol, sent as cos.col) ===== */
 [['red','빨강','#ff4d4d'],['mint','민트','#3fe0c5'],['yellow','노랑','#f5c94c'],['blue','파랑','#7c9eff'],['pink','분홍','#ff8fd9'],['lime','연두','#8dff7c'],
  ['orange','주황','#ff9d4d'],['purple','보라','#b98cff'],['sky','하늘','#4dd9ff'],['rose','장미','#ff6b9d'],['emerald','에메랄드','#6bffb3'],['white','하양','#eef1f6']]

@@ -11,17 +11,17 @@ const PI = Math.PI;
 /* one picture per skill / ultimate: t = shape, sizes in pixels (T = 64 per tile) */
 const R = (t, o) => Object.assign({ t }, o);
 const PVS = {
-  'sword:1': R('dash', { len: 320, w: 50 }), 'sword:2': R('dashEnd', { len: 160, r: 70 }), 'sword:3': R('self', { r: 118 }), 'sword:5': R('dash', { len: 256, w: 40 }), 'sword:u': R('ground', { max: 6 * T, r: 80 }),
+  'sword:1': R('dash', { len: 448, w: 50 }), 'sword:2': R('dashEnd', { len: 256, r: 70, over: 1 }), 'sword:3': R('self', { r: 118 }), 'sword:5': R('dash', { len: 256, w: 40 }), 'sword:u': R('ground', { max: 6 * T, r: 80 }),
   'pistol:2': R('line', { len: 576, w: 26 }), 'pistol:5': R('line', { len: 704, w: 28 }), 'pistol:u': R('line', { len: 704, w: 50 }),
-  'bow:1': R('line', { len: 512, w: 26 }), 'bow:2': R('ground', { max: 512, r: 110 }), 'bow:3': R('lob', { len: 576, r: 70 }), 'bow:4': R('lineTo', { max: 512, r: 26 }), 'bow:u': R('fan', { len: 576, half: .15, n: 3 }),
+  'bow:1': R('line', { len: 512, w: 26 }), 'bow:2': R('ground', { max: 512, r: 110 }), 'bow:3': R('lob', { len: 576, r: 70 }), 'bow:4': R('lineTo', { max: 512, r: 26 }), 'bow:5': R('line', { len: 576, w: 26, dots: 3 }), 'bow:u': R('fan', { len: 576, half: .15, n: 3 }),
   'bat:1': R('self', { r: 90 }), 'bat:2': R('line', { len: 512, w: 26 }), 'bat:3': R('dash', { len: 410, w: 44 }),
   'shuriken:1': R('dash', { len: 192, w: 30 }), 'shuriken:2': R('fan', { len: 384, half: .25, n: 5 }), 'shuriken:3': R('fan', { len: 320, half: .55, n: 5 }), 'shuriken:4': R('line', { len: 512, w: 26 }), 'shuriken:u': R('line', { len: 576, w: 26 }),
   'shotgun:1': R('self', { r: 120 }), 'shotgun:2': R('line', { len: 384, w: 36 }), 'shotgun:3': R('fan', { len: 422, half: .14, n: 5 }), 'shotgun:u': R('fan', { len: 352, half: .25, n: 5 }),
   'rifle:u': R('ground', { max: 12 * T, r: 130 }), 'rifle:1': R('pts', { pts: [[44, 1.2], [44, -1.2]], r: 26 }), 'rifle:2': R('ground', { max: 448, r: 80 }), 'rifle:4': R('ground', { max: 576, r: 66 }), 'rifle:5': R('self', { r: 110 }),
-  'smg:1': R('ground', { max: 448, r: 100 }), 'smg:2': R('ground', { max: 448, r: 120 }), 'smg:3': R('dash', { len: 141, w: 44 }), 'smg:u': R('wall', { d: 102, w: 192, th: 64 }),
+  'smg:1': R('ground', { max: 448, r: 100 }), 'smg:2': R('ground', { max: 448, r: 120 }), 'smg:3': R('dash', { len: 141, w: 44 }), 'smg:5': R('ground', { max: 448, r: 90 }), 'smg:u': R('wall', { d: 102, w: 192, th: 64 }),
   'gloves:1': R('arc', { len: 90, half: 1.2 }), 'gloves:3': R('arc', { len: 80, half: 1 }), 'gloves:4': R('arc', { len: 90, half: 1.4 }),
   'portalgun:1': R('ring'), 'portalgun:2': R('ground', { max: 320, r: 40 }), 'portalgun:3': R('bounce', { len: 1024, n: 6, w: 24 }), 'portalgun:4': R('ground', { max: 384, r: 95 }), 'portalgun:5': R('ring'), 'portalgun:u': R('ground', { max: 576, r: 34 }),
-  'grenade:1': R('dashEnd', { len: 192, r: 90 }), 'grenade:2': R('fan2', { len: 320, half: .175, n: 2, over: 1 }), 'grenade:3': R('line', { len: 384, w: 26 }), 'grenade:4': R('ground', { max: 448, r: 100 }), 'grenade:u': R('fan', { over: 1, len: 384, half: .5, n: 5 }),
+  'grenade:1': R('dashEnd', { len: 192, r: 90, over: 1 }), 'grenade:5': R('ground', { max: 448, r: 90 }), 'grenade:2': R('fan2', { len: 320, half: .175, n: 2, over: 1 }), 'grenade:3': R('line', { len: 384, w: 26 }), 'grenade:4': R('ground', { max: 448, r: 100 }), 'grenade:u': R('fan', { over: 1, len: 384, half: .5, n: 5 }),
   'bazooka:1': R('line', { len: 512, w: 28 }), 'bazooka:2': R('lob', { len: 512, r: 40 }), 'bazooka:3': R('lob', { len: 512, r: 80 }), 'bazooka:4': R('lob', { len: 512, r: 80 }), 'bazooka:u': R('line', { len: 640, w: 28 }),
   'dagger:1': R('self', { r: 384, faint: 1 }), 'dagger:2': R('dash', { len: 717, w: 60 }), 'dagger:4': R('dash', { len: 205, w: 44, back: 1 }),
   'dracula:2': R('dash', { len: 256, w: 60 }),
@@ -33,14 +33,14 @@ const PVS = {
   'vacuum:1': R('self', { r: 198 }), 'vacuum:2': R('self', { r: 130 }), 'vacuum:u': R('arc', { len: 145, half: .6 }),
   'pirate:1': R('dash', { len: 384, w: 44 }), 'pirate:2': R('ground', { max: 448, r: 85 }),
   'samurai:1': R('dash', { len: 258, w: 34 }), 'samurai:3': R('arc', { len: 163, half: 1.2 }), 'samurai:u': R('self', { r: 416, faint: 1 }),
-  'harald:2': R('arc', { len: 100, half: .9 }), 'harald:4': R('arc', { len: 64, half: 1.25 }), 'harald:5': R('dashEnd', { len: 128, r: 100 }), 'harald:u': R('dash', { len: 448, w: 50 }),
+  'harald:2': R('arc', { len: 100, half: .9 }), 'harald:3': R('self', { r: 120 }), 'harald:4': R('arc', { len: 64, half: 1.25 }), 'harald:5': R('dashEnd', { len: 128, r: 100 }), 'harald:u': R('dash', { len: 448, w: 50 }),
   'horemheb:1': R('line', { len: 512, w: 40 }), 'horemheb:3': R('self', { r: 120 }), 'horemheb:5': R('fan', { len: 384, half: .35, n: 5 }), 'horemheb:u': R('line', { len: 576, w: 140 }),
   'pizarro:2': R('line', { len: 448, w: 34 }), 'pizarro:3': R('line', { len: 704, w: 14 }), 'pizarro:4': R('self', { r: 220 }), 'pizarro:5': R('ground', { max: 448, r: 80 }),
   'edward:3': R('line', { len: 576, w: 18 }),
   'medium:3': R('self', { r: 130 }),
   'plague:3': R('ground', { max: 384, r: 90 }), 'plague:4': R('ground', { max: 384, r: 90 }),
   'dragonslayer:2': R('arc', { len: 64, half: 1.3 }), 'dragonslayer:3': R('arc', { len: 80, half: 1.2 }), 'dragonslayer:4': R('line', { len: 448, w: 30 }),
-  'shade:1': R('line', { len: 448, w: 40 }), 'shade:4': R('arc', { len: 140, half: .8 }), 'shade:u': R('line', { len: 372, w: 124 }),
+  'shade:1': R('line', { len: 448, w: 40 }), 'shade:2': R('dash', { len: 256, w: 44 }), 'shade:4': R('arc', { len: 140, half: .8 }), 'shade:u': R('line', { len: 372, w: 124 }),
   'kadas:1': R('line', { len: 320, w: 26 }), 'kadas:2': R('dash', { len: 192, w: 40 }), 'kadas:4': R('line', { len: 512, w: 30 }), 'kadas:5': R('self', { r: 70 }), 'kadas:u': R('ground', { max: 448, r: 80 }),
   'kan:1': R('ground', { max: 480, r: 30 }), 'kan:2': R('arc', { len: 90, half: .6 }), 'kan:3': R('line', { len: 576, w: 26 }), 'kan:5': R('dashEnd', { len: 192, r: 80 }),
   'puppeteer:1': R('line', { len: 512, w: 26 }), 'puppeteer:2': R('self', { r: 390, faint: 1 }), 'puppeteer:4': R('line', { len: 512, w: 26 }), 'puppeteer:u': R('line', { len: 512, w: 26 }),
@@ -48,7 +48,7 @@ const PVS = {
   'kurus:1': R('self', { r: 124 }), 'kurus:2': R('line', { len: 704, w: 44 }), 'kurus:3': R('pts', { pts: [[141, 0], [141, PI / 2], [141, PI], [141, -PI / 2]], r: 44 }),
   'cleon:2': R('ground', { max: 512, r: 60 }), 'cleon:5': R('arc', { len: 64, half: 1.1 }), 'cleon:u': R('ground', { max: 576, r: 150 }),
   'pel:3': R('arc', { len: 64, half: 1.1 }),
-  'tionis:1': R('line', { len: 384, w: 32 }), 'tionis:4': R('ground', { max: 448, r: 110 })
+  'tionis:1': R('line', { len: 384, w: 32 }), 'tionis:4': R('ground', { max: 448, r: 110 }), 'tionis:3': R('line', { len: 384, w: 32 }), 'tionis:5': R('dash', { len: 192, w: 40 }), 'gardener:4': R('ground', { max: 448, r: 90 }), 'gardener:5': R('arc', { len: 180, half: .6 })
 };
 function pvSpec(f, kind, slot) {       // kind: 's' skill (slot 0/1), 'u' ultimate, 'd' dash
   if (kind === 'd') return R('dash', { len: DASH_D, w: 40 });
@@ -153,7 +153,14 @@ function drawSpec(f, s, a, tx, ty, col, ready, move) {
     }
     case 'dash': case 'dashEnd': {
       const mvAng = move ? Math.atan2(move[1], move[0]) : a, aa = s.back ? mvAng + PI : mvAng;
-      const d = Math.min(s.len, rayLen(f.x, f.y + 4, aa, s.len, blockedAt));
+      let d = Math.min(s.len, rayLen(f.x, f.y + 4, aa, s.len, blockedAt));
+      if (s.over) {      // a leap over walls: where it really lands (same rule as moveFighter with fly 2 + leapLand)
+        const ax = Math.cos(aa), ay = Math.sin(aa), edge = (x, y) => arenaEdge(Math.floor(x / T), Math.floor(y / T)), free = (x, y) => ![[-16, -16], [16, -16], [-16, 16], [16, 16], [0, 0]].some(([ox, oy]) => blockedAt(x + ox, y + oy));
+        d = 0; while (d < s.len && !edge(f.x + ax * (d + 22), f.y + ay * (d + 22))) d += 4;
+        if (!free(f.x + ax * d, f.y + ay * d)) for (let k = T / 4; k <= 3 * T; k += T / 4) if (free(f.x + ax * (d + k), f.y + ay * (d + k))) { d += k; break; }
+        ctx.save(); ctx.setLineDash([6, 8]); ctx.beginPath(); ctx.moveTo(f.x, f.y + 4); ctx.lineTo(f.x + ax * d, f.y + 4 + ay * d); ctx.stroke(); ctx.restore();
+        circle(f.x + ax * d, f.y + 4 + ay * d, s.r); ctx.beginPath(); ctx.arc(f.x + ax * d, f.y + 4 + ay * d, 6, 0, 6.3); ctx.fill(); break;
+      }
       capsule(f.x, f.y + 4, aa, 0, d, s.w);
       arrowHead(f.x + Math.cos(aa) * d, f.y + 4 + Math.sin(aa) * d, aa, 11);
       if (s.t === 'dashEnd') circle(f.x + Math.cos(aa) * d, f.y + 4 + Math.sin(aa) * d, s.r);

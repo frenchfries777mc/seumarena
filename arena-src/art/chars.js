@@ -128,12 +128,13 @@ function drawWeaponPersona(c,wid,hx,hy,r,shy,tint,concept){
     case 'tionis': drawSpacePersona(c,wid,hx,hy,r,shy,tint);
       if(concept==='janus'){ mythTunic(c,hx,shy,'#d9b648',false); mythLaurel(c,hx,hy,r); }      // 야누스 티오니스: only a white tunic and a laurel wreath are new
       break;
+    case 'gardener': if(typeof gdHat==='function') gdHat(c,hx,hy,r,1,performance.now()/1000,tint); break;
     case 'shade': { // 네온: a thin glowing visor (the colour follows the skin)
       const vc=tint||'#7dffd8'; c.save(); c.shadowColor=vc; c.shadowBlur=6; c.fillStyle='#0b1018'; c.strokeStyle=vc; c.lineWidth=1.2; c.beginPath(); c.roundRect(hx-r*0.95,hy-r*0.42,r*1.9,r*0.62,2); c.fill(); c.stroke(); c.restore();
       break; }
     case 'kadas': { // 카다스: half human, half demon: the right half of the face red, a horn, one yellow eye
       c.save(); c.beginPath(); c.rect(hx,hy-r-2,r+2,2*r+4); c.clip(); c.fillStyle='#c4182e'; c.beginPath(); c.arc(hx,hy,r,0,7); c.fill(); c.restore();
-      c.fillStyle='#1d0a22'; c.strokeStyle='#07030c'; c.lineWidth=1; c.beginPath(); c.moveTo(hx+r*0.2,hy-r*0.8); c.lineTo(hx+r*1.15,hy-r*2.5); c.lineTo(hx+r*0.95,hy-r*0.5); c.closePath(); c.fill(); c.stroke();
+      c.fillStyle=(tint&&!concept)?tint:'#1d0a22'; c.strokeStyle='#07030c'; c.lineWidth=1; c.beginPath(); c.moveTo(hx+r*0.2,hy-r*0.8); c.lineTo(hx+r*1.15,hy-r*2.5); c.lineTo(hx+r*0.95,hy-r*0.5); c.closePath(); c.fill(); c.stroke();
       c.fillStyle='#ffdd33'; c.beginPath(); c.arc(hx+r*0.45,hy-r*0.15,1.9,0,7); c.fill(); c.fillStyle='#2a2a40'; c.beginPath(); c.arc(hx-r*0.35,hy-r*0.15,1.4,0,7); c.fill();
       break; }
     case 'pistol': // 제임스: 선글라스 + 넥타이
@@ -369,8 +370,8 @@ function drawWeaponPersona(c,wid,hx,hy,r,shy,tint,concept){
       c.strokeStyle='#8a5a30'; c.lineWidth=1; c.beginPath(); c.moveTo(hx-3,hy+r+1); c.lineTo(hx-2,hy+r+8); c.moveTo(hx+3,hy+r+1); c.lineTo(hx+2,hy+r+8); c.stroke();
       c.strokeStyle='#efe6cf'; c.lineWidth=3.2; c.lineCap='round';
       for(const s of [-1,1]){ c.beginPath(); c.moveTo(hx+s*(r+0.6),hy-3); c.quadraticCurveTo(hx+s*(r+8),hy-3,hx+s*(r+6.5),hy-r-7); c.stroke(); }
-      c.fillStyle='#9aa3b0'; c.strokeStyle='#5d6672'; c.lineWidth=1.2; c.beginPath(); c.arc(hx,hy-1.5,r+1.4,Math.PI,0); c.closePath(); c.fill(); c.stroke();
-      c.fillStyle='#5d6672'; c.fillRect(hx-r-1.6,hy-3,(r+1.6)*2,3.4);
+      c.fillStyle=tint||'#9aa3b0'; c.strokeStyle=tint?mixHex(tint,'#000000',0.45):'#5d6672'; c.lineWidth=1.2; c.beginPath(); c.arc(hx,hy-1.5,r+1.4,Math.PI,0); c.closePath(); c.fill(); c.stroke();
+      c.fillStyle=tint?mixHex(tint,'#000000',0.45):'#5d6672'; c.fillRect(hx-r-1.6,hy-3,(r+1.6)*2,3.4);
       c.fillStyle='#c9ced6'; c.fillRect(hx-1,hy-2,2,7);
       c.fillStyle='#e0b24a'; c.beginPath(); c.arc(hx,hy-r*0.9,1.4,0,7); c.fill();
       break; }
@@ -553,7 +554,7 @@ function drawSpacePersona(c, wid, hx, hy, r, shy, tint){       // the looks foll
       c.fillStyle='#ffc83a'; c.fillRect(hx-r+1.2,hy-3.6,2*r-2.4,1.7);
       c.strokeStyle='#ff8a1f'; c.lineWidth=2.1; c.lineCap='butt'; c.beginPath(); c.arc(hx,hy,r+0.9,Math.PI*1.12,Math.PI*1.88); c.stroke(); break; }
     case 'tionis': {
-      c.fillStyle='#2f7de1'; c.fillRect(hx-5.4,shy+1.5,3.6,16); c.fillStyle='#ff8a1f'; c.fillRect(hx-1.8,shy+1.5,3.6,16); c.fillStyle='#2f7de1'; c.fillRect(hx+1.8,shy+1.5,3.6,16);      // the striped vest
+      c.fillStyle=tint||'#2f7de1'; c.fillRect(hx-5.4,shy+1.5,3.6,16); c.fillStyle='#ff8a1f'; c.fillRect(hx-1.8,shy+1.5,3.6,16); c.fillStyle=tint||'#2f7de1'; c.fillRect(hx+1.8,shy+1.5,3.6,16);      // the striped vest
       c.fillStyle='#ffd34d'; for(const dy of [5,10,15]){ c.beginPath(); c.arc(hx,shy+dy,0.9,0,7); c.fill(); }
       c.fillStyle='#ffffff'; c.strokeStyle='#8b93a3'; c.lineWidth=0.8; c.beginPath(); c.moveTo(hx-7,shy-1); for(let i=-3;i<=3;i++) c.lineTo(hx+i*2.3, shy+((i&1)?3.2:0.2)); c.lineTo(hx+7,shy-1); c.closePath(); c.fill(); c.stroke();     // the ruff
       c.fillStyle='#f4f4f4'; c.beginPath(); c.arc(hx,hy,r-1.1,Math.PI/2,Math.PI*1.5); c.fill(); c.fillStyle='#16161c'; c.beginPath(); c.arc(hx,hy,r-1.1,-Math.PI/2,Math.PI/2); c.fill();

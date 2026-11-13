@@ -19,12 +19,13 @@ hero('samurai', { p: ['명상', '가만히 2초만 서 있어도 치유가 시�
   ] });
 
 hero('harald', { p: ['강인한 맷집', '방패와 도끼로 앞에서 버티는 근접 전사 · 방어 스킬이 많음'], hp: 540,
-  ult: ['도끼 돌진', '도끼를 조준 방향으로 던져 박고, 방패를 들고 박힌 도끼 쪽으로 돌진 (돌진 중 받는 피해 50% 감소) · 돌진하다 부딪힌 상대는 아주 크게 밀려나고 1초 기절 + 280 피해', [60, 7 * T], (f, a) => { buff(f, 'dr', .8, .5); fxAt(f, 'dash', { dir: 1, rot: +a.toFixed(2), color: '#cfd8e3' }); lunge(f, a, 7 * T, .55, { dmg: 35, stun: 1, onHit: e => knock(e, f.x, f.y, 1100) }); }],
+  ult: ['도끼 돌진', '도끼를 조준 방향으로 던져 박고, 방패를 들고 박힌 도끼 쪽으로 돌진 (돌진 중 받는 피해 59% 감소) · 돌진하다 부딪힌 상대는 아주 크게 밀려나고 1초 기절 + 330 피해', [60, 7 * T], (f, a) => { buff(f, 'dr', .8, .5); fxAt(f, 'dash', { dir: 1, rot: +a.toFixed(2), color: '#cfd8e3' }); lunge(f, a, 7 * T, .55, { dmg: 35, stun: 1, onHit: e => knock(e, f.x, f.y, 1100) }); }],
   skills: [
-    [1, '분노', 'buff', '2초 동안 받는 피해 10% 감소', [0, 5 * T], f => buff(f, 'dr', 2, .9)],
-    [2, '방패 강타', 'hit', '방패로 앞의 상대를 밀며 0.5초 기절 (80 피해) · 맞히면 대쉬 쿨타임이 바로 참', [0, 100], (f, a) => { f.swing = .22; if (arc(f, a, 100, .9, 10, { kb: 520, stun: .5 }).length) f.dcd = 0; }],
+    [1, '분노', 'buff', '2초 동안 받는 피해 12% 감소', [0, 5 * T], f => buff(f, 'dr', 2, .9)],
+    [2, '방패 강타', 'hit', '방패로 앞의 상대를 밀며 0.5초 기절 (95 피해) · 맞히면 대쉬 쿨타임이 바로 참', [0, 100], (f, a) => { f.swing = .22; if (arc(f, a, 100, .9, 10, { kb: 520, stun: .5 }).length) f.dcd = 0; }],
+    [3, '도끼 휘두르기', 'hit', '도끼를 크게 한 바퀴 휘둘러 주변 상대에게 250 피해 + 밀쳐냄', [0, 120], f => { f.spin = .4; circ(f, f.x, f.y, 120, 26, { kb: 360 }); }],
     [4, '방패 올리기', 'buff', '2초 동안 정면에서 날아오는 투사체를 막음', [150, 9 * T], f => buff(f, 'block', 2)],
-    [5, '내려찍기', 'hit', '높이 뛰어올랐다가 내려찍어 주변 적에게 160 피해 + 0.5초 기절', [0, 3 * T], (f, a) => lunge(f, a, 2 * T, .35, { fly: 1, end: g => boom(g, g.x, g.y, 100, 20, { stun: .5, kb: 0, col: '#cfd3dc' }) })]
+    [5, '내려찍기', 'hit', '높이 뛰어올랐다가 내려찍어 주변 적에게 190 피해 + 0.5초 기절', [0, 3 * T], (f, a) => lunge(f, a, 2 * T, .35, { fly: 1, end: g => boom(g, g.x, g.y, 100, 20, { stun: .5, kb: 0, col: '#cfd3dc' }) })]
   ] });
 
 hero('horemheb', { p: ['사막의 장군', '모래바람에 맞은 상대를 3초 안에 공격하면 피해 1.5배'],
@@ -110,19 +111,21 @@ hero('shade', { p: ['네온 강타', '공격은 범위 안의 적 모두에게 �
   ult: ['네온 점멸', '조준 방향으로 길게 점멸하며, 점멸 경로에 있던 모든 상대를 내 앞으로 끌어오고 1.2초 동안 기절시킴', [100, px(620)], (f, a) => { const r = blink(f, a, px(620)); fxLine('shblink', r.x0, r.y0 + BODY, f.x, f.y + BODY, { wid: 'shade', cos: f.cos, gy: f.y + 16 }); const p = fwd(f, 50, a); pathHit(f, r.x0, r.y0, f.x, f.y, 44, 0, { stun: 1.2, fn: e => { if (!e.minion) blinkTo(e, p.x + rnd(-14, 14), p.y + rnd(-14, 14)); } }); }],
   skills: [
     [1, '대검 돌진', 'hit', '네온 대검을 조준 방향으로 던짐 (중장거리) · 맞히면 상대에게 꽂히고 사슬로 빠르게 돌진해 대검을 다시 잡음 · 상대 130 피해 + 0.5초 기절', [100, 7 * T], (f, a) => emit(f, a, { skill: 1, dmg: 15, stun: .5, spd: 1040, range: 7 * T, r: 10, shape: 'arrow', onHit: e => { fx('shchain', f.x, f.y + BODY, { x2: Math.round(e.x), y2: Math.round(e.y + BODY), hit: true }); lunge(f, angTo(f, e), Math.max(10, dist(f, e) - 40), .18, { fly: 1 }); } })],
+    [2, '네온 돌진', 'move', '조준 방향으로 빠르게 돌진 · 처음 닿은 상대에게 170 피해 + 0.3초 기절하고 그 자리에서 멈춤', [60, 4 * T], (f, a) => lunge(f, a, 4 * T, .3, { onHit: e => { damage(e, 20, f); buff(e, 'stun', .3); return 'stop'; } })],
     [3, '분노', 'buff', '3초 동안 일반 공격 쿨타임 33% 감소', [0, 150], f => buff(f, 'rage', 3)],
-    [4, '찌르기', 'hit', '앞의 가까운 상대를 찔러 215 피해 + 0.9초 기절 (맞힐 상대가 없으면 쓰이지 않음)', [0, 130], (f, a) => { const e = nearest(f, 140, a, .8); if (!e) return false; f.swing = .22; damage(e, 25, f); buff(e, 'stun', .9); }]
+    [4, '찌르기', 'hit', '앞의 가까운 상대를 찔러 215 피해 + 0.9초 기절 (맞힐 상대가 없으면 쓰이지 않음)', [0, 130], (f, a) => { const e = nearest(f, 140, a, .8); if (!e) return false; f.swing = .22; damage(e, 25, f); buff(e, 'stun', .9); }],
+    [5, '네온 가속', 'buff', '2.5초 동안 이동속도 1.3배 + 받는 피해 20% 감소', [0, 5 * T], f => { buff(f, 'haste', 2.5, 1.3); buff(f, 'dr', 2.5, .8); }]
   ] });
 
 hero('kadas', { p: ['암흑 질주', '공격할 때마다 0.5초 동안 이동속도가 5% 증가함'],
   cdf: f => .8 * (B(f, 'pact') ? .75 : 1),
   pre(f, o) { buff(f, 'haste', .5, Math.max(1.05, V(f, 'haste', 1))); return o; },
-  ult: ['암흑 덩어리', '조준한 위치에 보라색으로 꿈틀거리는 암흑 덩어리를 만듦 · 안에 있는 적은 이동속도 25% 감소, 1초마다 90 피해 · 피해를 줄 때마다 덩어리가 커지고, 아무에게도 못 주면 천천히 작아져 사라짐', [0, 7 * T], f => { const p = aimPt(f, 7 * T); if (f.st.blob) f.st.blob.dead = true; f.st.blob = zone({ by: f, x: p.x, y: p.y, r: 80, t: 60, col: '#9a4cff', op: .5, fn: (z, dt) => { for (const e of foes(f)) if (inZone(z, e)) buff(e, 'slow', .2, .75); z.acc += dt; if (z.acc >= 1) { z.acc -= 1; if (circ(f, z.x, z.y, z.r, 8).length) z.r = Math.min(200, z.r + 12); else z.r -= 12; } if (z.r < 40) z.dead = true; }, end: z => { if (f.st.blob === z) f.st.blob = null; } }); }],
+  ult: ['암흑 덩어리', '조준한 위치에 보라색으로 꿈틀거리는 암흑 덩어리를 만듦 · 안에 있는 적은 이동속도 25% 감소, 1초마다 130 피해 · 피해를 줄 때마다 덩어리가 커지고, 아무에게도 못 주면 천천히 작아져 사라짐', [0, 7 * T], f => { const p = aimPt(f, 7 * T); if (f.st.blob) f.st.blob.dead = true; f.st.blob = zone({ by: f, x: p.x, y: p.y, r: 80, t: 60, col: '#9a4cff', op: .5, fn: (z, dt) => { for (const e of foes(f)) if (inZone(z, e)) buff(e, 'slow', .2, .75); z.acc += dt; if (z.acc >= 1) { z.acc -= 1; if (circ(f, z.x, z.y, z.r, 8).length) z.r = Math.min(200, z.r + 12); else z.r -= 12; } if (z.r < 40) z.dead = true; }, end: z => { if (f.st.blob === z) f.st.blob = null; } }); }],
   skills: [
     [1, '연발', 'hit', '암흑총을 3발 연달아 발사 (한 발마다 데미지 265)', [0, 5 * T], f => seq(f, 3, .12, () => emit(f, f.aim, { skill: 1, dmg: 23 }))],
     [2, '악마의 날개', 'move', '날개를 펴고 조준 방향으로 날아감 (벽과 물을 넘어감) · 내려앉으면 1초 동안 이동속도 20% 증가', [60, 4 * T], (f, a) => lunge(f, a, 3 * T, .3, { fly: 2, end: g => buff(g, 'haste', 1, 1.2) })],
-    [3, '블랙홀 친화', 'hit', '내 암흑 덩어리의 크기가 10% 커지고, 그 안에 있는 상대에게 115 피해 (내 암흑 덩어리가 없으면 쓰이지 않음)', [0, 12 * T], f => { const z = f.st.blob; if (!z) return false; z.r = Math.min(220, z.r * 1.1); circ(f, z.x, z.y, z.r, 10); ring(z.x, z.y, z.r, '#9a4cff'); }, { ok: f => !!f.st.blob }],
-    [4, '암흑 구슬', 'hit', '조준 방향으로 느리게 날아가는 큰 암흑 구슬을 쏨 · 맞은 상대에게 230 피해 + 1.5초 동안 이동속도 40% 감소', [0, 7 * T], (f, a) => emit(f, a, { skill: 1, dmg: 20, spd: 460, range: 8 * T, r: 12, shape: 'potion', slow: [.6, 1.5] })],
+    [3, '블랙홀 친화', 'hit', '내 암흑 덩어리의 크기가 10% 커지고, 그 안에 있는 상대에게 160 피해 (내 암흑 덩어리가 없으면 쓰이지 않음)', [0, 12 * T], f => { const z = f.st.blob; if (!z) return false; z.r = Math.min(220, z.r * 1.1); circ(f, z.x, z.y, z.r, 10); ring(z.x, z.y, z.r, '#9a4cff'); }, { ok: f => !!f.st.blob }],
+    [4, '암흑 구슬', 'hit', '조준 방향으로 느리게 날아가는 큰 암흑 구슬을 쏨 · 맞은 상대에게 320 피해 + 1.5초 동안 이동속도 40% 감소', [0, 7 * T], (f, a) => emit(f, a, { skill: 1, dmg: 20, spd: 460, range: 8 * T, r: 12, shape: 'potion', slow: [.6, 1.5] })],
     [5, '악마의 계약', 'buff', '체력 5%를 내주고 3초 동안 공격 데미지 25% 증가 + 기본 공격 쿨타임 25% 감소 (체력이 20% 이하면 쓰이지 않음)', [0, 6 * T], f => { if (f.hp <= f.mhp * .2) return false; f.hp = Math.max(STAT_X, f.hp - f.mhp * .05); buff(f, 'pact', 3); buff(f, 'dmg', 3, 1.25); ring(f.x, f.y, 70, '#c4182e'); }, { ok: f => f.hp > f.mhp * .45 }]
   ] });
 
@@ -167,7 +170,7 @@ hero('tell', { p: ['당겨진 시위', '꾹 눌러 게이지를 채우고(1.6초
   ult: ['떨어지는 사과', '게이지가 바로 가득 차고 1.5초 동안 계속 가득 찬 상태로 유지됨', [100, 10 * T], f => { f.st.g = 1; buff(f, 'full', 1.5); }],
   skills: [
     [1, '두 번째 화살', 'hit', '다음 한 발은 게이지 없이 바로 발사 · 피해 350, 적을 관통하며 일직선으로 날아감 (8초 안에 쓰지 않으면 사라짐)', [100, 10 * T], f => { f.st.second = time + 8; f.fireCd = 0; }],
-    [2, '강행돌파', 'move', '대쉬의 2배 거리로 도약 · 다음 2초 동안 일반 공격 게이지가 2.5배 빨리 참', [0, 4 * T], (f, a) => { const m = (f.mv[0] || f.mv[1]) ? Math.atan2(f.mv[1], f.mv[0]) : a + Math.PI; lunge(f, m, DASH_D * 2, .25, { fly: 1 }); buff(f, 'rush', 2); }],
+    [2, '강행돌파', 'move', '대쉬의 2배 거리로 도약 · 다음 2초 동안 일반 공격 게이지가 2.5배 빨리 참', [0, 4 * T], (f, a) => { lunge(f, a, DASH_D * 2, .25, { fly: 1 }); buff(f, 'rush', 2); }],
     [3, '관통 화살', 'buff', '다음 공격의 화살이 관통 · 한 번 관통할 때마다 피해가 20%씩 줄어듦', [100, 10 * T], f => { f.st.pierce = 1; }],
     [4, '사과 명중', 'hit', '랜덤한 적 머리 위에 사과 표식 (그 적이 죽을 때까지 유지) · 화살로 표식이 있는 적을 맞히면 5초 동안 게이지가 1.75배 빨리 참', [0, 12 * T], f => { const es = foes(f).filter(e => !e.minion); if (!es.length) return false; f.st.mark = pick(es); }],
     [5, '3중 석궁', 'buff', '다음 공격은 게이지가 가득 차는 데 1.5배 걸리는 대신 화살 3발이 한 번에 나가고 피해 8% 증가', [100, 10 * T], f => { f.st.triple = 1; }]
@@ -225,11 +228,13 @@ hero('tionis', { p: ['피의 연극', '채혈 주사기가 맞으면 체력 100 
   onHurt(f, d) { if (f.st.clone) { later(1, () => { if (f.st.clone) { f.st.clone.dead = true; f.st.clone = null; unbuff(f, 'stealth'); } }); } },
   ult: ['분신 연극', '4초 동안 분신이 나타나 공격하고 (내 공격력의 절반) 분신은 공격을 받지 않음 · 그동안 나는 투명해지고, 피해를 받으면 1초 뒤에 풀림', [0, 8 * T], f => { buff(f, 'stealth', 4); f.st.clone = minion({ by: f, kind: 'clone', x: f.x, y: f.y, t: 4, cd: .3, aim: f.aim, bound: true, upd: (m, dt) => { m.cd -= dt; const e = nearest(m, HEROES.tionis.range, null, 0); if (!e) return; m.aim = angTo(m, e); if (m.cd <= 0) { m.cd = .6; bullets.push({ src: SRC, x: m.x + Math.cos(m.aim) * 24, y: m.y + BODY + Math.sin(m.aim) * 24, vx: Math.cos(m.aim) * 680, vy: Math.sin(m.aim) * 680, spd: 680, ang: m.aim, life: HEROES.tionis.range, dmg: 6.5, team: m.team, owner: f, r: 6, shape: 'mask', pierce: 0, splash: 0, phase: 0, o: { skill: 1 }, hit: new Set(), born: time, x0: m.x, y0: m.y }); } }, end: () => { f.st.clone = null; } }); }, f => !f.st.morph],
   skills: [
-    [1, f => f.st.blood ? '변신' : '채혈', 'hit', '주사기를 던져(중거리) 맞힌 상대에게 300 피해 · 맞히면 스킬이 변신으로 바뀌어 바로 쓸 수 있음 · 변신은 맞힌 상대로 5초 동안 변장 (외형·공격·스킬·궁극기가 상대의 것)', [100, 6 * T], (f, a, i) => {
+    [1, f => f.st.blood ? '변신' : '채혈', 'hit', '주사기를 던져(중거리) 맞힌 상대에게 400 피해 · 맞히면 스킬이 변신으로 바뀌어 바로 쓸 수 있음 · 변신은 맞힌 상대로 5초 동안 변장 (외형·공격·스킬·궁극기가 상대의 것)', [100, 6 * T], (f, a, i) => {
       if (f.st.blood) { const e = f.st.blood; f.st.blood = null; morph(f, e, 5); return; }
       emit(f, a, { skill: 1, dmg: 20, spd: 720, range: 6 * T, r: 7, shape: 'needle', onHit: e => { heal(f, 10); if (!e.minion) { f.st.blood = e; later(0, () => { f.scd[i] = 0; }); } } }); }],
     [2, '말솜씨', 'buff', '2.5초 동안 적에게 내 체력바가 아군 색으로 보여, 공격하기 전까지 적이 나를 노리지 않음', [0, 7 * T], f => buff(f, 'ally', 2.5)],
-    [4, '무대 조명', 'hit', '조준한 바닥에 3초 동안 조명 원을 만듦 · 안에 있는 적은 투명이 풀리고 받는 피해 10% 증가', [100, 7 * T], f => { const p = aimPt(f, 7 * T); zone({ by: f, x: p.x, y: p.y, r: 110, t: 3, col: '#ffe9a8', op: .3, fn: z => { for (const e of foes(f)) if (!e.minion && inZone(z, e)) { buff(e, 'expose', .2); buff(e, 'reveal', .2); unbuff(e, 'stealth'); } } }); }]
+    [3, '마취 주사', 'hit', '주사기를 던져 맞힌 상대에게 300 피해 + 2초 동안 이동속도 40% 감소', [100, 6 * T], (f, a) => emit(f, a, { skill: 1, dmg: 15, spd: 720, range: 6 * T, r: 7, shape: 'syringe', slow: [.6, 2] })],
+    [4, '무대 조명', 'hit', '조준한 바닥에 3초 동안 조명 원을 만듦 · 안에 있는 적은 투명이 풀리고 받는 피해 13% 증가', [100, 7 * T], f => { const p = aimPt(f, 7 * T); zone({ by: f, x: p.x, y: p.y, r: 110, t: 3, col: '#ffe9a8', op: .3, fn: z => { for (const e of foes(f)) if (!e.minion && inZone(z, e)) { buff(e, 'expose', .2); buff(e, 'reveal', .2); unbuff(e, 'stealth'); } } }); }],
+    [5, '퇴장', 'move', '조준 방향으로 3칸 순간이동하고 1초 동안 투명해짐', [0, 6 * T], (f, a) => { const r = blink(f, a, 3 * T); fx('blink', r.x0, r.y0 + BODY, { color: '#ff6b9a', gy: r.y0 + 16 }); if (typeof FXF !== 'undefined' && FXF.exitpuff) fxPlay('exitpuff', Math.round(r.x0), Math.round(r.y0 + BODY), Math.round(f.x), Math.round(f.y + BODY)); buff(f, 'stealth', 1); }]
   ] });
 
 /* ===== 차원 여행자 (portalgun): bouncing portal shots, portals, a pulling rift ===== */
@@ -245,17 +250,17 @@ const landAt = (x, y) => blockedAt(x, y) ? freeNear(x, y) : { x, y };
 hero('portalgun', { p: ['차원 반사', '포탈건 탄환은 벽에 닿으면 최대 3번까지 튕기고, 튕길 때마다 피해가 30% 증가 (최대 420) · 튕긴 탄환이 상대에게 맞으면 대쉬 쿨타임 0.5초 감소'],
   range: 9 * T,
   pre(f, o) { o.bmul = 1.3; o.bcap = 30; o.onHit = (e, b) => { if (b.nb > 0) f.dcd = Math.max(0, f.dcd - .5); }; return o; },
-  ult: ['포탈 연결', '내 자리와 조준한 곳에 보라색 포탈 한 쌍을 8초 동안 엶 · 한쪽에 닿으면 반대쪽으로 순간이동 (나만 사용 가능, 나올 때 근처 적에게 170 피해와 약한 넉백, 새로 열면 기존 포탈은 사라짐)', [0, 9 * T], f => {
+  ult: ['포탈 연결', '내 자리와 조준한 곳에 보라색 포탈 한 쌍을 8초 동안 엶 · 한쪽에 닿으면 반대쪽으로 순간이동 (나만 사용 가능, 나올 때 근처 적에게 200 피해와 약한 넉백, 새로 열면 기존 포탈은 사라짐)', [0, 9 * T], f => {
     const p = aimPt(f, 9 * T), q = landAt(p.x, p.y); f.st.ptT = time + .9; portalPair(f, f.x, f.y, q.x, q.y, 8); }],
   skills: [
-    [1, '포탈 파괴', 'hit', '내 포탈 둘에서 연기가 나고 0.5초 뒤 두 포탈이 함께 폭발 (각각 주변 910 피해와 큰 넉백) · 포탈이 있을 때만 사용', [0, 12 * T], f => {
+    [1, '포탈 파괴', 'hit', '내 포탈 둘에서 연기가 나고 0.5초 뒤 두 포탈이 함께 폭발 (각각 주변 1070 피해와 큰 넉백) · 포탈이 있을 때만 사용', [0, 12 * T], f => {
       const ps = myPortals(f).filter(z => !z.dead); if (!ps.length || f.st.pblast) return false; f.st.pblast = 1;
       for (const z of ps) { fx('skillring', z.x, z.y, { color: '#9a9aa8', r: 60 }); burst(z.x, z.y, '#9a9aa8', 10, 120); }
       later(.5, () => { f.st.pblast = 0; for (const z of ps) { if (z.dead) continue; boom(f, z.x, z.y, 114, 65, { kb: 600, col: '#b45cff' }); z.dead = true; } });
     }, { ok: f => myPortals(f).some(z => !z.dead && foes(f).some(e => Math.hypot(e.x - z.x, e.y - z.y) < 120)) }],
     [2, '차원 도약', 'move', '조준한 곳으로 순간이동 (최대 5칸, 벽 너머도 가능)', [0, 5 * T], f => { const p = aimPt(f, 5 * T), q = landAt(p.x, p.y); blinkTo(f, q.x, q.y); }],
-    [3, '반사 구체', 'hit', '벽에 최대 6번 튕기는 큰 구체를 발사 (350 피해, 튕길 때마다 20% 증가)', [100, 9 * T], (f, a) => emit(f, a, { skill: 1, dmg: 25, r: 12, spd: 420, range: 16 * T, bnc: 6, bmul: 1.2, bcap: 55, shape: 'portalbullet' })],
-    [4, '차원 균열', 'hit', '조준한 곳에 2.5초 동안 균열을 열어 안의 상대를 가운데로 끌어당기고 0.5초마다 55 피해', [100, 6 * T], f => { const p = aimPt(f, 6 * T);
+    [3, '반사 구체', 'hit', '벽에 최대 6번 튕기는 큰 구체를 발사 (410 피해, 튕길 때마다 20% 증가)', [100, 9 * T], (f, a) => emit(f, a, { skill: 1, dmg: 25, r: 12, spd: 420, range: 16 * T, bnc: 6, bmul: 1.2, bcap: 55, shape: 'portalbullet' })],
+    [4, '차원 균열', 'hit', '조준한 곳에 2.5초 동안 균열을 열어 안의 상대를 가운데로 끌어당기고 0.5초마다 65 피해', [100, 6 * T], f => { const p = aimPt(f, 6 * T);
       zone({ by: f, x: p.x, y: p.y, r: 95, t: 2.5, col: 'rgba(0,0,0,0)', op: 0, kind: 'rift', fn: (z, dt) => { z.acc += dt; const tk = z.acc >= .5; if (tk) z.acc -= .5;
         for (const e of foes(f)) if (!e.minion && inZone(z, e)) { const dx = z.x - e.x, dy = z.y - e.y, d = Math.hypot(dx, dy) || 1; if (d > 12) moveFighter(e, dx / d * 150 * dt, dy / d * 150 * dt); if (tk) damage(e, 4, f); } } }); }],
     [5, '차원 이탈', 'buff', '1.5초 동안 다른 차원으로 사라져 모든 공격이 통과하고 이동속도 40% 증가 (그동안 공격 불가)', [0, 1e9], f => { f.form = 'sub'; f.ghost = true; buff(f, 'haste', 1.5, 1.4); fxAt(f, 'blink');
@@ -271,7 +276,7 @@ const ACTIVE_HEROES = ['sword', 'wizard', 'magiccard', 'bow', 'shade', 'kadas', 
 const HEROES_OFF = {};
 /* per-hero damage multiplier (applied in damage() to everything the hero deals: basic attack, skills, ultimate, DoTs).
    Balance table from the 14-hero bot sim, 2026-11-10; skill description numbers in kits1/kits2 already include these. */
-const DMG_MUL = { harald: .8, shade: .85, sword: 1, grenade: .85, shotgun: 1, magiccard: 1.15, kadas: 1.15, wizard: 1.3, rifle: 1.25, tionis: 1.5, bow: 1.5, pistol: 1.5, smg: 1.7, shuriken: 1.5, portalgun: 1.4 };
+const DMG_MUL = { harald: .95, shade: .85, sword: 1.2, grenade: .6, shotgun: .8, magiccard: 1.2, kadas: 1.6, wizard: 1.5, rifle: .95, tionis: 2, bow: 1.25, pistol: 1.4, smg: 1.1, shuriken: 1.6, portalgun: 1.65 };      // 2026-11-13 duel + team bot sim retune (gardener: gardener.js)
 for (const id in DMG_MUL) HEROES[id].xm = DMG_MUL[id];
 /* per-hero max hp in the original (small) units, ×STAT_X applied here. Tuned 2026-11-10 with bots that kite (14-hero sim: all win rates 46–55%). */
 const HP_TABLE = { sword: 580, shade: 490, harald: 540, grenade: 540, shotgun: 600, rifle: 600, magiccard: 610, kadas: 630, wizard: 640, bow: 690, pistol: 700, smg: 760, shuriken: 780, tionis: 830, portalgun: 700 };

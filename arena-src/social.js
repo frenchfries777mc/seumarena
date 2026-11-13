@@ -82,7 +82,8 @@ const saveCos = () => { try { localStorage.setItem(COS_KEY, JSON.stringify(COS))
 /* gold: earned by playing, spent on skins. Prices only follow how cheap or dear the skin is in Stickseum (its gold price, rank reward, soul or season skin), on this game's own scale */
 function skinPrice(id) {
   const it = COSMETICS[id]; if (!it) return 0;
-  if (it.cat === 'bcol' || it.cat === 'name' || it.cat === 'kfx') {      // the same idea for colours and kill effects: Stickseum's free ones are the cheapest, its season rewards are dear
+  if (it.cat === 'pose' && it.free) return 0;      // 만세 stays free; the other victory poses are bought like kill effects
+  if (it.cat === 'bcol' || it.cat === 'name' || it.cat === 'kfx' || it.cat === 'pose') {      // the same idea for colours and kill effects: Stickseum's free ones are the cheapest, its season rewards are dear
     const q = +it.price || 0;
     if (!q) return it.seasonOnly ? 2000 : 150;
     return q <= 400 ? 300 : q <= 900 ? 600 : q <= 1500 ? 1000 : q <= 2000 ? 1500 : q <= 3000 ? 2500 : q <= 4500 ? 3000 : 4000;
@@ -98,6 +99,7 @@ function skinPrice(id) {
 }
 const skinOwned = id => COS.own.includes(id);
 const cosLocked = id => skinPrice(id) > 0 && !skinOwned(id);      // has a price and is not bought yet
+if (COS.pose && cosLocked(COS.pose)) COS.pose = null;      // (victory poses used to be free: one worn but not bought goes back to 만세)
 const COS_SLOT = { bcol: 'col', name: 'name', kfx: 'kfx', pose: 'pose' };
 function goldUi() { for (const el of document.querySelectorAll('.goldN')) el.textContent = COS.gold.toLocaleString('en-US'); for (const el of document.querySelectorAll('.karmaN')) el.textContent = COS.karma.toLocaleString('en-US'); const sk = document.getElementById('streak'); if (sk) { sk.hidden = !((COS.ws | 0) >= 2); sk.querySelector('b').textContent = COS.ws | 0; }
   { const kb = document.querySelector('#karmaBar i'); { let lo = 0, hi = 0; for (const r of KARMA_ROAD) { if (COS.karma >= r[0]) lo = r[0]; else { hi = r[0]; break; } } const w = (hi ? Math.round((COS.karma - lo) / (hi - lo) * 100) : 100) + '%'; if (kb) kb.style.width = w; const hb = document.querySelector('.khBar i'), hn = document.getElementById('karmaNextN'); if (hb) hb.style.width = w; if (hn) hn.textContent = hi ? COS.karma.toLocaleString('en-US') + ' / ' + hi.toLocaleString('en-US') : ''; } }      // the banner's bar: the way to the next step of the road
