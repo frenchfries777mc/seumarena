@@ -10,7 +10,12 @@ function lowFx() { return reduceMotion || SET.fx; }
 { const baseSfx = sfx; sfx = (f, d, t, v, sl) => { if (SET.vol <= 0) return; baseSfx(f, d, t, (v || .05) * SET.vol / 100, sl); }; }
 {
   const baseP = addP, THIN = { dot: .35, streak: .35, smoke: .3, square: .35, fire: .5, flash: .5 };
-  addP = o => { if (SET.fx && o) { const k = THIN[o.shape]; if (k !== undefined && (Math.random() > k || (o.shape === 'flash' && o.size >= 100))) return; } baseP(o); };
+  const MTHIN = { dot: .6, streak: .6, smoke: .55, square: .6, fire: .75, flash: .8 };      // mobile (engine.js mobileMode): a lighter thinning, and no small bits past 260 at once
+  addP = o => {
+    if (o && SET.fx) { const k = THIN[o.shape]; if (k !== undefined && (Math.random() > k || (o.shape === 'flash' && o.size >= 100))) return; }
+    else if (o && mobileMode()) { const k = MTHIN[o.shape]; if (k !== undefined && (Math.random() > k || particles.length > 260)) return; }
+    baseP(o);
+  };
 }
 function fxInView(x, y) { return Math.abs(x - cam.x) < W / 2 / cam.s + 240 && Math.abs(y - cam.y) < H / 2 / cam.s + 240; }
 function shakeFrom(x, y, amp, range) { if (lowFx()) return; let k = 1; if (player) k = clamp(1 - Math.hypot(player.x - x, player.y - y) / (range || 600), 0, 1); shake = Math.max(shake, amp * k * .8); }
@@ -68,8 +73,6 @@ function cosNorm(C) {      // the save-version fixes, run on this browser's save
   if (C.v < 4) for (const k of ['col', 'name', 'kfx']) if (C[k] && !C.own.includes(C[k])) C[k] = null;      // v4: character colours, name colours and kill effects are bought with gold too
   C.v = 4;      // v3: the road got new steps, nothing on it is taken yet
   C.xp = Math.max(0, Math.floor(+C.xp || 0)); if (!C.mp || typeof C.mp !== 'object') C.mp = {};
-  if (!Array.isArray(C.unl)) { C.unl = []; const hg = (C.st && C.st.hg) || {}; for (const id of Object.keys(C.mp).concat(Object.keys(hg))) if (((C.mp[id] | 0) > 0 || (hg[id] | 0) > 0) && !C.unl.includes(id)) C.unl.push(id); }      // unlock (gear.js): characters already played stay open
-  if (!C.sh || typeof C.sh !== 'object') C.sh = {}; if (!Array.isArray(C.gown)) C.gown = []; if (!C.geq || typeof C.geq !== 'object') C.geq = {};
   return C;
 }
 let COS = cosDefault();
@@ -116,7 +119,7 @@ const KARMA_ROAD = (() => {      // paced like a trophy road (user 2026-11-12): 
   return out;
 })();
 /* what a box can hold: [chance weight, kind, least, most] */
-const BOX_LOOT = { box: [[50, 'g', 150, 400], [20, 'rx', 150, 300], [10, 'sh', 2, 4], [12, 'cx', 150, 250], [8, 'skin', 1000, 1000]], ebox: [[35, 'g', 600, 1200], [10, 'rx', 500, 800], [10, 'sh', 5, 8], [20, 'cx', 400, 600], [25, 'skin', 2500, 2500]] };
+const BOX_LOOT = { box: [[50, 'g', 150, 400], [30, 'rx', 150, 300], [12, 'cx', 150, 250], [8, 'skin', 1000, 1000]], ebox: [[35, 'g', 600, 1200], [20, 'rx', 500, 800], [20, 'cx', 400, 600], [25, 'skin', 2500, 2500]] };
 /* character mastery: every step is MP_STEP points (about 16 matches at ~50 a match) */
 const MP_STEP = 800, MASTERY = [];
 for (const [nm, n, col] of [['브론즈', 3, '#c8803a'], ['실버', 3, '#c0c8d4'], ['골드', 3, '#ffd34d'], ['플래티넘', 3, '#6fe0d0'], ['다이아', 3, '#6fb8ff'], ['아메시스트', 3, '#b07cff'], ['마스터', 5, '#ff8a4d'], ['그랜드마스터', 5, '#ff4d6d']]) for (let i = 0; i < n; i++) MASTERY.push({ name: nm + ' ' + ['I', 'II', 'III', 'IV', 'V'][i], col });
@@ -149,13 +152,12 @@ function streakStep(win, draw, place) {
 /* gives one reward and says what it was: { kind, n, hero, skin } */
 function giveReward(kind, n) {
   if (kind === 'box' || kind === 'ebox') { const L = BOX_LOOT[kind]; let r = Math.random() * L.reduce((a, l) => a + l[0], 0), l = L[0]; for (const x of L) { if ((r -= x[0]) < 0) { l = x; break; } } const tr = Math.random(), tier = l[1] === 'skin' ? 2 : kind === 'ebox' ? (tr < .25 ? 2 : 1) : tr < .05 ? 2 : tr < .25 ? 1 : 0;      // a box opens as common, rare or legendary: rare doubles what is inside, legendary gives four times (a skin is always legendary)
-    const got = giveReward(l[1], l[1] === 'skin' ? l[2] : l[1] === 'sh' ? Math.round(l[2] + Math.random() * (l[3] - l[2])) * (tier + 1) : Math.round((l[2] + Math.random() * (l[3] - l[2])) * (kind === 'ebox' ? [1, 1, 2] : [1, 2, 4])[tier] / 10) * 10); got.box = kind; got.tier = tier; return got; }
+    const got = giveReward(l[1], l[1] === 'skin' ? l[2] : Math.round((l[2] + Math.random() * (l[3] - l[2])) * (kind === 'ebox' ? [1, 1, 2] : [1, 2, 4])[tier] / 10) * 10); got.box = kind; got.tier = tier; return got; }
   if (kind === 'skin') {      // a skin not owned yet, from the dearest tier allowed; nothing left to give: its worth in gold
     const pool = COS_IDS('skin').filter(id => HEROES[COSMETICS[id].char] && !skinOwned(id) && skinPrice(id) <= n), top = Math.max(0, ...pool.map(skinPrice)), best = pool.filter(id => skinPrice(id) === top);
     if (best.length) { const id = pick(best); COS.own.push(id); return { kind, skin: id, hero: COSMETICS[id].char }; }
     kind = 'g';
   }
-  if (kind === 'sh') { const L = lockedIds(); if (L.length) { const hero = pick(L); addShard(hero, n); return { kind, n, hero }; } kind = 'g'; n *= SHARD_GOLD; }      // shards of a locked character (gear.js); none locked: their gold
   if (kind === 'g') { COS.gold += n; return { kind, n }; }
   if (kind === 'px') { COS.xp += n; return { kind, n }; }
   if (kind === 'k') { COS.karma += n; return { kind, n }; }
@@ -168,7 +170,7 @@ function karmaTake(r) {
   try { sfx(880, .18, 'triangle', .06); } catch (e) {}
   saveCos(); goldUi(); return got;
 }
-const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin', sh: 'ic-shard' };
+const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin' };
 function rewardIcon(kind) { const i = document.createElement('i'); if (kind === 'k') { i.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>'; return i; } i.className = kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[kind]; return i; }
 function renderKarma(got) {
   const tr = document.getElementById('karmaTrack'); tr.textContent = '';
