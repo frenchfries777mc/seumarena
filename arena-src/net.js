@@ -89,10 +89,13 @@ function startOnline() {
   showScreen('roomScreen');
   netSearch();
 }
-function netSearch() {
+function netSearch(again) {
   const tok = netToken;
   roomUi('방 찾는 중', '빈자리가 있는 방을 찾고 있어요');
-  if (typeof Peer === 'undefined') return netFallback('온라인 모듈을 불러오지 못했어요.');
+  if (typeof Peer === 'undefined') {      // PeerJS loads in the background (head.html): wait for it once, up to 8 s
+    if (!again && window.__peerLoad) { Promise.race([window.__peerLoad(), new Promise(r => setTimeout(r, 8000))]).then(() => { if (tok === netToken) netSearch(true); }); return; }
+    return netFallback('온라인 모듈을 불러오지 못했어요.');
+  }
   let p; try { p = newPeer(undefined); } catch (e) { return netFallback('온라인에 연결할 수 없어요.'); }
   NET.peer = p; NET.phase = 'search'; keepAlive(p);
   const to = setTimeout(() => { if (tok === netToken && NET.phase === 'search' && !p.open) netFallback('온라인 서버에 연결할 수 없어요.'); }, 7000);
