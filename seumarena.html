@@ -1,6 +1,7 @@
 <title>SeumArena</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Black+Han+Sans&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Black+Han+Sans&display=swap" media="print" onload="this.media='all'">
 <style>
 [hidden]{display:none!important}      /* the chat bar, HUD and other hidden parts must stay hidden even when the file is opened on its own (no wrapper page) */
 /* Layout: Stickseum lobby (brand top centre, picked character big on the left, gold menu buttons on the right) over a blurred live match; full-bleed canvas arena with an edge-pinned HUD. Single dark look, as in Stickseum. */
@@ -255,9 +256,11 @@ body.touchUi #sk1Btn{right:calc(var(--sr) + 186px);bottom:calc(var(--sb) + 46px)
 body.touchUi #dashBtn{width:54px;height:54px;right:calc(var(--sr) + 157px);bottom:calc(var(--sb) + 157px)}
 body.touchUi #sk2Btn{right:calc(var(--sr) + 80px);bottom:calc(var(--sb) + 186px)}
 body.touchUi #ultBtn{width:76px;height:76px;right:calc(var(--sr) + 195px);bottom:calc(var(--sb) + 195px)}
-@media (max-height:360px){
-  body.touchUi #ultBtn{width:68px;height:68px;right:calc(var(--sr) + 262px);bottom:calc(var(--sb) + 40px)}      /* very short screens: no room on the diagonal, the ultimate goes left of skill 1 */
+@media (max-height:440px){
+  body.touchUi #ultBtn{width:68px;height:68px;right:calc(var(--sr) + 262px);bottom:calc(var(--sb) + 40px)}      /* phones held sideways: on the diagonal the ultimate covered the middle of the fight, so it goes left of skill 1 */
 }
+body.touchUi .skillBtn{opacity:.86}      /* a little of the fight shows through the buttons */
+body.mob #lobbyChar canvas{filter:none}      /* mobile: no shadow filter on a canvas that is redrawn every frame */
 /* phone held upright: no room beside the stick, so the buttons stack above it */
 @media (max-width:520px) and (orientation:portrait){
   body.touchUi #dashBtn{right:calc(var(--sr) + 124px);bottom:calc(var(--sb) + 160px)}
@@ -982,7 +985,12 @@ body.touchUi canvas{touch-action:none}
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+<script>
+/* PeerJS is fetched without holding up the game: on a slow or shaky connection the page used to stay blank until it arrived.
+   window.__peerLoad() gives a promise (true = loaded); after a failure, calling it again tries once more (net.js waits for it when a search starts) */
+window.__peerLoad = (() => { let p = null; return () => p || (p = new Promise(r => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js'; s.onload = () => r(true); s.onerror = () => { p = null; s.remove(); r(false); }; document.head.appendChild(s); })); })();
+window.__peerLoad();
+</script>
 <script>
 (() => {
 'use strict';
@@ -3199,6 +3207,20 @@ function burstP(x,y,n,o){
   }
 }
 function svRand(seed){ let a=(Math.floor(seed*7919)+0x9E3779B9)>>>0; return ()=>{ a=(a+0x6D2B79F5)>>>0; let t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+/* a dash afterimage is a still figure: drawn once (per character, colour, direction and zoom) into a small canvas and stamped from there
+   (the whole figure drawn again for every afterimage every frame froze phones for a moment on each dash) */
+const ghostSpr=new Map(); let ghostK=0;
+function ghostSprite(q){
+  try{
+    const m=ctx.getTransform(), k=Math.round(Math.hypot(m.a,m.b)*20)/20; if(!(k>0.05 && k<8) || m.b || m.c) return null;
+    if(k!==ghostK || ghostSpr.size>16){ ghostSpr.clear(); ghostK=k; }
+    const cs=q.cos||null, key=(q.wid||'sword')+'|'+q.color+'|'+(q.ang||0).toFixed(2)+'|'+(cs?(cs.skin||'')+'/'+(cs.col||''):'');
+    let s=ghostSpr.get(key);
+    if(!s){ const n=Math.ceil(280*k), cv2=document.createElement('canvas'); cv2.width=cv2.height=n; const g=cv2.getContext('2d');
+      g.setTransform(k,0,0,k,n/2,n*0.74); g.scale(1.15,1.15); g.lineCap='round'; drawStick(g,q.wid||'sword',q.color,q.ang||0,0,0,0,q.cos); s={cv:cv2,k:n/280}; ghostSpr.set(key,s); }
+    return s;
+  }catch(e){ return null; }
+}
 function drawParticles(){
   const now=performance.now(); let dt=Math.min(0.05,(now-lastFxMs)/1000); lastFxMs=now; if(!(dt>0)) dt=0.016;
   for(let i=particles.length-1;i>=0;i--){
@@ -3224,7 +3246,10 @@ function drawParticles(){
           ctx.lineJoin='round'; stroke(q.size*3.4, hexA(q.color,0.35), a); stroke(q.size*1.6, q.color, a); stroke(q.size*0.6, '#ffffff', a);
           if(R()<0.5){ const k=1+Math.floor(R()*(n-2)), s=R()<0.5?-1:1; ctx.globalAlpha=a*0.8; ctx.strokeStyle=q.color; ctx.lineWidth=q.size*0.7; ctx.beginPath(); ctx.moveTo(pts[k][0],pts[k][1]); ctx.lineTo(pts[k][0]+nx*s*30+dx/len*14, pts[k][1]+ny*s*30+dy/len*14); ctx.stroke(); }
           break; }
-        case 'ghost': { ctx.save(); ctx.globalAlpha=a*0.55; ctx.translate(q.x,q.y+30); ctx.scale(1.15,1.15); drawStick(ctx,q.wid||'sword',q.color,q.ang||0,0,0,0,q.cos); ctx.restore(); break; }
+        case 'ghost': { const s=ghostSprite(q); ctx.globalAlpha=a*0.55;
+          if(s){ const w=s.cv.width/s.k; ctx.drawImage(s.cv,q.x-w/2,q.y+30-w*0.74,w,w); }
+          else { ctx.save(); ctx.translate(q.x,q.y+30); ctx.scale(1.15,1.15); drawStick(ctx,q.wid||'sword',q.color,q.ang||0,0,0,0,q.cos); ctx.restore(); }
+          break; }
         case 'ktext': { ctx.globalAlpha=Math.min(1,a*2); const sc=1+0.35*(1-Math.min(1,t*5)); ctx.save(); ctx.translate(q.x,q.y); ctx.scale(sc,sc); ctx.rotate(q.rot0||0);
           ctx.font='900 '+Math.round(q.size)+'px "Malgun Gothic","Noto Sans CJK KR","Noto Serif CJK JP","Yu Mincho",serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
           ctx.lineWidth=7; ctx.strokeStyle='rgba(10,10,30,0.85)'; ctx.strokeText(q.text,0,0); ctx.fillStyle=q.color; ctx.fillText(q.text,0,0); ctx.restore(); break; }
@@ -3248,6 +3273,7 @@ function drawParticles(){
         case 'square': case 'card': ctx.save(); ctx.translate(q.x,q.y); ctx.rotate(q.rot); ctx.globalAlpha=Math.min(1,a*1.6); ctx.fillStyle=q.color;
           if(q.shape==='card'){ ctx.fillRect(-q.size*0.6,-q.size,q.size*1.2,q.size*2); } else ctx.fillRect(-q.size/2,-q.size/2,q.size,q.size); ctx.restore(); break;
         case 'text': ctx.globalAlpha=Math.min(1,a*2.2); ctx.font='800 '+Math.round(q.size)+'px Rajdhani'; ctx.textAlign='center';
+          if(typeof stampText==='function' && stampText(ctx,q.text,ctx.font,q.color,'rgba(0,0,0,0.75)',4,q.x,q.y)) break;
           ctx.lineWidth=4; ctx.strokeStyle='rgba(0,0,0,0.75)'; ctx.strokeText(q.text,q.x,q.y); ctx.fillStyle=q.color; ctx.fillText(q.text,q.x,q.y); break;
         case 'warn': { const blink=0.35+0.5*Math.abs(Math.sin(t*16)); ctx.globalAlpha=blink; ctx.strokeStyle=q.color; ctx.lineWidth=3;
           ctx.beginPath(); ctx.arc(q.x,q.y,34,0,7); ctx.stroke(); ctx.beginPath(); ctx.arc(q.x,q.y,16,0,7); ctx.stroke(); if(q.hw){ ctx.beginPath(); ctx.ellipse(q.x,q.y,q.hw,14,0,0,7); ctx.stroke(); }
@@ -4219,18 +4245,20 @@ const keys = {}, mouse = { x: 0, y: 0, down: false };
 let touchMode = false, mouseRel = false, stickM = null, stickA = null, pendingFire = null, wantUlt = false, wantDash = false, wantSk = [false, false];
 
 /* device: 'mobile' or 'pc', picked on the first start (tail.js) and changed in the settings; net.js reads the same key. Until it is picked, a phone or tablet
-   (coarse pointer) counts as mobile. Mobile draws the canvas at a lower pixel ratio (RSCALE: 1.5, lowered to 1.25 / 1 by tail.js rsWatch while a phone
-   can not keep up) and thins the effects (social.js); pc stays as it was */
+   (coarse pointer) counts as mobile. Mobile is tuned for speed first (2026-11-13, user): the canvas is drawn at a lower pixel ratio (RSCALE: 1.25, lowered to 1 / .8 by tail.js rsWatch while a phone
+   can not keep up), no blurred glows (shadowBlur is ignored on the game canvas), far fewer particles (social.js) and a still lobby background (tail.js); pc stays as it was */
 let DEVICE = ''; try { const v = localStorage.getItem('seum_device'); if (v === 'mobile' || v === 'pc') DEVICE = v; } catch (e) {}
 const devMq = matchMedia('(pointer:coarse)'), deviceGuess = () => devMq.matches ? 'mobile' : 'pc';
 const mobileMode = () => (DEVICE || deviceGuess()) === 'mobile';
-let RSCALE = 1.5;
+let RSCALE = 1.25;
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, mobileMode() ? RSCALE : 2);
   W = window.innerWidth; H = window.innerHeight;
   cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
 }
 addEventListener('resize', resize); resize();
+{ const d = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'shadowBlur');      // mobile: blurred glows are the most expensive thing a phone can be asked to draw, so the game canvas ignores them
+  if (d && d.set && d.get) try { Object.defineProperty(ctx, 'shadowBlur', { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, mobileMode() ? 0 : v); } }); } catch (e) {} }
 
 let ac = null, muted = false;
 function sfx(freq, dur, type, vol, slide) {
@@ -5815,10 +5843,10 @@ function lowFx() { return reduceMotion || SET.fx; }
 { const baseSfx = sfx; sfx = (f, d, t, v, sl) => { if (SET.vol <= 0) return; baseSfx(f, d, t, (v || .05) * SET.vol / 100, sl); }; }
 {
   const baseP = addP, THIN = { dot: .35, streak: .35, smoke: .3, square: .35, fire: .5, flash: .5 };
-  const MTHIN = { dot: .6, streak: .6, smoke: .55, square: .6, fire: .75, flash: .8 };      // mobile (engine.js mobileMode): a lighter thinning, and no small bits past 260 at once
+  const MTHIN = { dot: .4, streak: .4, smoke: .35, square: .4, fire: .55, flash: .6 };      // mobile (engine.js mobileMode): speed first, and no small bits past 140 at once
   addP = o => {
     if (o && SET.fx) { const k = THIN[o.shape]; if (k !== undefined && (Math.random() > k || (o.shape === 'flash' && o.size >= 100))) return; }
-    else if (o && mobileMode()) { const k = MTHIN[o.shape]; if (k !== undefined && (Math.random() > k || particles.length > 260)) return; }
+    else if (o && mobileMode()) { const k = MTHIN[o.shape]; if (k !== undefined && (Math.random() > k || particles.length > 140)) return; }
     baseP(o);
   };
 }
@@ -7003,6 +7031,7 @@ function drawDmgText(t) {               // tail.js draws every floating text thr
   const col = me ? t.color : (t.color === '#ffffff' ? (tier === 3 ? '#ffd34d' : tier === 2 ? '#fff0b8' : '#ffffff') : t.color);
   ctx.save(); ctx.translate(t.x, t.y); if (pop !== 1) ctx.scale(pop, pop);
   ctx.font = '800 ' + px + 'px Rajdhani, sans-serif'; ctx.globalAlpha = clamp(t.life / .4, 0, 1);
+  if (pop === 1 && typeof stampText === 'function' && stampText(ctx, t.txt, ctx.font, col, tier === 3 && !me ? '#5a2a00' : '#0c0e13', tier === 3 ? 5 : 4, 0, 0)) { ctx.restore(); return true; }
   ctx.lineWidth = tier === 3 ? 5 : 4; ctx.strokeStyle = tier === 3 && !me ? '#5a2a00' : '#0c0e13'; ctx.strokeText(t.txt, 0, 0);
   ctx.fillStyle = col; ctx.fillText(t.txt, 0, 0);
   if (pa < .08) { ctx.globalAlpha *= 1 - pa / .08; ctx.fillStyle = '#ffffff'; ctx.fillText(t.txt, 0, 0); }
@@ -7904,10 +7933,13 @@ function startOnline() {
   showScreen('roomScreen');
   netSearch();
 }
-function netSearch() {
+function netSearch(again) {
   const tok = netToken;
   roomUi('방 찾는 중', '빈자리가 있는 방을 찾고 있어요');
-  if (typeof Peer === 'undefined') return netFallback('온라인 모듈을 불러오지 못했어요.');
+  if (typeof Peer === 'undefined') {      // PeerJS loads in the background (head.html): wait for it once, up to 8 s
+    if (!again && window.__peerLoad) { Promise.race([window.__peerLoad(), new Promise(r => setTimeout(r, 8000))]).then(() => { if (tok === netToken) netSearch(true); }); return; }
+    return netFallback('온라인 모듈을 불러오지 못했어요.');
+  }
   let p; try { p = newPeer(undefined); } catch (e) { return netFallback('온라인에 연결할 수 없어요.'); }
   NET.peer = p; NET.phase = 'search'; keepAlive(p);
   const to = setTimeout(() => { if (tok === netToken && NET.phase === 'search' && !p.open) netFallback('온라인 서버에 연결할 수 없어요.'); }, 7000);
@@ -8929,6 +8961,27 @@ function drawFighter0(f, alpha) {
   ctx.restore(); ctx.globalAlpha = 1;
   const th = st.thread; if (th && !th.dead) { ctx.strokeStyle = '#ff7bd9'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(f.x, f.y - 30); ctx.lineTo(th.x, th.y - 30); ctx.stroke(); }
 }
+/* outlined text (names, damage numbers, floating words) is drawn once into a small canvas and stamped from there afterwards: stroked text every frame is slow on phones.
+   Centred on x, baseline y, with c's current alpha; false = not stamped (the caller draws it the plain way) */
+const txtSpr = new Map(); let txtG = null;
+if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', () => txtSpr.clear());      // a web font arrived: the stamps are made again with it
+function stampText(c, txt, font, fill, stroke, lw, x, y) {
+  const m = c.getTransform(), k = Math.round(Math.hypot(m.a, m.b) * 50) / 50;
+  if (!(k > .05 && k < 8) || m.b || m.c || typeof fill !== 'string' || !txt || txt.length > 40) return false;
+  const key = k + '|' + font + '|' + fill + '|' + stroke + '|' + lw + '|' + txt; let s = txtSpr.get(key);
+  if (!s) {
+    if (txtSpr.size > 200) txtSpr.clear();
+    if (!txtG) txtG = document.createElement('canvas').getContext('2d');
+    txtG.font = font; const mt = txtG.measureText(txt), px = parseFloat((/([\d.]+)px/.exec(font) || [0, 16])[1]);
+    const asc = Math.max(mt.actualBoundingBoxAscent || 0, px * .8) + lw + 1, desc = Math.max(mt.actualBoundingBoxDescent || 0, px * .3) + lw + 1, hw = Math.max(mt.width / 2, mt.actualBoundingBoxLeft || 0, mt.actualBoundingBoxRight || 0) + lw + 2;
+    const cv2 = document.createElement('canvas'); cv2.width = Math.ceil(hw * k) * 2; cv2.height = Math.ceil(asc * k) + Math.ceil(desc * k);
+    const g = cv2.getContext('2d'); g.setTransform(k, 0, 0, k, cv2.width / 2, Math.ceil(asc * k));
+    g.font = font; g.textAlign = 'center'; g.lineJoin = c.lineJoin; g.miterLimit = c.miterLimit; g.lineWidth = lw; g.strokeStyle = stroke; g.strokeText(txt, 0, 0); g.fillStyle = fill; g.fillText(txt, 0, 0);
+    s = { cv: cv2, ax: cv2.width / 2, ay: Math.ceil(asc * k) }; txtSpr.set(key, s);
+  }
+  c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(s.cv, Math.round(m.a * x + m.e - s.ax), Math.round(m.d * y + m.f - s.ay)); c.restore();
+  return true;
+}
 function drawBars(f) {
   if (f.form === 'gone' || f.form === 'sub') return;
   const w = 54, x = f.x - w / 2, y = f.y - 72, st = f.st, col = B(f, 'ally') ? TC(1 - f.team) : TC(f.team);
@@ -8936,14 +8989,14 @@ function drawBars(f) {
   ctx.lineWidth = 4; ctx.strokeStyle = '#0c0e13'; ctx.fillStyle = f.isPlayer ? '#ffd34d' : (f.nick && f.cos && f.cos.name ? nameColorFor(f.cos.name) : col);
   let label = f.nick || f.h0.name;
   if (f.isPlayer) { const h = f.h.id; if (h === 'gambler') label += ' · 칩 ' + (st.chip || 0); if (h === 'vacuum') label += ' · 스택 ' + (st.stack || 0); if (h === 'pizarro') label += ' · ' + ((st.pz || 0) + 1) + '단계'; if (h === 'pel') label += ' · 드론 ' + st.dr; if (h === 'flamethrower') label += st.over > 0 ? ' · 과열' : ' · 열 ' + Math.round((st.heat || 0) / 9 * 100) + '%'; }
-  ctx.strokeText(label, f.x, y - 6); ctx.fillText(label, f.x, y - 6);
+  if (!stampText(ctx, label, ctx.font, ctx.fillStyle, '#0c0e13', 4, f.x, y - 6)) { ctx.strokeText(label, f.x, y - 6); ctx.fillText(label, f.x, y - 6); }
   ctx.fillStyle = '#0c0e13'; ctx.beginPath(); ctx.roundRect(x - 2, y - 2, w + 4, 11, 4); ctx.fill();
   hpGhost(f, x, y, w);      // (fx.js: white trail of the hp just lost)
   ctx.fillStyle = st.morph ? '#7ef0a8' : (B(f, 'infect') || st.pn) ? '#8dff7c' : col; ctx.beginPath(); ctx.roundRect(x, y, Math.max(0, w * f.hp / f.mhp), 7, 3); ctx.fill();
   if (f.shield > 0) { ctx.fillStyle = '#7ef0a8'; ctx.fillRect(x, y - 4, w * Math.min(1, f.shield / (50 * SX)), 2); }
   let s = '';
   if (B(f, 'stun')) s = '기절'; else if (B(f, 'charm')) s = '조종'; else if (B(f, 'root')) s = '속박'; else if (B(f, 'mute')) s = '봉인'; else if (B(f, 'blind')) s = '실명'; else if (st.pn) s = '독 ' + st.pn; else if (B(f, 'infect')) s = '감염'; else if (B(f, 'slow')) s = '둔화';
-  if (s) { ctx.font = '700 12px "IBM Plex Sans KR", sans-serif'; ctx.fillStyle = '#ffd34d'; ctx.strokeText(s, f.x, y + 22); ctx.fillText(s, f.x, y + 22); }
+  if (s) { ctx.font = '700 12px "IBM Plex Sans KR", sans-serif'; ctx.fillStyle = '#ffd34d'; if (!stampText(ctx, s, ctx.font, '#ffd34d', '#0c0e13', 4, f.x, y + 22)) { ctx.strokeText(s, f.x, y + 22); ctx.fillText(s, f.x, y + 22); } }
   if (fighters.some(o => o.st.mark === f)) { ctx.fillStyle = '#ff4d4d'; ctx.beginPath(); ctx.arc(f.x, y - 26, 6, 0, 6.3); ctx.fill(); }
   if (st.g > 0) { ctx.fillStyle = '#0c0e13'; ctx.fillRect(x - 1, y + 10, w + 2, 6); ctx.fillStyle = st.g >= 1 ? '#ffd34d' : '#e8eaf0'; ctx.fillRect(x, y + 11, w * st.g, 4); }
   if (st.neck) { const ph = ((time - st.neck) * 1.8) % 2, pos = ph < 1 ? ph : 2 - ph; ctx.fillStyle = '#c4182e'; ctx.fillRect(x - 8, y + 10, w + 16, 7); ctx.fillStyle = '#3fe07a'; ctx.fillRect(x - 8 + (w + 16) * .37, y + 10, (w + 16) * .26, 7); ctx.fillStyle = '#fff'; ctx.fillRect(x - 9 + (w + 16) * pos, y + 8, 3, 11); }
@@ -9093,7 +9146,7 @@ function render() {
     for (const f of fighters) if (!f.dead && visibleTo(f, VIEW)) drawBars(f);
     for (const f of fighters) if (f && !f.dead && visibleTo(f, VIEW)) { drawEmoteBubble(f); drawChatBubble(f); }
     ctx.textAlign = 'center';
-    for (const t of texts) { if (drawDmgText(t)) continue; ctx.font = t.small ? '700 15px "IBM Plex Sans KR", sans-serif' : '700 20px Rajdhani, sans-serif'; ctx.globalAlpha = clamp(t.life / .4, 0, 1); ctx.lineWidth = 4; ctx.strokeStyle = '#0c0e13'; ctx.strokeText(t.txt, t.x, t.y); ctx.fillStyle = t.color; ctx.fillText(t.txt, t.x, t.y); }
+    for (const t of texts) { if (drawDmgText(t)) continue; ctx.font = t.small ? '700 15px "IBM Plex Sans KR", sans-serif' : '700 20px Rajdhani, sans-serif'; ctx.globalAlpha = clamp(t.life / .4, 0, 1); if (stampText(ctx, t.txt, ctx.font, t.color, '#0c0e13', 4, t.x, t.y)) continue; ctx.lineWidth = 4; ctx.strokeStyle = '#0c0e13'; ctx.strokeText(t.txt, t.x, t.y); ctx.fillStyle = t.color; ctx.fillText(t.txt, t.x, t.y); }
     ctx.globalAlpha = 1;
   }
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -9213,10 +9266,10 @@ tapBtnUi($('setBtn'), () => setOpen(true));
 addEventListener('keydown', e => { if (setEl.hidden) return; if (e.code === 'Escape') setOpen(false); e.stopPropagation(); }, true);   // the game does not see keys while the window is open
 
 /* ---------- device (모바일 / 컴퓨터): picked once on the first start, changed in the settings (engine.js DEVICE; net.js reads the same key) ---------- */
-function devFill() { const cur = DEVICE || deviceGuess(); for (const b of document.querySelectorAll('[data-dev]')) { const on = b.dataset.dev === cur; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); } }
+function devFill() { const cur = DEVICE || deviceGuess(); for (const b of document.querySelectorAll('[data-dev]')) { const on = b.dataset.dev === cur; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); } document.body.classList.toggle('mob', cur === 'mobile'); }
 function setDevice(v) {
   DEVICE = v; try { localStorage.setItem('seum_device', v); } catch (e) {}
-  RSCALE = 1.5; resize(); touchUiSync(); devFill(); lastHud = '';
+  RSCALE = RS_STEPS[0]; resize(); touchUiSync(); devFill(); lastHud = '';
   try { if (typeof window.netDeviceChanged === 'function') window.netDeviceChanged(); } catch (e) {}
 }
 for (const b of document.querySelectorAll('#setDev [data-dev]')) b.addEventListener('click', () => setDevice(b.dataset.dev));
@@ -9713,9 +9766,9 @@ soundBtn.addEventListener('click', () => { muted = !muted; soundBtn.textContent 
 
 readSafe(); touchUiSync();
 /* ---------- loop ---------- */
-/* mobile: when a phone can not keep up (frames slower than ~45 a second over 2 s of play) the canvas goes one step down in pixel ratio (1.5 > 1.25 > 1);
+/* mobile: when a phone can not keep up (frames slower than ~45 a second over 2 s of play) the canvas goes one step down in pixel ratio (1.25 > 1 > .8);
    after about 10 s of smooth play it goes one step back up */
-const RS_STEPS = [1.5, 1.25, 1];
+const RS_STEPS = [1.25, 1, .8];
 let rsT0 = 0, rsN = 0, rsLast = 0, rsGood = 0;
 function rsWatch(now) {
   if (state !== 'play' || !mobileMode() || now - rsLast > 250) { rsT0 = now; rsN = 0; rsLast = now; return; }      // (a pause, a hidden tab or the lobby does not count)
@@ -9726,17 +9779,18 @@ function rsWatch(now) {
   else if (ms < 18 && i > 0) { if (++rsGood >= 5) { RSCALE = RS_STEPS[i - 1]; rsGood = 0; resize(); } }
   else rsGood = 0;
 }
-let last = performance.now();
+let last = performance.now(), stillAt = 0, stillW = '';
 function frame(now) {
   lastFrameAt = performance.now();
   rsWatch(now);
   const dt = Math.min(.033, (now - last) / 1000); last = now;
+  const still = state === 'menu' && !DED && mobileMode();      // mobile: the match behind the lobby stands still (drawn again once a second), so the lobby costs a phone almost nothing
   if (NET.role === 'guest' && state === 'play') { if (dt > 0) guestStep(dt); }
-  else if (state !== 'over' && dt > 0 && !(performance.now() < hitStopUntil)) step(dt);
+  else if (state !== 'over' && dt > 0 && !(performance.now() < hitStopUntil) && !still) step(dt);
   netTick(dt);
   if (DED) { requestAnimationFrame(frame); return; }      // a dedicated host (net.js) only runs the match: nothing is drawn
   if (state === 'play') updateHud();
-  render();
+  if (!still || now - stillAt > 1000 || stillW !== cv.width + 'x' + cv.height) { render(); stillAt = now; stillW = cv.width + 'x' + cv.height; }
   if (!lobby.hidden) {
     if ($('menuScreen').classList.contains('active')) drawPortrait($('lobbyCharCanvas'), chosen, true);
     else if (viewing) drawPortrait($('weaponPortraitCanvas'), viewing, true);

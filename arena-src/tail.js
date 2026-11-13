@@ -80,6 +80,27 @@ function drawFighter0(f, alpha) {
   ctx.restore(); ctx.globalAlpha = 1;
   const th = st.thread; if (th && !th.dead) { ctx.strokeStyle = '#ff7bd9'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(f.x, f.y - 30); ctx.lineTo(th.x, th.y - 30); ctx.stroke(); }
 }
+/* outlined text (names, damage numbers, floating words) is drawn once into a small canvas and stamped from there afterwards: stroked text every frame is slow on phones.
+   Centred on x, baseline y, with c's current alpha; false = not stamped (the caller draws it the plain way) */
+const txtSpr = new Map(); let txtG = null;
+if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', () => txtSpr.clear());      // a web font arrived: the stamps are made again with it
+function stampText(c, txt, font, fill, stroke, lw, x, y) {
+  const m = c.getTransform(), k = Math.round(Math.hypot(m.a, m.b) * 50) / 50;
+  if (!(k > .05 && k < 8) || m.b || m.c || typeof fill !== 'string' || !txt || txt.length > 40) return false;
+  const key = k + '|' + font + '|' + fill + '|' + stroke + '|' + lw + '|' + txt; let s = txtSpr.get(key);
+  if (!s) {
+    if (txtSpr.size > 200) txtSpr.clear();
+    if (!txtG) txtG = document.createElement('canvas').getContext('2d');
+    txtG.font = font; const mt = txtG.measureText(txt), px = parseFloat((/([\d.]+)px/.exec(font) || [0, 16])[1]);
+    const asc = Math.max(mt.actualBoundingBoxAscent || 0, px * .8) + lw + 1, desc = Math.max(mt.actualBoundingBoxDescent || 0, px * .3) + lw + 1, hw = Math.max(mt.width / 2, mt.actualBoundingBoxLeft || 0, mt.actualBoundingBoxRight || 0) + lw + 2;
+    const cv2 = document.createElement('canvas'); cv2.width = Math.ceil(hw * k) * 2; cv2.height = Math.ceil(asc * k) + Math.ceil(desc * k);
+    const g = cv2.getContext('2d'); g.setTransform(k, 0, 0, k, cv2.width / 2, Math.ceil(asc * k));
+    g.font = font; g.textAlign = 'center'; g.lineJoin = c.lineJoin; g.miterLimit = c.miterLimit; g.lineWidth = lw; g.strokeStyle = stroke; g.strokeText(txt, 0, 0); g.fillStyle = fill; g.fillText(txt, 0, 0);
+    s = { cv: cv2, ax: cv2.width / 2, ay: Math.ceil(asc * k) }; txtSpr.set(key, s);
+  }
+  c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(s.cv, Math.round(m.a * x + m.e - s.ax), Math.round(m.d * y + m.f - s.ay)); c.restore();
+  return true;
+}
 function drawBars(f) {
   if (f.form === 'gone' || f.form === 'sub') return;
   const w = 54, x = f.x - w / 2, y = f.y - 72, st = f.st, col = B(f, 'ally') ? TC(1 - f.team) : TC(f.team);
@@ -87,14 +108,14 @@ function drawBars(f) {
   ctx.lineWidth = 4; ctx.strokeStyle = '#0c0e13'; ctx.fillStyle = f.isPlayer ? '#ffd34d' : (f.nick && f.cos && f.cos.name ? nameColorFor(f.cos.name) : col);
   let label = f.nick || f.h0.name;
   if (f.isPlayer) { const h = f.h.id; if (h === 'gambler') label += ' · 칩 ' + (st.chip || 0); if (h === 'vacuum') label += ' · 스택 ' + (st.stack || 0); if (h === 'pizarro') label += ' · ' + ((st.pz || 0) + 1) + '단계'; if (h === 'pel') label += ' · 드론 ' + st.dr; if (h === 'flamethrower') label += st.over > 0 ? ' · 과열' : ' · 열 ' + Math.round((st.heat || 0) / 9 * 100) + '%'; }
-  ctx.strokeText(label, f.x, y - 6); ctx.fillText(label, f.x, y - 6);
+  if (!stampText(ctx, label, ctx.font, ctx.fillStyle, '#0c0e13', 4, f.x, y - 6)) { ctx.strokeText(label, f.x, y - 6); ctx.fillText(label, f.x, y - 6); }
   ctx.fillStyle = '#0c0e13'; ctx.beginPath(); ctx.roundRect(x - 2, y - 2, w + 4, 11, 4); ctx.fill();
   hpGhost(f, x, y, w);      // (fx.js: white trail of the hp just lost)
   ctx.fillStyle = st.morph ? '#7ef0a8' : (B(f, 'infect') || st.pn) ? '#8dff7c' : col; ctx.beginPath(); ctx.roundRect(x, y, Math.max(0, w * f.hp / f.mhp), 7, 3); ctx.fill();
   if (f.shield > 0) { ctx.fillStyle = '#7ef0a8'; ctx.fillRect(x, y - 4, w * Math.min(1, f.shield / (50 * SX)), 2); }
   let s = '';
   if (B(f, 'stun')) s = '기절'; else if (B(f, 'charm')) s = '조종'; else if (B(f, 'root')) s = '속박'; else if (B(f, 'mute')) s = '봉인'; else if (B(f, 'blind')) s = '실명'; else if (st.pn) s = '독 ' + st.pn; else if (B(f, 'infect')) s = '감염'; else if (B(f, 'slow')) s = '둔화';
-  if (s) { ctx.font = '700 12px "IBM Plex Sans KR", sans-serif'; ctx.fillStyle = '#ffd34d'; ctx.strokeText(s, f.x, y + 22); ctx.fillText(s, f.x, y + 22); }
+  if (s) { ctx.font = '700 12px "IBM Plex Sans KR", sans-serif'; ctx.fillStyle = '#ffd34d'; if (!stampText(ctx, s, ctx.font, '#ffd34d', '#0c0e13', 4, f.x, y + 22)) { ctx.strokeText(s, f.x, y + 22); ctx.fillText(s, f.x, y + 22); } }
   if (fighters.some(o => o.st.mark === f)) { ctx.fillStyle = '#ff4d4d'; ctx.beginPath(); ctx.arc(f.x, y - 26, 6, 0, 6.3); ctx.fill(); }
   if (st.g > 0) { ctx.fillStyle = '#0c0e13'; ctx.fillRect(x - 1, y + 10, w + 2, 6); ctx.fillStyle = st.g >= 1 ? '#ffd34d' : '#e8eaf0'; ctx.fillRect(x, y + 11, w * st.g, 4); }
   if (st.neck) { const ph = ((time - st.neck) * 1.8) % 2, pos = ph < 1 ? ph : 2 - ph; ctx.fillStyle = '#c4182e'; ctx.fillRect(x - 8, y + 10, w + 16, 7); ctx.fillStyle = '#3fe07a'; ctx.fillRect(x - 8 + (w + 16) * .37, y + 10, (w + 16) * .26, 7); ctx.fillStyle = '#fff'; ctx.fillRect(x - 9 + (w + 16) * pos, y + 8, 3, 11); }
@@ -244,7 +265,7 @@ function render() {
     for (const f of fighters) if (!f.dead && visibleTo(f, VIEW)) drawBars(f);
     for (const f of fighters) if (f && !f.dead && visibleTo(f, VIEW)) { drawEmoteBubble(f); drawChatBubble(f); }
     ctx.textAlign = 'center';
-    for (const t of texts) { if (drawDmgText(t)) continue; ctx.font = t.small ? '700 15px "IBM Plex Sans KR", sans-serif' : '700 20px Rajdhani, sans-serif'; ctx.globalAlpha = clamp(t.life / .4, 0, 1); ctx.lineWidth = 4; ctx.strokeStyle = '#0c0e13'; ctx.strokeText(t.txt, t.x, t.y); ctx.fillStyle = t.color; ctx.fillText(t.txt, t.x, t.y); }
+    for (const t of texts) { if (drawDmgText(t)) continue; ctx.font = t.small ? '700 15px "IBM Plex Sans KR", sans-serif' : '700 20px Rajdhani, sans-serif'; ctx.globalAlpha = clamp(t.life / .4, 0, 1); if (stampText(ctx, t.txt, ctx.font, t.color, '#0c0e13', 4, t.x, t.y)) continue; ctx.lineWidth = 4; ctx.strokeStyle = '#0c0e13'; ctx.strokeText(t.txt, t.x, t.y); ctx.fillStyle = t.color; ctx.fillText(t.txt, t.x, t.y); }
     ctx.globalAlpha = 1;
   }
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -364,10 +385,10 @@ tapBtnUi($('setBtn'), () => setOpen(true));
 addEventListener('keydown', e => { if (setEl.hidden) return; if (e.code === 'Escape') setOpen(false); e.stopPropagation(); }, true);   // the game does not see keys while the window is open
 
 /* ---------- device (모바일 / 컴퓨터): picked once on the first start, changed in the settings (engine.js DEVICE; net.js reads the same key) ---------- */
-function devFill() { const cur = DEVICE || deviceGuess(); for (const b of document.querySelectorAll('[data-dev]')) { const on = b.dataset.dev === cur; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); } }
+function devFill() { const cur = DEVICE || deviceGuess(); for (const b of document.querySelectorAll('[data-dev]')) { const on = b.dataset.dev === cur; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); } document.body.classList.toggle('mob', cur === 'mobile'); }
 function setDevice(v) {
   DEVICE = v; try { localStorage.setItem('seum_device', v); } catch (e) {}
-  RSCALE = 1.5; resize(); touchUiSync(); devFill(); lastHud = '';
+  RSCALE = RS_STEPS[0]; resize(); touchUiSync(); devFill(); lastHud = '';
   try { if (typeof window.netDeviceChanged === 'function') window.netDeviceChanged(); } catch (e) {}
 }
 for (const b of document.querySelectorAll('#setDev [data-dev]')) b.addEventListener('click', () => setDevice(b.dataset.dev));
@@ -864,9 +885,9 @@ soundBtn.addEventListener('click', () => { muted = !muted; soundBtn.textContent 
 
 readSafe(); touchUiSync();
 /* ---------- loop ---------- */
-/* mobile: when a phone can not keep up (frames slower than ~45 a second over 2 s of play) the canvas goes one step down in pixel ratio (1.5 > 1.25 > 1);
+/* mobile: when a phone can not keep up (frames slower than ~45 a second over 2 s of play) the canvas goes one step down in pixel ratio (1.25 > 1 > .8);
    after about 10 s of smooth play it goes one step back up */
-const RS_STEPS = [1.5, 1.25, 1];
+const RS_STEPS = [1.25, 1, .8];
 let rsT0 = 0, rsN = 0, rsLast = 0, rsGood = 0;
 function rsWatch(now) {
   if (state !== 'play' || !mobileMode() || now - rsLast > 250) { rsT0 = now; rsN = 0; rsLast = now; return; }      // (a pause, a hidden tab or the lobby does not count)
@@ -877,17 +898,18 @@ function rsWatch(now) {
   else if (ms < 18 && i > 0) { if (++rsGood >= 5) { RSCALE = RS_STEPS[i - 1]; rsGood = 0; resize(); } }
   else rsGood = 0;
 }
-let last = performance.now();
+let last = performance.now(), stillAt = 0, stillW = '';
 function frame(now) {
   lastFrameAt = performance.now();
   rsWatch(now);
   const dt = Math.min(.033, (now - last) / 1000); last = now;
+  const still = state === 'menu' && !DED && mobileMode();      // mobile: the match behind the lobby stands still (drawn again once a second), so the lobby costs a phone almost nothing
   if (NET.role === 'guest' && state === 'play') { if (dt > 0) guestStep(dt); }
-  else if (state !== 'over' && dt > 0 && !(performance.now() < hitStopUntil)) step(dt);
+  else if (state !== 'over' && dt > 0 && !(performance.now() < hitStopUntil) && !still) step(dt);
   netTick(dt);
   if (DED) { requestAnimationFrame(frame); return; }      // a dedicated host (net.js) only runs the match: nothing is drawn
   if (state === 'play') updateHud();
-  render();
+  if (!still || now - stillAt > 1000 || stillW !== cv.width + 'x' + cv.height) { render(); stillAt = now; stillW = cv.width + 'x' + cv.height; }
   if (!lobby.hidden) {
     if ($('menuScreen').classList.contains('active')) drawPortrait($('lobbyCharCanvas'), chosen, true);
     else if (viewing) drawPortrait($('weaponPortraitCanvas'), viewing, true);
