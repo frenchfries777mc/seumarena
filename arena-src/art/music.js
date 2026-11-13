@@ -1,6 +1,8 @@
 /* ---------- background music: Kevin MacLeod, Creative Commons Attribution 4.0 ----------
    Lobby: "Pixelland". Match: "Just Nasty". The mp3 files (art/music/*.mp3, re-encoded small) are put into the page by build.js
-   as base64 and only decoded when the first click/key press lets the browser play sound.
+   as base64 only when EMBED_MUSIC=1 (standalone file); the normal build leaves the file paths here instead (arena-src/art/music/*.mp3,
+   next to index.html) and the songs are downloaded in the background a moment after the page is up, lobby first, so a slow connection
+   shows the game first and the music joins when it has arrived. Played when the first click/key press lets the browser play sound.
    It follows the game by itself (state 'menu' -> lobby song, 'play' -> match song, 'over' -> match song, quieter), obeys the
    "소리 켬/끔" button (muted) and has its own volume: window.SeumMusic.setVolume(0..1) / getVolume(), kept in localStorage 'seumArenaMusicVol'. */
 const SeumMusic = (() => {
@@ -19,9 +21,26 @@ const SeumMusic = (() => {
     for (let i = 0; i < n; i++) u[i] = bin.charCodeAt(i);
     return URL.createObjectURL(new Blob([u], { type: 'audio/mpeg' }));
   }
+  /* songs given as a file path: fetched whole (so the app's offline cache keeps them), one at a time, a little after the page is up */
+  const blobs = {}, waiting = {};
+  const isPath = d => typeof d === 'string' && /\.mp3$/.test(d);
+  function fetchSong(name, tries) {
+    return fetch(DATA[name]).then(r => { if (!r.ok) throw 0; return r.blob(); })
+      .then(b => { blobs[name] = URL.createObjectURL(b); if (waiting[name]) { waiting[name] = 0; if (inited) { tracks[name] = make(name); tick(); } } })
+      .catch(() => new Promise(r => setTimeout(r, 8000 * (tries + 1))).then(() => tries < 4 && fetchSong(name, tries + 1)));
+  }
+  let fetching = null;
+  function fetchAll() { if (!fetching) fetching = (async () => { for (const n of ['lobby', 'battle']) if (isPath(DATA[n]) && !blobs[n]) await fetchSong(n, 0); })(); return fetching; }
+  if (isPath(DATA.lobby)) {
+    const go = () => setTimeout(fetchAll, 1500);
+    if (document.readyState === 'complete') go(); else addEventListener('load', go, { once: true });
+  }
   function make(name) {
     if (!DATA[name]) return null;
-    const a = new Audio(b64Url(DATA[name])); a.loop = true; a.preload = 'auto';
+    let url;
+    if (isPath(DATA[name])) { if (!blobs[name]) { waiting[name] = 1; fetchAll(); return null; } url = blobs[name]; }
+    else url = b64Url(DATA[name]);
+    const a = new Audio(url); a.loop = true; a.preload = 'auto';
     const t = { name, a, g: null, on: false, off: 0 };
     try { const src = ac.createMediaElementSource(a); t.g = ac.createGain(); t.g.gain.value = 0; src.connect(t.g); t.g.connect(ac.destination); }
     catch (e) { t.g = null; a.volume = 0; }            // (no WebAudio: the element's own volume does the job)
