@@ -106,13 +106,6 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent-2);outli
 .wpnCard .wm b{display:block;color:var(--mc,#c8803a);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wpnCard .wmBar{display:block;height:5px;margin-top:3px;border-radius:999px;background:#0d0f14;border:1px solid var(--line);overflow:hidden}
 .wpnCard .wmBar i{display:block;height:100%;background:var(--mc,#c8803a)}
-.wpnCard.lock canvas{filter:grayscale(1) brightness(.45)}.wpnCard.lock{--mc:#b98cff}.wpnCard.lock .wn{color:var(--text-dim)}
-#gearBox{margin:10px 0}#gearBox .shRow{display:flex;align-items:center;gap:8px;color:#c9a2ff;font-weight:800}#gearBox .shRow .mBar{flex:1}#gearBox .shRow .mBar i{background:#b98cff}
-.gSlots{display:flex;gap:6px;margin-bottom:6px}.gSlot{flex:1;text-align:center;padding:6px 4px;border:2px dashed var(--line);border-radius:9px;font-size:12px;font-weight:700;color:var(--text-dim)}.gSlot.on{border-style:solid;border-color:#7fe0ff;color:#bdf2ff}.gSlot.shut{opacity:.55}
-.gList{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}.gItem{position:relative;text-align:left;padding:6px 8px;border-radius:9px;border:2px solid var(--line);background:var(--panel-2);color:var(--text);cursor:pointer;font:inherit}
-.gItem b{display:block;font-size:13px}.gItem small{display:block;font-size:11px;color:var(--text-dim);line-height:1.25}.gItem.on{border-color:#7fe0ff;box-shadow:0 0 8px rgba(127,224,255,.4)}.gItem.buy{opacity:.85}
-.gItem .gPrice{display:flex;align-items:center;gap:3px;font-style:normal;font-size:12px;font-weight:800;color:#ffd34d;margin-top:3px}.gItem .gPrice.poor{color:#ff7a7a}.gItem .gPrice .coin{width:13px;height:13px}
-.ic-shard{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M24 4 38 18 30 44H18L10 18z' fill='%23a46bff' stroke='%2314100f' stroke-width='2.5' stroke-linejoin='round'/%3E%3Cpath d='M24 4 30 18 24 44 18 18z' fill='%23d9b8ff'/%3E%3C/svg%3E")}
 @media (max-width:760px){.wpnCard .wm{font-size:10px;margin:3px 1px 0} .wpnCard .wm b{white-space:normal;overflow-wrap:anywhere;letter-spacing:-.03em}}
 #weaponScreen.wDetail #weaponGrid,#weaponScreen.wDetail #weaponSearch{display:none}
 #weaponScreen:not(.wDetail) #weaponPortraitWrap{display:none}
@@ -780,6 +773,19 @@ body.touchUi canvas{touch-action:none}
 .setSwitch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#cfd3dc;transition:transform .15s}
 .setSwitch:checked{background:var(--accent-2);border-color:var(--accent-2)}
 .setSwitch:checked::after{transform:translateX(22px);background:#062824}
+/* device: 모바일 / 컴퓨터 (the first-start picker and the settings row) */
+.devSeg{grid-column:2/4;display:flex;gap:6px;justify-self:end;width:100%;max-width:220px}
+.devSeg button{flex:1;min-height:38px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--text-dim);font:700 14px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
+.devSeg button.on{background:var(--accent-2);border-color:var(--accent-2);color:#062824}
+#devPick{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:rgba(6,8,12,.94);padding:16px}
+#devPick[hidden]{display:none}
+#devPick .devCard{display:flex;flex-direction:column;align-items:center;gap:18px}
+#devPick h2{margin:0;font-size:22px}
+#devPick .devOpts{display:flex;gap:14px}
+#devPick .devOpts button{width:min(150px,38vw);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border-radius:16px;border:2px solid var(--line);background:var(--panel);color:var(--text);font:700 17px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
+#devPick .devOpts button svg{width:46%;height:auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#devPick .devOpts button.on{border-color:var(--accent-2);box-shadow:0 0 0 3px rgba(63,224,197,.22)}
+#devPick .devOpts button:hover{background:var(--panel-2)}
 .setBtns{display:flex;gap:8px;margin-top:12px}
 .setBtns button{flex:1;min-height:44px}
 .setBtns #setClose{flex:1.6}
@@ -865,9 +871,14 @@ body.touchUi canvas{touch-action:none}
     <label class="setRow"><span>음량</span><input id="setVol" type="range" min="0" max="100" step="5"><output id="setVolV"></output></label>
     <label class="setRow" id="setAimRow"><span>조준 감도</span><input id="setAim" type="range" min="50" max="200" step="10"><output id="setAimV"></output></label>
     <label class="setRow"><span>효과 줄이기</span><input id="setFx" class="setSwitch" type="checkbox" role="switch"></label>
+    <div class="setRow" id="setDev"><span>기기</span><span class="devSeg"><button type="button" data-dev="mobile">모바일</button><button type="button" data-dev="pc">컴퓨터</button></span></div>
     <div class="setBtns"><button class="btn-plain" id="setReset" type="button">기본값</button><button class="btn-primary" id="setClose" type="button">닫기</button></div>
   </div>
 </div>
+<div id="devPick" hidden><div class="devCard" role="dialog" aria-modal="true" aria-labelledby="devTitle"><h2 id="devTitle">기기 선택</h2><div class="devOpts">
+  <button type="button" data-dev="mobile"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/></svg>모바일</button>
+  <button type="button" data-dev="pc"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4" width="19" height="12.5" rx="1.5"/><path d="M8.5 20.5h7M12 16.5v4"/></svg>컴퓨터</button>
+</div></div></div>
 <div id="diceBannerContainer"></div>
 
 <div id="rwFx" hidden><div class="rwRays"></div><div class="rwSpk"></div><div class="rwBox"><i class="rwIc"></i><canvas width="192" height="192" hidden></canvas></div><em class="rwTier"></em><b class="rwTxt"></b></div>
@@ -2080,8 +2091,7 @@ function drawProjectileBase(b){
       ctx.fillStyle='#d62839'; drawCardHeart(ctx,0,0,2.3);
       break;
     case 'pellet':
-      ctx.fillStyle=b.color; ctx.shadowColor=b.color; ctx.shadowBlur=5;
-      ctx.beginPath(); ctx.arc(0,0,3,0,7); ctx.fill(); ctx.shadowBlur=0;
+      glowDot(ctx,3,b.color,b.color,5);
       break;
     case 'fireball':
       ctx.save(); ctx.globalCompositeOperation='lighter';
@@ -2235,10 +2245,22 @@ function drawProjectileBase(b){
         ctx.fillStyle='#ffb3a8'; ctx.beginPath(); ctx.arc(0,0,r*0.55,0,7); ctx.fill(); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-r*0.1,0,r*0.25,0,7); ctx.fill();
         ctx.strokeStyle='#fff'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(0,0,r+1,0,7); ctx.stroke(); break;
       }
-      ctx.beginPath(); ctx.arc(0,0,BULLET_R,0,7);
-      ctx.shadowColor=b.color; ctx.shadowBlur=8; ctx.fill(); ctx.shadowBlur=0;
+      glowDot(ctx,BULLET_R,ctx.fillStyle,b.color,8);
   }
   ctx.restore();
+}
+/* a round bullet with a soft glow (shadowBlur): drawn once per colour, size and zoom into a small canvas and stamped from there
+   (a blurred shadow on every bullet every frame was slow on phones). Same picture: the blur is in screen pixels either way */
+const glowSpr=new Map(); let glowK=0;
+function glowDot(c,r,fill,glow,blur){
+  const m=c.getTransform(), k=Math.round(Math.hypot(m.a,m.b)*20)/20;
+  if(typeof fill!=='string' || !(k>0.05 && k<8)){ c.beginPath(); c.arc(0,0,r,0,7); c.fillStyle=fill; c.shadowColor=glow; c.shadowBlur=blur; c.fill(); c.shadowBlur=0; return; }
+  if(k!==glowK){ glowSpr.clear(); glowK=k; }
+  const key=r+'|'+fill+'|'+glow+'|'+blur; let s=glowSpr.get(key);
+  if(!s){ const n=Math.ceil((r*k+blur*1.5+2)*2); s=document.createElement('canvas'); s.width=s.height=n; const g=s.getContext('2d');
+    g.translate(n/2,n/2); g.scale(k,k); g.beginPath(); g.arc(0,0,r,0,7); g.fillStyle=fill; g.shadowColor=glow; g.shadowBlur=blur; g.fill();
+    if(glowSpr.size>60) glowSpr.delete(glowSpr.keys().next().value); glowSpr.set(key,s); }
+  const w=s.width/k; c.drawImage(s,-w/2,-w/2,w,w);
 }
 function drawTrail(b){
   if(b.swingAngle!==undefined || b.dmgless) return;
@@ -4159,7 +4181,8 @@ const angTo = (a, b) => Math.atan2(b.y - a.y, b.x - a.x);
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- state ---------- */
-const cv = document.getElementById('game'), ctx = cv.getContext('2d');
+const cv = document.getElementById('game');
+let ctx = cv.getContext('2d');      // (let: tail.js drawFighter points it at a small canvas for a moment while a hit figure flashes)
 let W = 0, H = 0, DPR = 1;
 let state = 'menu', time = 0, timeLeft = MATCH_TIME, score = [0, 0];
 /* ===== game modes =====
@@ -4209,8 +4232,15 @@ const cam = { x: WW / 2, y: WH / 2, s: 1 };
 const keys = {}, mouse = { x: 0, y: 0, down: false };
 let touchMode = false, mouseRel = false, stickM = null, stickA = null, pendingFire = null, wantUlt = false, wantDash = false, wantSk = [false, false];
 
+/* device: 'mobile' or 'pc', picked on the first start (tail.js) and changed in the settings; net.js reads the same key. Until it is picked, a phone or tablet
+   (coarse pointer) counts as mobile. Mobile draws the canvas at a lower pixel ratio (RSCALE: 1.5, lowered to 1.25 / 1 by tail.js rsWatch while a phone
+   can not keep up) and thins the effects (social.js); pc stays as it was */
+let DEVICE = ''; try { const v = localStorage.getItem('seum_device'); if (v === 'mobile' || v === 'pc') DEVICE = v; } catch (e) {}
+const devMq = matchMedia('(pointer:coarse)'), deviceGuess = () => devMq.matches ? 'mobile' : 'pc';
+const mobileMode = () => (DEVICE || deviceGuess()) === 'mobile';
+let RSCALE = 1.5;
 function resize() {
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  DPR = Math.min(window.devicePixelRatio || 1, mobileMode() ? RSCALE : 2);
   W = window.innerWidth; H = window.innerHeight;
   cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
 }
@@ -4293,19 +4323,21 @@ function freeNear(x, y) {
   for (let r = 1; r < ROWS - 1; r++) for (let c = 1; c < COLS - 1; c++) { if (MAP[r][c] !== '.') continue; const d = Math.hypot((c + .5) * T - x, (r + .5) * T - y); if (d < bd) { bd = d; best = { x: (c + .5) * T, y: (r + .5) * T }; } }
   return best || { x, y };
 }
+/* distance field to a goal tile (bots' pathTo). Same result as a plain BFS; faster: a typed queue, no little arrays per step, and bots heading
+   for the same tile in the same tick (a flag, the same enemy) share one field (read only) */
+let bfsQ = null, bfsMemo = new Map(), bfsMemoT = -1, bfsMemoMap = null;
+function bfsStep(d, q, tl, nc, nr, nd) { if (blocked(nc, nr)) return tl; const ni = nc + nr * COLS; if (d[ni] < 0) { d[ni] = nd; q[tl++] = ni; } return tl; }
 function bfs(gc, gr) {
-  const d = new Int16Array(COLS * ROWS).fill(-1), q = [gc + gr * COLS];
-  d[q[0]] = 0;
-  for (let i = 0; i < q.length; i++) {
-    const cur = q[i], c = cur % COLS, r = (cur / COLS) | 0;
-    for (const [dc, dr] of [[1,0],[-1,0],[0,1],[0,-1]]) {
-      const nc = c + dc, nr = r + dr;
-      if (blocked(nc, nr)) continue;
-      const ni = nc + nr * COLS;
-      if (d[ni] < 0) { d[ni] = d[cur] + 1; q.push(ni); }
-    }
+  const N = COLS * ROWS, k0 = gc + gr * COLS;
+  if (bfsMemoT !== time || bfsMemoMap !== MAP || bfsMemo.size > 24) { bfsMemo.clear(); bfsMemoT = time; bfsMemoMap = MAP; }
+  const hit = bfsMemo.get(k0); if (hit && hit.length === N) return hit;
+  const d = new Int16Array(N).fill(-1); if (!bfsQ || bfsQ.length < N) bfsQ = new Int32Array(N);
+  const q = bfsQ; let hd = 0, tl = 0; q[tl++] = k0; d[k0] = 0;
+  while (hd < tl) {
+    const cur = q[hd++], c = cur % COLS, r = (cur / COLS) | 0, nd = d[cur] + 1;
+    tl = bfsStep(d, q, tl, c + 1, r, nd); tl = bfsStep(d, q, tl, c - 1, r, nd); tl = bfsStep(d, q, tl, c, r + 1, nd); tl = bfsStep(d, q, tl, c, r - 1, nd);
   }
-  return d;
+  bfsMemo.set(k0, d); return d;
 }
 const norm = (x, y) => { const d = Math.hypot(x, y); return d > 1e-4 ? [x / d, y / d] : [0, 0]; };
 function pathTo(f, gx, gy) {
@@ -4408,15 +4440,13 @@ function damage(e, dmg, by, o) {
   if (e.dead || !(dmg > 0)) return 0;
   if (!o.px) { dmg *= STAT_X; const ow = by && (by.minion ? by.by : by); if (ow && ow.h && ow.h.xm) dmg *= ow.h.xm; }   // o.px: already in scaled units (re-entry from onDmg / onDeal) · h.xm = per-hero damage multiplier (balance knob, kits2.js DMG_MUL)
   if (by && !by.minion && !o.raw) dmg *= V(by, 'dmg', 1);
-  { const ow = by && (by.minion ? by.by : by); if (ow && hasGear(ow, 'back') && gearBehind(ow)) dmg *= 1.08; }      // gear (gear.js)
   if (e.minion) { if (e.onDmg) return e.onDmg(e, dmg, by, o); e.hp -= dmg; if (e.hp <= 0) { e.dead = true; burst(e.x, e.y + BODY, '#cfd3dc', 10, 200); } return dmg; }
   if (e.inv > 0 || B(e, 'inv')) return 0;
   if (e.h.onHurt) { const r = e.h.onHurt(e, dmg, by, o); if (r === 0) return 0; if (r > 0) dmg = r; }
   dmg *= V(e, 'dr', 1) * (B(e, 'expose') ? 1.1 : 1);
-  if (e.st.gBand > time) dmg *= .7; if (!by && hasGear(e, 'lava') && /용암|분출|안전 구역/.test(o.src || SRC || '')) dmg *= .6;      // gear (gear.js)
   if (e.h.resist && o.el) dmg *= .7;
   if (e.shield > 0) { const a = Math.min(e.shield, dmg); e.shield -= a; dmg -= a; if (e.shield <= 0 && e.onShieldBreak) { const fn = e.onShieldBreak; e.onShieldBreak = null; fn(e); } if (dmg <= 0) return 0; }
-  e.hp -= dmg; if (e.hp > 0 && e.hp < e.mhp * .3 && hasGear(e, 'band') && !e.st.gBand) e.st.gBand = time + 2; e.lastHit = time; e.recent.push([time, dmg / STAT_X]); e.taken = (e.taken || 0) + dmg;
+  e.hp -= dmg; e.lastHit = time; e.recent.push([time, dmg / STAT_X]); e.taken = (e.taken || 0) + dmg;
   ultCharge(by, e, o);
   { const ow = by && (by.minion ? by.by : by); if (ow && ow !== e && ow.h && ow.team !== e.team) e.lastAtk = { f: ow, t: time }; }
   e.lastDmg = { src: o.src || SRC || (o.basic ? '기본 공격' : '패시브'), t: time };
@@ -4526,14 +4556,13 @@ function setup(withPlayer, humans) {
   curMode = modeOf(modeChoice).id; const MODE = modeNow(); RD = { n: 1, pause: 0, win: -1, out: [] }; SZ.on = false; FLAGS = [];
   loadMap(mapChoice < 0 || !MODE.maps.includes(mapChoice) ? pick(MODE.maps) : mapChoice);
   fighters = []; bullets = []; parts = []; texts = []; rings = []; zones = []; minions = []; timers = []; strikes = []; score = new Array(MODE.teams).fill(0); timeLeft = MODE.time; overtime = false; otT = 0; player = null; VIEW = 0;
-  humans = humans || (withPlayer ? [{ hero: chosen, lo: loadoutOf(chosen), gear: myGear(chosen), local: true, cos: myCos(chosen), name: PROF.name }] : []);
+  humans = humans || (withPlayer ? [{ hero: chosen, lo: loadoutOf(chosen), local: true, cos: myCos(chosen), name: PROF.name }] : []);
   const per = MODE.per, nt = MODE.teams, grid = Array.from({ length: nt }, () => new Array(per).fill(null)), ORDER = per === 3 ? [1, 0, 2] : [...Array(per).keys()];
   humans.forEach((h, i) => { grid[i % nt][ORDER[Math.floor(i / nt)]] = h; });
   const used = new Set(humans.map(h => h.hero)), pool = ROSTER.filter(k => !used.has(k)).sort(() => Math.random() - .5);
   for (let team = 0; team < nt; team++) for (let i = 0; i < per; i++) {
     const hm = grid[team][i];
     const f = makeFighter(team, per === 1 ? 1 : i, hm ? hm.hero : pool.pop(), !!(hm && hm.local), hm && hm.lo, hm && hm.cos, hm && hm.name);
-    f.gear = hm ? cleanGear(hm.gear) : [];
     if (hm) { f.human = true; if (hm.local) player = f; if (hm.remote) { f.remote = hm.remote; f.netIn = null; hm.remote.f = f; hm.remote.fi = fighters.length; } }
     fighters.push(f);
   }
@@ -4569,7 +4598,7 @@ function useSkill(f, i) {
   if (state === 'play' && (f.isPlayer || visibleTo(f, VIEW))) sfx(def.k === 'buff' ? 520 : def.k === 'move' ? 380 : 260, .16, 'triangle', .05, 1.6);
   return true;
 }
-function skillCd(f, i) { const def = f.sk[i]; let cd = i === 0 ? (def.cd1 || CD1) : CD2; if (f.h.cdMul) cd *= f.h.cdMul(f); if (i === 1 && hasGear(f, 'sk2')) cd *= .88; return cd; }
+function skillCd(f, i) { const def = f.sk[i]; let cd = i === 0 ? (def.cd1 || CD1) : CD2; if (f.h.cdMul) cd *= f.h.cdMul(f); return cd; }
 function useUlt(f) {
   const u = f.h.ult;
   if (f.ucd > 0 || !canAct(f) || B(f, 'charm') || f.noSkill) return false;
@@ -4581,7 +4610,7 @@ function useUlt(f) {
   if (state === 'play') sfx(220, .35, 'sawtooth', .06, 3);
   return true;
 }
-function dashCdOf(f) { return (f.h.dashCd ? f.h.dashCd(f) : 1.5) * (hasGear(f, 'dash') ? .85 : 1); }
+function dashCdOf(f) { return f.h.dashCd ? f.h.dashCd(f) : 1.5; }
 function tryDash(f, dx, dy) {
   if (f.dcd > 0 || !canAct(f) || B(f, 'root') || f.form === 'sub' || (!dx && !dy)) return false;
   f.dash = { t: .16, dx, dy, v: DASH_D / .16 }; f.dcd = dashCdOf(f); f.lastDash = time;
@@ -4603,7 +4632,7 @@ function kill(e, by) {
   fxAt(e, 'death', { color: TC(e.team) });
   if (by && by !== e) {
     by.kos++; if (by.h.onKill) by.h.onKill(by, e);
-    if (by.ucd > 0) by.ucd = Math.max(0, by.ucd - ULT_KILL - (hasGear(by, 'ult') ? 4 : 0));      // 2026-11-12 (user): a kill refills the ult by ULT_KILL seconds
+    if (by.ucd > 0) by.ucd = Math.max(0, by.ucd - ULT_KILL);      // 2026-11-12 (user): a kill refills the ult by ULT_KILL seconds
     if (by.cos && by.cos.kfx) fxPlay('kfx', by.cos.kfx, Math.round(e.x), Math.round(e.y + BODY), Math.round(e.y + 16), bodyColor(e.cos, TC(e.team)));
     if (!by.human && Math.random() < .3) later(.4, () => doEmote(by, pick([0, 1, 4, 5])), by);
   }
@@ -4791,7 +4820,7 @@ const driven = () => (player && player.st.ctrl && !player.st.ctrl.dead && B(play
 
 /* ---------- update ---------- */
 /* walking speed with every modifier (net.js uses the same function to predict a guest's own movement) */
-function moveSpeed(f) { const h = f.h; return SPEED * V(f, 'haste', 1) * V(f, 'slow', 1) * V(f, 'pad', 1) * (B(f, 'infect') ? .9 : 1) * (h.spd ? h.spd(f) : 1) * (carrying(f) && !hasGear(f, 'flag') ? .85 : 1); }
+function moveSpeed(f) { const h = f.h; return SPEED * V(f, 'haste', 1) * V(f, 'slow', 1) * V(f, 'pad', 1) * (B(f, 'infect') ? .9 : 1) * (h.spd ? h.spd(f) : 1) * (carrying(f) ? .85 : 1); }
 function updateFighter(f, dt) {
   if (f.dead) { if (!modeNow().respawn) return; f.respawnT -= dt; if (f.respawnT <= 0) respawn(f); return; }
   const h = f.h;
@@ -5028,13 +5057,16 @@ function flagStep(dt) {
 function flagGoal(f) {
   if (!isFlagMode(curMode) || FLAGS.length !== 2 || f.dead || B(f, 'charm')) return null;
   const mine = FLAGS[f.team], theirs = FLAGS[1 - f.team], me = fighters.indexOf(f), bd = f.ai.bd || 1e9;
-  if (theirs.by === me) return pathTo(f, mine.hx, mine.hy);
+  if (theirs.by === me) {       // carrying: go home; if our own flag is away (we can't score) go get it back instead of standing on the base
+    if (mine.home) return pathTo(f, mine.hx, mine.hy);
+    const c = mine.by >= 0 ? fighters[mine.by] : null; return c ? pathTo(f, c.x, c.y) : pathTo(f, mine.x, mine.y);
+  }
   if (bd < 6 * T) return null;
   if (mine.by >= 0) { const c = fighters[mine.by]; return c ? pathTo(f, c.x, c.y) : null; }
   if (!mine.home && Math.hypot(mine.x - f.x, mine.y - f.y) < 9 * T) return pathTo(f, mine.x, mine.y);
-  if (f.slot === 1) return Math.hypot(mine.hx - f.x, mine.hy - f.y) > 4 * T ? pathTo(f, mine.hx, mine.hy) : null;
+  // 2026-11-12 (user): no bot camps beside a flag any more (the old slot-1 guard stood on the base)
   if (theirs.by < 0) return pathTo(f, theirs.x, theirs.y);
-  return null;
+  const c = fighters[theirs.by]; return c && Math.hypot(c.x - f.x, c.y - f.y) > 3 * T ? pathTo(f, c.x, c.y) : null;      // a teammate has their flag: escort them
 }
 function drawFlags() {       // screen space
   if (!FLAGS.length || state !== 'play') return;
@@ -5171,8 +5203,8 @@ function envReset() { GALE.until = 0; const e = MAPS[curMap].env || {}; envNext.
 function padStep(f, dt) {
   if (f.minion || flying(f)) return;
   const t = tileAt(f.x, f.y);
-  if (t === 'p') { if (!B(f, 'pad')) burst(f.x, f.y + 16, '#c6ff3d', 6, 150); buff(f, 'pad', .9, hasGear(f, 'pad') ? 1.8 : 1.5); f.padT = 0; }
-  else if (t === 'h') { f.padT = (f.padT || 0) + dt; if (f.padT >= .5) { f.padT -= .5; if (f.hp < f.mhp) withSrc('치유 패드', () => heal(f, f.mhp * .025 / STAT_X * (hasGear(f, 'pad') ? 1.6 : 1))); } }
+  if (t === 'p') { if (!B(f, 'pad')) burst(f.x, f.y + 16, '#c6ff3d', 6, 150); buff(f, 'pad', .9, 1.5); f.padT = 0; }
+  else if (t === 'h') { f.padT = (f.padT || 0) + dt; if (f.padT >= .5) { f.padT -= .5; if (f.hp < f.mhp) withSrc('치유 패드', () => heal(f, f.mhp * .025 / STAT_X)); } }
   else f.padT = 0;
 }
 function envStep(dt) {
@@ -5341,7 +5373,7 @@ hero('shotgun', { p: ['명사수의 위협', '알갱이를 모두 맞히면 상�
 
 hero('rifle', { p: ['지뢰밭', '지뢰를 밟은 상대는 3초 동안 이동속도 10% 감소'],
   pre(f, o) { o.pad = 10; return o; },      // basic shots: hit radius 25 -> 35 (the user found the rifle too fussy to land)
-  ult: ['미사일 폭격', '상대 근처 랜덤 3곳에 미사일이 떨어짐 (발당 750 피해, 벽 통과, 나는 피해 없음)', [0, 12 * T], f => { const es = foes(f); seq(f, 3, .3, i => { const e = es.length ? es[i % es.length] : fwd(f, 4 * T); const x = e.x + rnd(-60, 60), y = e.y + rnd(-60, 60); fx('warn', x, y, { dur: .8 }); strike(f, x, y, 75, .8, () => boom(f, x, y, 75, 60)); }); }],
+  ult: ['미사일 폭격', '조준한 곳 주변에 미사일 3발이 떨어짐 (발당 750 피해, 벽 통과, 나는 피해 없음)', [100, 12 * T], f => { const p = aimPt(f, 12 * T); seq(f, 3, .3, i => { const a = i * 2.1 + rnd(-.3, .3), d = i ? 55 : 0; const x = p.x + Math.cos(a) * d, y = p.y + Math.sin(a) * d; fx('warn', x, y, { dur: .8 }); strike(f, x, y, 75, .8, () => boom(f, x, y, 75, 60)); }); }],
   skills: [
     [1, '지뢰 설치', 'hit', '바닥에 지뢰 2개를 설치 (최대 2개, 25초) · 밟은 적은 250 피해와 0.5초 기절 · 지뢰는 상대에게도 보임 (1스킬 칸에서는 쿨타임 2배)', [0, 6 * T], f => { for (const s of [-1, 1]) { const p = fwd(f, 44, f.aim + s * 1.2); trap(f, p.x, p.y, 25, 2, 'mine', e => { damage(e, 20, f); buff(e, 'stun', .5); buff(e, 'slow', 3, .9); }, '#ff5d5d'); } }, { cd1: 10 }],
     [2, '수류탄 투척', 'hit', '수류탄을 던져 떨어진 곳에서 폭발 (500 피해)', [100, 7 * T], f => { const p = aimPt(f, 7 * T); strike(f, p.x, p.y, 80, .5, () => boom(f, p.x, p.y, 80, 40)); }],
@@ -5797,7 +5829,12 @@ function lowFx() { return reduceMotion || SET.fx; }
 { const baseSfx = sfx; sfx = (f, d, t, v, sl) => { if (SET.vol <= 0) return; baseSfx(f, d, t, (v || .05) * SET.vol / 100, sl); }; }
 {
   const baseP = addP, THIN = { dot: .35, streak: .35, smoke: .3, square: .35, fire: .5, flash: .5 };
-  addP = o => { if (SET.fx && o) { const k = THIN[o.shape]; if (k !== undefined && (Math.random() > k || (o.shape === 'flash' && o.size >= 100))) return; } baseP(o); };
+  const MTHIN = { dot: .6, streak: .6, smoke: .55, square: .6, fire: .75, flash: .8 };      // mobile (engine.js mobileMode): a lighter thinning, and no small bits past 260 at once
+  addP = o => {
+    if (o && SET.fx) { const k = THIN[o.shape]; if (k !== undefined && (Math.random() > k || (o.shape === 'flash' && o.size >= 100))) return; }
+    else if (o && mobileMode()) { const k = MTHIN[o.shape]; if (k !== undefined && (Math.random() > k || particles.length > 260)) return; }
+    baseP(o);
+  };
 }
 function fxInView(x, y) { return Math.abs(x - cam.x) < W / 2 / cam.s + 240 && Math.abs(y - cam.y) < H / 2 / cam.s + 240; }
 function shakeFrom(x, y, amp, range) { if (lowFx()) return; let k = 1; if (player) k = clamp(1 - Math.hypot(player.x - x, player.y - y) / (range || 600), 0, 1); shake = Math.max(shake, amp * k * .8); }
@@ -5855,8 +5892,6 @@ function cosNorm(C) {      // the save-version fixes, run on this browser's save
   if (C.v < 4) for (const k of ['col', 'name', 'kfx']) if (C[k] && !C.own.includes(C[k])) C[k] = null;      // v4: character colours, name colours and kill effects are bought with gold too
   C.v = 4;      // v3: the road got new steps, nothing on it is taken yet
   C.xp = Math.max(0, Math.floor(+C.xp || 0)); if (!C.mp || typeof C.mp !== 'object') C.mp = {};
-  if (!Array.isArray(C.unl)) { C.unl = []; const hg = (C.st && C.st.hg) || {}; for (const id of Object.keys(C.mp).concat(Object.keys(hg))) if (((C.mp[id] | 0) > 0 || (hg[id] | 0) > 0) && !C.unl.includes(id)) C.unl.push(id); }      // unlock (gear.js): characters already played stay open
-  if (!C.sh || typeof C.sh !== 'object') C.sh = {}; if (!Array.isArray(C.gown)) C.gown = []; if (!C.geq || typeof C.geq !== 'object') C.geq = {};
   return C;
 }
 let COS = cosDefault();
@@ -5903,7 +5938,7 @@ const KARMA_ROAD = (() => {      // paced like a trophy road (user 2026-11-12): 
   return out;
 })();
 /* what a box can hold: [chance weight, kind, least, most] */
-const BOX_LOOT = { box: [[50, 'g', 150, 400], [20, 'rx', 150, 300], [10, 'sh', 2, 4], [12, 'cx', 150, 250], [8, 'skin', 1000, 1000]], ebox: [[35, 'g', 600, 1200], [10, 'rx', 500, 800], [10, 'sh', 5, 8], [20, 'cx', 400, 600], [25, 'skin', 2500, 2500]] };
+const BOX_LOOT = { box: [[50, 'g', 150, 400], [30, 'rx', 150, 300], [12, 'cx', 150, 250], [8, 'skin', 1000, 1000]], ebox: [[35, 'g', 600, 1200], [20, 'rx', 500, 800], [20, 'cx', 400, 600], [25, 'skin', 2500, 2500]] };
 /* character mastery: every step is MP_STEP points (about 16 matches at ~50 a match) */
 const MP_STEP = 800, MASTERY = [];
 for (const [nm, n, col] of [['브론즈', 3, '#c8803a'], ['실버', 3, '#c0c8d4'], ['골드', 3, '#ffd34d'], ['플래티넘', 3, '#6fe0d0'], ['다이아', 3, '#6fb8ff'], ['아메시스트', 3, '#b07cff'], ['마스터', 5, '#ff8a4d'], ['그랜드마스터', 5, '#ff4d6d']]) for (let i = 0; i < n; i++) MASTERY.push({ name: nm + ' ' + ['I', 'II', 'III', 'IV', 'V'][i], col });
@@ -5936,13 +5971,12 @@ function streakStep(win, draw, place) {
 /* gives one reward and says what it was: { kind, n, hero, skin } */
 function giveReward(kind, n) {
   if (kind === 'box' || kind === 'ebox') { const L = BOX_LOOT[kind]; let r = Math.random() * L.reduce((a, l) => a + l[0], 0), l = L[0]; for (const x of L) { if ((r -= x[0]) < 0) { l = x; break; } } const tr = Math.random(), tier = l[1] === 'skin' ? 2 : kind === 'ebox' ? (tr < .25 ? 2 : 1) : tr < .05 ? 2 : tr < .25 ? 1 : 0;      // a box opens as common, rare or legendary: rare doubles what is inside, legendary gives four times (a skin is always legendary)
-    const got = giveReward(l[1], l[1] === 'skin' ? l[2] : l[1] === 'sh' ? Math.round(l[2] + Math.random() * (l[3] - l[2])) * (tier + 1) : Math.round((l[2] + Math.random() * (l[3] - l[2])) * (kind === 'ebox' ? [1, 1, 2] : [1, 2, 4])[tier] / 10) * 10); got.box = kind; got.tier = tier; return got; }
+    const got = giveReward(l[1], l[1] === 'skin' ? l[2] : Math.round((l[2] + Math.random() * (l[3] - l[2])) * (kind === 'ebox' ? [1, 1, 2] : [1, 2, 4])[tier] / 10) * 10); got.box = kind; got.tier = tier; return got; }
   if (kind === 'skin') {      // a skin not owned yet, from the dearest tier allowed; nothing left to give: its worth in gold
     const pool = COS_IDS('skin').filter(id => HEROES[COSMETICS[id].char] && !skinOwned(id) && skinPrice(id) <= n), top = Math.max(0, ...pool.map(skinPrice)), best = pool.filter(id => skinPrice(id) === top);
     if (best.length) { const id = pick(best); COS.own.push(id); return { kind, skin: id, hero: COSMETICS[id].char }; }
     kind = 'g';
   }
-  if (kind === 'sh') { const L = lockedIds(); if (L.length) { const hero = pick(L); addShard(hero, n); return { kind, n, hero }; } kind = 'g'; n *= SHARD_GOLD; }      // shards of a locked character (gear.js); none locked: their gold
   if (kind === 'g') { COS.gold += n; return { kind, n }; }
   if (kind === 'px') { COS.xp += n; return { kind, n }; }
   if (kind === 'k') { COS.karma += n; return { kind, n }; }
@@ -5955,7 +5989,7 @@ function karmaTake(r) {
   try { sfx(880, .18, 'triangle', .06); } catch (e) {}
   saveCos(); goldUi(); return got;
 }
-const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin', sh: 'ic-shard' };
+const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin' };
 function rewardIcon(kind) { const i = document.createElement('i'); if (kind === 'k') { i.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>'; return i; } i.className = kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[kind]; return i; }
 function renderKarma(got) {
   const tr = document.getElementById('karmaTrack'); tr.textContent = '';
@@ -6454,8 +6488,12 @@ function hitReact(e) {
     if (tier === 3) { const px = -Math.sin(ang), py = Math.cos(ang); addP({ x: x - px * 34, y: y - py * 34, x2: x + px * 34, y2: y + py * 34, life: .18, color: '#ffffff', shape: 'slash', size: 6 }); }
   }
 }
-function staggerAngle(f) {             // tail.js turns the figure by this; while the hit flash lasts the figure is also drawn bright (the flash ends with tail.js's own ctx.restore)
-  if (f._hf) { const a = performance.now() - f._hf; if (a < f._hfT && !lowFx()) ctx.filter = a < 45 ? 'brightness(0) invert(1)' : 'brightness(' + (1 + 2.2 * (1 - a / f._hfT)).toFixed(2) + ')'; else f._hf = 0; }
+function hitFlashFilter(f) {           // while the hit flash lasts tail.js drawFighter draws the figure bright with this filter ('' = no flash)
+  if (!f._hf) return '';
+  const a = performance.now() - f._hf; if (a < f._hfT && !lowFx()) return a < 45 ? 'brightness(0) invert(1)' : 'brightness(' + (1 + 2.2 * (1 - a / f._hfT)).toFixed(2) + ')';
+  f._hf = 0; return '';
+}
+function staggerAngle(f) {             // tail.js turns the figure by this
   atkKick(f);
   const st = f.stg; if (!st) return 0;
   const age = performance.now() - st.at; if (age > 240 || age < 0) { f.stg = null; return 0; }
@@ -7258,7 +7296,7 @@ const PVS = {
   'bat:1': R('self', { r: 90 }), 'bat:2': R('line', { len: 512, w: 26 }), 'bat:3': R('dash', { len: 410, w: 44 }),
   'shuriken:1': R('dash', { len: 192, w: 30 }), 'shuriken:2': R('fan', { len: 384, half: .25, n: 5 }), 'shuriken:3': R('fan', { len: 320, half: .55, n: 5 }), 'shuriken:4': R('line', { len: 512, w: 26 }), 'shuriken:u': R('line', { len: 576, w: 26 }),
   'shotgun:1': R('self', { r: 120 }), 'shotgun:2': R('line', { len: 384, w: 36 }), 'shotgun:3': R('fan', { len: 422, half: .14, n: 5 }), 'shotgun:u': R('fan', { len: 352, half: .25, n: 5 }),
-  'rifle:1': R('pts', { pts: [[44, 1.2], [44, -1.2]], r: 26 }), 'rifle:2': R('ground', { max: 448, r: 80 }), 'rifle:4': R('ground', { max: 576, r: 66 }), 'rifle:5': R('self', { r: 110 }),
+  'rifle:u': R('ground', { max: 12 * T, r: 130 }), 'rifle:1': R('pts', { pts: [[44, 1.2], [44, -1.2]], r: 26 }), 'rifle:2': R('ground', { max: 448, r: 80 }), 'rifle:4': R('ground', { max: 576, r: 66 }), 'rifle:5': R('self', { r: 110 }),
   'smg:1': R('ground', { max: 448, r: 100 }), 'smg:2': R('ground', { max: 448, r: 120 }), 'smg:3': R('dash', { len: 141, w: 44 }), 'smg:u': R('wall', { d: 102, w: 192, th: 64 }),
   'gloves:1': R('arc', { len: 90, half: 1.2 }), 'gloves:3': R('arc', { len: 80, half: 1 }), 'gloves:4': R('arc', { len: 90, half: 1.4 }),
   'portalgun:1': R('ring'), 'portalgun:2': R('ground', { max: 320, r: 40 }), 'portalgun:3': R('bounce', { len: 1024, n: 6, w: 24 }), 'portalgun:4': R('ground', { max: 384, r: 95 }), 'portalgun:5': R('ring'), 'portalgun:u': R('ground', { max: 576, r: 34 }),
@@ -7789,116 +7827,6 @@ function drawGardenTop() {       // tail.js render(): above the fighters
   ctx.globalAlpha = 1;
 }
 
-/* ---------- character unlock (soul shards) and gear ----------
-   Unlock: six characters are open from the start. Beating a locked character in a match gives one of its shards; enough shards open it.
-   Missing shards can be filled with gold (SHARD_GOLD each). Boxes can hold shards too ('sh' in social.js BOX_LOOT).
-   Gear: bought once with gold, worn by any character; slot 1 opens with the character, slot 2 at mastery step 1 (브론즈 II).
-   Saved in COS: unl (opened ids), sh {id: shards}, gown (gear owned), geq {hero: [gear ids]} (cloud.js CL_RULE knows them) */
-const UNLOCK_START = ['sword', 'bow', 'pistol', 'wizard', 'shotgun', 'grenade'];
-const UNLOCK_NEED = { magiccard: 8, kadas: 8, rifle: 8, smg: 8, shuriken: 8, shade: 12, tionis: 12, harald: 12, portalgun: 12, gardener: 16 };
-const SHARD_GOLD = 100;
-const shardNeed = id => UNLOCK_NEED[id] || 8;
-const shardsOf = id => Math.max(0, ((COS.sh || {})[id] | 0));
-const unlocked = id => !!HEROES[id] && (UNLOCK_START.includes(id) || (COS.unl || []).includes(id));
-const lockedIds = () => ROSTER.filter(id => !unlocked(id));
-const unlockCost = id => Math.max(0, shardNeed(id) - shardsOf(id)) * SHARD_GOLD;
-function unlockOpen(id) { if (unlocked(id)) return false; if (!Array.isArray(COS.unl)) COS.unl = []; COS.unl.push(id); return true; }
-/* n shards for character id; opens it when they are enough. Returns true when this opened it */
-function addShard(id, n) {
-  if (!HEROES[id] || unlocked(id) || !(n > 0)) return false;
-  if (!COS.sh || typeof COS.sh !== 'object') COS.sh = {};
-  COS.sh[id] = shardsOf(id) + n;
-  return shardsOf(id) >= shardNeed(id) ? unlockOpen(id) : false;
-}
-function unlockBuy(id) {
-  const c = unlockCost(id); if (unlocked(id) || COS.gold < c) return false;
-  COS.gold -= c; unlockOpen(id); saveCos(); goldUi(); try { sfx(880, .2, 'triangle', .07); } catch (e) {} return true;
-}
-/* a kill seen by this browser (host, offline, or a guest through the killinfo event): the local player beat a locked character */
-function shardOnKill(vi, ki) {
-  if (typeof DED !== 'undefined' && DED) return;
-  const v = fighters[vi], k = fighters[ki];
-  if (!v || !k || !player || k !== player || v === k || v.minion) return;
-  const id = (v.h0 || v.h || {}).id; if (!id || unlocked(id)) return;
-  const opened = addShard(id, 1); saveCos();
-  try { addText({ x: v.x, y: v.y - 92, txt: opened ? '◆ ' + HEROES[id].name + '!' : '◆+1', life: 1.1, color: '#c9a2ff' }); } catch (e) {}
-}
-{ const k0 = FXF.killinfo; FXF.killinfo = (vi, ki, src) => { if (k0) k0(vi, ki, src); try { shardOnKill(vi, ki); } catch (e) {} }; }
-
-/* gear: [id, name, effect, price] — engine.js reads them through hasGear() */
-const GEARS = [
-  ['dash', '질풍 신발', '대쉬 쿨타임 -15%', 600],
-  ['sk2', '두 번째 숨', '2스킬 쿨타임 -12%', 700],
-  ['ult', '사냥꾼 표식', '처치하면 궁극기 4초 더 감소', 900],
-  ['band', '비상 붕대', '체력 30% 아래로 처음 떨어지면 2초간 받는 피해 -30%', 800],
-  ['pad', '패드 마니아', '치유·속도 패드 효과 +60%', 600],
-  ['lava', '용암 장화', '용암 분출·안전 구역 밖 피해 -40%', 600],
-  ['flag', '깃발 멜빵', '깃발을 들어도 느려지지 않음', 600],
-  ['back', '역전의 칼날', '팀 점수가 뒤질 때 주는 피해 +8%', 900]
-];
-const GEAR_IDS = GEARS.map(g => g[0]);
-const gearDef = id => GEARS.find(g => g[0] === id);
-const hasGear = (f, g) => !!(f && f.gear && f.gear.indexOf(g) >= 0);
-const cleanGear = a => Array.isArray(a) ? a.filter((g, i) => GEAR_IDS.includes(g) && a.indexOf(g) === i).slice(0, 2) : [];
-const gearOwned = g => (COS.gown || []).includes(g);
-const gearSlots = id => masteryOf(id).i >= 1 ? 2 : 1;
-function myGear(id) { return cleanGear(((COS.geq || {})[id] || []).filter(gearOwned)).slice(0, gearSlots(id)); }
-function gearBehind(f) { if (!score || score[f.team] == null) return false; let mx = -1; score.forEach((s, t) => { if (t !== f.team) mx = Math.max(mx, s); }); return score[f.team] < mx; }
-function gearToggle(hero, g) {
-  if (!gearOwned(g)) return false;
-  if (!COS.geq || typeof COS.geq !== 'object') COS.geq = {};
-  let l = myGear(hero); const n = gearSlots(hero);
-  if (l.includes(g)) l = l.filter(x => x !== g); else { l.push(g); if (l.length > n) l.shift(); }
-  COS.geq[hero] = l; saveCos(); return true;
-}
-function gearBuy(g) {
-  const d = gearDef(g); if (!d || gearOwned(g) || COS.gold < d[3]) return false;
-  if (!Array.isArray(COS.gown)) COS.gown = [];
-  COS.gown.push(g); COS.gold -= d[3]; saveCos(); goldUi(); try { sfx(880, .18, 'triangle', .06); } catch (e) {} return true;
-}
-
-/* ---------- lobby UI: locked cards, unlock button, gear box in the character detail ---------- */
-function markLocks() {
-  const grid = document.getElementById('weaponGrid'); if (!grid) return;
-  for (const el of grid.children) {
-    const id = el.dataset.wid, lk = !unlocked(id); el.classList.toggle('lock', lk);
-    if (lk) { const b = el.querySelector('.wm b'), bar = el.querySelector('.wmBar i'); if (b) b.textContent = '◆ ' + shardsOf(id) + ' / ' + shardNeed(id); if (bar) bar.style.width = Math.round(shardsOf(id) / shardNeed(id) * 100) + '%'; }
-  }
-}
-let gearPick = null;      // the gear tapped once (a second tap buys it)
-function renderGear(id) {
-  const d = document.getElementById('weaponDetail'); if (!d) return;
-  let box = document.getElementById('gearBox'); if (box) box.remove();
-  box = document.createElement('div'); box.id = 'gearBox';
-  const btn = document.getElementById('weaponLockBtn');
-  if (!unlocked(id)) {
-    const row = document.createElement('div'), b = document.createElement('b'), bar = document.createElement('span'), fl = document.createElement('i');
-    row.className = 'shRow'; b.textContent = '◆ ' + shardsOf(id) + ' / ' + shardNeed(id); bar.className = 'mBar'; fl.style.width = Math.round(shardsOf(id) / shardNeed(id) * 100) + '%'; bar.append(fl); row.append(b, bar); box.append(row);
-    d.prepend(box);
-    if (btn) { const c = unlockCost(id); btn.textContent = '해금 ' + c.toLocaleString('en-US'); btn.classList.add('unlockBtn'); btn.disabled = COS.gold < c; }
-    return;
-  }
-  if (btn) btn.classList.remove('unlockBtn');
-  const n = gearSlots(id), eq = myGear(id), slots = document.createElement('div'); slots.className = 'gSlots';
-  for (let i = 0; i < 2; i++) { const s = document.createElement('span'); s.className = 'gSlot' + (i >= n ? ' shut' : '') + (eq[i] ? ' on' : ''); s.textContent = i >= n ? '🔒 ' + MASTERY[1].name : eq[i] ? gearDef(eq[i])[1] : '+'; slots.append(s); }
-  box.append(slots);
-  const list = document.createElement('div'); list.className = 'gList';
-  for (const [g, nm, fx, pr] of GEARS) {
-    const b = document.createElement('button'), own = gearOwned(g), t = document.createElement('b'), p = document.createElement('small');
-    b.type = 'button'; b.id = 'gear-' + g; b.className = 'gItem' + (eq.includes(g) ? ' on' : '') + (own ? '' : ' buy');
-    t.textContent = nm; p.textContent = fx; b.append(t, p);
-    if (!own) { const c = document.createElement('i'), co = document.createElement('span'); co.className = 'coin'; c.className = 'gPrice' + (COS.gold < pr ? ' poor' : ''); c.append(co, gearPick === g ? '구매 ' + pr : String(pr)); b.append(c); }
-    b.addEventListener('click', () => {
-      if (own) { gearPick = null; gearToggle(id, g); }
-      else if (gearPick !== g) gearPick = g;
-      else { gearPick = null; if (gearBuy(g)) gearToggle(id, g); }
-      renderGear(id);
-    });
-    list.append(b);
-  }
-  box.append(list); d.append(box);
-}
-
 /* ---------- online: PeerJS matchmaking without room codes ----------
    Rooms are fixed PeerJS ids per game mode (seumarena-v3-<mode>-room-0 .. 7, e.g. seumarena-v3-team-room-0), so a search only meets rooms of the mode picked in the lobby. Game start asks all eight at once ('peek'): a room whose host is waiting for
    players answers 'info' (ok), one that is full or already playing answers ok:false, an id nobody holds gives PeerJS's 'peer-unavailable'
@@ -7969,7 +7897,7 @@ function netReset() {
   const shut = () => { for (const c of cs) try { c.close(); } catch (e) {} if (pr) try { pr.destroy(); } catch (e) {} };
   if (linger) setTimeout(shut, 600); else shut();      // give the last message time to leave before the connections go
   if (NET.hostConn) try { NET.hostConn.close(); } catch (e) {}
-  Object.assign(NET, { role: null, peer: null, conns: [], hostConn: null, members: [], phase: 'idle', rec: false, evs: [], room: -1, me: -1, waitEnd: 0, onRoomGone: null, heard: 0, ps: null, rtt: 0, tOff: null, jit: .02, delay: .1 });
+  Object.assign(NET, { role: null, peer: null, conns: [], hostConn: null, members: [], phase: 'idle', rec: false, evs: [], room: -1, me: -1, waitEnd: 0, onRoomGone: null, heard: 0, ps: null, rtt: 0, tOff: null, jit: .02, delay: .1, tok: null, rc: null, gone: [] }); netBadge(false);
   netOut = null; netSq = 0; inHist = [];
 }
 const newPeer = id => new Peer(id, Object.assign({ debug: 0 }, PEER_SERVER, PEERJS_ICE_CONFIG));
@@ -8017,7 +7945,7 @@ function netProbeAll(tok) {
     let best = -1; R.forEach((r, k) => { if (r.s === 'avail' && (best < 0 || r.n > R[best].n)) best = k; });      // the fullest waiting room
     if (best < 0) return false;
     joining = best; const r = R[best];
-    try { r.c.send({ t: 'hello', lite: NET_LITE ? 1 : 0, mode: NET.mode, hero: chosen, lo: loadoutOf(chosen), gear: myGear(chosen), name: PROF.name, cos: myCos(chosen) }); } catch (e) { r.s = 'busy'; joining = -1; return false; }
+    try { r.c.send({ t: 'hello', lite: NET_LITE ? 1 : 0, mode: NET.mode, hero: chosen, lo: loadoutOf(chosen), name: PROF.name, cos: myCos(chosen) }); } catch (e) { r.s = 'busy'; joining = -1; return false; }
     r.jt = setTimeout(() => { if (alive() && joining === best) { r.s = 'busy'; joining = -1; decide(); } }, 4500);
     return true;
   };
@@ -8046,7 +7974,7 @@ function netProbeAll(tok) {
     });
     c.on('close', () => {
       if (tok !== netToken) return;
-      if (NET.hostConn === c) return hostLost();
+      if (NET.hostConn === c) return guestLink();
       if (!decided && (r.s === 'pend' || r.s === 'avail')) { r.s = 'busy'; if (joining === k) joining = -1; decide(); }
     });
   });
@@ -8094,12 +8022,24 @@ function hostAccept(c, tok) {
     } else if (m.t === 'hello') {
       if (NET.members.some(x => x.conn === c)) return;
       if (NET.phase !== 'wait' || hostN() >= NET.max || m.mode !== NET.mode || typeof m.hero !== 'string' || !Object.prototype.hasOwnProperty.call(HEROES, m.hero)) { try { c.send({ t: 'busy' }); } catch (e) {} setTimeout(() => { try { c.close(); } catch (e) {} }, 500); return; }
-      const mem = { conn: c, hero: m.hero, lo: Array.isArray(m.lo) ? m.lo : null, gear: cleanGear(m.gear), name: cleanName(m.name) || '게스트', cos: cleanCos(m.cos, m.hero), f: null, fi: -1, heard: performance.now(), inAt: 0, sq: 0, sqAt: 0, lite: !!m.lite, evq: [], mv: -1 };
+      const mem = { conn: c, hero: m.hero, lo: Array.isArray(m.lo) ? m.lo : null, name: cleanName(m.name) || '게스트', cos: cleanCos(m.cos, m.hero), f: null, fi: -1, heard: performance.now(), inAt: 0, sq: 0, sqAt: 0, lite: !!m.lite, evq: [], mv: -1 };
       NET.members.push(mem); NET.conns.push(c);
       if (NET.waitEnd - performance.now() < 5000) NET.waitEnd = performance.now() + 5000;      // someone just arrived: leave time for the next one to find the room too
-      c.send({ t: 'welcome', room: NET.room });
+      mem.tok = Math.random().toString(36).slice(2, 12); c.send({ t: 'welcome', room: NET.room, tok: mem.tok });
       hostLobby();
       if (hostN() >= NET.max) hostStart();
+    } else if (m.t === 'rejoin') {      // a guest whose connection broke comes back to its own fighter
+      const now = performance.now();
+      const old = typeof m.tok === 'string' && NET.members.find(x => x.tok === m.tok); if (old) hostDrop(old.conn, tok);      // the old link may still look open on this side
+      NET.gone = (NET.gone || []).filter(g => now - g.at < 60000);
+      const g = NET.phase === 'play' && state === 'play' && typeof m.tok === 'string' ? NET.gone.find(x => x.mem.tok === m.tok) : null;
+      if (!g || !g.mem.f || !fighters.includes(g.mem.f)) { try { c.send({ t: 'busy' }); } catch (e) {} setTimeout(() => { try { c.close(); } catch (e) {} }, 500); return; }
+      NET.gone = NET.gone.filter(x => x !== g);
+      const mem = Object.assign(g.mem, { conn: c, heard: now, inAt: 0, sq: 0, sqAt: 0, evq: [], mv: -1, lite: !!m.lite });
+      mem.f.remote = mem; mem.f.human = true; mem.f.netIn = null; mem.fi = fighters.indexOf(mem.f);
+      NET.members.push(mem); NET.conns.push(c); NET.rec = true; NET.rejoins = (NET.rejoins || 0) + 1;
+      const roster = fighters.map(f => ({ nm: f.nick, cos: f.cos, hu: f.human ? 1 : 0 }));
+      try { c.send({ t: 'start', re: 1, you: mem.fi, team: mem.f.team, map: curMap, mode: NET.mode, roster, tok: mem.tok }); } catch (e) {}
     } else if (m.t === 'in' || m.t === 'ping') {
       const mem = NET.members.find(x => x.conn === c); if (!mem) return;
       const now = performance.now(); mem.heard = now;
@@ -8122,6 +8062,7 @@ function hostDrop(c, tok) {
     try { c.close(); } catch (e) {}
     const mem = NET.members[i]; NET.members.splice(i, 1); NET.conns = NET.conns.filter(x => x !== c);
     if (mem.f) { mem.f.remote = null; mem.f.human = false; mem.f.netIn = null; }      // a player who left mid-match: a bot takes over the fighter
+    if (mem.f && mem.tok && NET.phase === 'play') (NET.gone || (NET.gone = [])).push({ mem, at: performance.now() });      // ...until the same player comes back (rejoin) within a minute
     if (NET.phase === 'wait') hostLobby();
     NET.rec = NET.members.length > 0 && state === 'play';
 }
@@ -8133,11 +8074,11 @@ function hostLobby() {
 function hostStart() {
   if (NET.phase !== 'wait') return;
   NET.phase = 'play';
-  const humans = (DED ? [] : [{ hero: chosen, lo: loadoutOf(chosen), gear: myGear(chosen), local: true, cos: myCos(chosen), name: PROF.name }]).concat(NET.members.map(m => ({ hero: m.hero, lo: m.lo, gear: m.gear, remote: m, cos: m.cos, name: m.name })));
+  const humans = (DED ? [] : [{ hero: chosen, lo: loadoutOf(chosen), local: true, cos: myCos(chosen), name: PROF.name }]).concat(NET.members.map(m => ({ hero: m.hero, lo: m.lo, remote: m, cos: m.cos, name: m.name })));
   startMatchIn(NET.mode, humans);
   if (!NET.members.length) { const p = NET.peer; NET.peer = null; NET.role = null; NET.phase = 'idle'; try { p.destroy(); } catch (e) {} return; }      // nobody came: the room closes, the match is offline
   NET.rec = true; NET.evs = []; snapAcc = 0; mapSentVer = -1;
-  const roster = fighters.map(f => ({ nm: f.nick, cos: f.cos, hu: f.human ? 1 : 0, gr: f.gear && f.gear.length ? f.gear : undefined }));
+  const roster = fighters.map(f => ({ nm: f.nick, cos: f.cos, hu: f.human ? 1 : 0 }));
   for (const m of NET.members) try { m.conn.send({ t: 'start', you: m.fi, team: m.f.team, map: curMap, mode: NET.mode, roster }); } catch (e) {}
 }
 const r1 = v => Math.round(v * 10) / 10, r2 = v => Math.round(v * 100) / 100, r3 = v => Math.round(v * 1000) / 1000;
@@ -8206,7 +8147,7 @@ function hostEnd() {
 
 /* guest */
 function becomeGuest(c, k, m) {
-  Object.assign(NET, { role: 'guest', hostConn: c, room: k, phase: 'joined' });
+  Object.assign(NET, { role: 'guest', hostConn: c, room: k, phase: 'joined', tok: m && typeof m.tok === 'string' ? m.tok : null, rc: null });
   roomUi('방에 들어왔어요', (k + 1) + '번 방 · 방장이 경기를 시작하기를 기다리고 있어요');
 }
 function guestMsg(m) {
@@ -8217,7 +8158,43 @@ function guestMsg(m) {
   else if (m.t === 's' && state === 'play' && NET.phase === 'play') applySnap(m);
   else if (m.t === 'over' && NET.phase === 'play') { if (m.e) replayEvents(m.e); if (m.md !== undefined && typeof applyModeSnap === 'function') try { applyModeSnap(m.md); } catch (e) {} score = m.sc; NET.stats = m.st; NET.phase = 'over'; endGame(); const tok = netToken; setTimeout(() => { if (tok === netToken) netReset(); }, 300); }
 }
+/* reconnect: when the link to the host breaks mid-match (wifi <-> LTE, a tunnel, a dropped packet storm), the host's bot keeps the fighter
+   going and this screen keeps trying a new connection to the same room for 20 s, then takes the fighter back */
+function netBadge(on) {
+  let b = document.getElementById('netBadge');
+  if (!b && on) { b = document.createElement('div'); b.id = 'netBadge'; b.style.cssText = 'position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:60;padding:4px 12px;border-radius:12px;background:rgba(20,20,30,.78);color:#ffd36a;font:600 13px/1.4 sans-serif;pointer-events:none'; b.textContent = '연결 다시 잇는 중…'; document.body.append(b); }
+  if (b) b.hidden = !on;
+}
+function guestLink() {
+  if (NET.role !== 'guest' || NET.phase !== 'play' || state !== 'play' || !NET.tok) return hostLost();
+  if (NET.rc) return;
+  const now = performance.now(); NET.rc = { until: now + 20000, next: now + 300, n: 0, c: null };
+  try { NET.hostConn && NET.hostConn.close(); } catch (e) {} NET.hostConn = null; netOut = null;
+  netBadge(true);
+}
+function rejoinTry() {
+  const rc = NET.rc, tok = netToken; rc.next = performance.now() + 2500; rc.n++;
+  if (rc.c) try { rc.c.close(); } catch (e) {}
+  let p = NET.peer;
+  if (!p || p.destroyed) { try { p = NET.peer = newPeer(undefined); keepAlive(p); } catch (e) { return; } }
+  else if (p.disconnected) { try { p.reconnect(); } catch (e) {} if (rc.n % 3) return; try { p.destroy(); } catch (e) {} try { p = NET.peer = newPeer(undefined); keepAlive(p); } catch (e) { return; } }      // a new network: the old signalling link is dead, a fresh peer is quicker
+  const go = () => {
+    if (tok !== netToken || NET.rc !== rc) return;
+    let c; try { c = rc.c = p.connect(roomId(NET.room), { reliable: true }); } catch (e) { return; }
+    c.on('open', () => { try { c.send({ t: 'rejoin', tok: NET.tok, lite: NET_LITE ? 1 : 0 }); } catch (e) {} });
+    c.on('data', m => {
+      if (tok !== netToken || !m) return;
+      if (NET.hostConn === c) return guestMsg(m);
+      if (NET.rc !== rc) return;
+      if (m.t === 'start' && m.re) { NET.rc = null; NET.hostConn = c; NET.heard = performance.now(); NET.rejoined = (NET.rejoined || 0) + 1; netBadge(false); guestStart(m); }
+      else if (m.t === 'busy') { NET.rc = null; netBadge(false); hostLost(); }
+    });
+    c.on('close', () => { if (tok === netToken && NET.hostConn === c) guestLink(); });
+  };
+  if (p.open) go(); else p.once('open', go);
+}
 function hostLost() {
+  NET.rc = null; netBadge(false);
   const was = NET.phase; netReset();
   if (was === 'play' && state === 'play' && NET.mode === 'solo') endGame();      // 원 레프트: the result as it stands (the host's tab went away without a word)
   else if (was === 'play' && state === 'play') { state = 'over'; notice.hidden = false; notice.textContent = '방장이 나가서 경기가 끝났어요'; setTimeout(() => { if (state === 'over' && !NET.role) toMenu(); }, 2200); }
@@ -8238,7 +8215,7 @@ function guestFighter(i, s) {
       inv: 0, tapT: 0, hold: false, scd: [0, 0], sk: [null, null], queue: [], minion: false, isPlayer: i === NET.me, lastFire: -9, lastHit: -9, swing: 0, spin: 0, shield: 0, hp: s.hp, mhp: s.mh };
     fighters[i] = f;
     if (i === NET.me) player = f;
-    const r = (NET.roster || [])[i] || {}; f.nick = r.nm ? cleanName(r.nm) : null; f.cos = cleanCos(r.cos, s.h0); f.gear = cleanGear(r.gr);
+    const r = (NET.roster || [])[i] || {}; f.nick = r.nm ? cleanName(r.nm) : null; f.cos = cleanCos(r.cos, s.h0);
   }
   return f;
 }
@@ -8365,9 +8342,10 @@ function netTick(dt) {
     if (now - (m.heard || now) > 10000) hostDrop(m.conn, netToken);      // nothing from a guest for 6 s: gone
     else if (m.f && m.f.netIn && m.inAt && now - m.inAt > (m.lite ? 700 : 500)) { m.f.netIn.mx = 0; m.f.netIn.my = 0; m.f.netIn.hold = false; }      // controls gone quiet (frozen tab, bad link): stand still instead of walking on
   }
+  if (NET.role === 'guest' && NET.rc) { if (now > NET.rc.until) hostLost(); else if (now > NET.rc.next) rejoinTry(); }      // reconnecting: no way back for 20 s means the host is gone
   if (NET.role === 'guest' && NET.hostConn) {
     if ((pingAcc += dt) > 1) { pingAcc = 0; try { NET.hostConn.send({ t: 'ping', ts: now }); } catch (e) {} }
-    if (NET.phase === 'play' && NET.heard && now - NET.heard > 8000) hostLost();       // no snapshot for 5 s: the host is gone
+    if (NET.phase === 'play' && NET.heard && now - NET.heard > 4000 && !NET.rc) guestLink();       // no snapshot for 4 s: the link is probably broken, try a fresh one
     if (NET.phase === 'joined') { if (!NET.heard) NET.heard = now; if (now - NET.heard > 8000) hostLost(); }
   }
   if (NET.role === 'host' && NET.phase === 'wait') {
@@ -8727,7 +8705,7 @@ const CL_RULE = {
   gold: 'add', karma: 'add', xp: 'add', mp: 'add',
   'st.k': 'add', 'st.w': 'add', 'st.g': 'add', 'st.nd': 'add', 'st.sa': 'add', 'st.mw': 'add', 'st.mg': 'add', 'st.hg': 'add', 'st.hk': 'add', 'st.hn': 'add',
   'st.mk': 'max', 'st.hb': 'max', 'st.hw': 'max', ach: 'max', v: 'max',
-  own: 'union', kr: 'union', unl: 'union', gown: 'union', sh: 'add', dq: 'day', wq: 'day', att: 'att'
+  own: 'union', kr: 'union', dq: 'day', wq: 'day', att: 'att'
 };
 const clObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
 const clNum = v => (typeof v === 'number' && isFinite(v) ? v : 0);
@@ -8915,7 +8893,23 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   c.restore();
   if (lux >= 3) { c.save(); try { drawSkinLux(c, lux, tint, now, 7, 'front'); } catch (e) {} c.restore(); }
 }
+/* hit flash: the figure is drawn into a small canvas and only that one picture goes through the filter
+   (a filter left on while every line of the figure was drawn made each line its own filtered layer: very slow on phones) */
+let hfCv = null;
 function drawFighter(f, alpha) {
+  const flt = typeof hitFlashFilter === 'function' ? hitFlashFilter(f) : '';
+  if (!flt) return drawFighter0(f, alpha);
+  const main = ctx, m = main.getTransform(), k = Math.hypot(m.a, m.b), S = Math.min(2048, Math.ceil(400 * k)), px = m.a * f.x + m.c * (f.y - 30) + m.e, py = m.b * f.x + m.d * (f.y - 30) + m.f;
+  if (!hfCv) hfCv = document.createElement('canvas');
+  if (hfCv.width < S) hfCv.width = hfCv.height = S;
+  const oc = hfCv.getContext('2d');
+  oc.setTransform(1, 0, 0, 1, 0, 0); oc.clearRect(0, 0, S, S); oc.globalAlpha = 1; oc.globalCompositeOperation = 'source-over';
+  oc.setTransform(m.a, m.b, m.c, m.d, m.e + S / 2 - px, m.f + S / 2 - py);      // same scale as the screen, the fighter in the middle
+  ctx = oc; try { drawFighter0(f, alpha); } finally { ctx = main; }
+  main.save(); main.setTransform(1, 0, 0, 1, 0, 0); main.globalAlpha = 1; main.filter = flt;
+  main.drawImage(hfCv, 0, 0, S, S, px - S / 2, py - S / 2, S, S); main.restore();
+}
+function drawFighter0(f, alpha) {
   const st = f.st, col = B(f, 'ally') ? TC(1 - f.team) : TC(f.team);
   if (f.form === 'gone' && typeof drawHatThrow === 'function') { drawHatThrow(f); return; }      // (fx.js: the flying top hat)
   if (f.form === 'gone') { if (st.hat) { ctx.fillStyle = '#16181f'; ctx.fillRect(st.hat.x - 10, st.hat.y - 44, 20, 16); ctx.fillRect(st.hat.x - 16, st.hat.y - 28, 32, 4); } return; }
@@ -9027,10 +9021,24 @@ function drawTiles(c, c0, c1, r0, r1, pass) {
     } else if (pass === 2 && t === 'G' && typeof drawPlantTile === 'function') { drawPlantTile(c, cc, r, x, y);      // (a bush planted by 정원사: gardener.js)
     } else if (pass === 2 && t === 'g') {
       const sd = (cc * 7 + r * 13) % 5;
-      c.fillStyle = TH.b1; c.beginPath(); c.roundRect(x - 3, y - 9, T + 6, T + 6, 18); c.fill();
-      c.fillStyle = TH.b2; c.beginPath(); c.arc(x + 18 + sd * 2, y + 12, 15, 0, 6.3); c.arc(x + 46 - sd, y + 26 + sd, 13, 0, 6.3); c.arc(x + 22, y + 42 - sd, 12, 0, 6.3); c.fill();
+      if (!bushStamp(c, x, y, sd)) bushShape(c, x, y, sd);
     }
   }
+}
+function bushShape(c, x, y, sd) {
+  c.fillStyle = TH.b1; c.beginPath(); c.roundRect(x - 3, y - 9, T + 6, T + 6, 18); c.fill();
+  c.fillStyle = TH.b2; c.beginPath(); c.arc(x + 18 + sd * 2, y + 12, 15, 0, 6.3); c.arc(x + 46 - sd, y + 26 + sd, 13, 0, 6.3); c.arc(x + 22, y + 42 - sd, 12, 0, 6.3); c.fill();
+}
+/* a bush tile is always one of five pictures: each is drawn once (per map colours and zoom) into a small canvas and stamped from there, instead of four shapes per tile every frame */
+const bushSpr = new Map(); let bushK = 0;
+function bushStamp(c, x, y, sd) {
+  const m = c.getTransform(), k = Math.round(Math.hypot(m.a, m.b) * 100) / 100;
+  if (!(k > .05 && k <= 6) || m.b || m.c) return false;
+  if (k !== bushK) { bushSpr.clear(); bushK = k; }
+  const key = TH.b1 + TH.b2 + sd; let s = bushSpr.get(key);
+  if (!s) { s = document.createElement('canvas'); s.width = s.height = Math.ceil(74 * k); const g = s.getContext('2d'); g.setTransform(k, 0, 0, k, 5 * k, 11 * k); bushShape(g, 0, 0, sd); bushSpr.set(key, s); }
+  c.drawImage(s, x - 5, y - 11, s.width / k, s.height / k);
+  return true;
 }
 function renderMapPreview(i, canvas) {
   const c = canvas.getContext('2d'), sm = MAP, st = TH, tw = new Map(tempWalls), sz = [COLS, ROWS, WW, WH];
@@ -9125,7 +9133,7 @@ function render() {
 const STICK_R = 54, coarseMq = matchMedia('(pointer:coarse)');
 let safeIn = { l: 0, r: 0, b: 0 };
 function readSafe() { const p = $('safeProbe'); if (!p) return; const cs = getComputedStyle(p); safeIn = { l: parseFloat(cs.paddingLeft) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0 }; }
-const touchUi = () => touchMode || coarseMq.matches;
+const touchUi = () => touchMode || coarseMq.matches || DEVICE === 'mobile';
 const stickHome = atk => ({ x: atk ? W - 96 - Math.max(0, safeIn.r - 8) : 96 + Math.max(0, safeIn.l - 8), y: H - 96 - safeIn.b });
 function touchUiSync() { document.body.classList.toggle('touchUi', touchUi()); }
 addEventListener('resize', () => { readSafe(); touchUiSync(); });
@@ -9218,6 +9226,21 @@ $('setLobbyBtn').addEventListener('click', () => setOpen(true));
 tapBtnUi($('setBtn'), () => setOpen(true));
 addEventListener('keydown', e => { if (setEl.hidden) return; if (e.code === 'Escape') setOpen(false); e.stopPropagation(); }, true);   // the game does not see keys while the window is open
 
+/* ---------- device (모바일 / 컴퓨터): picked once on the first start, changed in the settings (engine.js DEVICE; net.js reads the same key) ---------- */
+function devFill() { const cur = DEVICE || deviceGuess(); for (const b of document.querySelectorAll('[data-dev]')) { const on = b.dataset.dev === cur; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); } }
+function setDevice(v) {
+  DEVICE = v; try { localStorage.setItem('seum_device', v); } catch (e) {}
+  RSCALE = 1.5; resize(); touchUiSync(); devFill(); lastHud = '';
+  try { if (typeof window.netDeviceChanged === 'function') window.netDeviceChanged(); } catch (e) {}
+}
+for (const b of document.querySelectorAll('#setDev [data-dev]')) b.addEventListener('click', () => setDevice(b.dataset.dev));
+devFill();
+if (!DEVICE && $('devPick')) {
+  const dp = $('devPick'); dp.hidden = false;
+  for (const b of dp.querySelectorAll('[data-dev]')) b.addEventListener('click', () => { setDevice(b.dataset.dev); dp.hidden = true; });
+  dp.addEventListener('keydown', e => e.stopPropagation(), true);
+}
+
 /* ---------- lobby ---------- */
 /* game modes: the engine's MODES registry ({id,name,size,maps,ready}) when it exists; until then the same four, with only the current rules playable */
 const MODE_FALLBACK = [{ id: 'team', name: '팀 아웃', size: '3v3' }, { id: 'solo', name: '원 레프트', size: '6명', ready: false }, { id: 'flag', name: '캡쳐 플래그', size: '3v3', ready: false }, { id: 'duel', name: '듀얼 배틀', size: '1v1', ready: false }];
@@ -9242,7 +9265,6 @@ function modeApply() {
   if (mapChoice >= 0 && !modeMaps().includes(mapChoice)) mapChoice = -1;
 }
 try { const s = JSON.parse(localStorage.getItem('seumArena') || '{}'); if (HEROES[s.c]) chosen = s.c; if (s.m >= -1 && s.m < MAPS.length) mapChoice = s.m | 0; if (s.l && typeof s.l === 'object') loadouts = s.l; if (typeof s.g === 'string') modeSel = s.g; if (s.mm && typeof s.mm === 'object') mapByMode = s.mm; } catch (e) {}
-if (!unlocked(chosen)) chosen = UNLOCK_START[0];      // a locked character can not be the pick (gear.js)
 const savePrefs = () => { mapByMode[modeSel] = mapChoice; try { localStorage.setItem('seumArena', JSON.stringify({ c: chosen, m: mapChoice, l: loadouts, g: modeSel, mm: mapByMode })); } catch (e) {} if (typeof cloudMark === 'function') cloudMark(); };
 const KIND_LABEL = { melee: '근접', shot: '원거리', flame: '방사', cone: '흡입' }, SK_LABEL = { hit: '공격', move: '이동', buff: '강화' };
 function attackText(h) {
@@ -9329,7 +9351,7 @@ function buildChars() {
   markSel(); markMastery();
 }
 /* every card of the list: mastery rank with its bar */
-function markMastery() { for (const el of $('weaponGrid').children) { const m = masteryOf(el.dataset.wid); el.style.setProperty('--mc', m.col); el.querySelector('.wm b').textContent = m.name; el.querySelector('.wmBar i').style.width = Math.round(m.into / m.need * 100) + '%'; } markLocks(); }
+function markMastery() { for (const el of $('weaponGrid').children) { const m = masteryOf(el.dataset.wid); el.style.setProperty('--mc', m.col); el.querySelector('.wm b').textContent = m.name; el.querySelector('.wmBar i').style.width = Math.round(m.into / m.need * 100) + '%'; } }
 function markSel() { for (const el of $('weaponGrid').children) el.classList.toggle('sel', el.dataset.wid === chosen); }
 function renderLoadout(id) {
   const h = HEROES[id], box = $('weaponLoadout'), lo = loadoutOf(id); box.textContent = '';
@@ -9367,7 +9389,6 @@ function openDetail(id) {
   }
   renderLoadout(id);
   $('weaponLockBtn').textContent = id === chosen ? '확인' : '이 캐릭터로 정하기'; $('weaponLockBtn').disabled = false;
-  gearPick = null; renderGear(id);
   $('weaponScreen').scrollTop = 0;
 }
 function closeDetail() { viewing = null; $('weaponScreen').classList.remove('wDetail'); }
@@ -9375,7 +9396,7 @@ $('weaponSearch').addEventListener('input', e => {
   const q = e.target.value.trim().toLowerCase();
   for (const el of $('weaponGrid').children) { const h = HEROES[el.dataset.wid]; el.style.display = (!q || (h.name + ' ' + h.wname + ' ' + h.id).toLowerCase().includes(q)) ? '' : 'none'; }
 });
-$('weaponLockBtn').addEventListener('click', () => { if (!unlocked(viewing)) { if (unlockBuy(viewing)) { markMastery(); openDetail(viewing); } return; } chosen = viewing; savePrefs(); markSel(); closeDetail(); showScreen('menuScreen'); });
+$('weaponLockBtn').addEventListener('click', () => { chosen = viewing; savePrefs(); markSel(); closeDetail(); showScreen('menuScreen'); });
 $('weaponBackListBtn').addEventListener('click', closeDetail);
 $('weaponBrowseBackBtn').addEventListener('click', () => { closeDetail(); showScreen('menuScreen'); });
 $('goCharBtn').addEventListener('click', () => { showScreen('weaponScreen'); openDetail(chosen); });       // one button: the picked character's skills first, the list one tap away
@@ -9706,9 +9727,23 @@ soundBtn.addEventListener('click', () => { muted = !muted; soundBtn.textContent 
 
 readSafe(); touchUiSync();
 /* ---------- loop ---------- */
+/* mobile: when a phone can not keep up (frames slower than ~45 a second over 2 s of play) the canvas goes one step down in pixel ratio (1.5 > 1.25 > 1);
+   after about 10 s of smooth play it goes one step back up */
+const RS_STEPS = [1.5, 1.25, 1];
+let rsT0 = 0, rsN = 0, rsLast = 0, rsGood = 0;
+function rsWatch(now) {
+  if (state !== 'play' || !mobileMode() || now - rsLast > 250) { rsT0 = now; rsN = 0; rsLast = now; return; }      // (a pause, a hidden tab or the lobby does not count)
+  rsLast = now; rsN++;
+  const el = now - rsT0; if (el < 2000) return;
+  const ms = el / rsN, i = Math.max(0, RS_STEPS.indexOf(RSCALE)); rsT0 = now; rsN = 0;
+  if (ms > 22 && i < RS_STEPS.length - 1) { RSCALE = RS_STEPS[i + 1]; rsGood = 0; resize(); }
+  else if (ms < 18 && i > 0) { if (++rsGood >= 5) { RSCALE = RS_STEPS[i - 1]; rsGood = 0; resize(); } }
+  else rsGood = 0;
+}
 let last = performance.now();
 function frame(now) {
   lastFrameAt = performance.now();
+  rsWatch(now);
   const dt = Math.min(.033, (now - last) / 1000); last = now;
   if (NET.role === 'guest' && state === 'play') { if (dt > 0) guestStep(dt); }
   else if (state !== 'over' && dt > 0 && !(performance.now() < hitStopUntil)) step(dt);
