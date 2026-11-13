@@ -28,6 +28,8 @@ const HEROES = [
   ['portalgun', '차원여행자', '포탈 연결', ['포탈 파괴', '차원 도약', '반사 구체', '차원 균열', '차원 이탈']],
   ['gardener', '정원사', '숲 폭발', ['덤불 심기', '가시 넝쿨', '해바라기 포탑']]
 ].map(([id, name, ult, skills]) => ({ id, name, ult, skills, img: 'img/' + id + '.png' }));
+/* heroes.js (made from the game by tools/gen-tips.js) has the current skills and guide; the list above is the fallback */
+if (typeof HERO_DATA !== 'undefined') for (const h of HEROES) { const d = HERO_DATA.find(x => x.id === h.id); if (d) Object.assign(h, { ult: d.ult.name, skills: d.skills.map(s => s.name), data: d }); }
 
 /* header + footer (one copy for every page) */
 function siteChrome(page) {

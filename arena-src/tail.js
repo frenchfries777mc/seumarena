@@ -24,7 +24,7 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   const hx = ax * reach, hy = SH + 6 + ay * reach;
   if (id !== 'harald') { c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(hx, hy); c.stroke(); }      // (하랄드 draws both of his bent arms himself, in art/chars.js)
   if (id === 'kadas') { c.strokeStyle = '#c4182e'; c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(hx, hy); c.stroke(); }
-  c.save(); try { if (id === 'gardener' && typeof drawGardener === 'function') drawGardener(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP }); else drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) {} c.restore();      // (정원사's hat, slingshot and pouch: gardener.js)
+  c.save(); try { if (id === 'gardener' && typeof drawGardener === 'function') drawGardener(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) {} c.restore();      // (정원사's hat, slingshot and pouch: gardener.js)
   if (it && it.fx) { c.save(); try { drawSkinFx(c, lux >= 4 ? 'sparkle' : it.fx, lux >= 4 ? auroraHex(now / 1000 * .9, 1) : tint, 0, HEADCY, HEADR * 1.3, now); } catch (e) {} c.restore(); }
   if (cos && cos.col && COSMETICS[cos.col] && COSMETICS[cos.col].shine) { c.save(); try { drawShineGlints(c, now, 0); } catch (e) {} c.restore(); }
   c.restore();
@@ -164,6 +164,7 @@ function drawBullet(b) {
   ctx.restore();
 }
 function drawTiles(c, c0, c1, r0, r1, pass) {
+  if (typeof MS_draw === 'function' && MS_draw(c, c0, c1, r0, r1, pass)) return;      // (mapart.js: the painted map; the code below is the old flat look)
   for (let r = r0; r <= r1; r++) for (let cc = c0; cc <= c1; cc++) {
     const t = tile(cc, r), x = cc * T, y = r * T;
     if (pass === 0) {
@@ -314,7 +315,9 @@ function updateHud() {
   const ovtBanner = ot && !dead && performance.now() < ovtUntil, kl = dead ? p.killer : null, di = dead ? (kl ? { by: kl.i >= 0 ? fighters[kl.i] || null : null, src: kl.src || '' } : deathInfo) : null;
   const hq = curMode === 'hot4' && typeof hotHud === 'function' ? hotHud() : null;
   const key = [hq ? hq.v.join('/') + '/' + hq.own : '', solo, mine, theirs, tl, up, dp, sp, sn, c.un, dead, touchUi(), ot, ovtBanner, di ? (di.by ? fighters.indexOf(di.by) : -1) + di.src : ''].join();
-  if (key === lastHud) return; lastHud = key;
+  const dk = DUEL.line ? JSON.stringify(DUEL.line) + DUEL.li + VIEW : '';
+  if (key + dk === lastHud) return; lastHud = key + dk;
+  duelHud();
   $('hud').classList.toggle('q4', !!hq); $('sg').parentNode.hidden = $('sy').parentNode.hidden = !hq;
   if (hq) ['sb', 'sr', 'sg', 'sy'].forEach((id, i) => { const t = hq.ord[i], b = $(id).parentNode; $(id).textContent = hq.v[i] + '%'; b.style.setProperty('--p', hq.v[i] + '%'); b.style.setProperty('--c', TC(t)); b.classList.toggle('on', hq.own === t); });      // 4팀 핫존: four bars, mine first
   else { $('sb').textContent = mine; $('sr').textContent = theirs; $('sbL').textContent = solo ? '킬' : '블루'; $('srL').textContent = solo ? '생존' : '레드'; }
@@ -436,7 +439,27 @@ function modeApply() {
   if (mapChoice >= 0 && !modeMaps().includes(mapChoice)) { const i = mapByMode[mapKey(modeCur())]; mapChoice = Number.isInteger(i) && modeMaps().includes(i) ? i : -1; }      // a choice from another list (an older save): the group's remembered map, or random
 }
 try { const s = JSON.parse(localStorage.getItem('seumArena') || '{}'); if (HEROES[s.c]) chosen = s.c; if (s.m >= -1 && s.m < MAPS.length) mapChoice = s.m | 0; if (s.l && typeof s.l === 'object') loadouts = s.l; if (typeof s.g === 'string') modeSel = s.g; if (s.mm && typeof s.mm === 'object') mapByMode = s.mm; } catch (e) {}
-const savePrefs = () => { mapByMode[mapKey(modeCur())] = mapChoice; try { localStorage.setItem('seumArena', JSON.stringify({ c: chosen, m: mapChoice, l: loadouts, g: modeSel, mm: mapByMode })); } catch (e) {} if (typeof cloudMark === 'function') cloudMark(); };
+/* 듀얼 배틀 picks: slot 1 is always `chosen`, duelMore = slots 2 and 3 (null = empty, the engine fills an empty slot with a random hero) */
+let duelMore = [null, null], DSLOT = 0;
+try { const s = JSON.parse(localStorage.getItem('seumArena') || '{}'); if (Array.isArray(s.dl)) duelMore = [0, 1].map(i => HEROES[s.dl[i]] ? s.dl[i] : null); } catch (e) {}
+const duelIds = () => [chosen, ...duelMore];
+function myDuelLine() { return duelIds().filter(id => id && HEROES[id]).map(id => ({ hero: id, lo: loadoutOf(id), cos: myCos(id) })); }
+function duelPut(k, id) {      // a hero already in another slot swaps places with what was in slot k
+  const ids = duelIds(), j = ids.indexOf(id); if (j >= 0 && j !== k) ids[j] = ids[k]; ids[k] = id;
+  if (!ids[0]) { ids[0] = ids[1] || ids[2]; if (ids[1] === ids[0]) ids[1] = null; else if (ids[2] === ids[0]) ids[2] = null; }
+  chosen = ids[0]; duelMore = [ids[1] || null, ids[2] || null];
+}
+function renderDuelLine() {
+  const box = $('duelLine'), on = modeSel === 'duel'; box.hidden = !on; if (!on) return; box.textContent = '';
+  duelIds().forEach((id, k) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 's' + (k === DSLOT ? ' on' : '') + (id ? '' : ' add');
+    if (id) { const c = document.createElement('canvas'); c.width = c.height = 128; b.append(c); drawPortrait(c, id); } else b.textContent = '+';
+    const n = document.createElement('b'); n.textContent = k + 1; b.append(n);
+    b.addEventListener('click', () => { DSLOT = k; if (id) openDetail(id); else { closeDetail(); renderDuelLine(); } });
+    box.append(b);
+  });
+}
+const savePrefs = () => { mapByMode[mapKey(modeCur())] = mapChoice; try { localStorage.setItem('seumArena', JSON.stringify({ c: chosen, m: mapChoice, l: loadouts, g: modeSel, mm: mapByMode, dl: duelMore })); } catch (e) {} if (typeof cloudMark === 'function') cloudMark(); };
 const KIND_LABEL = { melee: '근접', shot: '원거리', flame: '방사', cone: '흡입' }, SK_LABEL = { hit: '공격', move: '이동', buff: '강화' };
 function attackText(h) {
   const SX = (typeof STAT_X === 'number' ? STAT_X : 1) * (h.xm || 1), rd = v => Math.round(v);      // h.xm: this character's own damage multiplier
@@ -559,7 +582,8 @@ function openDetail(id) {
     const st = achSt(), rec = line('기록', (st.hg[id] | 0) + '판 · ' + (st.hn[id] | 0) + '승 · ' + (st.hk[id] | 0).toLocaleString('en-US') + '킬 · 최고 ' + (st.hb[id] | 0) + '킬'); rec.className = 'mRec'; row.after(rec);      // this character's own numbers (social.js achMatch counts them)
   }
   renderLoadout(id);
-  $('weaponLockBtn').textContent = id === chosen ? '확인' : '이 캐릭터로 정하기'; $('weaponLockBtn').disabled = false;
+  renderDuelLine();
+  $('weaponLockBtn').textContent = id === (modeSel === 'duel' ? duelIds()[DSLOT] : chosen) ? '확인' : '이 캐릭터로 정하기'; $('weaponLockBtn').disabled = false;
   $('weaponScreen').scrollTop = 0;
 }
 function closeDetail() { viewing = null; $('weaponScreen').classList.remove('wDetail'); }
@@ -567,10 +591,13 @@ $('weaponSearch').addEventListener('input', e => {
   const q = e.target.value.trim().toLowerCase();
   for (const el of $('weaponGrid').children) { const h = HEROES[el.dataset.wid]; el.style.display = (!q || (h.name + ' ' + h.wname + ' ' + h.id).toLowerCase().includes(q)) ? '' : 'none'; }
 });
-$('weaponLockBtn').addEventListener('click', () => { chosen = viewing; savePrefs(); markSel(); closeDetail(); showScreen('menuScreen'); });
+$('weaponLockBtn').addEventListener('click', () => {
+  if (modeSel === 'duel') { duelPut(DSLOT, viewing); savePrefs(); markSel(); const k = duelIds().indexOf(null); if (k >= 0) { DSLOT = k; closeDetail(); renderDuelLine(); return; } }
+  else chosen = viewing;
+  savePrefs(); markSel(); closeDetail(); showScreen('menuScreen'); });
 $('weaponBackListBtn').addEventListener('click', closeDetail);
 $('weaponBrowseBackBtn').addEventListener('click', () => { closeDetail(); showScreen('menuScreen'); });
-$('goCharBtn').addEventListener('click', () => { showScreen('weaponScreen'); openDetail(chosen); });       // one button: the picked character's skills first, the list one tap away
+$('goCharBtn').addEventListener('click', () => { DSLOT = 0; showScreen('weaponScreen'); openDetail(chosen); });       // one button: the picked character's skills first, the list one tap away
 
 let mapIdx = 0, mapList = [-1];        // mapList: -1 (random) followed by the maps of the picked mode
 function showMap() {
@@ -911,7 +938,8 @@ readSafe(); touchUiSync();
 /* ---------- loop ---------- */
 /* mobile: when a phone can not keep up (frames slower than ~45 a second over 2 s of play) the canvas goes one step down in pixel ratio (1.25 > 1 > .8);
    after about 10 s of smooth play it goes one step back up */
-const RS_STEPS = [1.25, 1, .8];
+const RS_STEPS = [1.25, 1, .8, .65];
+let MCAP = false, mcapAt = 0;      // mobile: at the lowest step and still slow -> steady 30 fps (each frame does half the drawing work)
 let rsT0 = 0, rsN = 0, rsLast = 0, rsGood = 0;
 function rsWatch(now) {
   const mob = mobileMode();
@@ -927,18 +955,22 @@ function rsWatch(now) {
     return;
   }
   const i = Math.max(0, RS_STEPS.indexOf(RSCALE));
+  if (MCAP) return;
+  if (ms > 22 && i === RS_STEPS.length - 1) { MCAP = true; return; }
   if (ms > 22 && i < RS_STEPS.length - 1) { RSCALE = RS_STEPS[i + 1]; rsGood = 0; resize(); }
   else if (ms < 18 && i > 0) { if (++rsGood >= 5) { RSCALE = RS_STEPS[i - 1]; rsGood = 0; resize(); } }
   else rsGood = 0;
 }
 let last = performance.now(), stillAt = 0, stillW = '';
 function frame(now) {
+  if (MCAP && state === 'play' && now - mcapAt < 30) { requestAnimationFrame(frame); return; }
+  mcapAt = now;
   lastFrameAt = performance.now();
   rsWatch(now);
-  const dt = Math.min(.033, (now - last) / 1000); last = now;
+  const dt = Math.min(MCAP ? .05 : .033, (now - last) / 1000); last = now;
   const still = state === 'menu' && !DED && mobileMode();      // mobile: the match behind the lobby stands still (drawn again once a second), so the lobby costs a phone almost nothing
   if (NET.role === 'guest' && state === 'play') { if (dt > 0) guestStep(dt); }
-  else if (state !== 'over' && dt > 0 && !(performance.now() < hitStopUntil) && !still) step(dt);
+  else if (state !== 'over' && dt > 0 && !(performance.now() < hitStopUntil) && !still) { if (dt > .034) { step(dt / 2); if (state !== 'over') step(dt / 2); } else step(dt); }
   netTick(dt);
   if (DED) { requestAnimationFrame(frame); return; }      // a dedicated host (net.js) only runs the match: nothing is drawn
   if (state === 'play') updateHud();
@@ -962,7 +994,20 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => lobb
 setTimeout(lobbyCharPlace, 60);
 for (let i = 0; i < 90; i++) step(.033);
 requestAnimationFrame(frame);
+/* 듀얼 배틀: both sides' picks beside the clock (mine on the left), in place of the two score boxes */
+function duelHud() {
+  const on = !!(DUEL.line && curMode === 'duel'); $('dqL').hidden = $('dqR').hidden = !on; $('sb').parentNode.hidden = $('sr').parentNode.hidden = on; if (!on) return;
+  [[$('dqL'), VIEW === 1 ? 1 : 0], [$('dqR'), VIEW === 1 ? 0 : 1]].forEach(([box, t]) => {
+    box.textContent = ''; box.style.setProperty('--c', TC(t));
+    (DUEL.line[t] || []).forEach((id, k) => {
+      const d = document.createElement('div'), li = DUEL.li[t] | 0; const out = k < li || (k === li && score[1 - t] >= DUEL_N); d.className = 's' + (out ? ' dead' : k === li ? ' on' : '');
+      if (id && HEROES[id]) { const c = document.createElement('canvas'); c.width = c.height = 96; d.append(c); const g = c.getContext('2d'); g.translate(48, 67); g.scale(.86, .86); drawStick(g, id, TC(t), .3, 0, 0, 0, null); }
+      box.append(d);
+    });
+  });
+}
 window.__arena = { modes: MODE_LIST, ACHS, achMatch, achScan, achSt, renderAch, questTab, setAchRates(r) { achRates = r; }, dqList, dqMatch, dqState, renderQuests, wqList, wqState, attSt, attTake, dealIds, cosPrice, TITLES, renderProfile, renderCos, rewardFx, matchMvp, endGame, goldUi, matchPay, masteryOf, levelOf, KARMA_ROAD, MASTERY, giveReward, COSMETICS, skinPrice, get COS() { return COS; }, get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
   setChar(id) { chosen = id; }, setMap(i) { mapChoice = i; }, tileAt: (x, y) => tile(Math.floor(x / T), Math.floor(y / T)), auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get PV() { return { sk: PV.sk, ult: PV.ult, dash: PV.dash }; }, get bullets() { return bullets; }, offline() { netReset(); startMatch(null); } };
 })();
 </script>
+
