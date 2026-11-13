@@ -13,7 +13,7 @@ function lowFx() { return reduceMotion || SET.fx; }
   const MTHIN = { dot: .4, streak: .4, smoke: .35, square: .4, fire: .55, flash: .6 };      // mobile (engine.js mobileMode): speed first, and no small bits past 140 at once
   addP = o => {
     if (o && SET.fx) { const k = THIN[o.shape]; if (k !== undefined && (Math.random() > k || (o.shape === 'flash' && o.size >= 100))) return; }
-    else if (o && mobileMode()) { const k = MTHIN[o.shape]; if (k !== undefined && (Math.random() > k || particles.length > 140)) return; }
+    else if (o && liteMode()) { const k = MTHIN[o.shape]; if (k !== undefined && (Math.random() > k || particles.length > 140)) return; }
     baseP(o);
   };
 }
@@ -130,13 +130,13 @@ function addMp(h, n) { if (!HEROES[h]) return; COS.mp[h] = mpOf(h) + Math.max(0,
 /* player level: level L needs 150 + 50 (L - 1) xp to pass */
 function levelOf() { let xp = Math.max(0, Math.floor(+COS.xp || 0)), lv = 1; while (xp >= 150 + 50 * (lv - 1) && lv < 999) { xp -= 150 + 50 * (lv - 1); lv++; } return { lv, into: xp, need: 150 + 50 * (lv - 1) }; }
 /* what a match pays, by mode: kk karma per kill, kw karma for the win, mm mastery multiplier */
-const MODE_PAY = { team: { kk: 1, kw: 3, mm: 1 }, flag: { kk: 1, kw: 4, mm: 1.2 }, duel: { kk: 1, kw: 2, mm: .7 }, solo: { kk: 2, kw: 6, mm: 1 } };
+const MODE_PAY = { team: { kk: 1, kw: 3, mm: 1 }, flag: { kk: 1, kw: 4, mm: 1.2 }, duel: { kk: 1, kw: 2, mm: .7 }, solo: { kk: 2, kw: 6, mm: 1 }, hot4: { kk: 1, kw: 4, mm: 1.1 } };
 /* 원 레프트 karma by finishing place (user 2026-11-11): the last three places (4th to 6th of 6) get only their kills (no place bonus);
    1st gets kills + the win bonus, 2nd and 3rd kills + a smaller bonus */
 function soloKarma(place, k, pm) { const n = 6; return k * pm.kk + (place >= 1 && place <= n - 3 ? [pm.kw, 4, 2][place - 1] : 0); }
 function matchPay(o) {      // o: { mode, win, draw, kills, place }
   if (o.mode === 'flag5') o = Object.assign({}, o, { mode: 'flag' });      // capture the flag pays the same whatever the team size
-  const pm = MODE_PAY[o.mode] || MODE_PAY.team, solo = o.mode === 'solo', k = Math.max(0, o.kills | 0), good = o.win ? 2 : o.draw || (solo && o.place <= 3) ? 1 : 0;
+  const pm = MODE_PAY[o.mode] || MODE_PAY.team, solo = o.mode === 'solo', k = Math.max(0, o.kills | 0), good = o.win ? 2 : o.draw || (solo && o.place <= 3) || (o.mode === 'hot4' && o.place === 2) ? 1 : 0;      // 4팀 핫존: 2nd of 4 pays like a draw
   return { gold: Math.round(([30, 40, 60][good] + 5 * Math.min(10, k)) * (o.mode === 'duel' ? .6 : 1)), karma: solo ? soloKarma(o.place, k, pm) : k * pm.kk + (o.win ? pm.kw : 0),
     mp: Math.round(([30, 42, 55][good] + 3 * Math.min(10, k)) * pm.mm), xp: [40, 55, 70][good] + 4 * Math.min(10, k) };
 }
@@ -530,7 +530,7 @@ function drawChatBubble(f) {
   const a = Math.min(1, (f.chatT - time) / .4), y = f.y - 104 - (f.em != null && f.emT > time ? 50 : 0);
   ctx.save(); ctx.globalAlpha = a; ctx.font = '600 14px "IBM Plex Sans KR", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   const w = Math.min(260, ctx.measureText(f.chat).width + 18);
-  ctx.fillStyle = 'rgba(12,14,19,.88)'; ctx.strokeStyle = f.team === VIEW ? TEAM[0] : TEAM[1]; ctx.lineWidth = 2;
+  ctx.fillStyle = 'rgba(12,14,19,.88)'; ctx.strokeStyle = TC(f.team); ctx.lineWidth = 2;
   ctx.beginPath(); ctx.roundRect(f.x - w / 2, y - 14, w, 28, 9); ctx.fill(); ctx.stroke();
   ctx.fillStyle = '#e8eaf0'; ctx.fillText(f.chat, f.x, y, w - 14);
   ctx.restore();
@@ -540,7 +540,7 @@ function drawChatBubble(f) {
 let winRun = 0;
 function winScreen(won, draw) {
   const cvs = document.getElementById('winCanvas'), c = cvs.getContext('2d'), run = ++winRun, Wc = cvs.width, Hc = cvs.height;
-  const mine = fighters.filter(f => f && f.team === VIEW), theirs = fighters.filter(f => f && f.team !== VIEW);
+  const mine = fighters.filter(f => f && f.team === VIEW), rt = curMode === 'hot4' ? [0, 1, 2, 3].filter(t => t !== VIEW).sort((a, b) => (score[b] | 0) - (score[a] | 0))[0] : -1, theirs = fighters.filter(f => f && f.team !== VIEW && (rt < 0 || f.team === rt));      // 4팀 핫존: only the best other team stands opposite
   const figs = [];
   const place = (list, x0, x1, win) => { const n = list.length, sc = n >= 3 ? 1.15 : n === 2 ? 1.5 : 1.9; list.forEach((f, i) => figs.push({ f, win, x: x0 + (x1 - x0) * (n === 1 ? .5 : (i + .5) / n), sc })); };
   place(mine, 10, Wc / 2 - 10, won || draw); place(theirs, Wc / 2 + 10, Wc - 10, !won || draw);
@@ -553,7 +553,7 @@ function winScreen(won, draw) {
     c.save(); c.strokeStyle = 'rgba(255,255,255,.18)'; c.lineWidth = 2; c.setLineDash([6, 6]); c.beginPath(); c.moveTo(Wc / 2, 20); c.lineTo(Wc / 2, Hc - 10); c.stroke(); c.restore();
     for (const q of conf) { q.y += q.vy * dt; q.x += q.vx * dt; q.r += q.vr * dt; if (q.y > Hc + 10) { q.y = -10; q.x = Math.random() * Wc; } c.save(); c.translate(q.x, q.y); c.rotate(q.r); c.fillStyle = q.col; c.fillRect(-q.w / 2, -q.h / 2, q.w, q.h * Math.abs(Math.cos(q.r * 2)) + 1); c.restore(); }
     for (const g of figs) {
-      const f = g.f, wid = f.h0.id, sk = skinOf(f.cos, wid), tint = sk ? COSMETICS[sk].tint : undefined, col = bodyColor(f.cos, f.team === VIEW ? TEAM[0] : TEAM[1]);
+      const f = g.f, wid = f.h0.id, sk = skinOf(f.cos, wid), tint = sk ? COSMETICS[sk].tint : undefined, col = bodyColor(f.cos, TC(f.team));
       c.save(); c.translate(g.x, Hc - 34); c.scale(g.sc, g.sc);
       c.shadowColor = col; c.shadowBlur = 10; c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 5; c.lineCap = 'round'; c.lineJoin = 'round';
       try { if (g.win) drawWinPose(c, (f.cos && f.cos.pose) || 'pose_cheer', t, wid, tint); else drawLosePose(c, t, wid, tint); } catch (e) {}

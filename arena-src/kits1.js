@@ -31,8 +31,8 @@ hero('sword', { p: ['기사도', '상대에게 피해를 줄 때마다 5% 확률
     [2, '강타', 'move', '앞으로 도약해(벽도 뛰어넘음) 떨어지며 검을 찍음 · 맞은 상대 0.5초 기절 + 피해 450', [60, 3 * T], (f, a) => { lunge(f, a, 3 * T, .3, { fly: 2, end: g => boom(g, g.x, g.y, 70, 45, { stun: .5, col: '#dfe6f0', kb: 0 }) }); }],
     [3, '칼 회전', 'hit', '제자리에서 칼을 1.2초 동안 빙글빙글 돌림 · 0.2초마다 주변 적에게 70 피해 (도는 동안 움직일 수 없음)', [0, 110], f => { buff(f, 'root', 1.2); f.spin = 1.2; seq(f, 6, .2, () => circ(f, f.x, f.y, f.h.range * 1.1, 7)); }],
     [4, '기사 수여', 'buff', '1초 동안 이동속도·데미지 20% 증가 · 즉시 한 번 이 스킬을 뺀 모든 쿨타임(다른 스킬·궁극기·대쉬)이 1초씩 참', [0, 6 * T], (f, a, i) => { buff(f, 'haste', 1, 1.2); buff(f, 'dmg', 1, 1.2); f.scd[1 - i] -= 1; f.ucd -= 1; f.dcd -= 1; }],
-    [5, '처형', 'hit', '앞쪽 가까운 상대(4칸 안)에게 순간이동해 내려벰 · 500 피해 + 0.4초 기절 · 상대 체력이 30% 이하면 피해 2배 (상대가 없으면 쓰이지 않음)', [0, 4 * T], (f, a) => {
-      const e = nearest(f, 4 * T, a, .7); if (!e) return false;
+    [5, '처형', 'hit', '앞쪽 가까운 상대(4칸 안)에게 순간이동해 내려벰 · 500 피해 + 0.4초 기절 · 상대 체력이 30% 이하면 피해 2배 (상대가 없으면 쓰이지 않고 쿨타임도 돌지 않음)', [0, 4 * T], (f, a, i) => {
+      const e = nearest(f, 4 * T, a, .7); if (!e) { f.scd[i] = 0; return false; }      // no foe in reach: nothing is used and the cooldown stays ready (developer 2026-11-13)
       const low = !e.minion && e.hp <= e.mhp * .3;
       blinkTo(f, e.x - Math.cos(angTo(f, e)) * 34, e.y - Math.sin(angTo(f, e)) * 34); f.swing = .22; f.aim = angTo(f, e);
       damage(e, low ? 100 : 50, f); buff(e, 'stun', .4); if (low) say(f, '처형!', '#ffd34d');
