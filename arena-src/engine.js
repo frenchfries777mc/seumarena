@@ -105,6 +105,7 @@ function addText(o) { texts.push(o); evt(['t', Math.round(o.x), Math.round(o.y),
 function addPart(p) { parts.push(p); evt(['p', Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy), +p.life.toFixed(2), p.color, +(p.r || 3).toFixed(1)]); }
 const OT_MAX = 60;       // sudden-death overtime when the clock runs out level: first kill wins, a draw if nobody scores within this many seconds
 const STAT_X = 10;       // every hp and every damage/heal/shield number written in the kits is multiplied by this (damage() and heal() do it, so kit code keeps the original small numbers)
+const HP_SCALE = .5;      // 2026-11-13 (developer): every fighter's hp is halved (damage, heals and shields stay as written) so fights end sooner
 const WIN_SCORE = 10, MATCH_TIME = 150, MAX_HP = 600, ULT_CD = 45, ULT_KILL = 10, CD1 = 5, CD2 = 10, DASH_D = 3.2 * T, SPEED = 205;
 
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -123,11 +124,15 @@ let state = 'menu', time = 0, timeLeft = MATCH_TIME, score = [0, 0];
    id / name / size: what the lobby shows · maps: indexes into MAPS this mode may use · ready: false = not playable yet (the lobby locks it)
    teams × per: how many sides and fighters per side · respawn: do the dead come back · win: score that ends the match · time: seconds on the clock (per round when rounds > 0)
    rounds: round wins needed (0 = no rounds). The UI sets `modeChoice` and calls setup(); the engine reads the rules with modeNow(). */
+/* 듀얼 배틀 (developer 2026-11-13): each side brings DUEL_N heroes in order; the side that loses a round sends out its next hero, both sides start every round
+   at full health, and the first side to knock out all of the other side's heroes wins. DUEL.line[team] = hero ids, DUEL.li[team] = who is out now,
+   DUEL.ent[team] = host-only { hero, lo, cos } per pick. */
+const DUEL_N = 3, DUEL = { line: null, li: [0, 0], ent: null };
 const MODES = [
   { id: 'team', name: '팀 아웃', size: '3v3', teams: 2, per: 3, respawn: true, win: WIN_SCORE, time: MATCH_TIME, rounds: 0, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true },
   { id: 'solo', name: '원 레프트', size: '6명', teams: 6, per: 1, respawn: false, win: 1, time: 150, rounds: 0, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },
   { id: 'flag', name: '캡쳐 플래그', size: '5v5', teams: 2, per: 5, respawn: true, win: 3, time: 240, rounds: 0, maps: [11, 12, 13, 14, 15, 16, 25], ready: true },      // 2026-11-12: the 3v3 version was dropped, 캡쳐 플래그 is 5v5 on the 5 big flag maps
-  { id: 'duel', name: '듀얼 배틀', size: '1v1', teams: 2, per: 1, respawn: false, win: 2, time: 60, rounds: 2, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true },      // 듀얼 배틀 and 팀 아웃 share one map list (user 2026-11-13): keep the two lists the same
+  { id: 'duel', name: '듀얼 배틀', size: '1v1', teams: 2, per: 1, respawn: false, win: DUEL_N, time: 60, rounds: DUEL_N, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true },      // 듀얼 배틀 and 팀 아웃 share one map list (user 2026-11-13): keep the two lists the same
   { id: 'hot4', name: '핫존', size: '4팀', teams: 4, per: 3, respawn: true, win: 100, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.hot ? i : -1).filter(i => i >= 0), ready: true }      // 2026-11-13 (developer): 3 x 4 teams around one circle; maps = every MAPS entry with hot:1
 ];
 for (const m of MODES) m.max = m.teams * m.per;
@@ -145,10 +150,11 @@ const HZ = { on: false, x: 0, y: 0, r: 0, own: -1, p: [0, 0, 0, 0], n: [0, 0, 0,
 const modeOf = id => MODES.find(m => m.id === id && m.ready) || MODES[0];
 const modeNow = () => modeOf(curMode);
 /* the small mode state that rides in every snapshot (net.js: `md`) so guests can draw it: round number, and later the flags / safe zone */
-function modeSnap() { const o = { rn: RD.n, rp: RD.pause > 0 ? 1 : 0 }; if (SZ.on) { o.z = [Math.round(SZ.x), Math.round(SZ.y), Math.round(SZ.r)]; o.w = RD.win; o.o = RD.out; } if (FLAGS.length) o.f = FLAGS.map(g => [Math.round(g.x), Math.round(g.y), g.by, g.home ? 1 : 0, Math.round(g.back * 10) / 10]); if (HZ.on) o.h = [HZ.own, Math.round(HZ.x), Math.round(HZ.y), Math.round(HZ.r)]; return o; }
+function modeSnap() { const o = { rn: RD.n, rp: RD.pause > 0 ? 1 : 0 }; if (DUEL.line) { o.dl = DUEL.line; o.di = DUEL.li; } if (SZ.on) { o.z = [Math.round(SZ.x), Math.round(SZ.y), Math.round(SZ.r)]; o.w = RD.win; o.o = RD.out; } if (FLAGS.length) o.f = FLAGS.map(g => [Math.round(g.x), Math.round(g.y), g.by, g.home ? 1 : 0, Math.round(g.back * 10) / 10]); if (HZ.on) o.h = [HZ.own, Math.round(HZ.x), Math.round(HZ.y), Math.round(HZ.r)]; return o; }
 function applyModeSnap(o) {
   if (!o || typeof o !== 'object') return;
   if (o.rn > 0) RD.n = o.rn | 0; RD.pause = o.rp ? 1 : 0;
+  if (Array.isArray(o.dl) && o.dl.length === 2 && Array.isArray(o.di)) { DUEL.line = o.dl.map(l => Array.isArray(l) ? l.slice(0, DUEL_N).map(id => HEROES[id] ? id : null) : []); DUEL.li = [o.di[0] | 0, o.di[1] | 0]; } else DUEL.line = null;
   SZ.on = Array.isArray(o.z) && o.z.length === 3;
   HZ.on = Array.isArray(o.h) && o.h.length === 4; if (HZ.on) { HZ.own = clamp(o.h[0] | 0, -2, 3); HZ.x = +o.h[1] || 0; HZ.y = +o.h[2] || 0; HZ.r = Math.max(0, +o.h[3] || 0); }
   if (Array.isArray(o.f) && o.f.length === 2) { if (FLAGS.length !== 2) flagsReset(); o.f.forEach((v, t) => { if (!Array.isArray(v)) return; const g = FLAGS[t]; g.x = +v[0] || 0; g.y = +v[1] || 0; g.by = v[2] | 0; g.home = !!v[3]; g.back = +v[4] || 0; }); } else FLAGS = [];
@@ -490,7 +496,7 @@ function lunge(f, ang, d, dur, o) { f.dash = Object.assign({ t: dur, dx: Math.co
 function makeFighter(team, slot, id, isPlayer, lo0, cos, nick) {
   const h = HEROES[id], p = spawnPos(team, slot);
   const f = { team, slot, h, h0: h, isPlayer, x: p.x, y: p.y, tx: p.x, ty: p.y, vx: 0, vy: 0, kx: 0, ky: 0, mv: [0, 0], aim: team === 0 ? 0 : Math.PI,
-    hp: h.hp, mhp: h.hp, dead: false, respawnT: 0, inv: 1.5, lastHit: -9, lastFire: -9, lastMove: 0, fireCd: 0, ucd: 6, dcd: 0, scd: [0, 0], sk: [null, null],
+    hp: h.hp * HP_SCALE, mhp: h.hp * HP_SCALE, dead: false, respawnT: 0, inv: 1.5, lastHit: -9, lastFire: -9, lastMove: 0, fireCd: 0, ucd: 6, dcd: 0, scd: [0, 0], sk: [null, null],
     queue: [], dash: null, swing: 0, spin: 0, shield: 0, onShieldBreak: null, dots: [], recent: [], b: {}, x_: 0, st: {}, acc: 0, dealt: 0, hold: false, washold: false, tapT: 0, form: null, ghost: false,
     kos: 0, deaths: 0, taken: 0, healed: 0, killer: null, lastDmg: null, bob: Math.random() * 6, infTick: 0,
     ai: { pers: pick(AI_PERS_IDS), fside: Math.random() < .5 ? 1 : -1, cool: rnd(.3, 1), strafeT: 0, sdir: Math.random() < .5 ? 1 : -1, roamT: 0, rx: 0, ry: 0, dist: null, pathNext: 0, gc: -1, gr: -1, sx: p.x, sy: p.y, stT: 0, thr: .7 } };
@@ -520,7 +526,8 @@ function setup(withPlayer, humans) {
   curMode = modeOf(modeChoice).id; const MODE = modeNow(); RD = { n: 1, pause: 0, win: -1, out: [] }; SZ.on = false; FLAGS = []; HZ.on = false;
   loadMap(mapChoice < 0 || !MODE.maps.includes(mapChoice) ? pick(MODE.maps) : mapChoice);
   fighters = []; bullets = []; parts = []; texts = []; rings = []; zones = []; minions = []; timers = []; strikes = []; score = new Array(MODE.teams).fill(0); timeLeft = MODE.time; overtime = false; otT = 0; player = null; VIEW = 0;
-  humans = humans || (withPlayer ? [{ hero: chosen, lo: loadoutOf(chosen), local: true, cos: myCos(chosen), name: PROF.name }] : []);
+  humans = humans || (withPlayer ? [{ hero: chosen, lo: loadoutOf(chosen), local: true, cos: myCos(chosen), name: PROF.name, line: myDuelLine() }] : []);
+  if (curMode === 'duel') for (const h of humans) { const e = duelEntries(h)[0]; Object.assign(h, { hero: e.hero, lo: e.lo, cos: e.cos }); }
   const per = MODE.per, nt = MODE.teams, grid = Array.from({ length: nt }, () => new Array(per).fill(null)), ORDER = per === 3 ? [1, 0, 2] : [...Array(per).keys()];
   humans.forEach((h, i) => { grid[i % nt][ORDER[Math.floor(i / nt)]] = h; });
   const used = new Set(humans.map(h => h.hero)), pool = ROSTER.filter(k => !used.has(k)).sort(() => Math.random() - .5);
@@ -530,11 +537,32 @@ function setup(withPlayer, humans) {
     if (hm) { f.human = true; if (hm.local) player = f; if (hm.remote) { f.remote = hm.remote; f.netIn = null; hm.remote.f = f; hm.remote.fi = fighters.length; } }
     fighters.push(f);
   }
+  DUEL.line = null; DUEL.li = [0, 0]; DUEL.ent = null;
+  if (curMode === 'duel') { DUEL.ent = fighters.map(f => duelEntries(grid[f.team][0], f)); DUEL.line = DUEL.ent.map(l => l.map(e => e.hero)); }
   modeStart();
+}
+/* a side's DUEL_N picks: a human's own list (h.line = [{ hero, lo, cos }]) checked and topped up, a bot's random distinct heroes; f (when given) is already out as pick 1 */
+function duelEntries(hm, f) {
+  const out = [], seen = new Set(), add = e => { if (out.length < DUEL_N && e && HEROES[e.hero] && !seen.has(e.hero)) { seen.add(e.hero); out.push(e); } };
+  if (f) add({ hero: f.h0.id, lo: f.sk.map(s => s && s.n), cos: f.cos });
+  if (hm && Array.isArray(hm.line)) for (const e of hm.line) if (e && typeof e.hero === 'string') add({ hero: e.hero, lo: Array.isArray(e.lo) ? e.lo : null, cos: e.cos });
+  if (hm && !out.length) add({ hero: hm.hero, lo: hm.lo, cos: hm.cos });
+  for (const id of ROSTER.slice().sort(() => Math.random() - .5)) add({ hero: id, lo: null, cos: null });
+  return out;
+}
+/* the side that lost the round sends out its next pick: the same fighter object takes the new hero (net, camera and AI keep their references) */
+function duelNext(t) {
+  const f = fighters.find(g => g.team === t), e = DUEL.ent && DUEL.ent[t] && DUEL.ent[t][DUEL.li[t] + 1]; if (!f || !e) return;
+  DUEL.li[t]++;
+  const nf = makeFighter(t, f.slot, e.hero, f.isPlayer, e.lo, e.cos || (f.isPlayer ? myCos(e.hero) : null), f.nick);
+  const keep = { human: f.human, remote: f.remote, netIn: f.netIn, kos: f.kos, deaths: f.deaths, dealt: f.dealt, taken: f.taken, healed: f.healed, aim: f.aim };
+  for (const k in f) if (!(k in nf)) delete f[k];
+  Object.assign(f, nf, keep);
 }
 const canAct = f => !f.dead && !B(f, 'stun') && !f.dash && f.form !== 'gone';
 const canAtk = f => canAct(f) && !B(f, 'mute') && !f.noAtk && f.form !== 'sub' && f.form !== 'dove';
-function cdOf(f) { const h = f.h; return (h.cdf ? h.cdf(f) : h.cd) * V(f, 'rapid', 1); }
+const ATK_CD_MUL = .65;      // 2026-11-13 (developer): every hero's basic attack cooldown x0.65
+function cdOf(f) { const h = f.h; return (h.cdf ? h.cdf(f) : h.cd) * V(f, 'rapid', 1) * ATK_CD_MUL; }
 function basic(f, ang) { return withSrc('기본 공격', () => basic0(f, ang)); }
 function basic0(f, ang) {
   const h = f.h;
@@ -631,7 +659,7 @@ const AI_PERS = {
   saver: { want: .6, low: .3, sk: .6, st: [.6, 1.5], flip: .6, save: 1 }
 };
 const AI_PERS_IDS = Object.keys(AI_PERS), AI_PERS0 = { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6 };      // (the old single behaviour)
-const AI_LV = { aim: .13, lead: .62, coolR: [.24, .78], coolM: [.07, .34], sk: .045, ult: .055 };
+const AI_LV = { aim: .21, lead: .42, coolR: [.34, 1.0], coolM: [.14, .46], sk: .032, ult: .04 };      // 2026-11-13 (developer): easier bots (was aim .13 lead .62 coolR .24-.78 coolM .07-.34 sk .045 ult .055)
 function kiteStep(f, reach) {
   const ts = foes(f).filter(e => !e.dead && !e.minion && !B(e, 'ally') && dist(f, e) < reach * 1.2 && visibleTo(e, teamOf(f)));
   if (!ts.length) return null;
@@ -753,7 +781,8 @@ function readLocal(f) {       // what this screen's controls say right now, for 
   } else {
     const wx = (mouse.x - W / 2) / cam.s + cam.x, wy = (mouse.y - H / 2) / cam.s + cam.y;
     aim = Math.atan2(wy - (f.y + BODY), wx - f.x); tx = wx; ty = wy - BODY;
-    const ae = pcAssist(f, wx, wy - BODY); if (ae) { aim = leadAng(f, ae); const dl = Math.hypot(wx - f.x, wy - BODY - f.y); tx = f.x + Math.cos(aim) * dl; ty = f.y + Math.sin(aim) * dl; }
+    const ae = null; if (ae)      // 2026-11-13 (developer): aim assist on phones only, the PC mouse aims exactly at the cursor (pcAssist kept unused)
+     { aim = leadAng(f, ae); const dl = Math.hypot(wx - f.x, wy - BODY - f.y); tx = f.x + Math.cos(aim) * dl; ty = f.y + Math.sin(aim) * dl; }
   }
   if (pendingFire && pendingFire.len != null && f.h.splash && f.h.w.shape === 'bomb') { const dl = clamp(pendingFire.len, .3, 1) * f.h.range; tx = f.x + Math.cos(pendingFire.ang) * dl; ty = f.y + Math.sin(pendingFire.ang) * dl; }      // phone: the drag length sets the bomb's distance
   if (mouseRel) { mouseRel = false; if (!f.h.fireHeld && !touchMode) pendingFire = { ang: aim }; }      // PC: the basic attack goes out when the button is released, towards the cursor
@@ -873,6 +902,7 @@ function updateBullets(dt) {
           if (fxInView(b.x, b.y)) fx('spark', b.x, b.y, { ang: +b.ang.toFixed(2), color: TC(b.team), gy: b.y + 24 });
           continue;
         }
+        if (o && o.wb && !b.wp && solidAt(b.x, b.y)) { const c = Math.floor(b.x / T), r = Math.floor(b.y / T); if (c > 0 && r > 0 && c < COLS - 1 && r < ROWS - 1 && MAP[r][c] === '#') { MAP[r][c] = '.'; NET.mapVer++; burst((c + .5) * T, (r + .5) * T, TH.wt, 14, 260); } }      // o.wb: the shot breaks the inner walls it touches and keeps going
         if (b.x < 0 || b.y < 0 || b.x > WW || b.y > WH || (!b.wp && solidAt(b.x, b.y)) || b.life <= 0) {
           if (b.boom) { b.phase = 1; b.hit.clear(); } else { dead = true; b.wall = b.life > 0; if (!b.splash && fxInView(b.x, b.y)) fx('spark', b.x, b.y, { ang: +b.ang.toFixed(2), color: TC(b.team), gy: b.y + 24 }); break; }
         }
@@ -952,13 +982,14 @@ function roundStep(dt) {
   else if (timeLeft <= 0) w = Math.abs(a - b) < 1e-6 ? -1 : a > b ? 0 : 1;
   if (w === -2) return;
   if (w >= 0) score[w]++;
+  RD.lost = w >= 0 ? 1 - w : -1;
   RD.pause = 2.5; timeLeft = MODE.time;
   const done = score[0] >= MODE.win || score[1] >= MODE.win;
   for (const f of fighters) if (!f.dead) say(f, w < 0 ? '무승부 · 다시' : f.team === w ? (done ? '승리!' : '라운드 승리') : '라운드 패배', w >= 0 && f.team === w ? '#ffd34d' : '#cfd3dc');
   sfx(520, .3, 'triangle', .07, 1.5);
 }
 function newRound() {
-  RD.n++; bullets = []; zones = []; minions = []; strikes = []; timers = []; tempWalls.clear(); NET.mapVer++; timeLeft = modeNow().time;
+  RD.n++; if (curMode === 'duel' && RD.lost >= 0) duelNext(RD.lost); RD.lost = -1; bullets = []; zones = []; minions = []; strikes = []; timers = []; tempWalls.clear(); NET.mapVer++; timeLeft = modeNow().time;
   for (const f of fighters) { f.queue = []; f.dash = null; if (f.h !== f.h0) { f.h = f.h0; f.sk = f.sk0; } respawn(f); f.scd = [0, 0]; f.dcd = 0; f.ucd = 6; say(f, RD.n + '라운드', '#ffffff'); }
 }
 
