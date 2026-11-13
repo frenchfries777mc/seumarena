@@ -1,5 +1,9 @@
 <title>SeumArena</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<script>/* phones: no zoom by double tap or pinch (the page that wraps the game may bring its own viewport line, so it is fixed here) */
+(function(){var c='width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover',m=document.querySelector('meta[name=viewport]');if(!m){m=document.createElement('meta');m.name='viewport';(document.head||document.documentElement).appendChild(m);}m.content=c;
+var no=function(e){e.preventDefault();};document.addEventListener('gesturestart',no,{passive:false});document.addEventListener('gesturechange',no,{passive:false});document.addEventListener('dblclick',no,{passive:false});
+document.addEventListener('touchmove',function(e){if(e.touches&&e.touches.length>1)e.preventDefault();},{passive:false});})();</script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Black+Han+Sans&display=swap" media="print" onload="this.media='all'">
 <style>
@@ -13,7 +17,7 @@
   --blue:#4d9dff; --red:#ff5d5d;
   --font:'Rajdhani','IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
 }
-*{box-sizing:border-box}
+*{box-sizing:border-box;touch-action:manipulation}      /* no double-tap zoom on phones (parts that set their own touch-action keep it) */
 html,body{height:100%}
 body{background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 button{font-family:inherit}
@@ -176,6 +180,9 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent-2);outli
 .score{min-width:60px;padding:5px 12px;border-radius:10px;font-size:26px;line-height:1;text-align:center;color:#06101f}
 .score small{display:block;font-size:11px;letter-spacing:.08em;opacity:.8;margin-bottom:2px}
 .score.b{background:var(--blue)} .score.r{background:var(--red)}
+.dq{display:flex;gap:10px;justify-content:center;margin:2px 0 12px}.dq .s,.dqH .s{position:relative;width:64px;height:64px;padding:0;border-radius:12px;background:#232838;border:2px solid #3a4258;overflow:hidden;cursor:pointer}.dq .s canvas,.dqH .s canvas{width:100%;height:100%;display:block}.dq .s b{position:absolute;left:5px;top:2px;font:800 14px sans-serif;color:#ffd34d;text-shadow:0 1px 2px #000}.dq .s.on{border-color:#3ee0c4;box-shadow:0 0 0 3px rgba(62,224,196,.35)}.dq .s.add{color:#7d869c;font:700 30px sans-serif;border-style:dashed}
+.dqH{display:flex;gap:6px;align-items:center}.dqH .s{width:46px;height:46px;cursor:default;border-color:var(--c);opacity:.75}.dqH .s.on{opacity:1;box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 40%,transparent)}.dqH .s.dead{filter:grayscale(1) brightness(.45);opacity:1}.dqH .s.dead:after{content:'✕';position:absolute;inset:0;display:grid;place-items:center;color:#ff5d5d;font:900 26px sans-serif}
+@media (max-width:760px),(max-height:500px){.dqH{gap:4px}.dqH .s{width:34px;height:34px;border-radius:9px}.dq .s{width:52px;height:52px}}
 .timer{font-size:22px;padding:6px 12px;border-radius:10px;background:rgba(20,22,28,.85);border:1px solid var(--line);min-width:66px;text-align:center}
 .timer.hot{color:var(--accent);border-color:var(--accent)}
 /* 4팀 핫존: four bars (mine first), two each side of the clock; the one filling glows */
@@ -831,7 +838,9 @@ body.touchUi canvas{touch-action:none}
 <div id="hud" hidden>
   <div class="scorebar">
     <div class="score b"><small id="sbL">블루</small><span id="sb">0</span></div>
+    <div class="dqH" id="dqL" hidden></div>
     <div class="timer" id="timer">2:00</div>
+    <div class="dqH" id="dqR" hidden></div>
     <div class="score r"><small id="srL">레드</small><span id="sr">0</span></div>
     <div class="score g" hidden><small></small><span id="sg">0</span></div>
     <div class="score y" hidden><small></small><span id="sy">0</span></div>
@@ -956,6 +965,7 @@ body.touchUi canvas{touch-action:none}
   <div class="card" id="weaponScreen">
     <button class="backlink" id="weaponBrowseBackBtn" type="button">&larr; 뒤로가기</button>
     <h2 id="weaponTitle" style="text-align:center">캐릭터를 선택하세요</h2>
+    <div class="dq" id="duelLine" hidden></div>
     <input id="weaponSearch" type="search" placeholder="캐릭터 검색" autocomplete="off">
     <div id="weaponGrid"></div>
     <div id="weaponPortraitWrap">

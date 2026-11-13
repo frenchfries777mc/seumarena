@@ -98,12 +98,14 @@ hero('gardener', { p: ['초록 손', '내가 심은 덤불(덤불 심기, 숲 �
           bullets.push({ src: SRC, x: sx, y: sy, vx: Math.cos(m.aim) * 700, vy: Math.sin(m.aim) * 700, spd: 700, ang: m.aim, life: 5.3 * T, dmg: 10, team: m.team, owner: f, r: 5, shape: 'seed', pierce: 0, splash: 0, phase: 0, o: { skill: 1 }, hit: new Set(), born: time, x0: m.x, y0: m.y });
         },
         end: m => { if (!m.dead || m.gone) return; fxPlay('garden', 'pollen', Math.round(m.x), Math.round(m.y), 1.5 * T); circ(f, m.x, m.y, 1.5 * T, 0, { fn: e => buff(e, 'blind', 1) }); } });
-    }, { cd1: 10 }]
+    }, { cd1: 10 }],
+    [4, '씨앗 폭탄', 'hit', '조준한 곳에 씨앗 주머니를 던짐 · 0.5초 뒤 터져 범위 안 상대에게 360 피해 + 1.5초 동안 30% 둔화', [100, 7 * T], f => { const p = aimPt(f, 7 * T); strike(f, p.x, p.y, 90, .5, () => boom(f, p.x, p.y, 90, 30, { kb: 0, col: '#7bc96f', slow: [.7, 1.5] }), '#7bc96f'); }],
+    [5, '꽃잎 바람', 'hit', '앞쪽으로 꽃잎 바람을 일으켜 상대를 크게 밀쳐냄 (180 피해)', [0, 180], (f, a) => { f.swing = .22; arc(f, a, 180, .6, 15, { kb: 620 }); }]
   ] });
 HEROES.gardener.name = '정원사';
 HEROES.gardener.hp = 540 * STAT_X;
-HEROES.gardener.xm = 1;
 if (!ACTIVE_HEROES.includes('gardener')) ACTIVE_HEROES.push('gardener');
+HEROES.gardener.xm = 1.2;      // 2026-11-13 duel + team bot sim retune (see DMG_MUL in kits2.js)
 Object.assign(PVS, {
   'gardener:1': R('ground', { max: 5 * T, r: 64 }),
   'gardener:2': R('line', { len: 4.3 * T, w: 30 }),
@@ -145,21 +147,27 @@ function drawGardener(c, o) {
   c.fillStyle = '#7a4a22'; c.beginPath(); c.ellipse(bx, 0, 2.2, 2.8, 0, 0, 7); c.fill();
   if (pull > .15) { c.fillStyle = '#e9c46a'; c.beginPath(); c.ellipse(bx + 1, 0, 2, 1.5, 0, 0, 7); c.fill(); }
   c.restore();
+  gdHat(c, 0, HEADCY, R0, face, t, o.tint);
+}
+/* the straw hat (also drawn alone on the skin cards); tint = the skin colour: the band, and a little of it in the straw */
+function gdHat(c, hx, HEADCY, R0, face, t, tint) {
+  c.save(); c.translate(hx, 0);
   const by = HEADCY - R0 * .45;
   c.fillStyle = 'rgba(0,0,0,.22)'; c.beginPath(); c.ellipse(0, by + 2.6, R0 * 1.05, 2.4, 0, 0, 7); c.fill();
-  c.fillStyle = '#f3d27a'; c.strokeStyle = '#7d5a1c'; c.lineWidth = 1.5;
+  c.fillStyle = tint ? mixHex('#f3d27a', tint, .22) : '#f3d27a'; c.strokeStyle = '#7d5a1c'; c.lineWidth = 1.5;
   c.beginPath(); c.ellipse(0, by, R0 * 2.05, R0 * .62, 0, 0, 7); c.fill(); c.stroke();
   c.strokeStyle = 'rgba(160,112,40,.55)'; c.lineWidth = .8;
   for (const k of [.55, .8]) { c.beginPath(); c.ellipse(0, by, R0 * 2.05 * k + 2, R0 * .62 * k + .6, 0, Math.PI * .05, Math.PI * .95); c.stroke(); }
-  c.fillStyle = '#f7dc8c'; c.strokeStyle = '#7d5a1c'; c.lineWidth = 1.5;
+  c.fillStyle = tint ? mixHex('#f7dc8c', tint, .22) : '#f7dc8c'; c.strokeStyle = '#7d5a1c'; c.lineWidth = 1.5;
   c.beginPath(); c.moveTo(-R0 * .98, by - .5); c.bezierCurveTo(-R0, by - R0 * 1.25, R0, by - R0 * 1.25, R0 * .98, by - .5);
   c.quadraticCurveTo(0, by + 2, -R0 * .98, by - .5); c.closePath(); c.fill(); c.stroke();
-  c.strokeStyle = '#3f9a3a'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(-R0 * .98, by - 2); c.quadraticCurveTo(0, by + .3, R0 * .98, by - 2); c.stroke();
+  c.strokeStyle = (tint || '#3f9a3a'); c.lineWidth = 2.6; c.beginPath(); c.moveTo(-R0 * .98, by - 2); c.quadraticCurveTo(0, by + .3, R0 * .98, by - 2); c.stroke();
   c.fillStyle = '#ffd34d'; c.beginPath(); c.arc(face * R0 * .55, by - 1.2, 1.5, 0, 7); c.fill();
   c.save(); c.translate(0, by - R0 * .9); c.rotate(Math.sin(t * 2.4) * .2);
   c.strokeStyle = '#2f7a24'; c.lineWidth = 2.2; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(1, -4, 0, -8); c.stroke();
   c.strokeStyle = '#5cc13d'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(1, -4, 0, -8); c.stroke();
   gdLeaf(c, 0, -7.5, 7.5, -2.6, '#7be05a'); gdLeaf(c, 0, -8, 7.5, -.55, '#6fd64a');
+  c.restore();
   c.restore();
 }
 /* a flying seed (basic attack and the sunflower) */

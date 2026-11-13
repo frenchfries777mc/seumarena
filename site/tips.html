@@ -50,20 +50,33 @@
 </div>
 
 <div data-p="mode" hidden class="modes">
-<section class="card mode" style="--c:#8fc3ff"><div><h3>팀 아웃</h3><span class="num">3v3</span></div><p class="soon">공략을 준비하고 있어요.</p></section>
-<section class="card mode" style="--c:#ffcc4d"><div><h3>원 레프트</h3><span class="num">6명</span></div><p class="soon">공략을 준비하고 있어요.</p></section>
-<section class="card mode" style="--c:#ff8a98"><div><h3>캡쳐 플래그</h3><span class="num">5v5</span></div><p class="soon">공략을 준비하고 있어요.</p></section>
-<section class="card mode" style="--c:#3fe0c5"><div><h3>듀얼 배틀</h3><span class="num">1v1</span></div><p class="soon">공략을 준비하고 있어요.</p></section>
+<section class="card mode" style="--c:#8fc3ff"><div><h3>팀 아웃</h3><span class="num">3v3</span></div><p class="rule">먼저 10킬을 하거나, 2분 30초가 끝났을 때 킬이 많은 팀이 이겨요. 쓰러져도 3초 뒤 다시 나와요.</p><ul><li>혼자 앞서 나가지 말고 아군과 함께 움직이세요. 3명이 한 명을 같이 노리면 빨리 끝나요.</li><li>체력이 낮으면 잠깐 빠지세요. 3초만 안 싸우면 체력이 차요.</li><li>적을 쓰러뜨리면 궁극기가 빨리 돌아와요. 킬이 난 직후 바로 밀어붙이세요.</li></ul></section>
+<section class="card mode" style="--c:#ffcc4d"><div><h3>원 레프트</h3><span class="num">6명</span></div><p class="rule">6명이 각자 싸우고, 마지막까지 살아남은 한 명이 이겨요. 다시 살아나지 않아요. 시간이 지나면 안전 구역이 줄어들고, 밖에 있으면 체력이 깎여요.</p><ul><li>처음에는 싸움을 피하고, 다른 사람끼리 싸울 때 끼어들어 마무리하세요.</li><li>안전 구역이 줄어드는 방향을 보고 미리 안쪽으로 들어가세요. 늦을수록 구역 밖 피해가 커져요.</li><li>풀숲에 숨어 있으면 가까이 온 상대만 나를 볼 수 있어요.</li></ul></section>
+<section class="card mode" style="--c:#ff8a98"><div><h3>캡쳐 플래그</h3><span class="num">5v5</span></div><p class="rule">상대 깃발을 밟아 집어서 우리 진영으로 가져오면 1점이에요. 먼저 3점이거나, 4분이 끝났을 때 점수가 높은 팀이 이겨요.</p><ul><li>깃발을 든 사람은 15% 느려져요. 아군이 옆에서 지켜 주세요.</li><li>깃발을 든 상대를 쓰러뜨리면 그 자리에 깃발이 떨어져요. 우리 팀이 밟으면 바로 돌아오고, 그대로 두어도 8초 뒤 돌아와요.</li><li>다섯 명이 다 공격하지 말고, 한두 명은 우리 깃발 근처를 지키세요.</li></ul></section>
+<section class="card mode" style="--c:#3fe0c5"><div><h3>듀얼 배틀</h3><span class="num">1v1</span></div><p class="rule">1대1로 싸워 먼저 2라운드를 이기면 승리예요. 한 라운드는 1분이고, 쓰러지면 그 라운드는 끝나요.</p><ul><li>상대 캐릭터의 궁극기와 이동기를 먼저 확인하고, 그 기술이 빠졌을 때 들어가세요.</li><li>풀숲과 벽을 이용해 상대가 나를 못 보게 하면서 다가가세요.</li><li>첫 라운드에서 진 캐릭터는 다음 라운드에서 스킬 조합을 바꿔 보는 것도 좋아요.</li></ul></section>
+<section class="card mode" style="--c:#c49bff"><div><h3>핫존</h3><span class="num">4팀</span></div><p class="rule">3명씩 4팀이 싸워요. 가운데 원 안에 우리 팀이 가장 많이 들어가 있으면 우리 게이지가 차요. 가장 많은 팀이 둘 이상이면 아무도 차지 않아요. 먼저 100%이거나, 끝났을 때 가장 높은 팀이 이겨요.</p><ul><li>원 안의 인원수가 중요해요. 한 명이라도 더 들어가 있으면 우리 팀이 차요.</li><li>다른 두 팀이 원에서 싸울 때 잠깐 기다렸다가 들어가면 쉽게 차지할 수 있어요.</li><li>밀치기 기술로 상대를 원 밖으로 밀어내면 그만큼 유리해져요.</li></ul></section>
 </div>
 
 <div data-p="hero" hidden class="dex" id="dex"><div class="big"></div><div class="grid16"></div></div>
 </main>
 <script src="https://frenchfries777.com/games/ff-auth.js"></script>
+<script src="heroes.js"></script>
 <script src="site.js"></script>
 <script>
 siteChrome('tips'); siteAuth();
-/* the developer's guide text for each character goes here: TIPS.sword = '...' */
-const TIPS = {};
+/* every character's guide: heroes.js (made from the game by tools/gen-tips.js; the guide text is in tools/tips-text.js) */
+function guide(d) {
+  if (!d) return '<p class="soon">공략을 준비하고 있어요.</p>';
+  const li = a => a.map(t => '<li>' + esc(t) + '</li>').join('');
+  return '<div class="guide">' +
+    '<div class="stat"><span>' + esc(d.role || '') + '</span><span>체력 ' + d.hp.toLocaleString() + '</span><span>' + (d.melee ? '근접' : '원거리') + ' · 사거리 ' + d.range + '칸</span><span>기본 공격 ' + d.dmg + ' · ' + d.cd + '초마다</span></div>' +
+    (d.passive ? '<h4>패시브 · ' + esc(d.passive.name) + '</h4><p>' + esc(d.passive.d) + '</p>' : '') +
+    '<h4>궁극기 · ' + esc(d.ult.name) + '</h4><p>' + esc(d.ult.d) + '</p>' +
+    '<h4>스킬 ' + d.skills.length + '개</h4><dl>' + d.skills.map(s => '<dt' + (d.combo && d.combo.includes(s.name) ? ' class="pick"' : '') + '>' + esc(s.name) + '</dt><dd>' + esc(s.d) + '</dd>').join('') + '</dl>' +
+    (d.combo ? '<h4>추천 조합</h4><p><b>1스킬 ' + esc(d.combo[0]) + '</b> + <b>2스킬 ' + esc(d.combo[1]) + '</b><br>' + esc(d.why || '') + '</p>' : '') +
+    (d.play ? '<h4>플레이 요령</h4><ul>' + li(d.play) + '</ul>' : '') +
+    (d.vs ? '<h4>상대할 때</h4><p>' + esc(d.vs) + '</p>' : '') + '</div>';
+}
 const tabs = document.querySelectorAll('[role=tab]');
 function show(t) {
   tabs.forEach(b => { const on = b.dataset.t === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
@@ -73,8 +86,7 @@ tabs.forEach(b => b.onclick = () => show(b.dataset.t));
 const want = location.hash.slice(1);
 heroDex(document.getElementById('dex'), {
   first: HEROES.some(h => h.id === want) ? want : 'sword',
-  extra: h => '<p style="margin:6px 0 0;line-height:1.7;color:' + (TIPS[h.id] ? '#dfe3ea' : '#9aa3b5') + '">' + esc(TIPS[h.id] || '공략을 준비하고 있어요.') + '</p>' +
-    '<a href="community.html">커뮤니티에서 다른 플레이어 팁 보기</a>'
+  extra: h => guide(h.data) + '<a href="community.html">커뮤니티에서 다른 플레이어 팁 보기</a>'
 });
 if (HEROES.some(h => h.id === want)) show('hero');
 </script>

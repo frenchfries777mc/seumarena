@@ -26,7 +26,7 @@ const SeumMusic = (() => {
   const isPath = d => typeof d === 'string' && /\.mp3$/.test(d);
   function fetchSong(name, tries) {
     return fetch(DATA[name]).then(r => { if (!r.ok) throw 0; return r.blob(); })
-      .then(b => { blobs[name] = URL.createObjectURL(b); if (waiting[name]) { waiting[name] = 0; if (inited) { tracks[name] = make(name); tick(); } } })
+      .then(b => { blobs[name] = URL.createObjectURL(b); if (waiting[name]) { waiting[name] = 0; if (inited) { tracks[name] = make(name); tick(); arm(); } } })
       .catch(() => new Promise(r => setTimeout(r, 8000 * (tries + 1))).then(() => tries < 4 && fetchSong(name, tries + 1)));
   }
   let fetching = null;
@@ -57,28 +57,45 @@ const SeumMusic = (() => {
     if (t.g) t.g.gain.setTargetAtTime(k, ac.currentTime, fast ? .08 : .6);
     else t.a.volume = Math.max(0, Math.min(1, k));
   }
-  let inited = false;
+  /* Phones only let sound start inside a real tap: pointerup / touchend / click / keydown (pointerdown of a finger does NOT count,
+     which is why the music never started on phones before). So every tap tries again until the wanted song is really playing,
+     and on the first tap each song is started once at volume 0 and paused ("primed"), so later switches lobby <-> match work without a tap. */
+  const GESTURES = ['pointerup', 'touchend', 'click', 'keydown', 'mousedown'];
+  let inited = false, armed = false;
+  function prime(t) {
+    if (!t || t.primed || t.on) return;
+    t.primed = 1;
+    try { const p = t.a.play(); if (p && p.then) p.then(() => { if (!t.on) t.a.pause(); }, () => { t.primed = 0; }); else if (!t.on) t.a.pause(); } catch (e) { t.primed = 0; }
+  }
   function unlock() {
-    for (const ev of ['pointerdown', 'keydown', 'touchend']) removeEventListener(ev, unlock, true);
     if (!inited) {
       inited = true;
+      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { }   // iPhone: music also plays with the ring/silent switch on silent
       try { const C = window.AudioContext || window.webkitAudioContext; ac = new C(); } catch (e) { ac = null; }
       for (const n of ['lobby', 'battle']) { try { tracks[n] = make(n); } catch (e) { tracks[n] = null; } }
     }
     try { if (ac && ac.state !== 'running') ac.resume(); } catch (e) { }
     started = true; tick();
+    for (const n in tracks) if (tracks[n] && n !== want) prime(tracks[n]);
+    if (ok()) disarm();
+  }
+  function ok() {                                         // done with taps once the sound system runs and every song exists, is primed or playing
+    if (ac && ac.state !== 'running') return false;
+    for (const n of ['lobby', 'battle']) { const t = tracks[n]; if (DATA[n] || waiting[n] || (t && !t.primed && !(t.on && !t.a.paused))) return false; }
+    return true;
   }
   function play(t) {
     if (!t) return;
     t.on = true; clearTimeout(t.off);
-    if (t.a.paused) { const p = t.a.play(); if (p && p.catch) p.catch(() => { t.on = false; arm(); }); }
+    if (t.a.paused) { const p = t.a.play(); if (p && p.then) p.then(() => { t.primed = 1; }, () => { t.on = false; started = false; arm(); }); else t.primed = 1; }
   }
   function stop(t) {                                     // fade out, then really pause (saves the phone's battery)
     if (!t || !t.on) return;
     t.on = false; clearTimeout(t.off);
     t.off = setTimeout(() => { if (!t.on) try { t.a.pause(); } catch (e) { } }, 1800);
   }
-  function arm() { started = false; for (const ev of ['pointerdown', 'keydown', 'touchend']) addEventListener(ev, unlock, true); }
+  function arm() { if (armed) return; armed = true; for (const ev of GESTURES) addEventListener(ev, unlock, true); }
+  function disarm() { if (!armed) return; armed = false; for (const ev of GESTURES) removeEventListener(ev, unlock, true); }
 
   /* the credit line (the licence asks for it): the song's name, the artist and the licence */
   function ensureCred() {
@@ -132,7 +149,7 @@ const SeumMusic = (() => {
   }
   arm();
   setInterval(tick, 200);
-  document.addEventListener('visibilitychange', tick);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && inited && ac && ac.state !== 'running') arm(); tick(); });
   return {
     getVolume: () => vol,
     setVolume(v) { v = +v; if (!(v >= 0)) v = 0; vol = Math.min(1, v); try { localStorage.setItem(KEY, String(vol)); } catch (e) { } tick(); },
