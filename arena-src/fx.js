@@ -37,8 +37,12 @@ function hitReact(e) {
     if (tier === 3) { const px = -Math.sin(ang), py = Math.cos(ang); addP({ x: x - px * 34, y: y - py * 34, x2: x + px * 34, y2: y + py * 34, life: .18, color: '#ffffff', shape: 'slash', size: 6 }); }
   }
 }
-function staggerAngle(f) {             // tail.js turns the figure by this; while the hit flash lasts the figure is also drawn bright (the flash ends with tail.js's own ctx.restore)
-  if (f._hf) { const a = performance.now() - f._hf; if (a < f._hfT && !lowFx()) ctx.filter = a < 45 ? 'brightness(0) invert(1)' : 'brightness(' + (1 + 2.2 * (1 - a / f._hfT)).toFixed(2) + ')'; else f._hf = 0; }
+function hitFlashFilter(f) {           // while the hit flash lasts tail.js drawFighter draws the figure bright with this filter ('' = no flash)
+  if (!f._hf) return '';
+  const a = performance.now() - f._hf; if (a < f._hfT && !lowFx()) return a < 45 ? 'brightness(0) invert(1)' : 'brightness(' + (1 + 2.2 * (1 - a / f._hfT)).toFixed(2) + ')';
+  f._hf = 0; return '';
+}
+function staggerAngle(f) {             // tail.js turns the figure by this
   atkKick(f);
   const st = f.stg; if (!st) return 0;
   const age = performance.now() - st.at; if (age > 240 || age < 0) { f.stg = null; return 0; }
