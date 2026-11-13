@@ -230,7 +230,8 @@ function render() {
   const c0 = Math.max(0, Math.floor((cam.x - W / 2 / cam.s) / T) - 1), c1 = Math.min(COLS - 1, Math.ceil((cam.x + W / 2 / cam.s) / T));
   const r0 = Math.max(0, Math.floor((cam.y - H / 2 / cam.s) / T) - 1), r1 = Math.min(ROWS - 1, Math.ceil((cam.y + H / 2 / cam.s) / T));
   drawTiles(ctx, c0, c1, r0, r1, 0);
-  if (curMode !== 'solo' || menu) for (let t = 0; t < 2; t++) { ctx.fillStyle = TC(t); ctx.globalAlpha = .18; ctx.beginPath(); ctx.roundRect((t ? COLS - 2 : 1) * T + 6, 6 * T, T - 12, 5 * T, 16); ctx.fill(); ctx.globalAlpha = 1; }
+  if (typeof drawHotZone === 'function') drawHotZone(ctx);      // (4팀 핫존: the circle and the corner pads)
+  if ((curMode !== 'solo' || menu) && !(typeof HZ === 'object' && HZ.on)) for (let t = 0; t < 2; t++) { ctx.fillStyle = TC(t); ctx.globalAlpha = .18; ctx.beginPath(); ctx.roundRect((t ? COLS - 2 : 1) * T + 6, 6 * T, T - 12, 5 * T, 16); ctx.fill(); ctx.globalAlpha = 1; }
   for (const z of zones) {
     if (z.hidden && z.team !== VIEW && !menu) continue;
     if (typeof drawZoneArt === 'function' && drawZoneArt(z, menu)) continue;      // (Stickseum's own zone pictures, from fx.js)
@@ -311,9 +312,12 @@ function updateHud() {
   const ot = inOvertime();
   if (ot && !ovtSeen) ovtUntil = performance.now() + 2600; ovtSeen = ot;
   const ovtBanner = ot && !dead && performance.now() < ovtUntil, kl = dead ? p.killer : null, di = dead ? (kl ? { by: kl.i >= 0 ? fighters[kl.i] || null : null, src: kl.src || '' } : deathInfo) : null;
-  const key = [solo, mine, theirs, tl, up, dp, sp, sn, c.un, dead, touchUi(), ot, ovtBanner, di ? (di.by ? fighters.indexOf(di.by) : -1) + di.src : ''].join();
+  const hq = curMode === 'hot4' && typeof hotHud === 'function' ? hotHud() : null;
+  const key = [hq ? hq.v.join('/') + '/' + hq.own : '', solo, mine, theirs, tl, up, dp, sp, sn, c.un, dead, touchUi(), ot, ovtBanner, di ? (di.by ? fighters.indexOf(di.by) : -1) + di.src : ''].join();
   if (key === lastHud) return; lastHud = key;
-  $('sb').textContent = mine; $('sr').textContent = theirs; $('sbL').textContent = solo ? '킬' : '블루'; $('srL').textContent = solo ? '생존' : '레드';
+  $('hud').classList.toggle('q4', !!hq); $('sg').parentNode.hidden = $('sy').parentNode.hidden = !hq;
+  if (hq) ['sb', 'sr', 'sg', 'sy'].forEach((id, i) => { const t = hq.ord[i], b = $(id).parentNode; $(id).textContent = hq.v[i] + '%'; b.style.setProperty('--p', hq.v[i] + '%'); b.style.setProperty('--c', TC(t)); b.classList.toggle('on', hq.own === t); });      // 4팀 핫존: four bars, mine first
+  else { $('sb').textContent = mine; $('sr').textContent = theirs; $('sbL').textContent = solo ? '킬' : '블루'; $('srL').textContent = solo ? '생존' : '레드'; }
   $('timer').textContent = ot ? '연장전' : Math.floor(tl / 60) + ':' + String(tl % 60).padStart(2, '0');
   $('timer').classList.toggle('hot', ot || tl <= 15);
   ultBtn.style.setProperty('--p', up); ultBtn.classList.toggle('ready', up >= 100);
@@ -337,7 +341,7 @@ function addFeed(owner, victim, src) {
   if (victim === player) deathInfo = { by: owner || null, src: src || (victim.killer && victim.killer.src) || '' };
   evt(['f', owner ? fighters.indexOf(owner) : -1, fighters.indexOf(victim)]);
   const d = document.createElement('div');
-  const who = f => { const s = document.createElement('span'); s.className = f.team === VIEW ? 'b' : 'r'; s.textContent = f.nick || f.h0.name; return s; };
+  const who = f => { const s = document.createElement('span'); s.className = f.team === VIEW ? 'b' : 'r'; if (curMode === 'hot4' && f.team !== VIEW) s.style.color = TC(f.team); s.textContent = f.nick || f.h0.name; return s; };
   if (owner) d.append(who(owner), ' → ', who(victim)); else d.append(who(victim), ' 쓰러짐');
   feed.append(d);
   while (feed.children.length > 3) feed.firstChild.remove();
@@ -385,13 +389,19 @@ tapBtnUi($('setBtn'), () => setOpen(true));
 addEventListener('keydown', e => { if (setEl.hidden) return; if (e.code === 'Escape') setOpen(false); e.stopPropagation(); }, true);   // the game does not see keys while the window is open
 
 /* ---------- device (모바일 / 컴퓨터): picked once on the first start, changed in the settings (engine.js DEVICE; net.js reads the same key) ---------- */
-function devFill() { const cur = DEVICE || deviceGuess(); for (const b of document.querySelectorAll('[data-dev]')) { const on = b.dataset.dev === cur; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); } document.body.classList.toggle('mob', cur === 'mobile'); }
+function devFill() { const cur = DEVICE || deviceGuess(); for (const b of document.querySelectorAll('[data-dev]')) { const on = b.dataset.dev === cur; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); } document.body.classList.toggle('mob', cur === 'mobile'); if (typeof pcqFill === 'function') pcqFill(); }
 function setDevice(v) {
   DEVICE = v; try { localStorage.setItem('seum_device', v); } catch (e) {}
   RSCALE = RS_STEPS[0]; resize(); touchUiSync(); devFill(); lastHud = '';
   try { if (typeof window.netDeviceChanged === 'function') window.netDeviceChanged(); } catch (e) {}
 }
 for (const b of document.querySelectorAll('#setDev [data-dev]')) b.addEventListener('click', () => setDevice(b.dataset.dev));
+function pcqFill() { const r = $('setPcq'); if (r) r.hidden = mobileMode(); for (const b of document.querySelectorAll('#setPcq [data-pcq]')) { const on = b.dataset.pcq === PCQ; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); } }
+for (const b of document.querySelectorAll('#setPcq [data-pcq]')) b.addEventListener('click', () => {
+  PCQ = b.dataset.pcq; try { localStorage.setItem('seum_pcq', PCQ); localStorage.removeItem('seum_pcauto'); } catch (e) {}      // (picking 자동 again starts the measuring over)
+  pcInit(); resize(); pcqFill();
+});
+pcqFill();
 devFill();
 if (!DEVICE && $('devPick')) {
   const dp = $('devPick'); dp.hidden = false;
@@ -403,14 +413,17 @@ if (!DEVICE && $('devPick')) {
 /* game modes: the engine's MODES registry ({id,name,size,maps,ready}) when it exists; until then the same four, with only the current rules playable */
 const MODE_FALLBACK = [{ id: 'team', name: '팀 아웃', size: '3v3' }, { id: 'solo', name: '원 레프트', size: '6명', ready: false }, { id: 'flag', name: '캡쳐 플래그', size: '3v3', ready: false }, { id: 'duel', name: '듀얼 배틀', size: '1v1', ready: false }];
 const MODE_LIST = typeof MODES !== 'undefined' && Array.isArray(MODES) && MODES.length ? MODES : MODE_FALLBACK;
-const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'] };
+const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'], hot4: ['mi-m-hot', '#ff8a3d'] };
 let modeSel = typeof modeChoice === 'string' ? modeChoice : MODE_LIST[0].id, modeView = modeSel;
 const modeOk = m => !!m && m.ready !== false;
 const modeCur = () => MODE_LIST.find(m => m.id === modeSel && modeOk(m)) || MODE_LIST.find(modeOk) || MODE_LIST[0];
 const modeMapsOf = m => { const a = (m.maps || []).filter(i => Number.isInteger(i) && MAPS[i]); return a.length ? a : MAPS.map((x, i) => i); };
 const modeMaps = () => modeMapsOf(modeCur());
 let mapByMode = {};      // each mode remembers its own map choice (-1 = random); the current mode's is mapChoice
-const modeMapOf = m => { if (m.id === modeSel) return mapChoice; const i = mapByMode[m.id]; return Number.isInteger(i) && modeMapsOf(m).includes(i) ? i : -1; };
+/* modes that play on the same maps (듀얼 배틀 and 팀 아웃, user 2026-11-13) are one group: one list in the map picker, one remembered choice. The key is the id of the group's first mode */
+const mapGroup = m => MODE_LIST.filter(x => modeOk(x) && String(modeMapsOf(x)) === String(modeMapsOf(m)));
+const mapKey = m => (mapGroup(m)[0] || m).id;
+const modeMapOf = m => { if (mapKey(m) === mapKey(modeCur())) return mapChoice; const i = mapByMode[mapKey(m)]; return Number.isInteger(i) && modeMapsOf(m).includes(i) ? i : -1; };
 function modeIcon(el, m) {
   const lk = MODE_LOOK[m.id] || ['mi-m-team', '#fff'], NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg'), use = document.createElementNS(NS, 'use');
   use.setAttribute('href', '#' + lk[0]); svg.setAttribute('aria-hidden', 'true'); svg.append(use);
@@ -420,10 +433,10 @@ function modeIcon(el, m) {
 function modeApply() {
   modeSel = modeCur().id;
   if (typeof modeChoice !== 'undefined') modeChoice = modeSel;
-  if (mapChoice >= 0 && !modeMaps().includes(mapChoice)) mapChoice = -1;
+  if (mapChoice >= 0 && !modeMaps().includes(mapChoice)) { const i = mapByMode[mapKey(modeCur())]; mapChoice = Number.isInteger(i) && modeMaps().includes(i) ? i : -1; }      // a choice from another list (an older save): the group's remembered map, or random
 }
 try { const s = JSON.parse(localStorage.getItem('seumArena') || '{}'); if (HEROES[s.c]) chosen = s.c; if (s.m >= -1 && s.m < MAPS.length) mapChoice = s.m | 0; if (s.l && typeof s.l === 'object') loadouts = s.l; if (typeof s.g === 'string') modeSel = s.g; if (s.mm && typeof s.mm === 'object') mapByMode = s.mm; } catch (e) {}
-const savePrefs = () => { mapByMode[modeSel] = mapChoice; try { localStorage.setItem('seumArena', JSON.stringify({ c: chosen, m: mapChoice, l: loadouts, g: modeSel, mm: mapByMode })); } catch (e) {} if (typeof cloudMark === 'function') cloudMark(); };
+const savePrefs = () => { mapByMode[mapKey(modeCur())] = mapChoice; try { localStorage.setItem('seumArena', JSON.stringify({ c: chosen, m: mapChoice, l: loadouts, g: modeSel, mm: mapByMode })); } catch (e) {} if (typeof cloudMark === 'function') cloudMark(); };
 const KIND_LABEL = { melee: '근접', shot: '원거리', flame: '방사', cone: '흡입' }, SK_LABEL = { hit: '공격', move: '이동', buff: '강화' };
 function attackText(h) {
   const SX = (typeof STAT_X === 'number' ? STAT_X : 1) * (h.xm || 1), rd = v => Math.round(v);      // h.xm: this character's own damage multiplier
@@ -574,21 +587,22 @@ function showMap() {
   const cur = mi === mapChoice;
   $('mapPickBtn').textContent = cur ? '선택됨' : '이 맵으로 하기'; $('mapPickBtn').disabled = cur;
 }
-$('goMapBtn').addEventListener('click', () => { mapList = [-1, ...modeMaps()]; mapIdx = Math.max(0, mapList.indexOf(mapChoice)); showMap(); showScreen('mapScreen'); });
+$('goMapBtn').addEventListener('click', () => { $('mapTitle').textContent = mapGroup(modeCur()).map(x => x.name.replace(/ 배틀$/, '')).reverse().join('-') + ' 맵'; mapList = [-1, ...modeMaps()]; mapIdx = Math.max(0, mapList.indexOf(mapChoice)); showMap(); showScreen('mapScreen'); });
 $('mapPrevBtn').addEventListener('click', () => { mapIdx = (mapIdx + mapList.length - 1) % mapList.length; showMap(); });
 $('mapNextBtn').addEventListener('click', () => { mapIdx = (mapIdx + 1) % mapList.length; showMap(); });
 $('mapPickBtn').addEventListener('click', () => { mapChoice = mapList[mapIdx]; savePrefs(); setup(false); showScreen('menuScreen'); });
 
 /* mode picker. PC: a row of event cards, tap one to look at it, the button below (or a double click) confirms.
    touch or small screens: big posters, a tap picks the mode right away. Each card: mode art, headcount, two rules, the mode's current map */
-const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a' };
-const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1 };      // map drawn behind the figures while the mode's map is random
+const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a', hot4: '#7a3510' };
+const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1, hot4: MAPS.findIndex(m => m.hot) };      // map drawn behind the figures while the mode's map is random
 const MODE_FFA = ['#4d9dff', '#ff5d5d', '#ffd34d', '#3ddbb4', '#b48cff', '#ff9a3d'];
 const RULE_ICO = {
   kill: '<circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>',
   clock: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/>',
   crown: '<path d="M4 8l4 4 4-7 4 7 4-4-1.5 10h-13z"/>',
   flag: '<path d="M6 21V4M6 5h12l-3 4 3 4H6"/>',
+  zone: '<circle cx="12" cy="12" r="9" stroke-dasharray="4 3"/><circle cx="12" cy="12" r="3.5"/>',
   rounds: '<circle cx="5" cy="12" r="3" fill="currentColor"/><circle cx="12" cy="12" r="3" fill="currentColor"/><circle cx="19" cy="12" r="3"/>'
 };
 const mmss = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
@@ -597,6 +611,7 @@ function modeRules(m) {
   if (solo) r.push(['crown', '최후 1인']);
   else if (isFlagMode(m.id) && m.win) r.push(['flag', '깃발 ' + m.win + '점']);
   else if (m.id === 'duel' && m.win) r.push(['rounds', m.win + '선승']);
+  else if (m.id === 'hot4') r.push(['zone', (m.win || 100) + '%']);
   else if (m.win) r.push(['kill', m.win + '킬']);
   if (m.time) r.push(['clock', (m.rounds ? '판당 ' : '') + mmss(m.time)]);
   return r;
@@ -637,6 +652,11 @@ function modeScene(cv, m, mi, cx) {
     fig('bow', B, x0 - 110 * s, base - 22 * s, s * .9, 1, .4);
     fig('sword', B, x0 - 30 * s, base, s * 1.1, 1, .2); flag(x0 - 48 * s, base - 30 * s, s * 1.05, R);
     fig('rifle', R, x0 + 70 * s, base - 14 * s, s, -1, .5); flag(x0 + 135 * s, base - 30 * s, s * .9, B);
+  } else if (m.id === 'hot4') {      // the circle with one fighter of each team around it
+    const zx = x0, zy = base - 22 * s, zr = 70 * s;
+    g.save(); g.fillStyle = 'rgba(255,138,61,.22)'; g.beginPath(); g.ellipse(zx, zy, zr, zr * .45, 0, 0, 7); g.fill();
+    g.strokeStyle = '#ffb36b'; g.lineWidth = 3 * k; g.setLineDash([10 * k, 6 * k]); g.beginPath(); g.ellipse(zx, zy, zr, zr * .45, 0, 0, 7); g.stroke(); g.restore();
+    [['sword', -1.25, 4, 1], ['bow', -.55, -26, 1], ['rifle', .55, -26, -1], ['harald', 1.25, 4, -1]].forEach(([id, dx, dy, face], t) => fig(id, TEAM[t], zx + dx * 70 * s, base + dy * s, s * .95, face, .4));
   } else if (m.id === 'duel') {
     fig('sword', B, x0 - 62 * s, base, s * 1.25, 1, .6); fig('magiccard', R, x0 + 62 * s, base, s * 1.25, -1, .6);
     g.save(); g.translate(x0, base - 44 * s); g.globalCompositeOperation = 'lighter';
@@ -659,8 +679,8 @@ function modeMark() {      // which card is being looked at, which mode is picke
 }
 function modePick() {
   if (modeView !== modeSel) {
-    mapByMode[modeSel] = mapChoice; modeSel = modeView;
-    const m = modeCur(), i = mapByMode[m.id]; mapChoice = Number.isInteger(i) && modeMapsOf(m).includes(i) ? i : -1;
+    mapByMode[mapKey(modeCur())] = mapChoice; modeSel = modeView;
+    const m = modeCur(), i = mapByMode[mapKey(m)]; mapChoice = Number.isInteger(i) && modeMapsOf(m).includes(i) ? i : -1;
     modeApply(); savePrefs(); setup(false);
   }
   showScreen('menuScreen');
@@ -680,6 +700,7 @@ function showModes() {
     if (m.teams && m.per) {
       const p = el('span', 'mPips' + (m.teams * m.per > 6 ? ' many' : '')), dots = (n, col) => { const w = el('b'); for (let j = 0; j < n; j++) { const d = el('i'); d.style.background = col; w.append(d); } return w; };
       if (m.teams === 2) p.append(dots(m.per, TEAM[0]), el('em', '', 'vs'), dots(m.per, TEAM[1]));
+      else if (m.per > 1) for (let t = 0; t < m.teams; t++) p.append(dots(m.per, TEAM[t % TEAM.length]));      // 4팀 핫존: three dots per team
       else { const w = el('b'); for (let j = 0; j < m.teams * m.per; j++) { const d = el('i'); d.style.background = MODE_FFA[j % MODE_FFA.length]; w.append(d); } p.append(w); }
       sz.append(p);
     }
@@ -723,13 +744,13 @@ const mvpVal = f => (f.kos || 0) * 100 + (f.dealt || 0) / (10 * SX) - (f.deaths 
 function matchMvp(win, draw) {
   const fs = fighters.filter(f => !f.minion && f.h0); if (fs.length < 2) return null;
   if (curMode === 'solo') return state === 'play' ? null : fs.find(f => f.team === RD.win) || null;
-  const pool = draw ? fs : fs.filter(f => f.team === (win ? VIEW : 1 - VIEW)), m = pool.length ? pool.reduce((a, b) => mvpVal(b) > mvpVal(a) ? b : a) : null;
+  const wt = curMode === 'hot4' ? hotTop() : win ? VIEW : 1 - VIEW, pool = draw ? fs : fs.filter(f => f.team === wt), m = pool.length ? pool.reduce((a, b) => mvpVal(b) > mvpVal(a) ? b : a) : null;
   return m && mvpVal(m) > 0 ? m : null;
 }
 let mvpRun = 0, mvpTimer = 0;
 function mvpFx(win, draw) {
   const fx = $('mvpFx'), f = matchMvp(win, draw), run = ++mvpRun; clearTimeout(mvpTimer); fx.classList.remove('out'); fx.hidden = !f; if (!f) return;
-  const cvs = fx.querySelector('canvas'), c = cvs.getContext('2d'), wid = f.h0.id, sk = skinOf(f.cos, wid), tint = sk ? COSMETICS[sk].tint : undefined, col = bodyColor(f.cos, f.team === VIEW ? TEAM[0] : TEAM[1]);
+  const cvs = fx.querySelector('canvas'), c = cvs.getContext('2d'), wid = f.h0.id, sk = skinOf(f.cos, wid), tint = sk ? COSMETICS[sk].tint : undefined, col = bodyColor(f.cos, TC(f.team));
   const nm = fx.querySelector('.mvName'); nm.textContent = f.nick || f.h0.name; nm.style.color = f === player ? '#ffd34d' : '';
   fx.querySelector('.mvStat').textContent = (f.kos || 0) + '킬 · ' + Math.round(f.dealt || 0).toLocaleString('en-US');
   const close = () => { if (run !== mvpRun) return; mvpRun++; clearTimeout(mvpTimer); fx.classList.add('out'); mvpTimer = setTimeout(() => { fx.hidden = true; fx.classList.remove('out'); }, 220); };
@@ -748,16 +769,17 @@ function buildOverStats(win, draw) {
   const box = $('overStats'); box.textContent = ''; box.classList.remove('noDmg');
   const fs = fighters.filter(f => !f.minion && f.h0); if (fs.length < 2) return;
   const val = f => (f.kos || 0) * 100 + (f.dealt || 0) / (10 * SX) - (f.deaths || 0) * 30;
-  const pool = draw ? fs : fs.filter(f => f.team === (win ? VIEW : 1 - VIEW)), mvp = pool.length ? pool.reduce((a, b) => val(b) > val(a) ? b : a) : null;
+  const wt = curMode === 'hot4' ? hotTop() : win ? VIEW : 1 - VIEW, pool = draw ? fs : fs.filter(f => f.team === wt), mvp = pool.length ? pool.reduce((a, b) => val(b) > val(a) ? b : a) : null;
   const top = Math.max(1, ...fs.map(f => f.dealt || 0));
   box.classList.toggle('noDmg', !fs.some(f => f.dealt > 0));
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   const head = el('div', 'osHead'); head.append(el('span', '', '이름'), el('span', '', '킬/데스'), el('span', '', '딜량')); box.append(head);
   const solo = curMode === 'solo', rank = f => f.team === RD.win ? 0 : RD.out.includes(f.team) ? fs.length - RD.out.indexOf(f.team) : 1;      // solo: one list in finishing order
-  for (const team of solo ? [-1] : [VIEW, 1 - VIEW]) {
+  const q4 = curMode === 'hot4', teams = q4 ? [VIEW].concat([0, 1, 2, 3].filter(t => t !== VIEW).sort((a, b) => (score[b] | 0) - (score[a] | 0))) : [VIEW, 1 - VIEW];
+  for (const team of solo ? [-1] : teams) {
     if (!solo && team !== VIEW) box.append(el('div', 'osGap'));
     for (const f of solo ? fs.slice().sort((a, b) => rank(a) - rank(b)).filter(f => state !== 'play' || RD.out.includes(f.team)) : fs.filter(f => f.team === team).sort((a, b) => val(b) - val(a))) {
-      const r = el('div', 'osRow ' + (f.team === VIEW ? 'b' : 'r') + (f === player ? ' me' : '')), nm = el('span', 'on');
+      const r = el('div', 'osRow ' + (f.team === VIEW ? 'b' : 'r') + (f === player ? ' me' : '')), nm = el('span', 'on'); if (q4 && f.team !== VIEW) r.style.borderLeftColor = TC(f.team);
       if (solo) nm.append(el('span', 'rk', String(fs.slice().sort((a, b) => rank(a) - rank(b)).indexOf(f) + 1)));
       else if (f === mvp && val(f) > 0) nm.append(el('span', 'mvp', 'MVP'));
       nm.append(f.nick || f.h0.name); if (f.nick) nm.append(el('small', '', f.h0.name));
@@ -791,11 +813,13 @@ function endGame(keepRunning) {
   document.querySelector('#overScreen .final').classList.toggle('solo', solo);
   rt.className = draw ? 'draw' : win ? 'win' : 'lose';
   $('fb').textContent = solo ? oc.place + '등' : mine; $('fr').textContent = theirs;
+  { const q4 = curMode === 'hot4', fq = $('fq'); document.querySelector('#overScreen .final').classList.toggle('q4', q4); fq.textContent = '';
+    if (q4) [0, 1, 2, 3].sort((a, b) => (score[b] | 0) - (score[a] | 0)).forEach(t => { const b = document.createElement('b'); b.textContent = (score[t] | 0) + '%'; b.style.color = TC(t); if (t === VIEW) b.className = 'me'; fq.append(b); }); }
   $('mine').textContent = player ? MAPS[curMap].name + ' · ' + player.h0.name + ' · ' + player.kos + '킬 ' + player.deaths + '데스' : MAPS[curMap].name;
   buildOverStats(win, draw);
   { /* what the match pays (social.js matchPay): gold, karma, mastery points for the character played, player xp */
     const pay = player ? matchPay({ mode: curMode, win, draw, kills: player.kos || 0, place: oc.place }) : null, hid = player ? player.h0.id : null;
-    if (pay) { const sk = streakStep(win, draw, solo ? oc.place : 0); pay.karma += sk.karma; pay.gold = Math.round(pay.gold * sk.gm); }
+    if (pay) { const sk = streakStep(win, draw, solo || (curMode === 'hot4' && oc.place <= 2) ? oc.place : 0); pay.karma += sk.karma; pay.gold = Math.round(pay.gold * sk.gm); }
     $('goldGain').hidden = !pay;
     if (pay) {
       COS.gold += pay.gold; COS.karma += pay.karma; COS.xp += pay.xp; addMp(hid, pay.mp); dqMatch({ mode: curMode, win, kills: player.kos || 0, place: solo ? oc.place : 0, hero: hid, dealt: player.dealt || 0 }); achMatch({ mode: curMode, win, kills: player.kos || 0, deaths: player.deaths || 0, hero: hid, n: fighters.length }); saveCos(); goldUi();
@@ -890,10 +914,19 @@ readSafe(); touchUiSync();
 const RS_STEPS = [1.25, 1, .8];
 let rsT0 = 0, rsN = 0, rsLast = 0, rsGood = 0;
 function rsWatch(now) {
-  if (state !== 'play' || !mobileMode() || now - rsLast > 250) { rsT0 = now; rsN = 0; rsLast = now; return; }      // (a pause, a hidden tab or the lobby does not count)
+  const mob = mobileMode();
+  if (state !== 'play' || (!mob && PCQ !== 'auto') || now - rsLast > 250) { rsT0 = now; rsN = 0; rsLast = now; return; }      // (a pause, a hidden tab or the lobby does not count)
   rsLast = now; rsN++;
   const el = now - rsT0; if (el < 2000) return;
-  const ms = el / rsN, i = Math.max(0, RS_STEPS.indexOf(RSCALE)); rsT0 = now; rsN = 0;
+  const ms = el / rsN; rsT0 = now; rsN = 0;
+  if (!mob) {      // computer, 화질 자동: same steps over PC_STEPS; at the bottom and still slow, light effects for good (kept for the next start)
+    const i = Math.max(0, PC_STEPS.indexOf(PCSCALE));
+    if (ms > 22) { rsGood = 0; if (i < PC_STEPS.length - 1) { PCSCALE = PC_STEPS[i + 1]; resize(); pcSave(); } else if (!pcLite) { pcLite = true; pcSave(); } }
+    else if (ms < 18 && i > 0) { if (++rsGood >= 5) { PCSCALE = PC_STEPS[i - 1]; rsGood = 0; resize(); pcSave(); } }
+    else rsGood = 0;
+    return;
+  }
+  const i = Math.max(0, RS_STEPS.indexOf(RSCALE));
   if (ms > 22 && i < RS_STEPS.length - 1) { RSCALE = RS_STEPS[i + 1]; rsGood = 0; resize(); }
   else if (ms < 18 && i > 0) { if (++rsGood >= 5) { RSCALE = RS_STEPS[i - 1]; rsGood = 0; resize(); } }
   else rsGood = 0;
@@ -930,6 +963,6 @@ setTimeout(lobbyCharPlace, 60);
 for (let i = 0; i < 90; i++) step(.033);
 requestAnimationFrame(frame);
 window.__arena = { modes: MODE_LIST, ACHS, achMatch, achScan, achSt, renderAch, questTab, setAchRates(r) { achRates = r; }, dqList, dqMatch, dqState, renderQuests, wqList, wqState, attSt, attTake, dealIds, cosPrice, TITLES, renderProfile, renderCos, rewardFx, matchMvp, endGame, goldUi, matchPay, masteryOf, levelOf, KARMA_ROAD, MASTERY, giveReward, COSMETICS, skinPrice, get COS() { return COS; }, get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
-  setChar(id) { chosen = id; }, setMap(i) { mapChoice = i; }, auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get PV() { return { sk: PV.sk, ult: PV.ult, dash: PV.dash }; }, get bullets() { return bullets; }, offline() { netReset(); startMatch(null); } };
+  setChar(id) { chosen = id; }, setMap(i) { mapChoice = i; }, tileAt: (x, y) => tile(Math.floor(x / T), Math.floor(y / T)), auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get PV() { return { sk: PV.sk, ult: PV.ult, dash: PV.dash }; }, get bullets() { return bullets; }, offline() { netReset(); startMatch(null); } };
 })();
 </script>
