@@ -106,6 +106,13 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent-2);outli
 .wpnCard .wm b{display:block;color:var(--mc,#c8803a);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wpnCard .wmBar{display:block;height:5px;margin-top:3px;border-radius:999px;background:#0d0f14;border:1px solid var(--line);overflow:hidden}
 .wpnCard .wmBar i{display:block;height:100%;background:var(--mc,#c8803a)}
+.wpnCard.lock canvas{filter:grayscale(1) brightness(.45)}.wpnCard.lock{--mc:#b98cff}.wpnCard.lock .wn{color:var(--text-dim)}
+#gearBox{margin:10px 0}#gearBox .shRow{display:flex;align-items:center;gap:8px;color:#c9a2ff;font-weight:800}#gearBox .shRow .mBar{flex:1}#gearBox .shRow .mBar i{background:#b98cff}
+.gSlots{display:flex;gap:6px;margin-bottom:6px}.gSlot{flex:1;text-align:center;padding:6px 4px;border:2px dashed var(--line);border-radius:9px;font-size:12px;font-weight:700;color:var(--text-dim)}.gSlot.on{border-style:solid;border-color:#7fe0ff;color:#bdf2ff}.gSlot.shut{opacity:.55}
+.gList{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}.gItem{position:relative;text-align:left;padding:6px 8px;border-radius:9px;border:2px solid var(--line);background:var(--panel-2);color:var(--text);cursor:pointer;font:inherit}
+.gItem b{display:block;font-size:13px}.gItem small{display:block;font-size:11px;color:var(--text-dim);line-height:1.25}.gItem.on{border-color:#7fe0ff;box-shadow:0 0 8px rgba(127,224,255,.4)}.gItem.buy{opacity:.85}
+.gItem .gPrice{display:flex;align-items:center;gap:3px;font-style:normal;font-size:12px;font-weight:800;color:#ffd34d;margin-top:3px}.gItem .gPrice.poor{color:#ff7a7a}.gItem .gPrice .coin{width:13px;height:13px}
+.ic-shard{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M24 4 38 18 30 44H18L10 18z' fill='%23a46bff' stroke='%2314100f' stroke-width='2.5' stroke-linejoin='round'/%3E%3Cpath d='M24 4 30 18 24 44 18 18z' fill='%23d9b8ff'/%3E%3C/svg%3E")}
 @media (max-width:760px){.wpnCard .wm{font-size:10px;margin:3px 1px 0} .wpnCard .wm b{white-space:normal;overflow-wrap:anywhere;letter-spacing:-.03em}}
 #weaponScreen.wDetail #weaponGrid,#weaponScreen.wDetail #weaponSearch{display:none}
 #weaponScreen:not(.wDetail) #weaponPortraitWrap{display:none}
@@ -336,7 +343,7 @@ body.touchUi canvas{touch-action:none}
 @media (max-width:520px){
   #acct{max-width:calc(100vw - 132px);gap:6px}
   #acctName{max-width:none;min-width:0;flex:0 1 auto}
-  #acct>*:not(#acctName){flex:none}
+  #acct>*:not(#acctId){flex:none}
   #karma{font-size:15px;padding:5px 11px 5px 7px;gap:5px}
   #karma svg{width:20px;height:20px}
 }
@@ -381,8 +388,8 @@ body.touchUi canvas{touch-action:none}
   #topRight #quest svg{width:22px;height:22px}
   #streak{position:absolute;top:56px;right:0;height:28px;font-size:14px}
   .brand{left:max(16px, env(safe-area-inset-left, 0px));transform:none;width:auto;align-items:flex-start;text-align:left}
-  .brand h1{font-size:min(38px, calc((100vw - 236px) / 6))}
-  .brand .ver{max-width:calc(100vw - 236px);text-align:left}
+  .brand h1{font-size:min(38px, calc((100vw - 276px) / 6.2))}      /* three tiles sit to its right now (karma, quests, news) */
+  .brand .ver{display:none}
 }
 @media (max-height:560px){
   #topRight{top:calc(env(safe-area-inset-top,0px) + 5px)}
@@ -438,6 +445,149 @@ body.touchUi canvas{touch-action:none}
 .kStep.k-ebox .kBox{background:linear-gradient(160deg,#2a1a4a,#1a1d26)} .kStep.k-skin .kBox{background:linear-gradient(160deg,#4a3a12,#1a1d26)}
 .gotLine .rwI,.gotLine .coin{font-size:34px}
 .gotLine [hidden]{display:none}
+/* ---------- the karma window and the quest window, dressed up; and the burst shown when a reward is taken ---------- */
+#karmaScreen{width:min(880px,100%);background:radial-gradient(120% 90% at 0 0,rgba(138,92,240,.28),transparent 60%),linear-gradient(180deg,#221641,#14101f 70%);border:2px solid #6b46c8;box-shadow:0 0 0 1px #120b26,0 18px 50px rgba(0,0,0,.6),0 0 40px rgba(138,92,240,.22)}
+#karmaHead{display:flex;align-items:center;gap:14px;margin:0 96px 4px 0}
+#karmaHead .kmI{width:64px;height:64px;flex:none;filter:drop-shadow(0 0 12px rgba(180,120,255,.75));animation:kmFloat 2.6s ease-in-out infinite alternate}
+@keyframes kmFloat{to{transform:translateY(-4px) rotate(4deg)}}
+#karmaHead .khCol{display:flex;flex-direction:column;line-height:1}
+#karmaHead small{font:700 13px 'IBM Plex Sans KR',sans-serif;color:#b79cf0;letter-spacing:.08em}
+#karmaHead .karmaN{font:800 40px 'Rajdhani','IBM Plex Sans KR',sans-serif;color:#f0e2ff;font-variant-numeric:tabular-nums;text-shadow:0 2px 0 #120b26,0 0 16px rgba(180,120,255,.5)}
+#karmaHead .khNext{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;align-items:flex-end;max-width:320px;margin-left:auto}
+.khBar{display:block;width:100%;height:12px;border-radius:999px;background:#0e0920;border:1px solid #3a2670;overflow:hidden}
+.khBar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#8a5cf0,#e3c4ff);box-shadow:0 0 10px rgba(180,120,255,.7)}
+#karmaNextN{font:700 13px 'IBM Plex Sans KR',sans-serif;font-style:normal;color:#b79cf0;font-variant-numeric:tabular-nums}
+#karmaRoad{margin-top:16px;padding-top:10px}
+#karmaTrack{gap:16px}
+.kStep{width:108px;font-size:14px}
+.kStep .kBox{width:108px;height:100px;border-radius:14px;border-color:#3a2a66;background:linear-gradient(180deg,#2a1d4d,#191230);box-shadow:0 4px 0 #0e0920;font-weight:800}
+.kStep.k-g .kBox{background:linear-gradient(180deg,#4a3a12,#231a0c)} .kStep.k-box .kBox{background:linear-gradient(180deg,#123a5c,#0e1c30)}
+.kStep.k-ebox .kBox{background:linear-gradient(180deg,#4a1d6a,#1c1030)} .kStep.k-skin .kBox{background:linear-gradient(180deg,#6a4a12,#2a1c0c)}
+.kStep .kBox .rwI{font-size:36px} .kStep .kBox .coin{font-size:30px}
+#karmaTrack::before,#karmaFill{top:118px;height:12px}
+.kStep .kPin{width:20px;height:20px;margin-top:5px}
+.kStep.reach .kBox{border-color:var(--sel);box-shadow:0 4px 0 #6b4a00,0 0 18px rgba(255,211,77,.65)}
+.kStep.done .kBox{box-shadow:none}
+.kStep.done .kBox::after{top:32px}
+@media (max-width:520px){ #karmaHead{margin-right:0;flex-wrap:wrap;gap:10px} #karmaHead .kmI{width:52px;height:52px} #karmaHead .karmaN{font-size:34px} #karmaHead .khNext{flex-basis:100%;max-width:none} }
+@media (max-height:420px){
+  #karmaHead .kmI{width:40px;height:40px} #karmaHead .karmaN{font-size:28px} #karmaHead small{display:none}
+  .kStep .kBox{height:70px} .kStep .kBox .rwI{font-size:26px} .kStep .kBox .coin{font-size:22px}
+  #karmaTrack::before,#karmaFill{top:86px;height:10px} .kStep.done .kBox::after{top:17px} #karmaRoad{margin-top:6px;padding-top:6px}
+}
+#questScreen{width:min(560px,100%);background:radial-gradient(120% 80% at 100% 0,rgba(69,200,120,.2),transparent 60%),linear-gradient(180deg,#14261b,#11151b 70%);border:2px solid #2f8a55;box-shadow:0 0 0 1px #08140c,0 18px 50px rgba(0,0,0,.6),0 0 36px rgba(69,200,120,.16)}
+.qTabs{gap:8px;padding:4px;background:#0c1510;border-radius:14px;width:max-content;max-width:calc(100% - 96px);margin:0}
+.qTabs button{border:0;border-radius:10px;padding:7px 16px;font-size:17px;color:#8fb7a0;border-bottom:0}
+.qTabs button.on{color:#08140c;background:linear-gradient(180deg,#8ff0b0,#45c878);box-shadow:0 3px 0 #1f6a3f}
+#achDot{top:-3px;right:-3px;border:2px solid #0c1510}
+.qRow{border-radius:14px;border:1px solid #284a36;background:linear-gradient(180deg,#1b2a22,#141c18);box-shadow:0 3px 0 #0a120d}
+.qRow .qBar{height:18px;border-color:#284a36}
+.qRow .qBar i{background:linear-gradient(90deg,#2f9e5a,#9ff5bd);box-shadow:0 0 8px rgba(120,240,170,.5)}
+.qRow .qRw{border-radius:12px;background:linear-gradient(180deg,#232a36,#151a22);box-shadow:0 3px 0 #0b0e13}
+.qRow.done{border-color:var(--sel);background:linear-gradient(180deg,#3a3214,#1c1a12)}
+.qRow.done .qRw{background:linear-gradient(180deg,#ffe07a,#f0b020);color:#2a1c00;border-color:#fff3b0;box-shadow:0 3px 0 #8a5a00,0 0 14px rgba(255,211,77,.55);animation:qGlow 1.1s ease-in-out infinite alternate}
+@keyframes qGlow{to{filter:brightness(1.18);box-shadow:0 3px 0 #8a5a00,0 0 22px rgba(255,211,77,.95)}}
+.qRow.aRow{border-left:5px solid var(--ac)}
+@media (max-width:520px){.qTabs{max-width:100%}.qTabs button{font-size:15px;padding:6px 12px}}
+@media (prefers-reduced-motion: reduce){#karmaHead .kmI,.qRow.done .qRw{animation:none}}
+/* reward burst: rays, the prize popping in, sparks flying out, the number counting up. A box shakes first, then opens */
+#rwFx{position:fixed;inset:0;z-index:40;display:grid;place-items:center;align-content:center;gap:14px;background:radial-gradient(circle at 50% 46%,rgba(60,40,110,.82),rgba(6,5,12,.9) 70%);cursor:pointer;animation:rwIn .18s ease-out}
+#rwFx[hidden]{display:none}
+#rwFx.out{animation:rwOut .22s ease-in forwards}
+@keyframes rwIn{from{opacity:0}} @keyframes rwOut{to{opacity:0}}
+#rwFx>*{grid-column:1}
+.rwRays{grid-row:1;width:min(78vmin,460px);aspect-ratio:1;border-radius:50%;background:repeating-conic-gradient(rgba(255,226,140,.34) 0 9deg,transparent 9deg 22deg);-webkit-mask:radial-gradient(circle,#000 18%,transparent 68%);mask:radial-gradient(circle,#000 18%,transparent 68%);animation:rwSpin 9s linear infinite,rwPop .5s cubic-bezier(.2,1.5,.4,1);opacity:0;transition:opacity .2s}
+#rwFx.open .rwRays{opacity:1}
+@keyframes rwSpin{to{rotate:360deg}} @keyframes rwPop{from{scale:.2}}
+.rwBox{grid-row:1;display:grid;place-items:center;width:150px;height:150px}
+.rwBox .rwIc{font-size:118px;line-height:1;display:block}
+.rwBox .rwIc.coin{width:1em;height:1em}
+.rwBox .rwIc svg{width:1em;height:1em;display:block;filter:drop-shadow(0 0 18px rgba(180,120,255,.8))}
+.rwBox canvas{width:150px;height:150px}
+.rwBox [hidden]{display:none}
+#rwFx.shake .rwBox{animation:rwShake .7s ease-in-out}
+@keyframes rwShake{0%{scale:.3;rotate:0deg}15%{scale:1}25%{rotate:-11deg}40%{rotate:11deg}55%{rotate:-13deg}70%{rotate:13deg}85%{rotate:-6deg;scale:1.08}100%{rotate:0deg;scale:1.2}}
+#rwFx.open .rwBox{animation:rwPrize .5s cubic-bezier(.2,1.7,.4,1)}
+@keyframes rwPrize{from{scale:.1;rotate:-20deg}}
+.rwTxt{grid-row:2;font:800 min(40px,8.5vw) 'Rajdhani','IBM Plex Sans KR',sans-serif;color:#ffe07a;text-shadow:0 3px 0 #5a3a00,0 0 18px rgba(255,211,77,.6);font-variant-numeric:tabular-nums;text-align:center;padding:0 16px;opacity:0}
+#rwFx.open .rwTxt{opacity:1;animation:rwPrize .4s .08s cubic-bezier(.2,1.5,.4,1) backwards}
+.rwSpk{grid-row:1;position:relative;width:0;height:0}
+.rwSpk i{position:absolute;left:0;top:0;width:10px;height:10px;margin:-5px;border-radius:2px;background:var(--c,#ffe07a);rotate:45deg;opacity:0}
+#rwFx.open .rwSpk i{animation:rwSpark .9s cubic-bezier(.1,.7,.3,1) var(--d,0s) forwards}
+@keyframes rwSpark{0%{opacity:1;translate:0 0;scale:1.4}100%{opacity:0;translate:var(--x) var(--y);scale:.3}}
+.bump{animation:rwBump .45s ease-out}
+@keyframes rwBump{30%{scale:1.22;filter:brightness(1.6)}}
+#goldGain:not([hidden])>span{animation:rwPrize .45s cubic-bezier(.2,1.6,.4,1) backwards}
+#goldGain>span:nth-child(2){animation-delay:.1s}#goldGain>span:nth-child(3){animation-delay:.2s}#goldGain>span:nth-child(4){animation-delay:.3s}
+@media (max-height:420px){.rwBox{width:110px;height:110px}.rwBox .rwIc{font-size:86px}.rwBox canvas{width:110px;height:110px}.rwTxt{font-size:30px}.rwRays{width:min(90vmin,320px)}}
+@media (prefers-reduced-motion: reduce){.rwRays{animation:none}#rwFx.shake .rwBox,#rwFx.open .rwBox,#rwFx.open .rwSpk i{animation-duration:.01s}}
+/* ---------- attendance strip, today's shop, character record, titles, the profile card, the MVP moment, box tiers ---------- */
+.attRow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.attDay{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0;height:62px;padding:12px 0 4px;border-radius:12px;border:1px solid #284a36;background:linear-gradient(180deg,#1b2a22,#141c18);color:var(--text);font:800 13px 'Rajdhani','IBM Plex Sans KR',sans-serif;font-variant-numeric:tabular-nums}
+.attDay small{position:absolute;top:3px;left:6px;font-size:10px;color:#8fb7a0}
+.attDay .rwI,.attDay .coin{font-size:22px} .attDay svg{width:22px;height:22px;display:block}
+.attDay:disabled{opacity:1;cursor:default}
+.attDay.took{opacity:.45} .attDay.took::after{content:'';position:absolute;right:5px;top:4px;width:9px;height:5px;border-left:2px solid #8ff0b0;border-bottom:2px solid #8ff0b0;transform:rotate(-45deg)}
+.attDay.now{cursor:pointer;border-color:#fff3b0;background:linear-gradient(180deg,#ffe07a,#f0b020);color:#2a1c00;box-shadow:0 3px 0 #8a5a00,0 0 14px rgba(255,211,77,.55);animation:qGlow 1.1s ease-in-out infinite alternate}
+.attDay.now small{color:#6b4a00}
+.attDay:last-child:not(.now){border-color:#3f6fa8;background:linear-gradient(180deg,#123a5c,#0e1c30)}
+@media (max-height:420px){.attDay{height:44px;padding-top:8px}.attDay .rwI,.attDay .coin{font-size:16px}.attDay svg{width:16px;height:16px}}
+.cosGrp.deal{color:var(--sel)}
+.cosCard.deal{border-color:#c79a2a;background:linear-gradient(180deg,rgba(255,211,77,.14),transparent 70%)}
+.cosPrice s{color:var(--text-dim);font-weight:400;font-size:.85em;margin-right:2px}
+#weaponDetail .mRec{color:var(--text-dim);font-variant-numeric:tabular-nums}
+#acctId{display:flex;flex-direction:column;min-width:0;line-height:1.15;cursor:pointer}
+#acctIcon{cursor:pointer}
+#acctTitle{font:700 10px 'IBM Plex Sans KR',sans-serif;color:var(--sel);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#acctTitle[hidden]{display:none}
+#profScreen{width:min(520px,100%);background:radial-gradient(120% 80% at 0 0,rgba(74,166,255,.22),transparent 60%),linear-gradient(180deg,#16203a,#11151b 70%);border:2px solid #3f6fa8;box-shadow:0 0 0 1px #0a1020,0 18px 50px rgba(0,0,0,.6)}
+.pfTop{display:flex;align-items:center;gap:14px;margin-top:4px}
+#profCv{width:120px;height:138px;flex:none;border-radius:14px;background:radial-gradient(circle at 50% 70%,rgba(74,166,255,.3),transparent 70%)}
+.pfId{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1;align-items:flex-start}
+#profName{font:800 26px 'IBM Plex Sans KR',sans-serif;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#profTitle{font:700 13px 'IBM Plex Sans KR',sans-serif;font-style:normal;color:#2a1c00;background:linear-gradient(180deg,#ffe07a,#f0b020);border-radius:999px;padding:2px 10px}
+#profTitle[hidden]{display:none}
+.pfLv{display:flex;align-items:center;gap:8px;width:100%;font:800 15px 'Rajdhani','IBM Plex Sans KR',sans-serif;color:#9fd0ff}
+.pfBar{flex:1;height:10px;border-radius:999px;background:#0a1020;border:1px solid #2a4a78;overflow:hidden}
+.pfBar i{display:block;height:100%;background:linear-gradient(90deg,#4aa6ff,#bfe2ff);border-radius:999px}
+#profHero{font:700 13px 'IBM Plex Sans KR',sans-serif}
+#profStats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+#profStats div{display:flex;flex-direction:column;align-items:center;padding:8px 4px;border-radius:12px;background:#0f1626;border:1px solid #24365a}
+#profStats b{font:800 22px 'Rajdhani','IBM Plex Sans KR',sans-serif;font-variant-numeric:tabular-nums}
+#profStats small{font-size:12px;color:var(--text-dim)}
+#profTitles{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;max-height:112px;overflow-y:auto}
+#profTitles[hidden]{display:none}
+#profTitles button{border:1px solid var(--tc,#9aa3b5);color:var(--tc,#9aa3b5);background:#0f1626;border-radius:999px;padding:4px 12px;font:700 13px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
+#profTitles button[aria-pressed="true"]{background:var(--tc);color:#0b0e13}
+@media (max-height:420px){#profCv{width:84px;height:97px}#profStats{margin-top:8px;grid-template-columns:repeat(6,1fr);gap:5px}#profStats b{font-size:17px}#profStats small{font-size:10px}#profStats div{padding:4px 2px}#profTitles{max-height:64px;margin-top:8px}#profName{font-size:20px}}
+#mvpFx{position:fixed;inset:0;z-index:39;display:grid;place-items:center;align-content:center;gap:2px;background:radial-gradient(circle at 50% 44%,rgba(110,80,20,.8),rgba(6,5,12,.92) 70%);cursor:pointer;animation:rwIn .18s ease-out}
+#mvpFx[hidden]{display:none}
+#mvpFx.out{animation:rwOut .22s ease-in forwards}
+#mvpFx>*{grid-column:1}
+#mvpFx .rwRays{opacity:1}
+#mvpFx canvas{grid-row:1;width:min(280px,52vh);height:auto;animation:rwPrize .5s cubic-bezier(.2,1.6,.4,1)}
+.mvTag{grid-row:2;font:400 46px 'Black Han Sans','IBM Plex Sans KR',sans-serif;letter-spacing:.1em;color:#ffe07a;text-shadow:0 3px 0 #5a3a00,0 0 22px rgba(255,211,77,.7);line-height:1;animation:rwPrize .45s .1s cubic-bezier(.2,1.6,.4,1) backwards}
+.mvName{grid-row:3;font:800 22px 'IBM Plex Sans KR',sans-serif;max-width:90vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mvStat{grid-row:4;font:700 15px 'IBM Plex Sans KR',sans-serif;color:var(--text-dim);font-variant-numeric:tabular-nums}
+@media (max-height:420px){.mvTag{font-size:32px}.mvName{font-size:17px}.mvStat{font-size:13px}}
+.rwTier{grid-row:2;font:800 18px 'IBM Plex Sans KR',sans-serif;font-style:normal;letter-spacing:.2em;opacity:0;margin-bottom:-10px}
+.rwTier:empty{display:none}
+#rwFx .rwTxt{grid-row:3}
+#rwFx.open .rwTier{opacity:1;animation:rwPrize .4s cubic-bezier(.2,1.5,.4,1) backwards}
+#rwFx.shake .rwBox{animation-duration:var(--sh,.7s)}
+#rwFx.t1{background:radial-gradient(circle at 50% 46%,rgba(110,50,170,.86),rgba(8,5,16,.92) 70%)}
+#rwFx.t1 .rwRays{background:repeating-conic-gradient(rgba(200,140,255,.42) 0 9deg,transparent 9deg 22deg)}
+#rwFx.t1 .rwBox{filter:drop-shadow(0 0 22px rgba(190,120,255,.95))}
+#rwFx.t1 .rwTier{color:#d9a8ff;text-shadow:0 0 14px rgba(190,120,255,.9)}
+#rwFx.t2{background:radial-gradient(circle at 50% 46%,rgba(170,110,10,.9),rgba(14,8,2,.93) 70%)}
+#rwFx.t2 .rwRays{background:repeating-conic-gradient(rgba(255,226,120,.6) 0 7deg,transparent 7deg 15deg);width:min(96vmin,620px);animation-duration:5s,.5s}
+#rwFx.t2 .rwBox{filter:drop-shadow(0 0 30px rgba(255,214,90,1)) drop-shadow(0 0 60px rgba(255,160,30,.7))}
+#rwFx.t2 .rwTier{color:#ffe07a;font-size:24px;text-shadow:0 2px 0 #5a3a00,0 0 18px rgba(255,211,77,.95)}
+#rwFx.t2.shake .rwRays{opacity:.7}
+#rwFx.t2.open{animation:rwFlash .5s ease-out}
+@keyframes rwFlash{0%{filter:brightness(3)}100%{filter:brightness(1)}}
+@media (prefers-reduced-motion: reduce){.attDay.now{animation:none}#rwFx.t2.open{animation:none}}
+.kStep.big .kBox{border-color:#ffd34d;box-shadow:0 4px 0 #6b4a00,0 0 16px rgba(255,211,77,.45)} .kStep.big .kNum{color:var(--sel);font-weight:800} .kStep.big .kPin{border-color:#ffd34d}
 /* player level: the number in the account pill, the ring around it is the way to the next level */
 #acct #acctIcon{display:grid;place-items:center;flex:none;width:24px;height:24px;border-radius:50%;font:800 12px 'IBM Plex Sans KR',sans-serif;color:#fff;background:radial-gradient(#14161c 58%,transparent 60%),conic-gradient(#4aa6ff calc(var(--p,0)*1%),#2a3142 0)}
 /* character mastery */
@@ -720,9 +870,11 @@ body.touchUi canvas{touch-action:none}
 </div>
 <div id="diceBannerContainer"></div>
 
+<div id="rwFx" hidden><div class="rwRays"></div><div class="rwSpk"></div><div class="rwBox"><i class="rwIc"></i><canvas width="192" height="192" hidden></canvas></div><em class="rwTier"></em><b class="rwTxt"></b></div>
+<div id="mvpFx" hidden><div class="rwRays"></div><canvas width="280" height="300"></canvas><b class="mvTag">MVP</b><b class="mvName"></b><span class="mvStat"></span></div>
 <button id="specBack" type="button" aria-label="결과 화면" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
 <div id="lobby">
-  <div id="acct"><span id="acctIcon" aria-hidden="true">●</span><span id="acctName"></span><button id="acctBtn" type="button" hidden>로그인</button><span class="goldPill" aria-label="골드"><i class="coin"></i><b class="goldN">0</b></span><button id="setLobbyBtn" type="button" aria-label="설정">⚙</button></div>
+  <div id="acct"><span id="acctIcon" aria-hidden="true">●</span><span id="acctId" role="button" tabindex="0" aria-label="프로필"><span id="acctName"></span><small id="acctTitle" hidden></small></span><button id="acctBtn" type="button" hidden>로그인</button><span class="goldPill" aria-label="골드"><i class="coin"></i><b class="goldN">0</b></span><button id="setLobbyBtn" type="button" aria-label="설정">⚙</button></div>
   <div id="topRight">
   <button id="karma" type="button" aria-label="카르마"><svg aria-hidden="true"><use href="#mi-karma"/></svg><span class="kCol"><b class="karmaN">0</b><span id="karmaBar"><i></i></span></span><i id="karmaDot" hidden></i></button>
   <button id="quest" type="button" aria-label="일일 과제"><svg aria-hidden="true"><use href="#mi-quest"/></svg><b id="questN">0/3</b><i id="questDot" hidden></i></button>
@@ -761,17 +913,24 @@ body.touchUi canvas{touch-action:none}
 
   <div class="card" id="karmaScreen">
     <button class="backlink" id="karmaBackBtn" type="button">&larr; 뒤로가기</button>
-    <h2><svg class="kmI" aria-hidden="true"><use href="#mi-karma"/></svg><span>카르마</span> <b class="karmaN">0</b></h2>
+    <div id="karmaHead"><svg class="kmI" aria-hidden="true"><use href="#mi-karma"/></svg><div class="khCol"><small>카르마</small><b class="karmaN">0</b></div><div class="khNext"><span class="khBar"><i></i></span><em id="karmaNextN"></em></div></div>
     <div id="karmaRoad"><div id="karmaTrack"></div></div>
     <div id="karmaGot" class="gotLine" hidden><canvas id="karmaGotCv" width="96" height="96"></canvas><i id="karmaGotIc"></i><b id="karmaGotName"></b></div>
   </div>
 
   <div class="card" id="questScreen">
     <button class="backlink" id="questBackBtn" type="button">&larr; 뒤로가기</button>
-    <div class="qTabs"><button id="qTabD" type="button" class="on">일일 과제</button><button id="qTabA" type="button">도전과제<i id="achDot" hidden></i></button></div>
+    <div class="qTabs"><button id="qTabD" type="button" class="on">일일 과제</button><button id="qTabW" type="button">주간 과제<i id="wqDot" hidden></i></button><button id="qTabA" type="button">도전과제<i id="achDot" hidden></i></button></div>
     <div id="questList"></div>
     <div id="achList" hidden></div>
     <div id="questGot" class="gotLine" hidden><canvas width="96" height="96"></canvas><i></i><b></b></div>
+  </div>
+
+  <div class="card" id="profScreen">
+    <button class="backlink" id="profBackBtn" type="button">&larr; 뒤로가기</button>
+    <div class="pfTop"><canvas id="profCv" width="200" height="230"></canvas><div class="pfId"><b id="profName"></b><em id="profTitle" hidden></em><div class="pfLv"><span id="profLv"></span><span class="pfBar"><i id="profLvBar"></i></span></div><small id="profHero"></small></div></div>
+    <div id="profStats"></div>
+    <div id="profTitles" hidden></div>
   </div>
 
   <div class="card" id="modeScreen">
@@ -3990,7 +4149,7 @@ function addText(o) { texts.push(o); evt(['t', Math.round(o.x), Math.round(o.y),
 function addPart(p) { parts.push(p); evt(['p', Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy), +p.life.toFixed(2), p.color, +(p.r || 3).toFixed(1)]); }
 const OT_MAX = 60;       // sudden-death overtime when the clock runs out level: first kill wins, a draw if nobody scores within this many seconds
 const STAT_X = 10;       // every hp and every damage/heal/shield number written in the kits is multiplied by this (damage() and heal() do it, so kit code keeps the original small numbers)
-const WIN_SCORE = 10, MATCH_TIME = 150, MAX_HP = 600, ULT_CD = 45, CD1 = 5, CD2 = 10, DASH_D = 3.2 * T, SPEED = 205;
+const WIN_SCORE = 10, MATCH_TIME = 150, MAX_HP = 600, ULT_CD = 45, ULT_KILL = 10, CD1 = 5, CD2 = 10, DASH_D = 3.2 * T, SPEED = 205;
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -4249,14 +4408,17 @@ function damage(e, dmg, by, o) {
   if (e.dead || !(dmg > 0)) return 0;
   if (!o.px) { dmg *= STAT_X; const ow = by && (by.minion ? by.by : by); if (ow && ow.h && ow.h.xm) dmg *= ow.h.xm; }   // o.px: already in scaled units (re-entry from onDmg / onDeal) · h.xm = per-hero damage multiplier (balance knob, kits2.js DMG_MUL)
   if (by && !by.minion && !o.raw) dmg *= V(by, 'dmg', 1);
+  { const ow = by && (by.minion ? by.by : by); if (ow && hasGear(ow, 'back') && gearBehind(ow)) dmg *= 1.08; }      // gear (gear.js)
   if (e.minion) { if (e.onDmg) return e.onDmg(e, dmg, by, o); e.hp -= dmg; if (e.hp <= 0) { e.dead = true; burst(e.x, e.y + BODY, '#cfd3dc', 10, 200); } return dmg; }
   if (e.inv > 0 || B(e, 'inv')) return 0;
   if (e.h.onHurt) { const r = e.h.onHurt(e, dmg, by, o); if (r === 0) return 0; if (r > 0) dmg = r; }
   dmg *= V(e, 'dr', 1) * (B(e, 'expose') ? 1.1 : 1);
+  if (e.st.gBand > time) dmg *= .7; if (!by && hasGear(e, 'lava') && /용암|분출|안전 구역/.test(o.src || SRC || '')) dmg *= .6;      // gear (gear.js)
   if (e.h.resist && o.el) dmg *= .7;
   if (e.shield > 0) { const a = Math.min(e.shield, dmg); e.shield -= a; dmg -= a; if (e.shield <= 0 && e.onShieldBreak) { const fn = e.onShieldBreak; e.onShieldBreak = null; fn(e); } if (dmg <= 0) return 0; }
-  e.hp -= dmg; e.lastHit = time; e.recent.push([time, dmg / STAT_X]); e.taken = (e.taken || 0) + dmg;
+  e.hp -= dmg; if (e.hp > 0 && e.hp < e.mhp * .3 && hasGear(e, 'band') && !e.st.gBand) e.st.gBand = time + 2; e.lastHit = time; e.recent.push([time, dmg / STAT_X]); e.taken = (e.taken || 0) + dmg;
   ultCharge(by, e, o);
+  { const ow = by && (by.minion ? by.by : by); if (ow && ow !== e && ow.h && ow.team !== e.team) e.lastAtk = { f: ow, t: time }; }
   e.lastDmg = { src: o.src || SRC || (o.basic ? '기본 공격' : '패시브'), t: time };
   if (by && by !== e) { by.dealt = (by.dealt || 0) + dmg; if (!by.minion && by.h.onDeal) by.h.onDeal(by, e, dmg, o); }
   if (o.quiet) { e.acc += dmg; if (e.acc >= 8 * STAT_X) { addText({ x: e.x + rnd(-10, 10), y: e.y - 70, txt: String(Math.round(e.acc)), life: .6, color: '#ffb347' }); e.acc = 0; } }
@@ -4364,13 +4526,14 @@ function setup(withPlayer, humans) {
   curMode = modeOf(modeChoice).id; const MODE = modeNow(); RD = { n: 1, pause: 0, win: -1, out: [] }; SZ.on = false; FLAGS = [];
   loadMap(mapChoice < 0 || !MODE.maps.includes(mapChoice) ? pick(MODE.maps) : mapChoice);
   fighters = []; bullets = []; parts = []; texts = []; rings = []; zones = []; minions = []; timers = []; strikes = []; score = new Array(MODE.teams).fill(0); timeLeft = MODE.time; overtime = false; otT = 0; player = null; VIEW = 0;
-  humans = humans || (withPlayer ? [{ hero: chosen, lo: loadoutOf(chosen), local: true, cos: myCos(chosen), name: PROF.name }] : []);
+  humans = humans || (withPlayer ? [{ hero: chosen, lo: loadoutOf(chosen), gear: myGear(chosen), local: true, cos: myCos(chosen), name: PROF.name }] : []);
   const per = MODE.per, nt = MODE.teams, grid = Array.from({ length: nt }, () => new Array(per).fill(null)), ORDER = per === 3 ? [1, 0, 2] : [...Array(per).keys()];
   humans.forEach((h, i) => { grid[i % nt][ORDER[Math.floor(i / nt)]] = h; });
   const used = new Set(humans.map(h => h.hero)), pool = ROSTER.filter(k => !used.has(k)).sort(() => Math.random() - .5);
   for (let team = 0; team < nt; team++) for (let i = 0; i < per; i++) {
     const hm = grid[team][i];
     const f = makeFighter(team, per === 1 ? 1 : i, hm ? hm.hero : pool.pop(), !!(hm && hm.local), hm && hm.lo, hm && hm.cos, hm && hm.name);
+    f.gear = hm ? cleanGear(hm.gear) : [];
     if (hm) { f.human = true; if (hm.local) player = f; if (hm.remote) { f.remote = hm.remote; f.netIn = null; hm.remote.f = f; hm.remote.fi = fighters.length; } }
     fighters.push(f);
   }
@@ -4406,7 +4569,7 @@ function useSkill(f, i) {
   if (state === 'play' && (f.isPlayer || visibleTo(f, VIEW))) sfx(def.k === 'buff' ? 520 : def.k === 'move' ? 380 : 260, .16, 'triangle', .05, 1.6);
   return true;
 }
-function skillCd(f, i) { const def = f.sk[i]; let cd = i === 0 ? (def.cd1 || CD1) : CD2; if (f.h.cdMul) cd *= f.h.cdMul(f); return cd; }
+function skillCd(f, i) { const def = f.sk[i]; let cd = i === 0 ? (def.cd1 || CD1) : CD2; if (f.h.cdMul) cd *= f.h.cdMul(f); if (i === 1 && hasGear(f, 'sk2')) cd *= .88; return cd; }
 function useUlt(f) {
   const u = f.h.ult;
   if (f.ucd > 0 || !canAct(f) || B(f, 'charm') || f.noSkill) return false;
@@ -4418,7 +4581,7 @@ function useUlt(f) {
   if (state === 'play') sfx(220, .35, 'sawtooth', .06, 3);
   return true;
 }
-function dashCdOf(f) { return f.h.dashCd ? f.h.dashCd(f) : 1.5; }
+function dashCdOf(f) { return (f.h.dashCd ? f.h.dashCd(f) : 1.5) * (hasGear(f, 'dash') ? .85 : 1); }
 function tryDash(f, dx, dy) {
   if (f.dcd > 0 || !canAct(f) || B(f, 'root') || f.form === 'sub' || (!dx && !dy)) return false;
   f.dash = { t: .16, dx, dy, v: DASH_D / .16 }; f.dcd = dashCdOf(f); f.lastDash = time;
@@ -4427,6 +4590,9 @@ function tryDash(f, dx, dy) {
   return true;
 }
 function kill(e, by) {
+  // 2026-11-12 (user): a death with no enemy killer (safe zone, lava, vents, self) goes to the last enemy who hit them within 5 s
+  if ((!by || by === e || !by.h) && e.lastAtk && time - e.lastAtk.t <= 5 && fighters.includes(e.lastAtk.f)) by = e.lastAtk.f;
+  e.lastAtk = null;
   if (e.h.onDeath) e.h.onDeath(e);
   const ki = by && by !== e ? fighters.indexOf(by) : -1, src = e.lastDmg && time - e.lastDmg.t < .6 ? e.lastDmg.src : '패시브';
   e.killer = { i: ki, src }; fxPlay('killinfo', fighters.indexOf(e), ki, src);
@@ -4437,6 +4603,7 @@ function kill(e, by) {
   fxAt(e, 'death', { color: TC(e.team) });
   if (by && by !== e) {
     by.kos++; if (by.h.onKill) by.h.onKill(by, e);
+    if (by.ucd > 0) by.ucd = Math.max(0, by.ucd - ULT_KILL - (hasGear(by, 'ult') ? 4 : 0));      // 2026-11-12 (user): a kill refills the ult by ULT_KILL seconds
     if (by.cos && by.cos.kfx) fxPlay('kfx', by.cos.kfx, Math.round(e.x), Math.round(e.y + BODY), Math.round(e.y + 16), bodyColor(e.cos, TC(e.team)));
     if (!by.human && Math.random() < .3) later(.4, () => doEmote(by, pick([0, 1, 4, 5])), by);
   }
@@ -4556,7 +4723,24 @@ function ai0(f, dt) {
 }
 
 /* ---------- player ---------- */
-function autoAim(f) { const e = nearest(f, Math.max((f.h.range || 300) * 1.15, 4 * T), null, 0, false); return e ? angTo(f, e) : f.aim; }
+function autoAim(f) {       // phone tap: aim at the nearest enemy, leading a moving target for shots (2026-11-12: plain aim missed anyone walking)
+  const e = nearest(f, Math.max((f.h.range || 300) * 1.15, 4 * T), null, 0, false); if (!e) return f.aim;
+  return leadAng(f, e);
+}
+function leadAng(f, e) {
+  if (f.h.type === 'melee' || e.minion) return angTo(f, e);
+  const spd = f.h.bspd || 800, vx = clamp(e.vx || 0, -600, 600), vy = clamp(e.vy || 0, -600, 600);
+  let t = Math.hypot(e.x - f.x, e.y - f.y) / spd; for (let k = 0; k < 2; k++) t = Math.hypot(e.x + vx * t - f.x, e.y + vy * t - f.y) / spd;
+  t = Math.min(t, .8) * .85; return Math.atan2(e.y + vy * t - f.y, e.x + vx * t - f.x);
+}
+/* PC aim assist (2026-11-12, user: shooting while moving misses): the camera follows me, so while I walk the cursor slides off the enemy
+   I pointed at. A visible enemy within 52 px of the cursor pulls the aim onto itself (leading it if it moves). */
+function pcAssist(f, wx, wy) {
+  if (f.h.type === 'melee') return null;
+  let best = null, bd = 52;
+  for (const e of fighters) { if (e.dead || e.team === f.team || !visibleTo(e, f.team)) continue; const d = Math.hypot(e.x - wx, e.y - wy); if (d < bd) { bd = d; best = e; } }
+  return best;
+}
 function readLocal(f) {       // what this screen's controls say right now, for the fighter it drives (its own, or a puppet)
   let mx = 0, my = 0;
   if (keys.KeyW || keys.ArrowUp) my -= 1;
@@ -4576,6 +4760,7 @@ function readLocal(f) {       // what this screen's controls say right now, for 
   } else {
     const wx = (mouse.x - W / 2) / cam.s + cam.x, wy = (mouse.y - H / 2) / cam.s + cam.y;
     aim = Math.atan2(wy - (f.y + BODY), wx - f.x); tx = wx; ty = wy - BODY;
+    const ae = pcAssist(f, wx, wy - BODY); if (ae) { aim = leadAng(f, ae); const dl = Math.hypot(wx - f.x, wy - BODY - f.y); tx = f.x + Math.cos(aim) * dl; ty = f.y + Math.sin(aim) * dl; }
   }
   if (pendingFire && pendingFire.len != null && f.h.splash && f.h.w.shape === 'bomb') { const dl = clamp(pendingFire.len, .3, 1) * f.h.range; tx = f.x + Math.cos(pendingFire.ang) * dl; ty = f.y + Math.sin(pendingFire.ang) * dl; }      // phone: the drag length sets the bomb's distance
   if (mouseRel) { mouseRel = false; if (!f.h.fireHeld && !touchMode) pendingFire = { ang: aim }; }      // PC: the basic attack goes out when the button is released, towards the cursor
@@ -4606,7 +4791,7 @@ const driven = () => (player && player.st.ctrl && !player.st.ctrl.dead && B(play
 
 /* ---------- update ---------- */
 /* walking speed with every modifier (net.js uses the same function to predict a guest's own movement) */
-function moveSpeed(f) { const h = f.h; return SPEED * V(f, 'haste', 1) * V(f, 'slow', 1) * V(f, 'pad', 1) * (B(f, 'infect') ? .9 : 1) * (h.spd ? h.spd(f) : 1) * (carrying(f) ? .85 : 1); }
+function moveSpeed(f) { const h = f.h; return SPEED * V(f, 'haste', 1) * V(f, 'slow', 1) * V(f, 'pad', 1) * (B(f, 'infect') ? .9 : 1) * (h.spd ? h.spd(f) : 1) * (carrying(f) && !hasGear(f, 'flag') ? .85 : 1); }
 function updateFighter(f, dt) {
   if (f.dead) { if (!modeNow().respawn) return; f.respawnT -= dt; if (f.respawnT <= 0) respawn(f); return; }
   const h = f.h;
@@ -4986,8 +5171,8 @@ function envReset() { GALE.until = 0; const e = MAPS[curMap].env || {}; envNext.
 function padStep(f, dt) {
   if (f.minion || flying(f)) return;
   const t = tileAt(f.x, f.y);
-  if (t === 'p') { if (!B(f, 'pad')) burst(f.x, f.y + 16, '#c6ff3d', 6, 150); buff(f, 'pad', .9, 1.5); f.padT = 0; }
-  else if (t === 'h') { f.padT = (f.padT || 0) + dt; if (f.padT >= .5) { f.padT -= .5; if (f.hp < f.mhp) withSrc('치유 패드', () => heal(f, f.mhp * .025 / STAT_X)); } }
+  if (t === 'p') { if (!B(f, 'pad')) burst(f.x, f.y + 16, '#c6ff3d', 6, 150); buff(f, 'pad', .9, hasGear(f, 'pad') ? 1.8 : 1.5); f.padT = 0; }
+  else if (t === 'h') { f.padT = (f.padT || 0) + dt; if (f.padT >= .5) { f.padT -= .5; if (f.hp < f.mhp) withSrc('치유 패드', () => heal(f, f.mhp * .025 / STAT_X * (hasGear(f, 'pad') ? 1.6 : 1))); } }
   else f.padT = 0;
 }
 function envStep(dt) {
@@ -5171,7 +5356,7 @@ hero('smg', { p: ['일제사격', '연발을 8발 이상 맞히면 주위 상대
   skills: [
     [1, '연막탄', 'hit', '조준한 곳으로 연막탄을 던짐 · 떨어진 자리에 2.5초 동안 짙은 연기 · 안에 있는 사람은 이동 속도가 절반으로 느려지고 시야가 가려짐', [100, 7 * T], f => { const p = aimPt(f, 7 * T); strike(f, p.x, p.y, 100, .4, () => (fx('smokeland', p.x, p.y), smoke(f, p.x, p.y, 100, 2.5)), '#9aa3b8'); }],
     [2, '섬광탄', 'hit', '던진 곳에서 0.5초 뒤 터져 범위 안 적을 1.2초 동안 실명', [100, 7 * T], f => { const p = aimPt(f, 7 * T); strike(f, p.x, p.y, 120, .5, () => { fx('flashbang', p.x, p.y); circ(f, p.x, p.y, 120, 0, { fn: e => buff(e, 'blind', 1.2) }); }, '#ffffff'); }],
-    [3, '전술 구르기', 'move', '0.5초 동안 무적 상태로 짧게 구름', [0, 6 * T], (f, a) => { const m = (f.mv[0] || f.mv[1]) ? Math.atan2(f.mv[1], f.mv[0]) : a; f.inv = Math.max(f.inv, .5); lunge(f, m, 2.2 * T, .3, {}); }]
+    [3, '전술 구르기', 'move', '0.5초 동안 무적 상태로 짧게 구름', [0, 6 * T], (f, a) => { const m = a; f.inv = Math.max(f.inv, .5); lunge(f, m, 2.2 * T, .3, {}); }]
   ] });
 
 hero('gloves', { p: ['맷집', '피격마다 받는 피해가 1%씩 줄고, 10%가 되면 초기화되며 2.5초 동안 이동속도 1.5배와 공격 피해 1.25배'],
@@ -5655,6 +5840,7 @@ function loadAccount() {
 function accountUi() {
   const n = document.getElementById('acctName'), b = document.getElementById('acctBtn'); if (!n) return;
   n.textContent = PROF.name; n.style.color = nameColorFor(COS.name); goldUi();
+  { const t = document.getElementById('acctTitle'); if (t) { t.textContent = myTitle(); t.hidden = !t.textContent; } }
   b.hidden = false;
   if (!PROF.online) { b.textContent = '게스트'; b.disabled = true; b.title = 'Frenchfries777 계정 로그인은 frenchfries777.com에 올린 게임에서 쓸 수 있어요'; }
   else { b.disabled = false; b.title = ''; b.textContent = PROF.guest ? '로그인' : '프로필'; }
@@ -5669,6 +5855,8 @@ function cosNorm(C) {      // the save-version fixes, run on this browser's save
   if (C.v < 4) for (const k of ['col', 'name', 'kfx']) if (C[k] && !C.own.includes(C[k])) C[k] = null;      // v4: character colours, name colours and kill effects are bought with gold too
   C.v = 4;      // v3: the road got new steps, nothing on it is taken yet
   C.xp = Math.max(0, Math.floor(+C.xp || 0)); if (!C.mp || typeof C.mp !== 'object') C.mp = {};
+  if (!Array.isArray(C.unl)) { C.unl = []; const hg = (C.st && C.st.hg) || {}; for (const id of Object.keys(C.mp).concat(Object.keys(hg))) if (((C.mp[id] | 0) > 0 || (hg[id] | 0) > 0) && !C.unl.includes(id)) C.unl.push(id); }      // unlock (gear.js): characters already played stay open
+  if (!C.sh || typeof C.sh !== 'object') C.sh = {}; if (!Array.isArray(C.gown)) C.gown = []; if (!C.geq || typeof C.geq !== 'object') C.geq = {};
   return C;
 }
 let COS = cosDefault();
@@ -5696,15 +5884,26 @@ const skinOwned = id => COS.own.includes(id);
 const cosLocked = id => skinPrice(id) > 0 && !skinOwned(id);      // has a price and is not bought yet
 const COS_SLOT = { bcol: 'col', name: 'name', kfx: 'kfx', pose: 'pose' };
 function goldUi() { for (const el of document.querySelectorAll('.goldN')) el.textContent = COS.gold.toLocaleString('en-US'); for (const el of document.querySelectorAll('.karmaN')) el.textContent = COS.karma.toLocaleString('en-US'); const sk = document.getElementById('streak'); if (sk) { sk.hidden = !((COS.ws | 0) >= 2); sk.querySelector('b').textContent = COS.ws | 0; }
-  { const kb = document.querySelector('#karmaBar i'); if (kb) { let lo = 0, hi = 0; for (const r of KARMA_ROAD) { if (COS.karma >= r[0]) lo = r[0]; else { hi = r[0]; break; } } kb.style.width = (hi ? Math.round((COS.karma - lo) / (hi - lo) * 100) : 100) + '%'; } }      // the banner's bar: the way to the next step of the road
+  { const kb = document.querySelector('#karmaBar i'); { let lo = 0, hi = 0; for (const r of KARMA_ROAD) { if (COS.karma >= r[0]) lo = r[0]; else { hi = r[0]; break; } } const w = (hi ? Math.round((COS.karma - lo) / (hi - lo) * 100) : 100) + '%'; if (kb) kb.style.width = w; const hb = document.querySelector('.khBar i'), hn = document.getElementById('karmaNextN'); if (hb) hb.style.width = w; if (hn) hn.textContent = hi ? COS.karma.toLocaleString('en-US') + ' / ' + hi.toLocaleString('en-US') : ''; } }      // the banner's bar: the way to the next step of the road
   const kd = document.getElementById('karmaDot'); if (kd) kd.hidden = !karmaOpen(); questUi();
   const ai = document.getElementById('acctIcon'); if (ai) { const l = levelOf(); ai.textContent = l.lv; ai.style.setProperty('--p', Math.round(l.into / l.need * 100)); ai.title = '레벨 ' + l.lv + ' · ' + l.into + ' / ' + l.need; } }
 /* ---------- progression: karma road, boxes, player level, character mastery ---------- */
 /* karma road: [karma needed, kind, amount]. kinds: g gold · rx mastery points for a random character · cx mastery points for the picked character · box / ebox · skin (amount = dearest tier). Taken steps are kept in COS.kr */
-const KARMA_ROAD = [[15, 'g', 100], [30, 'rx', 200], [50, 'box'], [100, 'g', 200], [250, 'cx', 300], [500, 'box'], [1000, 'ebox'], [1500, 'g', 500], [2000, 'box'], [2500, 'cx', 600], [3000, 'ebox'], [3500, 'g', 800], [4000, 'box'], [4500, 'rx', 800], [5000, 'ebox'],
-  [5500, 'g', 1200], [6000, 'box'], [8000, 'ebox'], [10000, 'skin', 4000]];
+const KARMA_ROAD = (() => {      // paced like a trophy road (user 2026-11-12): a reward every 10 to 20 karma at first (a match pays about 5), then every 50, 100, 250, 500 and 1,000; the big steps hold an epic box or a skin
+  const at = [10, 20, 30, 40, 50, 60, 80, 100], big = { 500: ['ebox'], 1500: ['ebox'], 5000: ['skin', 2500], 10000: ['skin', 4000], 15000: ['ebox'], 20000: ['skin', 4000] }, out = [];
+  for (const [to, gap] of [[500, 50], [1500, 100], [5000, 250], [10000, 500], [20000, 1000]]) for (let n = at[at.length - 1] + gap; n <= to; n += gap) at.push(n);
+  const amt = (gap, t) => t[gap <= 20 ? 0 : gap <= 50 ? 1 : gap <= 100 ? 2 : gap <= 250 ? 3 : gap <= 500 ? 4 : 5];
+  let i = 0, prev = 0;
+  for (const n of at) {
+    const gap = n - prev, kind = ['g', 'rx', 'g', 'box', 'cx'][i % 5]; prev = n;
+    if (big[n]) { out.push([n, big[n][0], big[n][1], 1]); continue; }      // a big step does not use up a turn of the cycle
+    i++;
+    out.push(kind === 'box' ? [n, gap >= 500 ? 'ebox' : 'box'] : [n, kind, kind === 'g' ? amt(gap, [50, 150, 300, 500, 800, 1200]) : amt(gap, [100, 200, 300, 500, 700, 1000])]);
+  }
+  return out;
+})();
 /* what a box can hold: [chance weight, kind, least, most] */
-const BOX_LOOT = { box: [[50, 'g', 150, 400], [30, 'rx', 150, 300], [12, 'cx', 150, 250], [8, 'skin', 1000, 1000]], ebox: [[35, 'g', 600, 1200], [20, 'rx', 500, 800], [20, 'cx', 400, 600], [25, 'skin', 2500, 2500]] };
+const BOX_LOOT = { box: [[50, 'g', 150, 400], [20, 'rx', 150, 300], [10, 'sh', 2, 4], [12, 'cx', 150, 250], [8, 'skin', 1000, 1000]], ebox: [[35, 'g', 600, 1200], [10, 'rx', 500, 800], [10, 'sh', 5, 8], [20, 'cx', 400, 600], [25, 'skin', 2500, 2500]] };
 /* character mastery: every step is MP_STEP points (about 16 matches at ~50 a match) */
 const MP_STEP = 800, MASTERY = [];
 for (const [nm, n, col] of [['브론즈', 3, '#c8803a'], ['실버', 3, '#c0c8d4'], ['골드', 3, '#ffd34d'], ['플래티넘', 3, '#6fe0d0'], ['다이아', 3, '#6fb8ff'], ['아메시스트', 3, '#b07cff'], ['마스터', 5, '#ff8a4d'], ['그랜드마스터', 5, '#ff4d6d']]) for (let i = 0; i < n; i++) MASTERY.push({ name: nm + ' ' + ['I', 'II', 'III', 'IV', 'V'][i], col });
@@ -5736,12 +5935,14 @@ function streakStep(win, draw, place) {
 }
 /* gives one reward and says what it was: { kind, n, hero, skin } */
 function giveReward(kind, n) {
-  if (kind === 'box' || kind === 'ebox') { const L = BOX_LOOT[kind]; let r = Math.random() * L.reduce((a, l) => a + l[0], 0), l = L[0]; for (const x of L) { if ((r -= x[0]) < 0) { l = x; break; } } return giveReward(l[1], Math.round((l[2] + Math.random() * (l[3] - l[2])) / 10) * 10); }
+  if (kind === 'box' || kind === 'ebox') { const L = BOX_LOOT[kind]; let r = Math.random() * L.reduce((a, l) => a + l[0], 0), l = L[0]; for (const x of L) { if ((r -= x[0]) < 0) { l = x; break; } } const tr = Math.random(), tier = l[1] === 'skin' ? 2 : kind === 'ebox' ? (tr < .25 ? 2 : 1) : tr < .05 ? 2 : tr < .25 ? 1 : 0;      // a box opens as common, rare or legendary: rare doubles what is inside, legendary gives four times (a skin is always legendary)
+    const got = giveReward(l[1], l[1] === 'skin' ? l[2] : l[1] === 'sh' ? Math.round(l[2] + Math.random() * (l[3] - l[2])) * (tier + 1) : Math.round((l[2] + Math.random() * (l[3] - l[2])) * (kind === 'ebox' ? [1, 1, 2] : [1, 2, 4])[tier] / 10) * 10); got.box = kind; got.tier = tier; return got; }
   if (kind === 'skin') {      // a skin not owned yet, from the dearest tier allowed; nothing left to give: its worth in gold
     const pool = COS_IDS('skin').filter(id => HEROES[COSMETICS[id].char] && !skinOwned(id) && skinPrice(id) <= n), top = Math.max(0, ...pool.map(skinPrice)), best = pool.filter(id => skinPrice(id) === top);
     if (best.length) { const id = pick(best); COS.own.push(id); return { kind, skin: id, hero: COSMETICS[id].char }; }
     kind = 'g';
   }
+  if (kind === 'sh') { const L = lockedIds(); if (L.length) { const hero = pick(L); addShard(hero, n); return { kind, n, hero }; } kind = 'g'; n *= SHARD_GOLD; }      // shards of a locked character (gear.js); none locked: their gold
   if (kind === 'g') { COS.gold += n; return { kind, n }; }
   if (kind === 'px') { COS.xp += n; return { kind, n }; }
   if (kind === 'k') { COS.karma += n; return { kind, n }; }
@@ -5754,7 +5955,7 @@ function karmaTake(r) {
   try { sfx(880, .18, 'triangle', .06); } catch (e) {}
   saveCos(); goldUi(); return got;
 }
-const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin' };
+const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin', sh: 'ic-shard' };
 function rewardIcon(kind) { const i = document.createElement('i'); if (kind === 'k') { i.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>'; return i; } i.className = kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[kind]; return i; }
 function renderKarma(got) {
   const tr = document.getElementById('karmaTrack'); tr.textContent = '';
@@ -5764,7 +5965,7 @@ function renderKarma(got) {
   for (const r of KARMA_ROAD) {
     const b = document.createElement('button'), box = document.createElement('span'), pin = document.createElement('span'), num = document.createElement('span');
     const done = COS.kr.includes(r[0]), reach = !done && COS.karma >= r[0];
-    b.type = 'button'; b.className = 'kStep ' + (done ? 'done' : reach ? 'reach' : 'lock') + ' k-' + r[1]; b.dataset.k = r[0]; box.className = 'kBox'; pin.className = 'kPin'; num.className = 'kNum'; num.textContent = r[0].toLocaleString('en-US');
+    b.type = 'button'; b.className = 'kStep ' + (done ? 'done' : reach ? 'reach' : 'lock') + ' k-' + r[1] + (r[3] ? ' big' : ''); b.dataset.k = r[0]; box.className = 'kBox'; pin.className = 'kPin'; num.className = 'kNum'; num.textContent = r[0].toLocaleString('en-US');
     box.append(rewardIcon(r[1]), r[1] === 'g' || r[1] === 'rx' || r[1] === 'cx' ? r[2].toLocaleString('en-US') : LBL[r[1]]);
     b.setAttribute('aria-label', r[0] + ' 카르마: ' + LBL[r[1]] + (r[2] && r[1] !== 'skin' ? ' ' + r[2] : '')); b.title = LBL[r[1]];
     b.disabled = !reach; b.append(box, pin, num);
@@ -5779,12 +5980,33 @@ function renderKarma(got) {
   showGot(document.getElementById('karmaGot'), got);
 }
 /* the line that says what a reward turned out to be */
-function showGot(g, got) {
-  const cvs = g.querySelector('canvas'), ic = g.querySelector('i'), nm = g.querySelector('b'); g.hidden = !got; if (!got) return;
-  cvs.hidden = !got.skin; ic.hidden = !!got.skin; ic.textContent = ''; ic.className = got.skin || got.kind === 'k' ? '' : got.kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[got.kind];
-  if (got.kind === 'k') ic.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>';
-  if (got.skin) { nm.textContent = HEROES[got.hero].name + ' · ' + COSMETICS[got.skin].name; try { drawItemPreview(cvs, got.skin, performance.now()); } catch (e) {} }
-  else nm.textContent = (got.hero ? HEROES[got.hero].name + ' ' : '') + '+' + got.n.toLocaleString('en-US');
+function showGot(g, got) { g.hidden = true; if (got) rewardFx(got); }
+/* the burst over the whole screen when a reward is taken (head.html #rwFx): a box shakes and opens first, then the prize pops in with rays, sparks, a little tune and its number counting up. A tap puts it away */
+let rwTimer = 0, rwRaf = 0;
+function rewardFx(got) {
+  const fx = document.getElementById('rwFx'); if (!fx) return;
+  const ic = fx.querySelector('.rwIc'), cvs = fx.querySelector('canvas'), txt = fx.querySelector('.rwTxt'), spk = fx.querySelector('.rwSpk');
+  const setIcon = kind => { cvs.hidden = true; ic.hidden = false; ic.textContent = ''; ic.className = 'rwIc ' + (kind === 'k' ? '' : kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[kind]); if (kind === 'k') ic.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>'; };
+  const note = (f, at) => setTimeout(() => { try { sfx(f, .16, 'triangle', .07); } catch (e) {} }, at);
+  const close = () => { clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.classList.add('out'); rwTimer = setTimeout(() => { fx.hidden = true; fx.classList.remove('out', 'open', 'shake'); }, 220); for (const el of document.querySelectorAll('.goldPill, #karma, #acctIcon')) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } };
+  const open = () => {
+    fx.classList.remove('shake'); void fx.offsetWidth; fx.classList.add('open');
+    if (got.skin) { ic.hidden = true; cvs.hidden = false; try { drawItemPreview(cvs, got.skin, performance.now()); } catch (e) {} txt.textContent = HEROES[got.hero].name + ' · ' + COSMETICS[got.skin].name; }
+    else {
+      setIcon(got.kind); const pre = (got.hero ? HEROES[got.hero].name + ' ' : '') + '+', n = got.n | 0, t0 = performance.now();
+      const tick = now => { const k = Math.min(1, (now - t0) / 650), e = 1 - Math.pow(1 - k, 3); txt.textContent = pre + Math.round(n * e).toLocaleString('en-US'); if (k < 1) rwRaf = requestAnimationFrame(tick); };
+      txt.textContent = pre + '0'; rwRaf = requestAnimationFrame(tick);
+    }
+    spk.textContent = ''; const cols = tier === 2 ? ['#ffe07a', '#fff', '#ffb020', '#ff7ad9', '#7fe0ff'] : tier === 1 ? ['#d9a8ff', '#a45cff', '#fff', '#7fb4ff'] : got.kind === 'k' ? ['#e3c4ff', '#a45cff', '#fff'] : ['#ffe07a', '#fff3b0', '#ff9a3d', '#7fe0a0'], np = [22, 34, 56][tier];
+    for (let i = 0; i < np; i++) { const p = document.createElement('i'), a = Math.PI * 2 * i / np + Math.random() * .3, r = (110 + Math.random() * 120) * (1 + tier * .25); p.style.setProperty('--x', Math.round(Math.cos(a) * r) + 'px'); p.style.setProperty('--y', Math.round(Math.sin(a) * r) + 'px'); p.style.setProperty('--c', cols[i % cols.length]); p.style.setProperty('--d', (Math.random() * .12).toFixed(2) + 's'); spk.append(p); }
+    note(660, 0); note(880, 90); note(1320, 180); if (got.skin || got.box === 'ebox' || tier) note(1760, 300); if (tier === 2) { note(2090, 420); note(2640, 560); }
+    rwTimer = setTimeout(close, got.skin || tier === 2 ? 2800 : 1900);
+  };
+  clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.hidden = false; fx.classList.remove('out', 'open', 'shake', 't1', 't2'); txt.textContent = ''; spk.textContent = '';
+  const tier = got.box ? got.tier | 0 : 0, tg = fx.querySelector('.rwTier'); if (tier) fx.classList.add('t' + tier); if (tg) tg.textContent = got.box ? ['', '희귀', '전설'][tier] : '';
+  fx.onclick = () => { if (fx.classList.contains('shake')) { clearTimeout(rwTimer); open(); } else close(); };
+  if (got.box) { setIcon(got.box); void fx.offsetWidth; fx.classList.add('shake'); const sh = [720, 1000, 1500][tier]; fx.style.setProperty('--sh', sh + 'ms'); for (let i = 0; i < sh / 130 - 1; i++) note(300 + i * (40 + tier * 15), 150 + i * 120); rwTimer = setTimeout(open, sh); }
+  else open();
 }
 /* ---------- daily quests: three a day (one easy, one middling, one hard), picked by the date on this device. COS.dq = { d: day, p: progress x3, c: taken x3 } ---------- */
 const dqDay = () => { const d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
@@ -5808,6 +6030,7 @@ function dqMatch(m) {
     const add = q.t === 'play' ? 1 : q.t === 'win' ? (m.win ? 1 : 0) : q.t === 'kill' ? m.kills | 0 : q.t === 'dmg' ? Math.round(m.dealt || 0) : q.t === 'top3' ? (m.place >= 1 && m.place <= 3 ? 1 : 0) : 0;
     st.p[i] = Math.min(q.n, (+st.p[i] || 0) + Math.max(0, add));
   });
+  { const ws = wqState(); wqList(ws.d).forEach((q, i) => { ws.p[i] = Math.min(q.n, (+ws.p[i] || 0) + qAdd(q, m)); }); }
   saveCos(); questUi();
 }
 function dqTake(i) {
@@ -5816,10 +6039,70 @@ function dqTake(i) {
   try { sfx(880, .18, 'triangle', .06); } catch (e) {}
   saveCos(); goldUi(); return got;
 }
+/* what a finished match adds to a quest */
+function qAdd(q, m) {
+  if ((q.mode && q.mode !== m.mode) || (q.hero && q.hero !== m.hero)) return 0;
+  return Math.max(0, q.t === 'play' ? 1 : q.t === 'win' ? (m.win ? 1 : 0) : q.t === 'kill' ? m.kills | 0 : q.t === 'dmg' ? Math.round(m.dealt || 0) : q.t === 'top3' ? (m.place >= 1 && m.place <= 3 ? 1 : 0) : 0);
+}
+const dayRnd = n => { let sd = (n * 2654435761) >>> 0; return () => { sd = (sd + 0x6D2B79F5) >>> 0; let t = Math.imul(sd ^ sd >>> 15, 1 | sd); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
+/* ---------- weekly quests: three bigger ones, new every Monday. COS.wq has the shape of COS.dq (d is the Monday) ---------- */
+const wqWeek = () => { const d = new Date(); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
+function wqList(week) {
+  const rnd = dayRnd(week + 7), pk = a => a[Math.floor(rnd() * a.length)];
+  const modes = (typeof MODES !== 'undefined' ? MODES : []).filter(m => m.ready !== false), m = pk(modes), h = pk(ROSTER), solo = modes.find(x => x.id === 'solo'), hn = HEROES[h] ? HEROES[h].name : h;
+  const a = pk([{ t: 'play', n: 20, txt: '20판 하기' }, { t: 'kill', n: 60, txt: '60킬' }]);
+  const b = pk([{ t: 'win', n: 10, txt: '10승' }, m && { t: 'play', n: 8, mode: m.id, txt: m.name + ' 8판' }, m && { t: 'win', n: 4, mode: m.id, txt: m.name + ' 4승' }].filter(Boolean));
+  const c = pk([h && { t: 'win', n: 5, hero: h, txt: hn + ' 5승' }, h && { t: 'kill', n: 30, hero: h, txt: hn + ' 30킬' }, solo && { t: 'top3', n: 6, mode: 'solo', txt: solo.name + ' 3등 안 6번' }].filter(Boolean));
+  a.rw = ['g', 500]; b.rw = ['k', 30]; c.rw = ['ebox'];
+  return [a, b, c];
+}
+function wqState() { const d = wqWeek(), q = COS.wq; if (!q || q.d !== d || !Array.isArray(q.p) || !Array.isArray(q.c)) COS.wq = { d, p: [0, 0, 0], c: [0, 0, 0] }; return COS.wq; }
+function wqTake(i) {
+  const st = wqState(), q = wqList(st.d)[i]; if (!q || st.c[i] || !(st.p[i] >= q.n)) return null;
+  st.c[i] = 1; const got = giveReward(q.rw[0], q.rw[1]); saveCos(); goldUi(); return got;
+}
+const wqOpen = () => { const st = wqState(); return wqList(st.d).some((q, i) => st.p[i] >= q.n && !st.c[i]); };
+/* ---------- attendance: one reward a day, seven in a row then round again. A missed day loses nothing. COS.att = { d: the day last taken, n: how many taken } ---------- */
+const ATT = [['g', 100], ['k', 5], ['g', 150], ['rx', 150], ['g', 200], ['k', 10], ['box']];
+const attSt = () => { if (!COS.att || typeof COS.att !== 'object') COS.att = { d: 0, n: 0 }; COS.att.n = Math.max(0, COS.att.n | 0); return COS.att; };
+const attOpen = () => attSt().d !== dqDay();
+function attTake() { const a = attSt(); if (!attOpen()) return null; const r = ATT[a.n % 7]; a.d = dqDay(); a.n++; const got = giveReward(r[0], r[1]); saveCos(); goldUi(); return got; }
+/* ---------- today's shop: three skins a day at a lower price ---------- */
+const DEAL_OFF = .3;
+let dealMemo = null;
+function dealIds() {
+  const d = dqDay(); if (dealMemo && dealMemo.d === d) return dealMemo.ids;
+  const rnd = dayRnd(d + 3), pool = COS_IDS('skin').filter(id => HEROES[COSMETICS[id].char] && skinPrice(id) > 0).sort(), ids = [];
+  while (ids.length < 3 && pool.length) ids.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]);
+  dealMemo = { d, ids }; return ids;
+}
+const cosPrice = id => { const p = skinPrice(id); return p > 0 && dealIds().includes(id) ? Math.round(p * (1 - DEAL_OFF) / 10) * 10 : p; };
+/* ---------- titles: an achievement reached gives a title to wear under the name. COS.title = the achievement's id ---------- */
+const TITLES = { modes: '탐험가', k100: '사냥꾼', w10: '승부사', mk7: '연쇄 처치', nd1: '무결점', solo1: '최후의 1인', duel5: '결투가', flag5: '깃발 도둑', silver: '실버', lv10: '베테랑',
+  k1000: '학살자', w100: '백전노장', mk10: '폭풍', solo10: '원 레프트 고수', allhero: '만능', dia: '다이아', karma1k: '카르마 부자', k10000: '전설의 학살자', w1000: '불패 신화', mk15: '재앙', soloall: '원 레프트 지배자', champ: '챔피언' };
+const titleOk = id => !!(id && TITLES[id] && COS.ach && COS.ach[id]);
+const myTitle = () => titleOk(COS.title) ? TITLES[COS.title] : '';
+/* ---------- the profile card: level, lifetime numbers, the character played most, titles to pick ---------- */
+function favHero() { const st = achSt(); let best = null, bv = 0; for (const h of Object.keys(HEROES)) { const v = (st.hg[h] | 0) * 1e6 + mpOf(h); if (v > bv) { bv = v; best = h; } } return best || (HEROES[chosen] ? chosen : Object.keys(HEROES)[0]); }
+function renderProfile() {
+  const $i = id => document.getElementById(id), st = achSt(), l = levelOf(), h = favHero(), tier = ['#9aa3b5', '#7fb4ff', '#c17bff', '#ffd34d'];
+  $i('profName').textContent = PROF.name; $i('profName').style.color = nameColorFor(COS.name); $i('profTitle').textContent = myTitle(); $i('profTitle').hidden = !myTitle();
+  $i('profLv').textContent = 'Lv ' + l.lv; $i('profLvBar').style.width = Math.round(l.into / l.need * 100) + '%';
+  $i('profHero').textContent = HEROES[h].name + ' · ' + masteryOf(h).name; $i('profHero').style.color = masteryOf(h).col;
+  { const cvs = $i('profCv'), c = cvs.getContext('2d'), cos = myCos(h); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cvs.width, cvs.height); c.translate(cvs.width / 2, cvs.height - 34); c.scale(2.6, 2.6); try { drawStick(c, h, bodyColor(cos, '#cfd3dc'), .3, 0, 0, 0, cos); } catch (e) {} }
+  const box = $i('profStats'); box.textContent = '';
+  for (const [k, v] of [['경기', st.g], ['승리', st.w], ['승률', st.g ? Math.round(st.w / st.g * 100) + '%' : '-'], ['킬', st.k], ['최고 킬', st.mk], ['도전과제', ACHS.filter(a => COS.ach && COS.ach[a.id]).length + ' / ' + ACHS.length]]) {
+    const d = document.createElement('div'), b = document.createElement('b'), sm = document.createElement('small'); b.textContent = typeof v === 'number' ? v.toLocaleString('en-US') : v; sm.textContent = k; d.append(b, sm); box.append(d);
+  }
+  const tb = $i('profTitles'); tb.textContent = '';
+  for (const a of ACHS) { if (!titleOk(a.id)) continue; const b = document.createElement('button'); b.type = 'button'; b.textContent = TITLES[a.id]; b.style.setProperty('--tc', tier[a.t]); b.setAttribute('aria-pressed', String(COS.title === a.id));
+    b.addEventListener('click', () => { COS.title = COS.title === a.id ? null : a.id; saveCos(); renderProfile(); accountUi(); }); tb.append(b); }
+  tb.hidden = !tb.children.length;
+}
 /* ---------- achievements ----------
    [id, tier 0 basic · 1 normal · 2 hard · 3 extreme, text, goal, value now]. Lifetime numbers live in COS.st; COS.ach[id] = 1 reached · 2 reward taken.
    The ids also go to the server that counts how many players have each one, so never reuse or rename one. */
-const achSt = () => { const s = COS.st && typeof COS.st === 'object' ? COS.st : (COS.st = {}); for (const k of ['k', 'w', 'g', 'mk', 'nd', 'sa']) s[k] = Math.max(0, Math.floor(+s[k] || 0)); for (const k of ['mw', 'mg', 'hw']) if (!s[k] || typeof s[k] !== 'object') s[k] = {}; return s; };
+const achSt = () => { const s = COS.st && typeof COS.st === 'object' ? COS.st : (COS.st = {}); for (const k of ['k', 'w', 'g', 'mk', 'nd', 'sa']) s[k] = Math.max(0, Math.floor(+s[k] || 0)); for (const k of ['mw', 'mg', 'hw', 'hk', 'hg', 'hn', 'hb']) if (!s[k] || typeof s[k] !== 'object') s[k] = {}; return s; };
 const achTopRank = () => Math.max(0, ...Object.keys(HEROES).map(h => masteryOf(h).i));
 const ACH_PAY = [['g', 100], ['g', 300], ['box'], ['ebox']];
 const ACHS = [
@@ -5840,6 +6123,7 @@ const achOpen = () => !!COS.ach && ACHS.some(a => COS.ach[a.id] === 1);
 function achMatch(m) {
   const s = achSt(), k = Math.max(0, m.kills | 0); if (m.mode === 'flag5') m = Object.assign({}, m, { mode: 'flag' });      // one capture the flag count, whatever the team size
   s.g++; s.k += k; s.mk = Math.max(s.mk, k); s.mg[m.mode] = (s.mg[m.mode] | 0) + 1;
+  if (HEROES[m.hero]) { const h = m.hero; s.hg[h] = (s.hg[h] | 0) + 1; s.hk[h] = (s.hk[h] | 0) + k; s.hb[h] = Math.max(s.hb[h] | 0, k); if (m.win) s.hn[h] = (s.hn[h] | 0) + 1; }      // per character: games, kills, best kills, wins (the character screen and the profile card show them)
   if (m.win) { s.w++; s.mw[m.mode] = (s.mw[m.mode] | 0) + 1; if (HEROES[m.hero]) s.hw[m.hero] = 1; if (m.mode === 'team' && !m.deaths) s.nd++; if (m.mode === 'solo' && m.n > 1 && k >= m.n - 1) s.sa++; }
   if (achScan()) achSync(true);
   saveCos(); questUi();
@@ -5893,30 +6177,43 @@ function renderAch(got) {
   box.scrollTop = got === undefined ? 0 : keep;
   showGot(document.getElementById('questGot'), got); questUi();
 }
-function questTab(ach) {
-  document.getElementById('qTabD').classList.toggle('on', !ach); document.getElementById('qTabA').classList.toggle('on', !!ach);
-  document.getElementById('questList').hidden = !!ach; document.getElementById('achList').hidden = !ach;
-  if (ach) { renderAch(); achSync(); } else renderQuests();
+let qTab = 'd';
+function questTab(t) {      // 'd' daily (with the attendance strip) · 'w' weekly · 'a' achievements
+  t = t === true ? 'a' : t || 'd'; qTab = t;
+  for (const [id, k] of [['qTabD', 'd'], ['qTabW', 'w'], ['qTabA', 'a']]) { const el = document.getElementById(id); if (el) el.classList.toggle('on', k === t); }
+  document.getElementById('questList').hidden = t === 'a'; document.getElementById('achList').hidden = t !== 'a';
+  if (t === 'a') { renderAch(); achSync(); } else renderQuests();
 }
 const dqOpen = () => { const st = dqState(); return dqList(st.d).some((q, i) => st.p[i] >= q.n && !st.c[i]); };
 function questUi() {
   const n = document.getElementById('questN'), dot = document.getElementById('questDot'); if (!n) return;
   const st = dqState(), L = dqList(st.d);
-  n.textContent = L.filter((q, i) => st.p[i] >= q.n).length + '/3'; dot.hidden = !(L.some((q, i) => st.p[i] >= q.n && !st.c[i]) || achOpen());
+  n.textContent = L.filter((q, i) => st.p[i] >= q.n).length + '/3'; dot.hidden = !(L.some((q, i) => st.p[i] >= q.n && !st.c[i]) || achOpen() || wqOpen() || attOpen());
   const ad = document.getElementById('achDot'); if (ad) ad.hidden = !achOpen();
+  const wd = document.getElementById('wqDot'); if (wd) wd.hidden = !wqOpen();
 }
 function renderQuests(got) {
-  const st = dqState(), box = document.getElementById('questList'); box.textContent = '';
-  dqList(st.d).forEach((q, i) => {
+  const wk = qTab === 'w', st = wk ? wqState() : dqState(), box = document.getElementById('questList'); box.textContent = '';
+  if (!wk) {      // attendance: seven days in a row, today's one glows
+    const a = attSt(), open = attOpen(), done = open ? a.n % 7 : (a.n - 1) % 7 + 1, row = document.createElement('div'); row.className = 'attRow';
+    ATT.forEach((r, i) => {
+      const b = document.createElement('button'), d = document.createElement('small'); b.type = 'button'; b.className = 'attDay' + (i < done ? ' took' : open && i === done ? ' now' : ''); b.disabled = !(open && i === done);
+      d.textContent = i + 1; b.append(d, rewardIcon(r[0])); if (r[1]) b.append(String(r[1])); b.setAttribute('aria-label', (i + 1) + '일째 출석 보상');
+      if (open && i === done) b.addEventListener('click', () => renderQuests(attTake() || null));
+      row.append(b);
+    });
+    box.append(row);
+  }
+  (wk ? wqList(st.d) : dqList(st.d)).forEach((q, i) => {
     const row = document.createElement('div'), t = document.createElement('span'), bar = document.createElement('div'), fill = document.createElement('i'), num = document.createElement('span'), rw = document.createElement('button');
     const p = Math.min(q.n, +st.p[i] || 0), done = p >= q.n, took = !!st.c[i];
     row.className = 'qRow' + (took ? ' took' : done ? ' done' : ''); t.className = 'qTxt'; t.textContent = q.txt; bar.className = 'qBar'; fill.style.width = Math.round(p / q.n * 100) + '%'; num.textContent = p.toLocaleString('en-US') + ' / ' + q.n.toLocaleString('en-US'); bar.append(fill, num);
     rw.type = 'button'; rw.className = 'qRw'; rw.disabled = !done || took; rw.append(rewardIcon(q.rw[0])); if (q.rw[1]) rw.append(String(q.rw[1]));
     rw.setAttribute('aria-label', took ? '받음' : '보상 받기');
-    if (done && !took) rw.addEventListener('click', () => renderQuests(dqTake(i) || null));
+    if (done && !took) rw.addEventListener('click', () => renderQuests((wk ? wqTake(i) : dqTake(i)) || null));
     row.append(t, bar, rw); box.append(row);
   });
-  showGot(document.getElementById('questGot'), got);
+  showGot(document.getElementById('questGot'), got); questUi();
 }
 /* karma: 1 per kill, 3 per win; it only goes up */
 function addKarma(n) { COS.karma = Math.max(0, COS.karma + Math.round(n)); saveCos(); goldUi(); }
@@ -6067,7 +6364,7 @@ function cosEquipped(id) {
 function cosToggle(id) {
   const it = COSMETICS[id];
   if (cosLocked(id)) {
-    const p = skinPrice(id);
+    const p = cosPrice(id);
     if (COS.gold < p) { cosBuy = null; try { sfx(150, .12, 'square', .04); } catch (e) {} const el = document.getElementById('cos-' + id); if (el) { el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); } return; }
     if (cosBuy !== id) { cosBuy = id; renderCos(); return; }
     cosBuy = null; COS.own.push(id); COS.gold -= p; if (it.cat === 'skin') COS.skin[it.char] = id; else COS[COS_SLOT[it.cat]] = id; try { sfx(880, .18, 'triangle', .06); } catch (e) {}
@@ -6084,10 +6381,10 @@ function renderCos() {
   const tabs = document.getElementById('cosTabs'), grid = document.getElementById('cosGrid'), hint = document.getElementById('cosHint');
   tabs.textContent = '';
   for (const [k, nm] of COS_TABS) { const b = document.createElement('button'); b.type = 'button'; b.textContent = nm; b.setAttribute('aria-pressed', String(k === cosTab)); b.addEventListener('click', () => { cosTab = k; cosBuy = null; renderCos(); }); tabs.append(b); }
-  let ids = COS_IDS(cosTab);
+  let ids = COS_IDS(cosTab); const deal = cosTab === 'skin' ? dealIds().filter(id => !skinOwned(id)) : [];      // today's cheaper skins come first, under their own heading
   if (cosTab === 'skin') {      // every character's skins, the picked character first
     const order = [chosen, ...Object.keys(HEROES).filter(h => h !== chosen)];
-    ids = ids.filter(id => HEROES[COSMETICS[id].char]).sort((a, b) => order.indexOf(COSMETICS[a].char) - order.indexOf(COSMETICS[b].char) || skinPrice(a) - skinPrice(b));
+    ids = ids.filter(id => HEROES[COSMETICS[id].char]).sort((a, b) => deal.includes(b) - deal.includes(a) || order.indexOf(COSMETICS[a].char) - order.indexOf(COSMETICS[b].char) || skinPrice(a) - skinPrice(b));
   }
   else if (cosTab === 'bcol' || cosTab === 'name' || cosTab === 'kfx') ids = ids.slice().sort((a, b) => skinPrice(a) - skinPrice(b));
   goldUi();
@@ -6097,18 +6394,20 @@ function renderCos() {
   let grp = null;
   for (const id of ids) {
     const it = COSMETICS[id], b = document.createElement('button');
-    if (it.cat === 'skin' && it.char !== grp) { grp = it.char; const hd = document.createElement('h3'); hd.className = 'cosGrp'; hd.textContent = HEROES[grp].name; grid.append(hd); }
+    const g = deal.includes(id) ? '*' : it.char;
+    if (it.cat === 'skin' && g !== grp) { grp = g; const hd = document.createElement('h3'); hd.className = 'cosGrp' + (g === '*' ? ' deal' : ''); hd.textContent = g === '*' ? '오늘의 할인' : HEROES[g].name; grid.append(hd); }
     b.type = 'button'; b.className = 'cosCard'; b.id = 'cos-' + id; b.setAttribute('aria-pressed', String(cosEquipped(id)));
     const pv = document.createElement('div'); pv.className = 'cosPv';
     if (it.cat === 'emo') { pv.textContent = it.em; if (cosEquipped(id)) { const off = document.createElement('span'); off.className = 'cosOff'; off.textContent = '선택해제'; b.append(pv, off); } }
     else if (it.cat === 'kfx' || it.cat === 'pose') pv.textContent = it.icon || '';
     else if (it.cat === 'name') { pv.textContent = 'Aa'; pv.style.color = nameColorFor(id); pv.style.fontWeight = '700'; }
     else { const cv2 = document.createElement('canvas'); try { drawItemPreview(cv2, id, performance.now()); } catch (e) {} pv.append(cv2); }
-    const nm = document.createElement('span'); nm.textContent = it.name;
+    const nm = document.createElement('span'); nm.textContent = (deal.includes(id) ? HEROES[it.char].name + ' · ' : '') + it.name;
     b.append(pv, nm);
     if (cosLocked(id)) {
-      const pr = document.createElement('span'), co = document.createElement('i'), p = skinPrice(id);
+      const pr = document.createElement('span'), co = document.createElement('i'), p = cosPrice(id);
       pr.className = 'cosPrice' + (COS.gold < p ? ' poor' : ''); co.className = 'coin'; pr.append(co, cosBuy === id ? '구매 ' + p.toLocaleString('en-US') : p.toLocaleString('en-US'));
+      if (p < skinPrice(id) && cosBuy !== id) { const was = document.createElement('s'); was.textContent = skinPrice(id).toLocaleString('en-US'); pr.prepend(was); b.classList.add('deal'); }
       b.classList.add('lock'); if (cosBuy === id) b.classList.add('buy'); b.append(pr);
     }
     b.addEventListener('click', () => cosToggle(id));
@@ -6521,7 +6820,7 @@ function drawDarkVeil(dt) {            // trapped in an enemy's lump: the pictur
   g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(.6, 'rgba(0,0,0,.7)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(sx, sy, r, 0, 7); c.fill();
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(kdVeilCv, 0, 0); ctx.restore();
 }
-function drawScreenVeil() { const now = performance.now(), dt = Math.min(.05, (now - (drawScreenVeil.last || now)) / 1000); drawScreenVeil.last = now; drawDarkVeil(dt); drawHurtVignette(now); }
+function drawScreenVeil() { const now = performance.now(), dt = Math.min(.05, (now - (drawScreenVeil.last || now)) / 1000); drawScreenVeil.last = now; drawDarkVeil(dt); drawHurtVignette(now); drawUltSparks(now); }
 function drawZoneArt(z, menu) {       // tail.js asks this for every zone first; true = drawn here
   if ((z.kind === 'sprout' || z.kind === 'vine') && typeof drawGardenZone === 'function') return drawGardenZone(z);      // (정원사: gardener.js)
   if (z.col === '#9a4cff' && !z.kind) { drawDarkLump(z); return true; }
@@ -6563,7 +6862,7 @@ function drawKanWings(now) {           // 칸's ultimate: two wings of quetzal f
 }
 function drawBuffAuras(dt) {
   const now = performance.now(), T = now / 1000, menu = state === 'menu';
-  drawMuzzles(); drawImpacts(); doveFeathers(dt); predictHits(); deathWatch(); drawHaraldAxes(now); drawLeapCracks(now); bombFrame(); mkCheck(); hatPops();
+  drawMuzzles(); drawUltRings(now); ultSparkWatch(dt); flagWatch(); drawImpacts(); doveFeathers(dt); predictHits(); deathWatch(); drawHaraldAxes(now); drawLeapCracks(now); bombFrame(); mkCheck(); hatPops();
   for (const f of fighters) { if (f && !f.dead && !f.minion && f.st && f.st.pz && (menu || (visibleTo(f, VIEW) && !bushAt(f.x, f.y)))) drawPizarroAura(f, now); }
   for (const f of fighters) {
     const a = f && f.fxAura; if (!a || f.minion) continue;
@@ -6866,6 +7165,80 @@ function ultPunch(e) {                  // every ultimate: a hard shake and a de
   if (mine) buzz(40);
 }
 
+/* ---------- 궁극기 ready: a turning dotted ring at the feet (mine and my team's), and every hit sends a spark flying into the ultimate button ---------- */
+function drawUltRings(now) {
+  if (state !== 'play') return;
+  for (const f of fighters) {
+    if (!f || f.dead || f.minion || f.ucd > 0 || f.team !== VIEW || f.form === 'gone') continue;
+    if (f !== player && NET.role === 'guest') continue;           // a guest only knows its own charge
+    if (!visibleTo(f, VIEW)) continue;
+    const x = f.x, y = f.y + 16, p = .5 + .5 * Math.sin(now / 160);
+    ctx.save();
+    ctx.globalAlpha = .18 + .1 * p; ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.ellipse(x, y, 34, 13, 0, 0, 7); ctx.fill();
+    ctx.globalAlpha = .95; ctx.strokeStyle = '#ffd34d'; ctx.lineWidth = 3; ctx.setLineDash([7, 6]); ctx.lineDashOffset = -now / 40;
+    ctx.beginPath(); ctx.ellipse(x, y, 34 + p * 2, 13 + p, 0, 0, 7); ctx.stroke();
+    ctx.restore();
+  }
+}
+const USP = []; let uPrev = null, uBtnPulse = 0;
+function ultSparkWatch(dt) {           // the charge jumps (a basic attack landed): fly a spark from me to the button
+  if (state !== 'play' || !player || player.dead) { uPrev = null; return; }
+  const u = player.ucd;
+  if (uPrev !== null && uPrev - u > (dt || .016) * 1.5 + .05 && uPrev > 0) {
+    const b = document.getElementById('ultBtn'); if (b && !b.hidden && b.getClientRects().length) {
+      const r = b.getBoundingClientRect(), sx = (player.x - cam.x) * cam.s + W / 2, sy = (player.y + BODY - cam.y) * cam.s + H / 2;
+      const n = lowFx() ? 1 : 3; for (let i = 0; i < n; i++) USP.push({ x0: sx + RND(-12, 12), y0: sy + RND(-12, 12), x1: r.left + r.width / 2, y1: r.top + r.height / 2, cx: sx + RND(-140, 140), cy: sy - RND(60, 180), t0: performance.now() + i * 50, d: RND(340, 460), full: u <= 0 });
+    }
+  }
+  uPrev = u;
+}
+function drawUltSparks(now) {
+  if (!USP.length) return;
+  ctx.save(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.globalCompositeOperation = 'lighter';
+  for (let i = USP.length - 1; i >= 0; i--) {
+    const q = USP[i], t = (now - q.t0) / q.d; if (t < 0) continue;
+    if (t >= 1) { USP.splice(i, 1); const b = document.getElementById('ultBtn'); if (b && b.animate && now - uBtnPulse > 90) { uBtnPulse = now; b.animate([{ transform: 'scale(1.14)', filter: 'brightness(1.6)' }, { transform: 'scale(1)', filter: 'brightness(1)' }], { duration: 220, easing: 'ease-out' }); } continue; }
+    const e = t * t * (3 - 2 * t), m = 1 - e;
+    for (let k = 0; k < 4; k++) {          // the spark and a short fading tail
+      const tt = Math.max(0, e - k * .04), mm = 1 - tt, x = mm * mm * q.x0 + 2 * mm * tt * q.cx + tt * tt * q.x1, y = mm * mm * q.y0 + 2 * mm * tt * q.cy + tt * tt * q.y1, r = (6 - k * 1.3) * (q.full ? 1.3 : 1);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r * 2.2); g.addColorStop(0, 'rgba(255,248,210,' + (1 - k * .22) + ')'); g.addColorStop(.4, 'rgba(255,211,77,' + (.8 - k * .18) + ')'); g.addColorStop(1, 'rgba(255,211,77,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 2.2, 0, 7); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+/* ---------- 캡쳐 플래그: grabbing the enemy flag or scoring with it gets a big banner with the carrier's name and team-coloured fireworks ---------- */
+let flagPrev = null, flagEl = null;
+function flagWatch() {
+  if (state !== 'play' || !FLAGS.length) { flagPrev = null; return; }
+  const cur = FLAGS.map(g => g.by), sc = score ? score.slice() : [];
+  if (flagPrev && flagPrev.by.length === cur.length) {
+    cur.forEach((by, t) => {
+      const was = flagPrev.by[t];
+      if (by >= 0 && was < 0 && fighters[by]) flagShow(fighters[by], false);
+      else if (by < 0 && was >= 0 && FLAGS[t].home && fighters[was] && sc[fighters[was].team] > (flagPrev.sc[fighters[was].team] || 0)) flagShow(fighters[was], true);
+    });
+  }
+  flagPrev = { by: cur, sc };
+}
+function flagShow(f, scored) {
+  mkEnsure();
+  if (!flagEl) { flagEl = document.createElement('div'); flagEl.id = 'multiKillBig'; flagEl.style.top = '22%'; document.body.append(flagEl); }
+  const c = TC(f.team), name = f.nick || (f.h0 && f.h0.name) || f.h.name || '';
+  const vw = Math.min(innerWidth, innerHeight * 1.8), px = Math.round((scored ? 86 : 64) * Math.min(1, vw / 900));
+  flagEl.className = ''; flagEl.style.fontSize = Math.max(32, px) + 'px'; flagEl.style.color = c; flagEl.style.textShadow = '0 0 18px ' + c + ', 0 0 44px ' + c + ', 0 4px 0 rgba(0,0,0,.6)';
+  flagEl.textContent = scored ? '득점!' : '깃발 획득!'; const sub = document.createElement('div'); sub.className = 'mkSub'; sub.textContent = name; flagEl.append(sub);
+  void flagEl.offsetWidth; flagEl.classList.add('show'); clearTimeout(flagEl._t); flagEl._t = setTimeout(() => flagEl.classList.remove('show'), 2200);
+  const x0 = f.x, y0 = f.y + BODY, N = lowFx() ? 2 : scored ? 6 : 3;
+  for (let k = 0; k < N; k++) setTimeout(() => {      // fireworks: bursts popping around the carrier, team colour and white
+    const x = x0 + RND(-120, 120), y = y0 - RND(40, 160), cols = [c, '#ffffff', c];
+    addP({ x, y, life: .25, color: '#ffffff', shape: 'flash', size: 60 });
+    addP({ x, y, life: .5, color: c, shape: 'ring', r0: 6, r1: 70, lw: 4 });
+    for (let i = 0; i < (lowFx() ? 10 : 22); i++) { const a = i / 22 * 6.283, sp = RND(160, 300); addP({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: 2.2, grav: 160, life: RND(.6, 1), size: RND(2, 3.4), color: cols[i % 3], shape: 'dot' }); }
+    try { sfx(scored ? 880 : 660, .16, 'triangle', .05, 1.4); } catch (e) { }
+  }, k * 160);
+}
+
 /* ---------- previews ----------
    Holding a skill key (F, E), the ultimate (R / Space) or the dash (Q / Shift) draws a mint, see-through picture of what it will
    do; letting go fires it where the cursor is then. Esc (or a right click) cancels. The normal attack has its own white picture,
@@ -7041,8 +7414,8 @@ function drawPreviews(f) {
   let any = false;
   const mv = inp && Math.hypot(inp.mx, inp.my) > .15 ? [inp.mx, inp.my] : null;
   if (PV.dash) { drawSpec(f, pvSpec(f, 'd'), a, tx, ty, cancel ? '255,93,93' : MINT, f.dcd <= 0, mv || [Math.cos(a), Math.sin(a)]); any = true; }
-  for (let i = 0; i < 2; i++) if (PV.sk[i] && f.sk[i]) { drawSpec(f, pvSpec(f, 's', i), a, tx, ty, cancel ? '255,93,93' : MINT, f.scd[i] <= 0, mv); any = true; }
-  if (PV.ult) { drawSpec(f, pvSpec(f, 'u'), a, tx, ty, cancel ? '255,93,93' : MINT, f.ucd <= 0, mv); any = true; }
+  for (let i = 0; i < 2; i++) if (PV.sk[i] && f.sk[i]) { drawSpec(f, pvSpec(f, 's', i), a, tx, ty, cancel ? '255,93,93' : MINT, f.scd[i] <= 0, null); any = true; }
+  if (PV.ult) { drawSpec(f, pvSpec(f, 'u'), a, tx, ty, cancel ? '255,93,93' : MINT, f.ucd <= 0, null); any = true; }
   return any;
 }
 function drawBasicGuide(f) {
@@ -7416,6 +7789,116 @@ function drawGardenTop() {       // tail.js render(): above the fighters
   ctx.globalAlpha = 1;
 }
 
+/* ---------- character unlock (soul shards) and gear ----------
+   Unlock: six characters are open from the start. Beating a locked character in a match gives one of its shards; enough shards open it.
+   Missing shards can be filled with gold (SHARD_GOLD each). Boxes can hold shards too ('sh' in social.js BOX_LOOT).
+   Gear: bought once with gold, worn by any character; slot 1 opens with the character, slot 2 at mastery step 1 (브론즈 II).
+   Saved in COS: unl (opened ids), sh {id: shards}, gown (gear owned), geq {hero: [gear ids]} (cloud.js CL_RULE knows them) */
+const UNLOCK_START = ['sword', 'bow', 'pistol', 'wizard', 'shotgun', 'grenade'];
+const UNLOCK_NEED = { magiccard: 8, kadas: 8, rifle: 8, smg: 8, shuriken: 8, shade: 12, tionis: 12, harald: 12, portalgun: 12, gardener: 16 };
+const SHARD_GOLD = 100;
+const shardNeed = id => UNLOCK_NEED[id] || 8;
+const shardsOf = id => Math.max(0, ((COS.sh || {})[id] | 0));
+const unlocked = id => !!HEROES[id] && (UNLOCK_START.includes(id) || (COS.unl || []).includes(id));
+const lockedIds = () => ROSTER.filter(id => !unlocked(id));
+const unlockCost = id => Math.max(0, shardNeed(id) - shardsOf(id)) * SHARD_GOLD;
+function unlockOpen(id) { if (unlocked(id)) return false; if (!Array.isArray(COS.unl)) COS.unl = []; COS.unl.push(id); return true; }
+/* n shards for character id; opens it when they are enough. Returns true when this opened it */
+function addShard(id, n) {
+  if (!HEROES[id] || unlocked(id) || !(n > 0)) return false;
+  if (!COS.sh || typeof COS.sh !== 'object') COS.sh = {};
+  COS.sh[id] = shardsOf(id) + n;
+  return shardsOf(id) >= shardNeed(id) ? unlockOpen(id) : false;
+}
+function unlockBuy(id) {
+  const c = unlockCost(id); if (unlocked(id) || COS.gold < c) return false;
+  COS.gold -= c; unlockOpen(id); saveCos(); goldUi(); try { sfx(880, .2, 'triangle', .07); } catch (e) {} return true;
+}
+/* a kill seen by this browser (host, offline, or a guest through the killinfo event): the local player beat a locked character */
+function shardOnKill(vi, ki) {
+  if (typeof DED !== 'undefined' && DED) return;
+  const v = fighters[vi], k = fighters[ki];
+  if (!v || !k || !player || k !== player || v === k || v.minion) return;
+  const id = (v.h0 || v.h || {}).id; if (!id || unlocked(id)) return;
+  const opened = addShard(id, 1); saveCos();
+  try { addText({ x: v.x, y: v.y - 92, txt: opened ? '◆ ' + HEROES[id].name + '!' : '◆+1', life: 1.1, color: '#c9a2ff' }); } catch (e) {}
+}
+{ const k0 = FXF.killinfo; FXF.killinfo = (vi, ki, src) => { if (k0) k0(vi, ki, src); try { shardOnKill(vi, ki); } catch (e) {} }; }
+
+/* gear: [id, name, effect, price] — engine.js reads them through hasGear() */
+const GEARS = [
+  ['dash', '질풍 신발', '대쉬 쿨타임 -15%', 600],
+  ['sk2', '두 번째 숨', '2스킬 쿨타임 -12%', 700],
+  ['ult', '사냥꾼 표식', '처치하면 궁극기 4초 더 감소', 900],
+  ['band', '비상 붕대', '체력 30% 아래로 처음 떨어지면 2초간 받는 피해 -30%', 800],
+  ['pad', '패드 마니아', '치유·속도 패드 효과 +60%', 600],
+  ['lava', '용암 장화', '용암 분출·안전 구역 밖 피해 -40%', 600],
+  ['flag', '깃발 멜빵', '깃발을 들어도 느려지지 않음', 600],
+  ['back', '역전의 칼날', '팀 점수가 뒤질 때 주는 피해 +8%', 900]
+];
+const GEAR_IDS = GEARS.map(g => g[0]);
+const gearDef = id => GEARS.find(g => g[0] === id);
+const hasGear = (f, g) => !!(f && f.gear && f.gear.indexOf(g) >= 0);
+const cleanGear = a => Array.isArray(a) ? a.filter((g, i) => GEAR_IDS.includes(g) && a.indexOf(g) === i).slice(0, 2) : [];
+const gearOwned = g => (COS.gown || []).includes(g);
+const gearSlots = id => masteryOf(id).i >= 1 ? 2 : 1;
+function myGear(id) { return cleanGear(((COS.geq || {})[id] || []).filter(gearOwned)).slice(0, gearSlots(id)); }
+function gearBehind(f) { if (!score || score[f.team] == null) return false; let mx = -1; score.forEach((s, t) => { if (t !== f.team) mx = Math.max(mx, s); }); return score[f.team] < mx; }
+function gearToggle(hero, g) {
+  if (!gearOwned(g)) return false;
+  if (!COS.geq || typeof COS.geq !== 'object') COS.geq = {};
+  let l = myGear(hero); const n = gearSlots(hero);
+  if (l.includes(g)) l = l.filter(x => x !== g); else { l.push(g); if (l.length > n) l.shift(); }
+  COS.geq[hero] = l; saveCos(); return true;
+}
+function gearBuy(g) {
+  const d = gearDef(g); if (!d || gearOwned(g) || COS.gold < d[3]) return false;
+  if (!Array.isArray(COS.gown)) COS.gown = [];
+  COS.gown.push(g); COS.gold -= d[3]; saveCos(); goldUi(); try { sfx(880, .18, 'triangle', .06); } catch (e) {} return true;
+}
+
+/* ---------- lobby UI: locked cards, unlock button, gear box in the character detail ---------- */
+function markLocks() {
+  const grid = document.getElementById('weaponGrid'); if (!grid) return;
+  for (const el of grid.children) {
+    const id = el.dataset.wid, lk = !unlocked(id); el.classList.toggle('lock', lk);
+    if (lk) { const b = el.querySelector('.wm b'), bar = el.querySelector('.wmBar i'); if (b) b.textContent = '◆ ' + shardsOf(id) + ' / ' + shardNeed(id); if (bar) bar.style.width = Math.round(shardsOf(id) / shardNeed(id) * 100) + '%'; }
+  }
+}
+let gearPick = null;      // the gear tapped once (a second tap buys it)
+function renderGear(id) {
+  const d = document.getElementById('weaponDetail'); if (!d) return;
+  let box = document.getElementById('gearBox'); if (box) box.remove();
+  box = document.createElement('div'); box.id = 'gearBox';
+  const btn = document.getElementById('weaponLockBtn');
+  if (!unlocked(id)) {
+    const row = document.createElement('div'), b = document.createElement('b'), bar = document.createElement('span'), fl = document.createElement('i');
+    row.className = 'shRow'; b.textContent = '◆ ' + shardsOf(id) + ' / ' + shardNeed(id); bar.className = 'mBar'; fl.style.width = Math.round(shardsOf(id) / shardNeed(id) * 100) + '%'; bar.append(fl); row.append(b, bar); box.append(row);
+    d.prepend(box);
+    if (btn) { const c = unlockCost(id); btn.textContent = '해금 ' + c.toLocaleString('en-US'); btn.classList.add('unlockBtn'); btn.disabled = COS.gold < c; }
+    return;
+  }
+  if (btn) btn.classList.remove('unlockBtn');
+  const n = gearSlots(id), eq = myGear(id), slots = document.createElement('div'); slots.className = 'gSlots';
+  for (let i = 0; i < 2; i++) { const s = document.createElement('span'); s.className = 'gSlot' + (i >= n ? ' shut' : '') + (eq[i] ? ' on' : ''); s.textContent = i >= n ? '🔒 ' + MASTERY[1].name : eq[i] ? gearDef(eq[i])[1] : '+'; slots.append(s); }
+  box.append(slots);
+  const list = document.createElement('div'); list.className = 'gList';
+  for (const [g, nm, fx, pr] of GEARS) {
+    const b = document.createElement('button'), own = gearOwned(g), t = document.createElement('b'), p = document.createElement('small');
+    b.type = 'button'; b.id = 'gear-' + g; b.className = 'gItem' + (eq.includes(g) ? ' on' : '') + (own ? '' : ' buy');
+    t.textContent = nm; p.textContent = fx; b.append(t, p);
+    if (!own) { const c = document.createElement('i'), co = document.createElement('span'); co.className = 'coin'; c.className = 'gPrice' + (COS.gold < pr ? ' poor' : ''); c.append(co, gearPick === g ? '구매 ' + pr : String(pr)); b.append(c); }
+    b.addEventListener('click', () => {
+      if (own) { gearPick = null; gearToggle(id, g); }
+      else if (gearPick !== g) gearPick = g;
+      else { gearPick = null; if (gearBuy(g)) gearToggle(id, g); }
+      renderGear(id);
+    });
+    list.append(b);
+  }
+  box.append(list); d.append(box);
+}
+
 /* ---------- online: PeerJS matchmaking without room codes ----------
    Rooms are fixed PeerJS ids per game mode (seumarena-v3-<mode>-room-0 .. 7, e.g. seumarena-v3-team-room-0), so a search only meets rooms of the mode picked in the lobby. Game start asks all eight at once ('peek'): a room whose host is waiting for
    players answers 'info' (ok), one that is full or already playing answers ok:false, an id nobody holds gives PeerJS's 'peer-unavailable'
@@ -7463,7 +7946,12 @@ function startMatchIn(id, humans) {      // setup() takes the lobby's modeChoice
 }
 function modeState() { try { if (typeof modeSnap === 'function') return modeSnap(); } catch (e) {} }
 const roomId = k => NET_PREFIX + NET.mode + '-room-' + k;
-let netToken = 0, netClaimTries = 0, netBad = new Set(), netSq = 0, inHist = [], snapAcc = 0, inAcc = 0, mapSentVer = -1, mapSentAt = 0, netOut = null;
+/* light network mode for phones / busy connections (the device setting 'seum_device' = 'mobile' | 'pc', set on first start and in the settings; before that: a touch screen counts as mobile).
+   A light guest asks the host for 10 snapshots a second instead of 20, sends its controls 20 times a second instead of 30, and keeps a larger buffer against jitter */
+function netLite() { let v = null; try { v = localStorage.getItem('seum_device'); } catch (e) {} if (v === 'mobile') return true; if (v === 'pc') return false; try { return matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0; } catch (e) { return false; } }
+let NET_LITE = netLite();
+window.netDeviceChanged = () => { NET_LITE = netLite(); };      // the device setting changed: used from the next room on
+let netToken = 0, netClaimTries = 0, netBad = new Set(), netSq = 0, inHist = [], snapAcc = 0, snapTick = 0, inAcc = 0, mapSentVer = -1, mapSentAt = 0, netOut = null;
 
 /* 원 레프트: a host who leaves while others are still fighting (lobby / again / closing the tab after being knocked out) ends the match for them
    with the standings at that moment, so they get their result and reward instead of a bare "the host left" */
@@ -7481,7 +7969,7 @@ function netReset() {
   const shut = () => { for (const c of cs) try { c.close(); } catch (e) {} if (pr) try { pr.destroy(); } catch (e) {} };
   if (linger) setTimeout(shut, 600); else shut();      // give the last message time to leave before the connections go
   if (NET.hostConn) try { NET.hostConn.close(); } catch (e) {}
-  Object.assign(NET, { role: null, peer: null, conns: [], hostConn: null, members: [], phase: 'idle', rec: false, evs: [], room: -1, me: -1, waitEnd: 0, onRoomGone: null, heard: 0, ps: null, rtt: 0 });
+  Object.assign(NET, { role: null, peer: null, conns: [], hostConn: null, members: [], phase: 'idle', rec: false, evs: [], room: -1, me: -1, waitEnd: 0, onRoomGone: null, heard: 0, ps: null, rtt: 0, tOff: null, jit: .02, delay: .1 });
   netOut = null; netSq = 0; inHist = [];
 }
 const newPeer = id => new Peer(id, Object.assign({ debug: 0 }, PEER_SERVER, PEERJS_ICE_CONFIG));
@@ -7529,7 +8017,7 @@ function netProbeAll(tok) {
     let best = -1; R.forEach((r, k) => { if (r.s === 'avail' && (best < 0 || r.n > R[best].n)) best = k; });      // the fullest waiting room
     if (best < 0) return false;
     joining = best; const r = R[best];
-    try { r.c.send({ t: 'hello', mode: NET.mode, hero: chosen, lo: loadoutOf(chosen), name: PROF.name, cos: myCos(chosen) }); } catch (e) { r.s = 'busy'; joining = -1; return false; }
+    try { r.c.send({ t: 'hello', lite: NET_LITE ? 1 : 0, mode: NET.mode, hero: chosen, lo: loadoutOf(chosen), gear: myGear(chosen), name: PROF.name, cos: myCos(chosen) }); } catch (e) { r.s = 'busy'; joining = -1; return false; }
     r.jt = setTimeout(() => { if (alive() && joining === best) { r.s = 'busy'; joining = -1; decide(); } }, 4500);
     return true;
   };
@@ -7606,7 +8094,7 @@ function hostAccept(c, tok) {
     } else if (m.t === 'hello') {
       if (NET.members.some(x => x.conn === c)) return;
       if (NET.phase !== 'wait' || hostN() >= NET.max || m.mode !== NET.mode || typeof m.hero !== 'string' || !Object.prototype.hasOwnProperty.call(HEROES, m.hero)) { try { c.send({ t: 'busy' }); } catch (e) {} setTimeout(() => { try { c.close(); } catch (e) {} }, 500); return; }
-      const mem = { conn: c, hero: m.hero, lo: Array.isArray(m.lo) ? m.lo : null, name: cleanName(m.name) || '게스트', cos: cleanCos(m.cos, m.hero), f: null, fi: -1, heard: performance.now(), inAt: 0, sq: 0, sqAt: 0 };
+      const mem = { conn: c, hero: m.hero, lo: Array.isArray(m.lo) ? m.lo : null, gear: cleanGear(m.gear), name: cleanName(m.name) || '게스트', cos: cleanCos(m.cos, m.hero), f: null, fi: -1, heard: performance.now(), inAt: 0, sq: 0, sqAt: 0, lite: !!m.lite, evq: [], mv: -1 };
       NET.members.push(mem); NET.conns.push(c);
       if (NET.waitEnd - performance.now() < 5000) NET.waitEnd = performance.now() + 5000;      // someone just arrived: leave time for the next one to find the room too
       c.send({ t: 'welcome', room: NET.room });
@@ -7645,11 +8133,11 @@ function hostLobby() {
 function hostStart() {
   if (NET.phase !== 'wait') return;
   NET.phase = 'play';
-  const humans = (DED ? [] : [{ hero: chosen, lo: loadoutOf(chosen), local: true, cos: myCos(chosen), name: PROF.name }]).concat(NET.members.map(m => ({ hero: m.hero, lo: m.lo, remote: m, cos: m.cos, name: m.name })));
+  const humans = (DED ? [] : [{ hero: chosen, lo: loadoutOf(chosen), gear: myGear(chosen), local: true, cos: myCos(chosen), name: PROF.name }]).concat(NET.members.map(m => ({ hero: m.hero, lo: m.lo, gear: m.gear, remote: m, cos: m.cos, name: m.name })));
   startMatchIn(NET.mode, humans);
   if (!NET.members.length) { const p = NET.peer; NET.peer = null; NET.role = null; NET.phase = 'idle'; try { p.destroy(); } catch (e) {} return; }      // nobody came: the room closes, the match is offline
   NET.rec = true; NET.evs = []; snapAcc = 0; mapSentVer = -1;
-  const roster = fighters.map(f => ({ nm: f.nick, cos: f.cos, hu: f.human ? 1 : 0 }));
+  const roster = fighters.map(f => ({ nm: f.nick, cos: f.cos, hu: f.human ? 1 : 0, gr: f.gear && f.gear.length ? f.gear : undefined }));
   for (const m of NET.members) try { m.conn.send({ t: 'start', you: m.fi, team: m.f.team, map: curMap, mode: NET.mode, roster }); } catch (e) {}
 }
 const r1 = v => Math.round(v * 10) / 10, r2 = v => Math.round(v * 100) / 100, r3 = v => Math.round(v * 1000) / 1000;
@@ -7696,10 +8184,16 @@ function hostSnap() {
     k: strikes.map(k => [Math.round(k.x), Math.round(k.y), Math.round(k.r), r2(k.t), r2(k.max), k.col]),
     w: [...tempWalls].filter(e => e[1] > time).map(e => [e[0], r1(e[1] - time)]), e: NET.evs };
   const md = modeState(); if (md !== undefined) s.md = md;      // flags, rounds, safe zone ... whatever the mode keeps
-  NET.evs = [];
-  const now = performance.now();
-  if (NET.mapVer !== mapSentVer || now - mapSentAt > 2000) { s.mr = MAP.map(r => r.join('')); mapSentVer = NET.mapVer; mapSentAt = now; }
-  for (const m of NET.members) try { if (m.conn.open) m.conn.send(s); } catch (e) {}
+  s.ts = r3(time);      // the host's match clock: guests place what they see on it (interpolation)
+  const ev = NET.evs; NET.evs = []; snapTick++;
+  const now = performance.now(), mapAll = now - mapSentAt > 2000; if (mapAll) mapSentAt = now;
+  let mr = null; const rows = () => mr || (mr = MAP.map(r => r.join('')));
+  for (const m of NET.members) {
+    if (m.lite && snapTick % 2) { if (ev.length) m.evq.push(...ev); continue; }      // a light guest gets every other snapshot; its events wait for the next one it gets
+    const o = Object.assign({}, s, { e: m.evq.length ? m.evq.concat(ev) : ev }); m.evq = [];
+    if (m.mv !== NET.mapVer || mapAll) { o.mr = rows(); m.mv = NET.mapVer; }
+    try { if (m.conn.open) m.conn.send(o); } catch (e) {}
+  }
 }
 function hostEnd() {
   if (NET.role !== 'host') return;
@@ -7744,12 +8238,13 @@ function guestFighter(i, s) {
       inv: 0, tapT: 0, hold: false, scd: [0, 0], sk: [null, null], queue: [], minion: false, isPlayer: i === NET.me, lastFire: -9, lastHit: -9, swing: 0, spin: 0, shield: 0, hp: s.hp, mhp: s.mh };
     fighters[i] = f;
     if (i === NET.me) player = f;
-    const r = (NET.roster || [])[i] || {}; f.nick = r.nm ? cleanName(r.nm) : null; f.cos = cleanCos(r.cos, s.h0);
+    const r = (NET.roster || [])[i] || {}; f.nick = r.nm ? cleanName(r.nm) : null; f.cos = cleanCos(r.cos, s.h0); f.gear = cleanGear(r.gr);
   }
   return f;
 }
 function applySnap(s) {
   NET.heard = performance.now();
+  if (s.ts != null) netClock(s.ts);
   timeLeft = s.tl; score = s.sc;
   if (s.mr) MAP = s.mr.map(r => r.split(''));
   tempWalls.clear(); for (const w of s.w) tempWalls.set(w[0], time + w[1]);
@@ -7760,7 +8255,8 @@ function applySnap(s) {
     f.lfPrev = d.lf;
     f.h = HEROES[d.h]; f.h0 = HEROES[d.h0]; f.team = d.tm; f.human = !!d.hu;
     if (f.dead && !d.d) { f.x = d.x; f.y = d.y; }
-    f.nx = d.x; f.ny = d.y; f.na = d.a; if (!me) f.aim = f.aim == null ? d.a : f.aim;
+    f.nx = d.x; f.ny = d.y; f.na = d.a;
+    if (!me && s.ts != null) { const h = f.ih || (f.ih = []); if (h.length && s.ts < h[h.length - 1].t) h.length = 0; h.push({ t: s.ts, x: d.x, y: d.y }); while (h.length > 2 && s.ts - h[0].t > 1) h.shift(); if (d.d || (f.dead && !d.d)) h.length = 0, h.push({ t: s.ts, x: d.x, y: d.y }); } if (!me) f.aim = f.aim == null ? d.a : f.aim;
     f.hp = d.hp; f.mhp = d.mh; f.dead = !!d.d; f.respawnT = d.rt; f.form = d.fm || null; f.ghost = f.form === 'gone' || f.form === 'sub' || f.form === 'spirit';
     f.swing = d.sw; f.spin = d.sp; f.shield = d.sh; f.inv = d.iv ? .1 : 0; f.kos = d.k; f.deaths = d.de;
     f.lastFire = time - d.lf; f.lastHit = time - d.lh;
@@ -7810,14 +8306,34 @@ function guestPredict(f) {
   }
   return q;
 }
+/* guest clock: tOff maps local seconds to the host's match clock. It follows the earliest-arriving snapshots (late ones are jitter), and
+   the shown time runs `delay` behind, enough to cover the snapshot gap plus the measured jitter, so remote players move smoothly between two known positions */
+let netRT = null;
+function netClock(ts) {
+  const now = performance.now() / 1000, o = ts - now, gap = NET_LITE ? .1 : .05;
+  if (NET.tOff == null || o - NET.tOff > .5 || NET.tOff - o > 1.5) { NET.tOff = o; NET.jit = .02; }      // first snapshot, or the clock jumped (new match)
+  else { const d = o - NET.tOff; NET.tOff += d > 0 ? d * .2 : d * .01; NET.jit += (Math.abs(d) - NET.jit) * .05; }
+  NET.delay = Math.max(NET_LITE ? .12 : .07, Math.min(.35, gap * 1.2 + NET.jit * 2.5));
+}
+/* (remote players: interpAt gives the target, and a light touch of smoothing hides the small corrections when a late snapshot lands) */
+function interpAt(h, t) {
+  let i = h.length - 1;
+  if (t >= h[i].t) { if (i < 1) return [h[i].x, h[i].y]; const a = h[i - 1], b = h[i], dt = b.t - a.t, e = Math.min(t - b.t, .2); if (dt <= 0 || Math.hypot(b.x - a.x, b.y - a.y) > 160) return [b.x, b.y]; return [b.x + (b.x - a.x) / dt * e, b.y + (b.y - a.y) / dt * e]; }      // past the newest: a short extrapolation, then hold
+  while (i > 0 && h[i - 1].t > t) i--;
+  if (i === 0) return [h[0].x, h[0].y];
+  const a = h[i - 1], b = h[i], u = (t - a.t) / Math.max(1e-3, b.t - a.t);
+  if (Math.hypot(b.x - a.x, b.y - a.y) > 160) return u < .5 ? [a.x, a.y] : [b.x, b.y];      // a teleport / respawn: no sliding across the map
+  return [a.x + (b.x - a.x) * u, a.y + (b.y - a.y) * u];
+}
 function guestStep(dt) {
+  netRT = NET.tOff != null ? performance.now() / 1000 + NET.tOff - NET.delay : null;      // the host time being shown now
   time += dt; timeLeft = Math.max(0, timeLeft - dt);
   const k = Math.min(1, dt * 14);
   for (const f of fighters) {
     if (!f || f.dead) continue;
     const px = f.x, py = f.y, q = f === player && NET.ps ? guestPredict(f) : null;
     if (q) { const ex = q.x - f.x, ey = q.y - f.y; if (ex * ex + ey * ey > 8100) { f.x = q.x; f.y = q.y; } else { const kp = Math.min(1, dt * 40); f.x += ex * kp; f.y += ey * kp; } }      // own walking: the host's position plus the inputs it has not yet seen
-    else { f.x += (f.nx - f.x) * k; f.y += (f.ny - f.y) * k; }
+    else { const ip = f.ih && f.ih.length && netRT != null ? interpAt(f.ih, netRT) : null; if (ip) { const ex = ip[0] - f.x, ey = ip[1] - f.y; if (ex * ex + ey * ey > 25600) { f.x = ip[0]; f.y = ip[1]; } else { const kk = Math.min(1, dt * 22); f.x += ex * kk; f.y += ey * kk; } } else { f.x += (f.nx - f.x) * k; f.y += (f.ny - f.y) * k; } }
     f.vx = (f.x - px) / dt; f.vy = (f.y - py) / dt; f.bob += Math.hypot(f.vx, f.vy) * dt * .06;
     if (f !== player) { let da = f.na - f.aim; da = Math.atan2(Math.sin(da), Math.cos(da)); f.aim += da * k; }
     f.swing = Math.max(0, f.swing - dt); f.spin = Math.max(0, f.spin - dt);
@@ -7833,7 +8349,7 @@ function guestStep(dt) {
   if (!netOut) netOut = inp;
   else { netOut = Object.assign(inp, { pf: inp.pf || netOut.pf, ult: inp.ult || netOut.ult, dash: inp.dash || netOut.dash, sk: [inp.sk[0] || netOut.sk[0], inp.sk[1] || netOut.sk[1]], np: inp.np != null ? inp.np : netOut.np, manual: inp.manual || netOut.manual }); }
   inAcc += dt;
-  if (inAcc >= IN_DT && NET.hostConn && NET.hostConn.open) {
+  if (inAcc >= (NET_LITE ? 1 / 20 : IN_DT) && NET.hostConn && NET.hostConn.open) {
     inAcc = 0;
     const o = netOut; netOut = null;
     const sq = ++netSq; inHist.push({ sq, t: time, mx: r2(o.mx), my: r2(o.my) }); while (inHist.length && time - inHist[0].t > 1.5) inHist.shift();
@@ -7846,12 +8362,12 @@ let pingAcc = 0;
 function netTick(dt) {
   const now = performance.now();
   if (NET.role === 'host') for (const m of NET.members.slice()) {
-    if (now - (m.heard || now) > 6000) hostDrop(m.conn, netToken);      // nothing from a guest for 6 s: gone
-    else if (m.f && m.f.netIn && m.inAt && now - m.inAt > 300) { m.f.netIn.mx = 0; m.f.netIn.my = 0; m.f.netIn.hold = false; }      // controls gone quiet (frozen tab, bad link): stand still instead of walking on
+    if (now - (m.heard || now) > 10000) hostDrop(m.conn, netToken);      // nothing from a guest for 6 s: gone
+    else if (m.f && m.f.netIn && m.inAt && now - m.inAt > (m.lite ? 700 : 500)) { m.f.netIn.mx = 0; m.f.netIn.my = 0; m.f.netIn.hold = false; }      // controls gone quiet (frozen tab, bad link): stand still instead of walking on
   }
   if (NET.role === 'guest' && NET.hostConn) {
     if ((pingAcc += dt) > 1) { pingAcc = 0; try { NET.hostConn.send({ t: 'ping', ts: now }); } catch (e) {} }
-    if (NET.phase === 'play' && NET.heard && now - NET.heard > 5000) hostLost();       // no snapshot for 5 s: the host is gone
+    if (NET.phase === 'play' && NET.heard && now - NET.heard > 8000) hostLost();       // no snapshot for 5 s: the host is gone
     if (NET.phase === 'joined') { if (!NET.heard) NET.heard = now; if (now - NET.heard > 8000) hostLost(); }
   }
   if (NET.role === 'host' && NET.phase === 'wait') {
@@ -7992,15 +8508,17 @@ if (DED) {
 }
 
 /* ---------- news: notices the developer writes, read by every player ----------
-   The list lives in the seumarena repository as news/news.json (written with news/admin.html). The game reads it from
-   raw.githubusercontent.com (any origin may read it, and the app's service worker leaves that host alone); the copy that
-   was current at build time is baked in below, and the last list read is kept in localStorage, so news still shows offline.
+   The list lives in the Supabase table seumarena_news: everyone may read it, only the lead developer (ff_devs role 'owner')
+   may write it, with news/admin.html. The copy in news/news.json at build time is baked in below, and the last list read
+   is kept in localStorage, so news still shows offline (and in the claude.ai preview, where Supabase cannot be reached).
    An item: { id, kind: 공지|업데이트|이벤트|점검, date: 'YYYY-MM-DD', title, body, image?, link?: {label, url},
-   popup? (false = no pop-up on launch), pin? (kept on top), start?/end? (ISO time: shown only between them) }.
+   popup? (false = no pop-up on launch), pin? (kept on top), start?/end? (ISO time: shown only between them),
+   poll?: {o: [2-6 options], close?: ISO time} (the title is the question; signed-in players vote once, see newsPoll*) }.
    Players see a newspaper tile in the lobby's top right with a red dot while something is unread; unread news that
    asks for it opens once by itself when the lobby is first shown. */
 const NEWS_BUILT = {"v":1,"updated":"2026-11-12T12:00:00+09:00","news":[{"id":"n-welcome","kind":"공지","date":"2026-11-12","title":"SeumArena 뉴스가 열렸어요","body":"업데이트, 이벤트, 점검 소식을 여기서 알려 드릴게요."}]};
-const NEWS_URL = 'https://raw.githubusercontent.com/frenchfries777mc/seumarena/main/news/news.json';
+const NEWS_SB = 'https://kebsbuvuutilitwlvxzv.supabase.co', NEWS_ADMIN = 'https://frenchfries777.com/seumarena/news/admin.html';
+const NEWS_URL = NEWS_SB + '/rest/v1/seumarena_news?select=*&order=pin.desc,date.desc,created_at.desc';
 const NEWS_KIND = { '공지': '#4d9dff', '업데이트': '#3fe0c5', '이벤트': '#ffd34d', '점검': '#ff5d5d' };
 const NEWS_SEEN_KEY = 'seumArenaNewsSeen', NEWS_CACHE_KEY = 'seumArenaNewsCache';
 let newsData = null, newsAsked = false, newsPopped = false, newsT0 = Date.now();
@@ -8029,6 +8547,7 @@ function newsItemHtml(n, unread) {
     '<div class="nwBody"><div class="nwMeta">' + (n.kind ? '<span class="nwTag">' + newsEsc(n.kind) + '</span>' : '') + (n.pin ? '<svg class="nwPin" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4H6l4-4z M12 13v8" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>' : '') +
     '<span>' + newsDate(n.date) + '</span>' + (unread ? '<i class="nwNew" aria-label="새 소식"></i>' : '') + '</div>' +
     '<h3>' + newsEsc(n.title) + '</h3>' + (n.body ? '<p>' + newsEsc(n.body) + '</p>' : '') +
+    (n.poll && Array.isArray(n.poll.o) ? '<div class="nwPoll" data-id="' + newsEsc(n.id) + '">' + n.poll.o.map((o, i) => '<button type="button" class="nwOpt" data-i="' + i + '"><i></i><span>' + newsEsc(o) + '</span><b></b></button>').join('') + '<small class="nwVotes"></small></div>' : '') +
     (lk ? '<a class="btn-primary nwLink" href="' + newsEsc(lk) + '" target="_blank" rel="noopener">' + newsEsc(n.link.label || '열기') + '</a>' : '') + '</div></article>';
 }
 const NEWS_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 5.5h13v13a2 2 0 0 0 2 2h-13a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16.5 9h4v9.5a2 2 0 0 1-4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M6.5 9h7v4h-7z" fill="currentColor"/><path d="M6.5 15.5h7M6.5 18h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
@@ -8051,7 +8570,10 @@ const NEWS_CSS = `
 .nwHead svg{width:28px;height:28px;flex:none;color:#ffcf6a}
 .nwHead h2{flex:1;margin:0;font:400 25px 'Black Han Sans','IBM Plex Sans KR',sans-serif;letter-spacing:.05em;color:#ffe3a0;text-shadow:0 2px 0 rgba(0,0,0,.45);transform:skewX(-8deg)}
 .nwX{flex:none;width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font-size:24px;line-height:1;cursor:pointer;display:grid;place-items:center}
-.nwX:hover{background:var(--line)}
+.nwX:hover,.nwEd:hover{background:var(--line)}
+.nwEd{flex:none;width:42px;height:42px;border-radius:10px;border:1px solid #6b5a1e;background:var(--panel-2);color:#ffcf6a;display:grid;place-items:center}
+.nwEd[hidden]{display:none}
+.nwEd svg{width:22px;height:22px}
 .nwList{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:14px;display:flex;flex-direction:column;gap:12px}
 .nwItem{flex:none;background:var(--panel-2);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:12px;overflow:hidden}
 .nwItem img{display:block;width:100%;height:auto;max-height:260px;object-fit:cover;background:#0b0d12}
@@ -8062,6 +8584,18 @@ const NEWS_CSS = `
 .nwNew{width:10px;height:10px;border-radius:50%;background:var(--red);margin-left:auto;box-shadow:0 0 0 3px rgba(255,93,93,.18)}
 .nwItem h3{margin:7px 0 4px;font:700 19px/1.4 'IBM Plex Sans KR',sans-serif;color:var(--text);word-break:keep-all;overflow-wrap:anywhere}
 .nwItem p{margin:0;font:400 15px/1.65 'IBM Plex Sans KR',sans-serif;color:#cdd2dc;white-space:pre-line;word-break:keep-all;overflow-wrap:anywhere}
+.nwPoll{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.nwOpt{position:relative;overflow:hidden;display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 14px;border-radius:10px;border:1.5px solid var(--line);background:#11141b;color:var(--text);font:600 15px/1.35 'IBM Plex Sans KR',sans-serif;text-align:left;cursor:pointer;transition:border-color .12s,transform .08s}
+.nwOpt:hover{border-color:var(--c)} .nwOpt:active{transform:scale(.99)}
+.nwOpt i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--c);opacity:.2;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.nwOpt span{position:relative;flex:1;min-width:0;overflow-wrap:anywhere}
+.nwOpt b{position:relative;display:none;font-variant-numeric:tabular-nums;font-weight:800;color:var(--text-dim)}
+.nwPoll.show .nwOpt{cursor:default} .nwPoll.show .nwOpt:hover{border-color:var(--line)} .nwPoll.show .nwOpt:active{transform:none} .nwPoll.show .nwOpt b{display:block}
+.nwPoll.show .nwOpt.mine{border-color:var(--c)} .nwPoll.show .nwOpt.mine i{opacity:.34} .nwPoll.show .nwOpt.mine b{color:var(--text)}
+.nwOpt.mine span::after{content:'';display:inline-block;width:11px;height:6px;margin-left:8px;border-left:2.5px solid var(--c);border-bottom:2.5px solid var(--c);transform:rotate(-45deg) translateY(-3px)}
+.nwPoll.busy{opacity:.6;pointer-events:none}
+.nwVotes{align-self:flex-end;font:600 12.5px 'IBM Plex Sans KR',sans-serif;color:var(--text-dim);font-variant-numeric:tabular-nums}
+.nwVotes:empty{display:none}
 .nwLink{display:inline-block;margin-top:12px;padding:9px 28px;font-size:16px;text-decoration:none}
 @media (max-height:560px){ .nwHead{padding:6px 10px 6px 14px} .nwHead h2{font-size:21px} .nwX{width:38px;height:38px} .nwList{padding:10px;gap:10px} .nwItem img{max-height:150px} .nwBody{padding:10px 14px 12px} .nwItem h3{font-size:17px} .nwItem p{font-size:14px} }
 `;
@@ -8072,7 +8606,7 @@ if (!DED) {
   const tr = document.getElementById('topRight'), q = document.getElementById('quest');
   if (tr) { if (q && q.parentNode === tr) q.after(newsBtn); else tr.appendChild(newsBtn); }
   newsWin.id = 'newsWin'; newsWin.hidden = true;
-  newsWin.innerHTML = '<div class="nwCard" role="dialog" aria-modal="true" aria-labelledby="nwTitle"><div class="nwHead">' + NEWS_ICON + '<h2 id="nwTitle">뉴스</h2><button class="nwX" type="button" aria-label="닫기">&times;</button></div><div class="nwList"></div></div>';
+  newsWin.innerHTML = '<div class="nwCard" role="dialog" aria-modal="true" aria-labelledby="nwTitle"><div class="nwHead">' + NEWS_ICON + '<h2 id="nwTitle">뉴스</h2><a class="nwEd" href="' + NEWS_ADMIN + '" target="_blank" rel="noopener" aria-label="뉴스 쓰기" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z M14 6l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></a><button class="nwX" type="button" aria-label="닫기">&times;</button></div><div class="nwList"></div></div>';
   document.body.appendChild(newsWin);
   newsBtn.addEventListener('click', () => newsOpen(true));
   newsWin.querySelector('.nwX').addEventListener('click', () => newsOpen(false));
@@ -8087,16 +8621,68 @@ function newsPaint() { const live = newsLive(); newsBtn.hidden = !live.length; c
 function newsOpen(on) {
   if (on) {
     const s = newsSeen(); newsWin.querySelector('.nwList').innerHTML = newsLive().map(n => newsItemHtml(n, !s.includes(n.id))).join('');
-    newsWin.hidden = false; newsWin.querySelector('.nwList').scrollTop = 0;
+    newsWin.hidden = false; newsWin.querySelector('.nwList').scrollTop = 0; newsOwnerCheck(); newsPollLoad();
   } else if (!newsWin.hidden) { newsWin.hidden = true; newsMarkSeen(); newsPaint(); }
+}
+/* a table row -> the item shape used here (and in news/news.json) */
+function newsFromRows(rows) {
+  if (!Array.isArray(rows)) return null;
+  const news = rows.map(r => {
+    const n = { id: r.id, kind: r.kind, date: r.date, title: r.title };
+    if (r.body) n.body = r.body; if (r.image) n.image = r.image; if (r.link_url) n.link = { label: r.link_label || '', url: r.link_url };
+    if (r.popup === false) n.popup = false; if (r.pin) n.pin = true; if (r.start_at) n.start = r.start_at; if (r.end_at) n.end = r.end_at;
+    if (Array.isArray(r.poll_options)) { n.poll = { o: r.poll_options.map(String) }; if (r.poll_close_at) n.poll.close = r.poll_close_at; }
+    return n;
+  });
+  return { v: 1, updated: rows.reduce((m, r) => String(r.updated_at || '') > m ? String(r.updated_at) : m, ''), news };
 }
 function newsFetch() {
   if (newsAsked) return; newsAsked = true;
   let ctl = null; try { ctl = new AbortController(); setTimeout(() => ctl.abort(), 8000); } catch (e) {}
-  fetch(NEWS_URL + '?t=' + Math.floor(Date.now() / 60000), { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
-    .then(r => r.ok ? r.json() : null).then(d => { d = newsOk(d); if (!d) return; newsData = d; newsSave(NEWS_CACHE_KEY, d); newsPaint(); })
+  fetch(NEWS_URL, { cache: 'no-store', headers: { apikey: ACH_KEY }, signal: ctl ? ctl.signal : undefined })
+    .then(r => r.ok ? r.json() : null).then(rows => { const d = newsFromRows(rows); if (!d) return; newsData = d; newsSave(NEWS_CACHE_KEY, d); newsPaint(); })
     .catch(() => {}).then(() => { newsAsked = 'done'; });
 }
+/* the lead developer (signed in) gets a pencil in the window's head that opens the writing page */
+let newsOwner = null;
+function newsOwnerCheck() {
+  const ed = newsWin.querySelector('.nwEd'), A = window.FFAuth, u = A && A.user && A.user(), sb = A && A.client && A.client();
+  if (!u || !sb) { ed.hidden = true; return; }
+  if (newsOwner && newsOwner.uid === u.id) { ed.hidden = !newsOwner.ok; return; }
+  newsOwner = { uid: u.id, ok: false };
+  try { sb.from('ff_devs').select('role').eq('user_id', u.id).maybeSingle().then(r => { const ok = !!(r && r.data && r.data.role === 'owner'); if (newsOwner && newsOwner.uid === u.id) newsOwner.ok = ok; ed.hidden = !ok; }, () => {}); } catch (e) {}
+}
+/* polls: counts come from seumarena_poll_counts (public), a vote goes through seumarena_poll_vote (signed in, once).
+   The options stay plain buttons until the player has voted or the poll is closed; then they turn into result bars. */
+function newsSbCall(fn, args) {
+  const A = window.FFAuth, sb = A && A.client && A.client();
+  if (sb && sb.rpc) return sb.rpc(fn, args).then(r => { if (r.error) throw r.error; return r.data; });
+  return fetch(NEWS_SB + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: ACH_KEY }, body: JSON.stringify(args) }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+}
+function newsPollPaint(el, rows) {
+  const n = newsLive().find(x => x.id === el.dataset.id); if (!n || !n.poll) return;
+  const cnt = n.poll.o.map(() => 0); let mine = -1;
+  for (const r of rows || []) if (r.news_id === n.id && r.choice >= 0 && r.choice < cnt.length) { cnt[r.choice] = +r.n || 0; if (r.mine) mine = r.choice; }
+  const tot = cnt.reduce((a, b) => a + b, 0), closed = !!(n.poll.close && Date.parse(n.poll.close) <= Date.now()), show = mine >= 0 || closed;
+  el.classList.toggle('show', show); el.classList.remove('busy');
+  el.querySelectorAll('.nwOpt').forEach((b, i) => {
+    const pc = tot ? Math.round(cnt[i] / tot * 100) : 0;
+    b.classList.toggle('mine', i === mine); b.querySelector('b').textContent = pc + '%';
+    b.querySelector('i').style.width = show ? pc + '%' : '0';
+  });
+  el.querySelector('.nwVotes').textContent = show ? tot + '표' : '';
+}
+function newsPollLoad() {
+  const els = [...newsWin.querySelectorAll('.nwPoll')]; if (!els.length) return;
+  newsSbCall('seumarena_poll_counts', { p_ids: els.map(e => e.dataset.id) }).then(rows => els.forEach(e => newsPollPaint(e, rows)), () => {});
+}
+if (!DED) newsWin.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('.nwOpt'), el = b && b.closest('.nwPoll'); if (!el || el.classList.contains('show')) return;
+  const A = window.FFAuth, u = A && A.user && A.user();
+  if (!u) { try { if (A && A.openLogin) A.openLogin(); } catch (err) {} return; }
+  el.classList.add('busy');
+  newsSbCall('seumarena_poll_vote', { p_news: el.dataset.id, p_choice: +b.dataset.i }).then(() => newsPollLoad(), () => el.classList.remove('busy'));
+});
 /* the one pop-up: once the intro is gone and the plain lobby menu is up (nothing else open), after the fresh list came or 4 s passed */
 function newsTick() {
   if (newsPopped || DED) return;
@@ -8106,6 +8692,21 @@ function newsTick() {
   newsPopped = true;
   if (newsUnread().some(n => n.popup !== false)) newsOpen(true);
 }
+
+/* ---------- site button: a globe tile left of the news tile; opens the intro / tips / community site in a new window ---------- */
+(function () {
+  const URL_SITE = 'https://frenchfries777.com/seumarena/site/';
+  const st = document.createElement('style');
+  st.textContent = '#topRight #siteBtn{position:relative;box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:56px;height:56px;margin:0;padding:0;cursor:pointer;border-radius:14px;border:2px solid #4a9dff;color:#cfe4ff;background:linear-gradient(180deg,#123056,#0a1a33);box-shadow:0 4px 0 #050d1a,0 0 12px rgba(74,157,255,.2);transition:transform .08s ease;text-decoration:none;pointer-events:auto}' +
+    '#topRight #siteBtn:active{transform:translateY(2px)}#topRight #siteBtn svg{width:28px;height:28px;display:block}' +
+    '@media (max-width:520px){#topRight #siteBtn{width:48px;height:48px;border-radius:12px}#topRight #siteBtn svg{width:24px;height:24px}}';
+  document.head.append(st);
+  const a = document.createElement('a');
+  a.id = 'siteBtn'; a.href = URL_SITE; a.target = '_blank'; a.rel = 'noopener'; a.setAttribute('aria-label', '공식 사이트');
+  a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>';
+  const place = () => { const tr = document.getElementById('topRight'), nb = document.getElementById('newsBtn'); if (!tr) return; if (nb && nb.parentNode) { const rev = getComputedStyle(nb.parentNode).flexDirection.includes('reverse'); nb.parentNode.insertBefore(a, rev ? nb.nextSibling : nb); } else tr.append(a); };
+  place(); setTimeout(place, 0);
+})();
 
 /* ---------- account saves: a signed-in player's progress also lives in Supabase (public.seumarena_saves, one row per account; RLS lets
    only the owner read or write it), so it follows them to another device or a cleared browser.
@@ -8126,7 +8727,7 @@ const CL_RULE = {
   gold: 'add', karma: 'add', xp: 'add', mp: 'add',
   'st.k': 'add', 'st.w': 'add', 'st.g': 'add', 'st.nd': 'add', 'st.sa': 'add', 'st.mw': 'add', 'st.mg': 'add', 'st.hg': 'add', 'st.hk': 'add', 'st.hn': 'add',
   'st.mk': 'max', 'st.hb': 'max', 'st.hw': 'max', ach: 'max', v: 'max',
-  own: 'union', kr: 'union', dq: 'day', wq: 'day', att: 'att'
+  own: 'union', kr: 'union', unl: 'union', gown: 'union', sh: 'add', dq: 'day', wq: 'day', att: 'att'
 };
 const clObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
 const clNum = v => (typeof v === 'number' && isFinite(v) ? v : 0);
@@ -8641,6 +9242,7 @@ function modeApply() {
   if (mapChoice >= 0 && !modeMaps().includes(mapChoice)) mapChoice = -1;
 }
 try { const s = JSON.parse(localStorage.getItem('seumArena') || '{}'); if (HEROES[s.c]) chosen = s.c; if (s.m >= -1 && s.m < MAPS.length) mapChoice = s.m | 0; if (s.l && typeof s.l === 'object') loadouts = s.l; if (typeof s.g === 'string') modeSel = s.g; if (s.mm && typeof s.mm === 'object') mapByMode = s.mm; } catch (e) {}
+if (!unlocked(chosen)) chosen = UNLOCK_START[0];      // a locked character can not be the pick (gear.js)
 const savePrefs = () => { mapByMode[modeSel] = mapChoice; try { localStorage.setItem('seumArena', JSON.stringify({ c: chosen, m: mapChoice, l: loadouts, g: modeSel, mm: mapByMode })); } catch (e) {} if (typeof cloudMark === 'function') cloudMark(); };
 const KIND_LABEL = { melee: '근접', shot: '원거리', flame: '방사', cone: '흡입' }, SK_LABEL = { hit: '공격', move: '이동', buff: '강화' };
 function attackText(h) {
@@ -8727,7 +9329,7 @@ function buildChars() {
   markSel(); markMastery();
 }
 /* every card of the list: mastery rank with its bar */
-function markMastery() { for (const el of $('weaponGrid').children) { const m = masteryOf(el.dataset.wid); el.style.setProperty('--mc', m.col); el.querySelector('.wm b').textContent = m.name; el.querySelector('.wmBar i').style.width = Math.round(m.into / m.need * 100) + '%'; } }
+function markMastery() { for (const el of $('weaponGrid').children) { const m = masteryOf(el.dataset.wid); el.style.setProperty('--mc', m.col); el.querySelector('.wm b').textContent = m.name; el.querySelector('.wmBar i').style.width = Math.round(m.into / m.need * 100) + '%'; } markLocks(); }
 function markSel() { for (const el of $('weaponGrid').children) el.classList.toggle('sel', el.dataset.wid === chosen); }
 function renderLoadout(id) {
   const h = HEROES[id], box = $('weaponLoadout'), lo = loadoutOf(id); box.textContent = '';
@@ -8761,9 +9363,11 @@ function openDetail(id) {
     const m = masteryOf(id), row = document.createElement('div'), nm = document.createElement('b'), bar = document.createElement('span'), fl = document.createElement('i'), num = document.createElement('small');
     row.className = 'mRow'; row.style.setProperty('--mc', m.col); nm.textContent = m.name; fl.style.width = Math.round(m.into / m.need * 100) + '%'; bar.className = 'mBar'; bar.append(fl); num.textContent = m.top ? m.mp.toLocaleString('en-US') : m.into + ' / ' + m.need;
     row.append(nm, bar, num); d.prepend(row);
+    const st = achSt(), rec = line('기록', (st.hg[id] | 0) + '판 · ' + (st.hn[id] | 0) + '승 · ' + (st.hk[id] | 0).toLocaleString('en-US') + '킬 · 최고 ' + (st.hb[id] | 0) + '킬'); rec.className = 'mRec'; row.after(rec);      // this character's own numbers (social.js achMatch counts them)
   }
   renderLoadout(id);
   $('weaponLockBtn').textContent = id === chosen ? '확인' : '이 캐릭터로 정하기'; $('weaponLockBtn').disabled = false;
+  gearPick = null; renderGear(id);
   $('weaponScreen').scrollTop = 0;
 }
 function closeDetail() { viewing = null; $('weaponScreen').classList.remove('wDetail'); }
@@ -8771,7 +9375,7 @@ $('weaponSearch').addEventListener('input', e => {
   const q = e.target.value.trim().toLowerCase();
   for (const el of $('weaponGrid').children) { const h = HEROES[el.dataset.wid]; el.style.display = (!q || (h.name + ' ' + h.wname + ' ' + h.id).toLowerCase().includes(q)) ? '' : 'none'; }
 });
-$('weaponLockBtn').addEventListener('click', () => { chosen = viewing; savePrefs(); markSel(); closeDetail(); showScreen('menuScreen'); });
+$('weaponLockBtn').addEventListener('click', () => { if (!unlocked(viewing)) { if (unlockBuy(viewing)) { markMastery(); openDetail(viewing); } return; } chosen = viewing; savePrefs(); markSel(); closeDetail(); showScreen('menuScreen'); });
 $('weaponBackListBtn').addEventListener('click', closeDetail);
 $('weaponBrowseBackBtn').addEventListener('click', () => { closeDetail(); showScreen('menuScreen'); });
 $('goCharBtn').addEventListener('click', () => { showScreen('weaponScreen'); openDetail(chosen); });       // one button: the picked character's skills first, the list one tap away
@@ -8920,8 +9524,10 @@ $('modePickBtn').addEventListener('click', modePick);
 $('modeBackBtn').addEventListener('click', () => showScreen('menuScreen'));
 $('karma').addEventListener('click', () => { showScreen('karmaScreen'); renderKarma(); });
 $('karmaBackBtn').addEventListener('click', () => showScreen('menuScreen'));
-$('quest').addEventListener('click', () => { showScreen('questScreen'); questTab(achOpen() && !dqOpen()); });
-$('qTabD').addEventListener('click', () => questTab(false)); $('qTabA').addEventListener('click', () => questTab(true));
+$('quest').addEventListener('click', () => { showScreen('questScreen'); questTab(attOpen() || dqOpen() ? 'd' : wqOpen() ? 'w' : achOpen() ? 'a' : 'd'); });
+$('qTabD').addEventListener('click', () => questTab('d')); $('qTabW').addEventListener('click', () => questTab('w')); $('qTabA').addEventListener('click', () => questTab('a'));
+for (const id of ['acctId', 'acctIcon']) $(id).addEventListener('click', () => { showScreen('profScreen'); renderProfile(); });
+$('profBackBtn').addEventListener('click', () => showScreen('menuScreen'));
 $('questBackBtn').addEventListener('click', () => showScreen('menuScreen'));
 $('mapBackBtn').addEventListener('click', () => showScreen('menuScreen'));
 
@@ -8933,6 +9539,31 @@ function enterPlay() {
   lobby.hidden = true; cv.classList.remove('inLobby'); showPlayUi(true);
 }
 function startMatch(humans) { setup(true, humans); enterPlay(); }
+/* the best fighter of the match, shown big for a moment before the result (head.html #mvpFx): the best of the winning team (of everyone on a draw), in solo the one left standing. A tap puts it away */
+const mvpVal = f => (f.kos || 0) * 100 + (f.dealt || 0) / (10 * SX) - (f.deaths || 0) * 30;
+function matchMvp(win, draw) {
+  const fs = fighters.filter(f => !f.minion && f.h0); if (fs.length < 2) return null;
+  if (curMode === 'solo') return state === 'play' ? null : fs.find(f => f.team === RD.win) || null;
+  const pool = draw ? fs : fs.filter(f => f.team === (win ? VIEW : 1 - VIEW)), m = pool.length ? pool.reduce((a, b) => mvpVal(b) > mvpVal(a) ? b : a) : null;
+  return m && mvpVal(m) > 0 ? m : null;
+}
+let mvpRun = 0, mvpTimer = 0;
+function mvpFx(win, draw) {
+  const fx = $('mvpFx'), f = matchMvp(win, draw), run = ++mvpRun; clearTimeout(mvpTimer); fx.classList.remove('out'); fx.hidden = !f; if (!f) return;
+  const cvs = fx.querySelector('canvas'), c = cvs.getContext('2d'), wid = f.h0.id, sk = skinOf(f.cos, wid), tint = sk ? COSMETICS[sk].tint : undefined, col = bodyColor(f.cos, f.team === VIEW ? TEAM[0] : TEAM[1]);
+  const nm = fx.querySelector('.mvName'); nm.textContent = f.nick || f.h0.name; nm.style.color = f === player ? '#ffd34d' : '';
+  fx.querySelector('.mvStat').textContent = (f.kos || 0) + '킬 · ' + Math.round(f.dealt || 0).toLocaleString('en-US');
+  const close = () => { if (run !== mvpRun) return; mvpRun++; clearTimeout(mvpTimer); fx.classList.add('out'); mvpTimer = setTimeout(() => { fx.hidden = true; fx.classList.remove('out'); }, 220); };
+  fx.onclick = close; mvpTimer = setTimeout(close, 2400);
+  [523, 659, 784, 1047].forEach((n, i) => setTimeout(() => { try { if (run === mvpRun) sfx(n, .2, 'triangle', .06); } catch (e) {} }, i * 110));
+  (function fr(now) {
+    if (run !== mvpRun) return;
+    c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cvs.width, cvs.height); c.translate(cvs.width / 2, cvs.height - 40); c.scale(2.7, 2.7);
+    c.shadowColor = col; c.shadowBlur = 10; c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 5; c.lineCap = 'round'; c.lineJoin = 'round';
+    try { drawWinPose(c, (f.cos && f.cos.pose) || 'pose_cheer', now / 1000, wid, tint); } catch (e) {}
+    requestAnimationFrame(fr);
+  })(performance.now());
+}
 /* result table: every fighter's kills/deaths and damage dealt; the MVP is the best fighter of the winning team (of everyone on a draw) */
 function buildOverStats(win, draw) {
   const box = $('overStats'); box.textContent = ''; box.classList.remove('noDmg');
@@ -8971,7 +9602,7 @@ function soloWatch(on) { lobby.hidden = on; cv.classList.toggle('inLobby', !on);
 function endGame(keepRunning) {
   if (keepRunning !== true) { state = 'over'; if (NET.role === 'guest' && NET.stats) applyMatchStats(NET.stats); hostEnd(); }
   if (soloOutShown) {      // this player already got the result screen (and the pay) when knocked out: now the match is really over, so the whole table is known
-    showPlayUi(false); buildOverStats(false, false); $('specBtn').hidden = true; soloWatch(false); return;
+    showPlayUi(false); buildOverStats(false, false); $('specBtn').hidden = true; soloWatch(false); mvpFx(false, false); return;
   }
   if (curMode === 'solo' && player && player.dead) soloOutShown = true;
   showPlayUi(false);
@@ -8996,9 +9627,9 @@ function endGame(keepRunning) {
   $('specBtn').hidden = !(soloOutShown && state === 'play'); $('specBack').hidden = true;
   lobby.hidden = false; cv.classList.add('inLobby'); showScreen('overScreen');
   emoteWheel(false); chatOpen(false);
-  winScreen(win, draw);
+  winScreen(win, draw); mvpFx(win, draw);
 }
-function toMenu() { netReset(); VIEW = 0; state = 'menu'; setup(false); showPlayUi(false); lobby.hidden = false; cv.classList.add('inLobby'); showScreen('menuScreen'); }
+function toMenu() { mvpRun++; $('mvpFx').hidden = true; netReset(); VIEW = 0; state = 'menu'; setup(false); showPlayUi(false); lobby.hidden = false; cv.classList.add('inLobby'); showScreen('menuScreen'); }
 $('startBtn').addEventListener('click', startOnline);
 $('againBtn').addEventListener('click', () => { netReset(); if (state !== 'menu') { VIEW = 0; state = 'menu'; setup(false); } startOnline(); });
 $('lobbyBtn').addEventListener('click', toMenu);
@@ -9104,7 +9735,7 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => lobb
 setTimeout(lobbyCharPlace, 60);
 for (let i = 0; i < 90; i++) step(.033);
 requestAnimationFrame(frame);
-window.__arena = { modes: MODE_LIST, ACHS, achMatch, achScan, achSt, renderAch, questTab, setAchRates(r) { achRates = r; }, dqList, dqMatch, dqState, renderQuests, goldUi, matchPay, masteryOf, levelOf, KARMA_ROAD, MASTERY, giveReward, COSMETICS, skinPrice, get COS() { return COS; }, get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
+window.__arena = { modes: MODE_LIST, ACHS, achMatch, achScan, achSt, renderAch, questTab, setAchRates(r) { achRates = r; }, dqList, dqMatch, dqState, renderQuests, wqList, wqState, attSt, attTake, dealIds, cosPrice, TITLES, renderProfile, renderCos, rewardFx, matchMvp, endGame, goldUi, matchPay, masteryOf, levelOf, KARMA_ROAD, MASTERY, giveReward, COSMETICS, skinPrice, get COS() { return COS; }, get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
   setChar(id) { chosen = id; }, setMap(i) { mapChoice = i; }, auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get PV() { return { sk: PV.sk, ult: PV.ult, dash: PV.dash }; }, get bullets() { return bullets; }, offline() { netReset(); startMatch(null); } };
 })();
 </script>
