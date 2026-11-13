@@ -73,13 +73,6 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent-2);outli
 .wpnCard .wm b{display:block;color:var(--mc,#c8803a);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wpnCard .wmBar{display:block;height:5px;margin-top:3px;border-radius:999px;background:#0d0f14;border:1px solid var(--line);overflow:hidden}
 .wpnCard .wmBar i{display:block;height:100%;background:var(--mc,#c8803a)}
-.wpnCard.lock canvas{filter:grayscale(1) brightness(.45)}.wpnCard.lock{--mc:#b98cff}.wpnCard.lock .wn{color:var(--text-dim)}
-#gearBox{margin:10px 0}#gearBox .shRow{display:flex;align-items:center;gap:8px;color:#c9a2ff;font-weight:800}#gearBox .shRow .mBar{flex:1}#gearBox .shRow .mBar i{background:#b98cff}
-.gSlots{display:flex;gap:6px;margin-bottom:6px}.gSlot{flex:1;text-align:center;padding:6px 4px;border:2px dashed var(--line);border-radius:9px;font-size:12px;font-weight:700;color:var(--text-dim)}.gSlot.on{border-style:solid;border-color:#7fe0ff;color:#bdf2ff}.gSlot.shut{opacity:.55}
-.gList{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}.gItem{position:relative;text-align:left;padding:6px 8px;border-radius:9px;border:2px solid var(--line);background:var(--panel-2);color:var(--text);cursor:pointer;font:inherit}
-.gItem b{display:block;font-size:13px}.gItem small{display:block;font-size:11px;color:var(--text-dim);line-height:1.25}.gItem.on{border-color:#7fe0ff;box-shadow:0 0 8px rgba(127,224,255,.4)}.gItem.buy{opacity:.85}
-.gItem .gPrice{display:flex;align-items:center;gap:3px;font-style:normal;font-size:12px;font-weight:800;color:#ffd34d;margin-top:3px}.gItem .gPrice.poor{color:#ff7a7a}.gItem .gPrice .coin{width:13px;height:13px}
-.ic-shard{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M24 4 38 18 30 44H18L10 18z' fill='%23a46bff' stroke='%2314100f' stroke-width='2.5' stroke-linejoin='round'/%3E%3Cpath d='M24 4 30 18 24 44 18 18z' fill='%23d9b8ff'/%3E%3C/svg%3E")}
 @media (max-width:760px){.wpnCard .wm{font-size:10px;margin:3px 1px 0} .wpnCard .wm b{white-space:normal;overflow-wrap:anywhere;letter-spacing:-.03em}}
 #weaponScreen.wDetail #weaponGrid,#weaponScreen.wDetail #weaponSearch{display:none}
 #weaponScreen:not(.wDetail) #weaponPortraitWrap{display:none}
@@ -747,6 +740,19 @@ body.touchUi canvas{touch-action:none}
 .setSwitch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#cfd3dc;transition:transform .15s}
 .setSwitch:checked{background:var(--accent-2);border-color:var(--accent-2)}
 .setSwitch:checked::after{transform:translateX(22px);background:#062824}
+/* device: 모바일 / 컴퓨터 (the first-start picker and the settings row) */
+.devSeg{grid-column:2/4;display:flex;gap:6px;justify-self:end;width:100%;max-width:220px}
+.devSeg button{flex:1;min-height:38px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--text-dim);font:700 14px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
+.devSeg button.on{background:var(--accent-2);border-color:var(--accent-2);color:#062824}
+#devPick{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:rgba(6,8,12,.94);padding:16px}
+#devPick[hidden]{display:none}
+#devPick .devCard{display:flex;flex-direction:column;align-items:center;gap:18px}
+#devPick h2{margin:0;font-size:22px}
+#devPick .devOpts{display:flex;gap:14px}
+#devPick .devOpts button{width:min(150px,38vw);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border-radius:16px;border:2px solid var(--line);background:var(--panel);color:var(--text);font:700 17px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
+#devPick .devOpts button svg{width:46%;height:auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#devPick .devOpts button.on{border-color:var(--accent-2);box-shadow:0 0 0 3px rgba(63,224,197,.22)}
+#devPick .devOpts button:hover{background:var(--panel-2)}
 .setBtns{display:flex;gap:8px;margin-top:12px}
 .setBtns button{flex:1;min-height:44px}
 .setBtns #setClose{flex:1.6}
@@ -832,9 +838,14 @@ body.touchUi canvas{touch-action:none}
     <label class="setRow"><span>음량</span><input id="setVol" type="range" min="0" max="100" step="5"><output id="setVolV"></output></label>
     <label class="setRow" id="setAimRow"><span>조준 감도</span><input id="setAim" type="range" min="50" max="200" step="10"><output id="setAimV"></output></label>
     <label class="setRow"><span>효과 줄이기</span><input id="setFx" class="setSwitch" type="checkbox" role="switch"></label>
+    <div class="setRow" id="setDev"><span>기기</span><span class="devSeg"><button type="button" data-dev="mobile">모바일</button><button type="button" data-dev="pc">컴퓨터</button></span></div>
     <div class="setBtns"><button class="btn-plain" id="setReset" type="button">기본값</button><button class="btn-primary" id="setClose" type="button">닫기</button></div>
   </div>
 </div>
+<div id="devPick" hidden><div class="devCard" role="dialog" aria-modal="true" aria-labelledby="devTitle"><h2 id="devTitle">기기 선택</h2><div class="devOpts">
+  <button type="button" data-dev="mobile"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/></svg>모바일</button>
+  <button type="button" data-dev="pc"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4" width="19" height="12.5" rx="1.5"/><path d="M8.5 20.5h7M12 16.5v4"/></svg>컴퓨터</button>
+</div></div></div>
 <div id="diceBannerContainer"></div>
 
 <div id="rwFx" hidden><div class="rwRays"></div><div class="rwSpk"></div><div class="rwBox"><i class="rwIc"></i><canvas width="192" height="192" hidden></canvas></div><em class="rwTier"></em><b class="rwTxt"></b></div>
