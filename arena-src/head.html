@@ -1,5 +1,9 @@
 <title>SeumArena</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<script>/* phones: no zoom by double tap or pinch (the page that wraps the game may bring its own viewport line, so it is fixed here) */
+(function(){var c='width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover',m=document.querySelector('meta[name=viewport]');if(!m){m=document.createElement('meta');m.name='viewport';(document.head||document.documentElement).appendChild(m);}m.content=c;
+var no=function(e){e.preventDefault();};document.addEventListener('gesturestart',no,{passive:false});document.addEventListener('gesturechange',no,{passive:false});document.addEventListener('dblclick',no,{passive:false});
+document.addEventListener('touchmove',function(e){if(e.touches&&e.touches.length>1)e.preventDefault();},{passive:false});})();</script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Black+Han+Sans&display=swap" media="print" onload="this.media='all'">
 <style>
@@ -13,7 +17,7 @@
   --blue:#4d9dff; --red:#ff5d5d;
   --font:'Rajdhani','IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
 }
-*{box-sizing:border-box}
+*{box-sizing:border-box;touch-action:manipulation}      /* no double-tap zoom on phones (parts that set their own touch-action keep it) */
 html,body{height:100%}
 body{background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 button{font-family:inherit}
