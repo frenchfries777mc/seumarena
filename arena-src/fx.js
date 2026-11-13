@@ -566,6 +566,7 @@ function drawDmgText(t) {               // tail.js draws every floating text thr
   const col = me ? t.color : (t.color === '#ffffff' ? (tier === 3 ? '#ffd34d' : tier === 2 ? '#fff0b8' : '#ffffff') : t.color);
   ctx.save(); ctx.translate(t.x, t.y); if (pop !== 1) ctx.scale(pop, pop);
   ctx.font = '800 ' + px + 'px Rajdhani, sans-serif'; ctx.globalAlpha = clamp(t.life / .4, 0, 1);
+  if (pop === 1 && typeof stampText === 'function' && stampText(ctx, t.txt, ctx.font, col, tier === 3 && !me ? '#5a2a00' : '#0c0e13', tier === 3 ? 5 : 4, 0, 0)) { ctx.restore(); return true; }
   ctx.lineWidth = tier === 3 ? 5 : 4; ctx.strokeStyle = tier === 3 && !me ? '#5a2a00' : '#0c0e13'; ctx.strokeText(t.txt, 0, 0);
   ctx.fillStyle = col; ctx.fillText(t.txt, 0, 0);
   if (pa < .08) { ctx.globalAlpha *= 1 - pa / .08; ctx.fillStyle = '#ffffff'; ctx.fillText(t.txt, 0, 0); }

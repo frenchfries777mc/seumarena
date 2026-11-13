@@ -10,10 +10,10 @@ function lowFx() { return reduceMotion || SET.fx; }
 { const baseSfx = sfx; sfx = (f, d, t, v, sl) => { if (SET.vol <= 0) return; baseSfx(f, d, t, (v || .05) * SET.vol / 100, sl); }; }
 {
   const baseP = addP, THIN = { dot: .35, streak: .35, smoke: .3, square: .35, fire: .5, flash: .5 };
-  const MTHIN = { dot: .6, streak: .6, smoke: .55, square: .6, fire: .75, flash: .8 };      // mobile (engine.js mobileMode): a lighter thinning, and no small bits past 260 at once
+  const MTHIN = { dot: .4, streak: .4, smoke: .35, square: .4, fire: .55, flash: .6 };      // mobile (engine.js mobileMode): speed first, and no small bits past 140 at once
   addP = o => {
     if (o && SET.fx) { const k = THIN[o.shape]; if (k !== undefined && (Math.random() > k || (o.shape === 'flash' && o.size >= 100))) return; }
-    else if (o && mobileMode()) { const k = MTHIN[o.shape]; if (k !== undefined && (Math.random() > k || particles.length > 260)) return; }
+    else if (o && mobileMode()) { const k = MTHIN[o.shape]; if (k !== undefined && (Math.random() > k || particles.length > 140)) return; }
     baseP(o);
   };
 }

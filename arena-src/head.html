@@ -1,6 +1,7 @@
 <title>SeumArena</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Black+Han+Sans&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Black+Han+Sans&display=swap" media="print" onload="this.media='all'">
 <style>
 [hidden]{display:none!important}      /* the chat bar, HUD and other hidden parts must stay hidden even when the file is opened on its own (no wrapper page) */
 /* Layout: Stickseum lobby (brand top centre, picked character big on the left, gold menu buttons on the right) over a blurred live match; full-bleed canvas arena with an edge-pinned HUD. Single dark look, as in Stickseum. */
@@ -236,9 +237,11 @@ body.touchUi #sk1Btn{right:calc(var(--sr) + 186px);bottom:calc(var(--sb) + 46px)
 body.touchUi #dashBtn{width:54px;height:54px;right:calc(var(--sr) + 157px);bottom:calc(var(--sb) + 157px)}
 body.touchUi #sk2Btn{right:calc(var(--sr) + 80px);bottom:calc(var(--sb) + 186px)}
 body.touchUi #ultBtn{width:76px;height:76px;right:calc(var(--sr) + 195px);bottom:calc(var(--sb) + 195px)}
-@media (max-height:360px){
-  body.touchUi #ultBtn{width:68px;height:68px;right:calc(var(--sr) + 262px);bottom:calc(var(--sb) + 40px)}      /* very short screens: no room on the diagonal, the ultimate goes left of skill 1 */
+@media (max-height:440px){
+  body.touchUi #ultBtn{width:68px;height:68px;right:calc(var(--sr) + 262px);bottom:calc(var(--sb) + 40px)}      /* phones held sideways: on the diagonal the ultimate covered the middle of the fight, so it goes left of skill 1 */
 }
+body.touchUi .skillBtn{opacity:.86}      /* a little of the fight shows through the buttons */
+body.mob #lobbyChar canvas{filter:none}      /* mobile: no shadow filter on a canvas that is redrawn every frame */
 /* phone held upright: no room beside the stick, so the buttons stack above it */
 @media (max-width:520px) and (orientation:portrait){
   body.touchUi #dashBtn{right:calc(var(--sr) + 124px);bottom:calc(var(--sb) + 160px)}
@@ -963,7 +966,12 @@ body.touchUi canvas{touch-action:none}
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+<script>
+/* PeerJS is fetched without holding up the game: on a slow or shaky connection the page used to stay blank until it arrived.
+   window.__peerLoad() gives a promise (true = loaded); after a failure, calling it again tries once more (net.js waits for it when a search starts) */
+window.__peerLoad = (() => { let p = null; return () => p || (p = new Promise(r => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js'; s.onload = () => r(true); s.onerror = () => { p = null; s.remove(); r(false); }; document.head.appendChild(s); })); })();
+window.__peerLoad();
+</script>
 <script>
 (() => {
 'use strict';

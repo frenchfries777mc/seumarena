@@ -149,18 +149,20 @@ const keys = {}, mouse = { x: 0, y: 0, down: false };
 let touchMode = false, mouseRel = false, stickM = null, stickA = null, pendingFire = null, wantUlt = false, wantDash = false, wantSk = [false, false];
 
 /* device: 'mobile' or 'pc', picked on the first start (tail.js) and changed in the settings; net.js reads the same key. Until it is picked, a phone or tablet
-   (coarse pointer) counts as mobile. Mobile draws the canvas at a lower pixel ratio (RSCALE: 1.5, lowered to 1.25 / 1 by tail.js rsWatch while a phone
-   can not keep up) and thins the effects (social.js); pc stays as it was */
+   (coarse pointer) counts as mobile. Mobile is tuned for speed first (2026-11-13, user): the canvas is drawn at a lower pixel ratio (RSCALE: 1.25, lowered to 1 / .8 by tail.js rsWatch while a phone
+   can not keep up), no blurred glows (shadowBlur is ignored on the game canvas), far fewer particles (social.js) and a still lobby background (tail.js); pc stays as it was */
 let DEVICE = ''; try { const v = localStorage.getItem('seum_device'); if (v === 'mobile' || v === 'pc') DEVICE = v; } catch (e) {}
 const devMq = matchMedia('(pointer:coarse)'), deviceGuess = () => devMq.matches ? 'mobile' : 'pc';
 const mobileMode = () => (DEVICE || deviceGuess()) === 'mobile';
-let RSCALE = 1.5;
+let RSCALE = 1.25;
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, mobileMode() ? RSCALE : 2);
   W = window.innerWidth; H = window.innerHeight;
   cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
 }
 addEventListener('resize', resize); resize();
+{ const d = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'shadowBlur');      // mobile: blurred glows are the most expensive thing a phone can be asked to draw, so the game canvas ignores them
+  if (d && d.set && d.get) try { Object.defineProperty(ctx, 'shadowBlur', { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, mobileMode() ? 0 : v); } }); } catch (e) {} }
 
 let ac = null, muted = false;
 function sfx(freq, dur, type, vol, slide) {

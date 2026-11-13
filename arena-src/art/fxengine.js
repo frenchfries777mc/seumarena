@@ -14,6 +14,20 @@ function burst(x,y,n,o){
   }
 }
 function svRand(seed){ let a=(Math.floor(seed*7919)+0x9E3779B9)>>>0; return ()=>{ a=(a+0x6D2B79F5)>>>0; let t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+/* a dash afterimage is a still figure: drawn once (per character, colour, direction and zoom) into a small canvas and stamped from there
+   (the whole figure drawn again for every afterimage every frame froze phones for a moment on each dash) */
+const ghostSpr=new Map(); let ghostK=0;
+function ghostSprite(q){
+  try{
+    const m=ctx.getTransform(), k=Math.round(Math.hypot(m.a,m.b)*20)/20; if(!(k>0.05 && k<8) || m.b || m.c) return null;
+    if(k!==ghostK || ghostSpr.size>16){ ghostSpr.clear(); ghostK=k; }
+    const cs=q.cos||null, key=(q.wid||'sword')+'|'+q.color+'|'+(q.ang||0).toFixed(2)+'|'+(cs?(cs.skin||'')+'/'+(cs.col||''):'');
+    let s=ghostSpr.get(key);
+    if(!s){ const n=Math.ceil(280*k), cv2=document.createElement('canvas'); cv2.width=cv2.height=n; const g=cv2.getContext('2d');
+      g.setTransform(k,0,0,k,n/2,n*0.74); g.scale(1.15,1.15); g.lineCap='round'; drawStick(g,q.wid||'sword',q.color,q.ang||0,0,0,0,q.cos); s={cv:cv2,k:n/280}; ghostSpr.set(key,s); }
+    return s;
+  }catch(e){ return null; }
+}
 function drawParticles(){
   const now=performance.now(); let dt=Math.min(0.05,(now-lastFxMs)/1000); lastFxMs=now; if(!(dt>0)) dt=0.016;
   for(let i=particles.length-1;i>=0;i--){
@@ -39,7 +53,10 @@ function drawParticles(){
           ctx.lineJoin='round'; stroke(q.size*3.4, hexA(q.color,0.35), a); stroke(q.size*1.6, q.color, a); stroke(q.size*0.6, '#ffffff', a);
           if(R()<0.5){ const k=1+Math.floor(R()*(n-2)), s=R()<0.5?-1:1; ctx.globalAlpha=a*0.8; ctx.strokeStyle=q.color; ctx.lineWidth=q.size*0.7; ctx.beginPath(); ctx.moveTo(pts[k][0],pts[k][1]); ctx.lineTo(pts[k][0]+nx*s*30+dx/len*14, pts[k][1]+ny*s*30+dy/len*14); ctx.stroke(); }
           break; }
-        case 'ghost': { ctx.save(); ctx.globalAlpha=a*0.55; ctx.translate(q.x,q.y+30); ctx.scale(1.15,1.15); drawStick(ctx,q.wid||'sword',q.color,q.ang||0,0,0,0,q.cos); ctx.restore(); break; }
+        case 'ghost': { const s=ghostSprite(q); ctx.globalAlpha=a*0.55;
+          if(s){ const w=s.cv.width/s.k; ctx.drawImage(s.cv,q.x-w/2,q.y+30-w*0.74,w,w); }
+          else { ctx.save(); ctx.translate(q.x,q.y+30); ctx.scale(1.15,1.15); drawStick(ctx,q.wid||'sword',q.color,q.ang||0,0,0,0,q.cos); ctx.restore(); }
+          break; }
         case 'ktext': { ctx.globalAlpha=Math.min(1,a*2); const sc=1+0.35*(1-Math.min(1,t*5)); ctx.save(); ctx.translate(q.x,q.y); ctx.scale(sc,sc); ctx.rotate(q.rot0||0);
           ctx.font='900 '+Math.round(q.size)+'px "Malgun Gothic","Noto Sans CJK KR","Noto Serif CJK JP","Yu Mincho",serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
           ctx.lineWidth=7; ctx.strokeStyle='rgba(10,10,30,0.85)'; ctx.strokeText(q.text,0,0); ctx.fillStyle=q.color; ctx.fillText(q.text,0,0); ctx.restore(); break; }
@@ -63,6 +80,7 @@ function drawParticles(){
         case 'square': case 'card': ctx.save(); ctx.translate(q.x,q.y); ctx.rotate(q.rot); ctx.globalAlpha=Math.min(1,a*1.6); ctx.fillStyle=q.color;
           if(q.shape==='card'){ ctx.fillRect(-q.size*0.6,-q.size,q.size*1.2,q.size*2); } else ctx.fillRect(-q.size/2,-q.size/2,q.size,q.size); ctx.restore(); break;
         case 'text': ctx.globalAlpha=Math.min(1,a*2.2); ctx.font='800 '+Math.round(q.size)+'px Rajdhani'; ctx.textAlign='center';
+          if(typeof stampText==='function' && stampText(ctx,q.text,ctx.font,q.color,'rgba(0,0,0,0.75)',4,q.x,q.y)) break;
           ctx.lineWidth=4; ctx.strokeStyle='rgba(0,0,0,0.75)'; ctx.strokeText(q.text,q.x,q.y); ctx.fillStyle=q.color; ctx.fillText(q.text,q.x,q.y); break;
         case 'warn': { const blink=0.35+0.5*Math.abs(Math.sin(t*16)); ctx.globalAlpha=blink; ctx.strokeStyle=q.color; ctx.lineWidth=3;
           ctx.beginPath(); ctx.arc(q.x,q.y,34,0,7); ctx.stroke(); ctx.beginPath(); ctx.arc(q.x,q.y,16,0,7); ctx.stroke(); if(q.hw){ ctx.beginPath(); ctx.ellipse(q.x,q.y,q.hw,14,0,0,7); ctx.stroke(); }
