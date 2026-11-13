@@ -30,7 +30,23 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   c.restore();
   if (lux >= 3) { c.save(); try { drawSkinLux(c, lux, tint, now, 7, 'front'); } catch (e) {} c.restore(); }
 }
+/* hit flash: the figure is drawn into a small canvas and only that one picture goes through the filter
+   (a filter left on while every line of the figure was drawn made each line its own filtered layer: very slow on phones) */
+let hfCv = null;
 function drawFighter(f, alpha) {
+  const flt = typeof hitFlashFilter === 'function' ? hitFlashFilter(f) : '';
+  if (!flt) return drawFighter0(f, alpha);
+  const main = ctx, m = main.getTransform(), k = Math.hypot(m.a, m.b), S = Math.min(2048, Math.ceil(400 * k)), px = m.a * f.x + m.c * (f.y - 30) + m.e, py = m.b * f.x + m.d * (f.y - 30) + m.f;
+  if (!hfCv) hfCv = document.createElement('canvas');
+  if (hfCv.width < S) hfCv.width = hfCv.height = S;
+  const oc = hfCv.getContext('2d');
+  oc.setTransform(1, 0, 0, 1, 0, 0); oc.clearRect(0, 0, S, S); oc.globalAlpha = 1; oc.globalCompositeOperation = 'source-over';
+  oc.setTransform(m.a, m.b, m.c, m.d, m.e + S / 2 - px, m.f + S / 2 - py);      // same scale as the screen, the fighter in the middle
+  ctx = oc; try { drawFighter0(f, alpha); } finally { ctx = main; }
+  main.save(); main.setTransform(1, 0, 0, 1, 0, 0); main.globalAlpha = 1; main.filter = flt;
+  main.drawImage(hfCv, 0, 0, S, S, px - S / 2, py - S / 2, S, S); main.restore();
+}
+function drawFighter0(f, alpha) {
   const st = f.st, col = B(f, 'ally') ? TC(1 - f.team) : TC(f.team);
   if (f.form === 'gone' && typeof drawHatThrow === 'function') { drawHatThrow(f); return; }      // (fx.js: the flying top hat)
   if (f.form === 'gone') { if (st.hat) { ctx.fillStyle = '#16181f'; ctx.fillRect(st.hat.x - 10, st.hat.y - 44, 20, 16); ctx.fillRect(st.hat.x - 16, st.hat.y - 28, 32, 4); } return; }
@@ -142,10 +158,24 @@ function drawTiles(c, c0, c1, r0, r1, pass) {
     } else if (pass === 2 && t === 'G' && typeof drawPlantTile === 'function') { drawPlantTile(c, cc, r, x, y);      // (a bush planted by 정원사: gardener.js)
     } else if (pass === 2 && t === 'g') {
       const sd = (cc * 7 + r * 13) % 5;
-      c.fillStyle = TH.b1; c.beginPath(); c.roundRect(x - 3, y - 9, T + 6, T + 6, 18); c.fill();
-      c.fillStyle = TH.b2; c.beginPath(); c.arc(x + 18 + sd * 2, y + 12, 15, 0, 6.3); c.arc(x + 46 - sd, y + 26 + sd, 13, 0, 6.3); c.arc(x + 22, y + 42 - sd, 12, 0, 6.3); c.fill();
+      if (!bushStamp(c, x, y, sd)) bushShape(c, x, y, sd);
     }
   }
+}
+function bushShape(c, x, y, sd) {
+  c.fillStyle = TH.b1; c.beginPath(); c.roundRect(x - 3, y - 9, T + 6, T + 6, 18); c.fill();
+  c.fillStyle = TH.b2; c.beginPath(); c.arc(x + 18 + sd * 2, y + 12, 15, 0, 6.3); c.arc(x + 46 - sd, y + 26 + sd, 13, 0, 6.3); c.arc(x + 22, y + 42 - sd, 12, 0, 6.3); c.fill();
+}
+/* a bush tile is always one of five pictures: each is drawn once (per map colours and zoom) into a small canvas and stamped from there, instead of four shapes per tile every frame */
+const bushSpr = new Map(); let bushK = 0;
+function bushStamp(c, x, y, sd) {
+  const m = c.getTransform(), k = Math.round(Math.hypot(m.a, m.b) * 100) / 100;
+  if (!(k > .05 && k <= 6) || m.b || m.c) return false;
+  if (k !== bushK) { bushSpr.clear(); bushK = k; }
+  const key = TH.b1 + TH.b2 + sd; let s = bushSpr.get(key);
+  if (!s) { s = document.createElement('canvas'); s.width = s.height = Math.ceil(74 * k); const g = s.getContext('2d'); g.setTransform(k, 0, 0, k, 5 * k, 11 * k); bushShape(g, 0, 0, sd); bushSpr.set(key, s); }
+  c.drawImage(s, x - 5, y - 11, s.width / k, s.height / k);
+  return true;
 }
 function renderMapPreview(i, canvas) {
   const c = canvas.getContext('2d'), sm = MAP, st = TH, tw = new Map(tempWalls), sz = [COLS, ROWS, WW, WH];
@@ -240,7 +270,7 @@ function render() {
 const STICK_R = 54, coarseMq = matchMedia('(pointer:coarse)');
 let safeIn = { l: 0, r: 0, b: 0 };
 function readSafe() { const p = $('safeProbe'); if (!p) return; const cs = getComputedStyle(p); safeIn = { l: parseFloat(cs.paddingLeft) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0 }; }
-const touchUi = () => touchMode || coarseMq.matches;
+const touchUi = () => touchMode || coarseMq.matches || DEVICE === 'mobile';
 const stickHome = atk => ({ x: atk ? W - 96 - Math.max(0, safeIn.r - 8) : 96 + Math.max(0, safeIn.l - 8), y: H - 96 - safeIn.b });
 function touchUiSync() { document.body.classList.toggle('touchUi', touchUi()); }
 addEventListener('resize', () => { readSafe(); touchUiSync(); });
@@ -332,6 +362,21 @@ setEl.addEventListener('pointerdown', e => { e.stopPropagation(); if (e.target =
 $('setLobbyBtn').addEventListener('click', () => setOpen(true));
 tapBtnUi($('setBtn'), () => setOpen(true));
 addEventListener('keydown', e => { if (setEl.hidden) return; if (e.code === 'Escape') setOpen(false); e.stopPropagation(); }, true);   // the game does not see keys while the window is open
+
+/* ---------- device (모바일 / 컴퓨터): picked once on the first start, changed in the settings (engine.js DEVICE; net.js reads the same key) ---------- */
+function devFill() { const cur = DEVICE || deviceGuess(); for (const b of document.querySelectorAll('[data-dev]')) { const on = b.dataset.dev === cur; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); } }
+function setDevice(v) {
+  DEVICE = v; try { localStorage.setItem('seum_device', v); } catch (e) {}
+  RSCALE = 1.5; resize(); touchUiSync(); devFill(); lastHud = '';
+  try { if (typeof window.netDeviceChanged === 'function') window.netDeviceChanged(); } catch (e) {}
+}
+for (const b of document.querySelectorAll('#setDev [data-dev]')) b.addEventListener('click', () => setDevice(b.dataset.dev));
+devFill();
+if (!DEVICE && $('devPick')) {
+  const dp = $('devPick'); dp.hidden = false;
+  for (const b of dp.querySelectorAll('[data-dev]')) b.addEventListener('click', () => { setDevice(b.dataset.dev); dp.hidden = true; });
+  dp.addEventListener('keydown', e => e.stopPropagation(), true);
+}
 
 /* ---------- lobby ---------- */
 /* game modes: the engine's MODES registry ({id,name,size,maps,ready}) when it exists; until then the same four, with only the current rules playable */
@@ -821,9 +866,23 @@ soundBtn.addEventListener('click', () => { muted = !muted; soundBtn.textContent 
 
 readSafe(); touchUiSync();
 /* ---------- loop ---------- */
+/* mobile: when a phone can not keep up (frames slower than ~45 a second over 2 s of play) the canvas goes one step down in pixel ratio (1.5 > 1.25 > 1);
+   after about 10 s of smooth play it goes one step back up */
+const RS_STEPS = [1.5, 1.25, 1];
+let rsT0 = 0, rsN = 0, rsLast = 0, rsGood = 0;
+function rsWatch(now) {
+  if (state !== 'play' || !mobileMode() || now - rsLast > 250) { rsT0 = now; rsN = 0; rsLast = now; return; }      // (a pause, a hidden tab or the lobby does not count)
+  rsLast = now; rsN++;
+  const el = now - rsT0; if (el < 2000) return;
+  const ms = el / rsN, i = Math.max(0, RS_STEPS.indexOf(RSCALE)); rsT0 = now; rsN = 0;
+  if (ms > 22 && i < RS_STEPS.length - 1) { RSCALE = RS_STEPS[i + 1]; rsGood = 0; resize(); }
+  else if (ms < 18 && i > 0) { if (++rsGood >= 5) { RSCALE = RS_STEPS[i - 1]; rsGood = 0; resize(); } }
+  else rsGood = 0;
+}
 let last = performance.now();
 function frame(now) {
   lastFrameAt = performance.now();
+  rsWatch(now);
   const dt = Math.min(.033, (now - last) / 1000); last = now;
   if (NET.role === 'guest' && state === 'play') { if (dt > 0) guestStep(dt); }
   else if (state !== 'over' && dt > 0 && !(performance.now() < hitStopUntil)) step(dt);

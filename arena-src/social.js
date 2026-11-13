@@ -10,7 +10,12 @@ function lowFx() { return reduceMotion || SET.fx; }
 { const baseSfx = sfx; sfx = (f, d, t, v, sl) => { if (SET.vol <= 0) return; baseSfx(f, d, t, (v || .05) * SET.vol / 100, sl); }; }
 {
   const baseP = addP, THIN = { dot: .35, streak: .35, smoke: .3, square: .35, fire: .5, flash: .5 };
-  addP = o => { if (SET.fx && o) { const k = THIN[o.shape]; if (k !== undefined && (Math.random() > k || (o.shape === 'flash' && o.size >= 100))) return; } baseP(o); };
+  const MTHIN = { dot: .6, streak: .6, smoke: .55, square: .6, fire: .75, flash: .8 };      // mobile (engine.js mobileMode): a lighter thinning, and no small bits past 260 at once
+  addP = o => {
+    if (o && SET.fx) { const k = THIN[o.shape]; if (k !== undefined && (Math.random() > k || (o.shape === 'flash' && o.size >= 100))) return; }
+    else if (o && mobileMode()) { const k = MTHIN[o.shape]; if (k !== undefined && (Math.random() > k || particles.length > 260)) return; }
+    baseP(o);
+  };
 }
 function fxInView(x, y) { return Math.abs(x - cam.x) < W / 2 / cam.s + 240 && Math.abs(y - cam.y) < H / 2 / cam.s + 240; }
 function shakeFrom(x, y, amp, range) { if (lowFx()) return; let k = 1; if (player) k = clamp(1 - Math.hypot(player.x - x, player.y - y) / (range || 600), 0, 1); shake = Math.max(shake, amp * k * .8); }
