@@ -45,7 +45,12 @@ function startMatchIn(id, humans) {      // setup() takes the lobby's modeChoice
 }
 function modeState() { try { if (typeof modeSnap === 'function') return modeSnap(); } catch (e) {} }
 const roomId = k => NET_PREFIX + NET.mode + '-room-' + k;
-let netToken = 0, netClaimTries = 0, netBad = new Set(), netSq = 0, inHist = [], snapAcc = 0, inAcc = 0, mapSentVer = -1, mapSentAt = 0, netOut = null;
+/* light network mode for phones / busy connections (the device setting 'seum_device' = 'mobile' | 'pc', set on first start and in the settings; before that: a touch screen counts as mobile).
+   A light guest asks the host for 10 snapshots a second instead of 20, sends its controls 20 times a second instead of 30, and keeps a larger buffer against jitter */
+function netLite() { let v = null; try { v = localStorage.getItem('seum_device'); } catch (e) {} if (v === 'mobile') return true; if (v === 'pc') return false; try { return matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0; } catch (e) { return false; } }
+let NET_LITE = netLite();
+window.netDeviceChanged = () => { NET_LITE = netLite(); };      // the device setting changed: used from the next room on
+let netToken = 0, netClaimTries = 0, netBad = new Set(), netSq = 0, inHist = [], snapAcc = 0, snapTick = 0, inAcc = 0, mapSentVer = -1, mapSentAt = 0, netOut = null;
 
 /* 원 레프트: a host who leaves while others are still fighting (lobby / again / closing the tab after being knocked out) ends the match for them
    with the standings at that moment, so they get their result and reward instead of a bare "the host left" */
@@ -63,7 +68,7 @@ function netReset() {
   const shut = () => { for (const c of cs) try { c.close(); } catch (e) {} if (pr) try { pr.destroy(); } catch (e) {} };
   if (linger) setTimeout(shut, 600); else shut();      // give the last message time to leave before the connections go
   if (NET.hostConn) try { NET.hostConn.close(); } catch (e) {}
-  Object.assign(NET, { role: null, peer: null, conns: [], hostConn: null, members: [], phase: 'idle', rec: false, evs: [], room: -1, me: -1, waitEnd: 0, onRoomGone: null, heard: 0, ps: null, rtt: 0 });
+  Object.assign(NET, { role: null, peer: null, conns: [], hostConn: null, members: [], phase: 'idle', rec: false, evs: [], room: -1, me: -1, waitEnd: 0, onRoomGone: null, heard: 0, ps: null, rtt: 0, tOff: null, jit: .02, delay: .1 });
   netOut = null; netSq = 0; inHist = [];
 }
 const newPeer = id => new Peer(id, Object.assign({ debug: 0 }, PEER_SERVER, PEERJS_ICE_CONFIG));
@@ -111,7 +116,7 @@ function netProbeAll(tok) {
     let best = -1; R.forEach((r, k) => { if (r.s === 'avail' && (best < 0 || r.n > R[best].n)) best = k; });      // the fullest waiting room
     if (best < 0) return false;
     joining = best; const r = R[best];
-    try { r.c.send({ t: 'hello', mode: NET.mode, hero: chosen, lo: loadoutOf(chosen), name: PROF.name, cos: myCos(chosen) }); } catch (e) { r.s = 'busy'; joining = -1; return false; }
+    try { r.c.send({ t: 'hello', lite: NET_LITE ? 1 : 0, mode: NET.mode, hero: chosen, lo: loadoutOf(chosen), gear: myGear(chosen), name: PROF.name, cos: myCos(chosen) }); } catch (e) { r.s = 'busy'; joining = -1; return false; }
     r.jt = setTimeout(() => { if (alive() && joining === best) { r.s = 'busy'; joining = -1; decide(); } }, 4500);
     return true;
   };
@@ -188,7 +193,7 @@ function hostAccept(c, tok) {
     } else if (m.t === 'hello') {
       if (NET.members.some(x => x.conn === c)) return;
       if (NET.phase !== 'wait' || hostN() >= NET.max || m.mode !== NET.mode || typeof m.hero !== 'string' || !Object.prototype.hasOwnProperty.call(HEROES, m.hero)) { try { c.send({ t: 'busy' }); } catch (e) {} setTimeout(() => { try { c.close(); } catch (e) {} }, 500); return; }
-      const mem = { conn: c, hero: m.hero, lo: Array.isArray(m.lo) ? m.lo : null, name: cleanName(m.name) || '게스트', cos: cleanCos(m.cos, m.hero), f: null, fi: -1, heard: performance.now(), inAt: 0, sq: 0, sqAt: 0 };
+      const mem = { conn: c, hero: m.hero, lo: Array.isArray(m.lo) ? m.lo : null, gear: cleanGear(m.gear), name: cleanName(m.name) || '게스트', cos: cleanCos(m.cos, m.hero), f: null, fi: -1, heard: performance.now(), inAt: 0, sq: 0, sqAt: 0, lite: !!m.lite, evq: [], mv: -1 };
       NET.members.push(mem); NET.conns.push(c);
       if (NET.waitEnd - performance.now() < 5000) NET.waitEnd = performance.now() + 5000;      // someone just arrived: leave time for the next one to find the room too
       c.send({ t: 'welcome', room: NET.room });
@@ -227,11 +232,11 @@ function hostLobby() {
 function hostStart() {
   if (NET.phase !== 'wait') return;
   NET.phase = 'play';
-  const humans = (DED ? [] : [{ hero: chosen, lo: loadoutOf(chosen), local: true, cos: myCos(chosen), name: PROF.name }]).concat(NET.members.map(m => ({ hero: m.hero, lo: m.lo, remote: m, cos: m.cos, name: m.name })));
+  const humans = (DED ? [] : [{ hero: chosen, lo: loadoutOf(chosen), gear: myGear(chosen), local: true, cos: myCos(chosen), name: PROF.name }]).concat(NET.members.map(m => ({ hero: m.hero, lo: m.lo, gear: m.gear, remote: m, cos: m.cos, name: m.name })));
   startMatchIn(NET.mode, humans);
   if (!NET.members.length) { const p = NET.peer; NET.peer = null; NET.role = null; NET.phase = 'idle'; try { p.destroy(); } catch (e) {} return; }      // nobody came: the room closes, the match is offline
   NET.rec = true; NET.evs = []; snapAcc = 0; mapSentVer = -1;
-  const roster = fighters.map(f => ({ nm: f.nick, cos: f.cos, hu: f.human ? 1 : 0 }));
+  const roster = fighters.map(f => ({ nm: f.nick, cos: f.cos, hu: f.human ? 1 : 0, gr: f.gear && f.gear.length ? f.gear : undefined }));
   for (const m of NET.members) try { m.conn.send({ t: 'start', you: m.fi, team: m.f.team, map: curMap, mode: NET.mode, roster }); } catch (e) {}
 }
 const r1 = v => Math.round(v * 10) / 10, r2 = v => Math.round(v * 100) / 100, r3 = v => Math.round(v * 1000) / 1000;
@@ -278,10 +283,16 @@ function hostSnap() {
     k: strikes.map(k => [Math.round(k.x), Math.round(k.y), Math.round(k.r), r2(k.t), r2(k.max), k.col]),
     w: [...tempWalls].filter(e => e[1] > time).map(e => [e[0], r1(e[1] - time)]), e: NET.evs };
   const md = modeState(); if (md !== undefined) s.md = md;      // flags, rounds, safe zone ... whatever the mode keeps
-  NET.evs = [];
-  const now = performance.now();
-  if (NET.mapVer !== mapSentVer || now - mapSentAt > 2000) { s.mr = MAP.map(r => r.join('')); mapSentVer = NET.mapVer; mapSentAt = now; }
-  for (const m of NET.members) try { if (m.conn.open) m.conn.send(s); } catch (e) {}
+  s.ts = r3(time);      // the host's match clock: guests place what they see on it (interpolation)
+  const ev = NET.evs; NET.evs = []; snapTick++;
+  const now = performance.now(), mapAll = now - mapSentAt > 2000; if (mapAll) mapSentAt = now;
+  let mr = null; const rows = () => mr || (mr = MAP.map(r => r.join('')));
+  for (const m of NET.members) {
+    if (m.lite && snapTick % 2) { if (ev.length) m.evq.push(...ev); continue; }      // a light guest gets every other snapshot; its events wait for the next one it gets
+    const o = Object.assign({}, s, { e: m.evq.length ? m.evq.concat(ev) : ev }); m.evq = [];
+    if (m.mv !== NET.mapVer || mapAll) { o.mr = rows(); m.mv = NET.mapVer; }
+    try { if (m.conn.open) m.conn.send(o); } catch (e) {}
+  }
 }
 function hostEnd() {
   if (NET.role !== 'host') return;
@@ -326,12 +337,13 @@ function guestFighter(i, s) {
       inv: 0, tapT: 0, hold: false, scd: [0, 0], sk: [null, null], queue: [], minion: false, isPlayer: i === NET.me, lastFire: -9, lastHit: -9, swing: 0, spin: 0, shield: 0, hp: s.hp, mhp: s.mh };
     fighters[i] = f;
     if (i === NET.me) player = f;
-    const r = (NET.roster || [])[i] || {}; f.nick = r.nm ? cleanName(r.nm) : null; f.cos = cleanCos(r.cos, s.h0);
+    const r = (NET.roster || [])[i] || {}; f.nick = r.nm ? cleanName(r.nm) : null; f.cos = cleanCos(r.cos, s.h0); f.gear = cleanGear(r.gr);
   }
   return f;
 }
 function applySnap(s) {
   NET.heard = performance.now();
+  if (s.ts != null) netClock(s.ts);
   timeLeft = s.tl; score = s.sc;
   if (s.mr) MAP = s.mr.map(r => r.split(''));
   tempWalls.clear(); for (const w of s.w) tempWalls.set(w[0], time + w[1]);
@@ -342,7 +354,8 @@ function applySnap(s) {
     f.lfPrev = d.lf;
     f.h = HEROES[d.h]; f.h0 = HEROES[d.h0]; f.team = d.tm; f.human = !!d.hu;
     if (f.dead && !d.d) { f.x = d.x; f.y = d.y; }
-    f.nx = d.x; f.ny = d.y; f.na = d.a; if (!me) f.aim = f.aim == null ? d.a : f.aim;
+    f.nx = d.x; f.ny = d.y; f.na = d.a;
+    if (!me && s.ts != null) { const h = f.ih || (f.ih = []); if (h.length && s.ts < h[h.length - 1].t) h.length = 0; h.push({ t: s.ts, x: d.x, y: d.y }); while (h.length > 2 && s.ts - h[0].t > 1) h.shift(); if (d.d || (f.dead && !d.d)) h.length = 0, h.push({ t: s.ts, x: d.x, y: d.y }); } if (!me) f.aim = f.aim == null ? d.a : f.aim;
     f.hp = d.hp; f.mhp = d.mh; f.dead = !!d.d; f.respawnT = d.rt; f.form = d.fm || null; f.ghost = f.form === 'gone' || f.form === 'sub' || f.form === 'spirit';
     f.swing = d.sw; f.spin = d.sp; f.shield = d.sh; f.inv = d.iv ? .1 : 0; f.kos = d.k; f.deaths = d.de;
     f.lastFire = time - d.lf; f.lastHit = time - d.lh;
@@ -392,14 +405,34 @@ function guestPredict(f) {
   }
   return q;
 }
+/* guest clock: tOff maps local seconds to the host's match clock. It follows the earliest-arriving snapshots (late ones are jitter), and
+   the shown time runs `delay` behind, enough to cover the snapshot gap plus the measured jitter, so remote players move smoothly between two known positions */
+let netRT = null;
+function netClock(ts) {
+  const now = performance.now() / 1000, o = ts - now, gap = NET_LITE ? .1 : .05;
+  if (NET.tOff == null || o - NET.tOff > .5 || NET.tOff - o > 1.5) { NET.tOff = o; NET.jit = .02; }      // first snapshot, or the clock jumped (new match)
+  else { const d = o - NET.tOff; NET.tOff += d > 0 ? d * .2 : d * .01; NET.jit += (Math.abs(d) - NET.jit) * .05; }
+  NET.delay = Math.max(NET_LITE ? .12 : .07, Math.min(.35, gap * 1.2 + NET.jit * 2.5));
+}
+/* (remote players: interpAt gives the target, and a light touch of smoothing hides the small corrections when a late snapshot lands) */
+function interpAt(h, t) {
+  let i = h.length - 1;
+  if (t >= h[i].t) { if (i < 1) return [h[i].x, h[i].y]; const a = h[i - 1], b = h[i], dt = b.t - a.t, e = Math.min(t - b.t, .2); if (dt <= 0 || Math.hypot(b.x - a.x, b.y - a.y) > 160) return [b.x, b.y]; return [b.x + (b.x - a.x) / dt * e, b.y + (b.y - a.y) / dt * e]; }      // past the newest: a short extrapolation, then hold
+  while (i > 0 && h[i - 1].t > t) i--;
+  if (i === 0) return [h[0].x, h[0].y];
+  const a = h[i - 1], b = h[i], u = (t - a.t) / Math.max(1e-3, b.t - a.t);
+  if (Math.hypot(b.x - a.x, b.y - a.y) > 160) return u < .5 ? [a.x, a.y] : [b.x, b.y];      // a teleport / respawn: no sliding across the map
+  return [a.x + (b.x - a.x) * u, a.y + (b.y - a.y) * u];
+}
 function guestStep(dt) {
+  netRT = NET.tOff != null ? performance.now() / 1000 + NET.tOff - NET.delay : null;      // the host time being shown now
   time += dt; timeLeft = Math.max(0, timeLeft - dt);
   const k = Math.min(1, dt * 14);
   for (const f of fighters) {
     if (!f || f.dead) continue;
     const px = f.x, py = f.y, q = f === player && NET.ps ? guestPredict(f) : null;
     if (q) { const ex = q.x - f.x, ey = q.y - f.y; if (ex * ex + ey * ey > 8100) { f.x = q.x; f.y = q.y; } else { const kp = Math.min(1, dt * 40); f.x += ex * kp; f.y += ey * kp; } }      // own walking: the host's position plus the inputs it has not yet seen
-    else { f.x += (f.nx - f.x) * k; f.y += (f.ny - f.y) * k; }
+    else { const ip = f.ih && f.ih.length && netRT != null ? interpAt(f.ih, netRT) : null; if (ip) { const ex = ip[0] - f.x, ey = ip[1] - f.y; if (ex * ex + ey * ey > 25600) { f.x = ip[0]; f.y = ip[1]; } else { const kk = Math.min(1, dt * 22); f.x += ex * kk; f.y += ey * kk; } } else { f.x += (f.nx - f.x) * k; f.y += (f.ny - f.y) * k; } }
     f.vx = (f.x - px) / dt; f.vy = (f.y - py) / dt; f.bob += Math.hypot(f.vx, f.vy) * dt * .06;
     if (f !== player) { let da = f.na - f.aim; da = Math.atan2(Math.sin(da), Math.cos(da)); f.aim += da * k; }
     f.swing = Math.max(0, f.swing - dt); f.spin = Math.max(0, f.spin - dt);
@@ -415,7 +448,7 @@ function guestStep(dt) {
   if (!netOut) netOut = inp;
   else { netOut = Object.assign(inp, { pf: inp.pf || netOut.pf, ult: inp.ult || netOut.ult, dash: inp.dash || netOut.dash, sk: [inp.sk[0] || netOut.sk[0], inp.sk[1] || netOut.sk[1]], np: inp.np != null ? inp.np : netOut.np, manual: inp.manual || netOut.manual }); }
   inAcc += dt;
-  if (inAcc >= IN_DT && NET.hostConn && NET.hostConn.open) {
+  if (inAcc >= (NET_LITE ? 1 / 20 : IN_DT) && NET.hostConn && NET.hostConn.open) {
     inAcc = 0;
     const o = netOut; netOut = null;
     const sq = ++netSq; inHist.push({ sq, t: time, mx: r2(o.mx), my: r2(o.my) }); while (inHist.length && time - inHist[0].t > 1.5) inHist.shift();
@@ -428,12 +461,12 @@ let pingAcc = 0;
 function netTick(dt) {
   const now = performance.now();
   if (NET.role === 'host') for (const m of NET.members.slice()) {
-    if (now - (m.heard || now) > 6000) hostDrop(m.conn, netToken);      // nothing from a guest for 6 s: gone
-    else if (m.f && m.f.netIn && m.inAt && now - m.inAt > 300) { m.f.netIn.mx = 0; m.f.netIn.my = 0; m.f.netIn.hold = false; }      // controls gone quiet (frozen tab, bad link): stand still instead of walking on
+    if (now - (m.heard || now) > 10000) hostDrop(m.conn, netToken);      // nothing from a guest for 6 s: gone
+    else if (m.f && m.f.netIn && m.inAt && now - m.inAt > (m.lite ? 700 : 500)) { m.f.netIn.mx = 0; m.f.netIn.my = 0; m.f.netIn.hold = false; }      // controls gone quiet (frozen tab, bad link): stand still instead of walking on
   }
   if (NET.role === 'guest' && NET.hostConn) {
     if ((pingAcc += dt) > 1) { pingAcc = 0; try { NET.hostConn.send({ t: 'ping', ts: now }); } catch (e) {} }
-    if (NET.phase === 'play' && NET.heard && now - NET.heard > 5000) hostLost();       // no snapshot for 5 s: the host is gone
+    if (NET.phase === 'play' && NET.heard && now - NET.heard > 8000) hostLost();       // no snapshot for 5 s: the host is gone
     if (NET.phase === 'joined') { if (!NET.heard) NET.heard = now; if (now - NET.heard > 8000) hostLost(); }
   }
   if (NET.role === 'host' && NET.phase === 'wait') {

@@ -53,6 +53,7 @@ function loadAccount() {
 function accountUi() {
   const n = document.getElementById('acctName'), b = document.getElementById('acctBtn'); if (!n) return;
   n.textContent = PROF.name; n.style.color = nameColorFor(COS.name); goldUi();
+  { const t = document.getElementById('acctTitle'); if (t) { t.textContent = myTitle(); t.hidden = !t.textContent; } }
   b.hidden = false;
   if (!PROF.online) { b.textContent = '게스트'; b.disabled = true; b.title = 'Frenchfries777 계정 로그인은 frenchfries777.com에 올린 게임에서 쓸 수 있어요'; }
   else { b.disabled = false; b.title = ''; b.textContent = PROF.guest ? '로그인' : '프로필'; }
@@ -67,6 +68,8 @@ function cosNorm(C) {      // the save-version fixes, run on this browser's save
   if (C.v < 4) for (const k of ['col', 'name', 'kfx']) if (C[k] && !C.own.includes(C[k])) C[k] = null;      // v4: character colours, name colours and kill effects are bought with gold too
   C.v = 4;      // v3: the road got new steps, nothing on it is taken yet
   C.xp = Math.max(0, Math.floor(+C.xp || 0)); if (!C.mp || typeof C.mp !== 'object') C.mp = {};
+  if (!Array.isArray(C.unl)) { C.unl = []; const hg = (C.st && C.st.hg) || {}; for (const id of Object.keys(C.mp).concat(Object.keys(hg))) if (((C.mp[id] | 0) > 0 || (hg[id] | 0) > 0) && !C.unl.includes(id)) C.unl.push(id); }      // unlock (gear.js): characters already played stay open
+  if (!C.sh || typeof C.sh !== 'object') C.sh = {}; if (!Array.isArray(C.gown)) C.gown = []; if (!C.geq || typeof C.geq !== 'object') C.geq = {};
   return C;
 }
 let COS = cosDefault();
@@ -94,15 +97,26 @@ const skinOwned = id => COS.own.includes(id);
 const cosLocked = id => skinPrice(id) > 0 && !skinOwned(id);      // has a price and is not bought yet
 const COS_SLOT = { bcol: 'col', name: 'name', kfx: 'kfx', pose: 'pose' };
 function goldUi() { for (const el of document.querySelectorAll('.goldN')) el.textContent = COS.gold.toLocaleString('en-US'); for (const el of document.querySelectorAll('.karmaN')) el.textContent = COS.karma.toLocaleString('en-US'); const sk = document.getElementById('streak'); if (sk) { sk.hidden = !((COS.ws | 0) >= 2); sk.querySelector('b').textContent = COS.ws | 0; }
-  { const kb = document.querySelector('#karmaBar i'); if (kb) { let lo = 0, hi = 0; for (const r of KARMA_ROAD) { if (COS.karma >= r[0]) lo = r[0]; else { hi = r[0]; break; } } kb.style.width = (hi ? Math.round((COS.karma - lo) / (hi - lo) * 100) : 100) + '%'; } }      // the banner's bar: the way to the next step of the road
+  { const kb = document.querySelector('#karmaBar i'); { let lo = 0, hi = 0; for (const r of KARMA_ROAD) { if (COS.karma >= r[0]) lo = r[0]; else { hi = r[0]; break; } } const w = (hi ? Math.round((COS.karma - lo) / (hi - lo) * 100) : 100) + '%'; if (kb) kb.style.width = w; const hb = document.querySelector('.khBar i'), hn = document.getElementById('karmaNextN'); if (hb) hb.style.width = w; if (hn) hn.textContent = hi ? COS.karma.toLocaleString('en-US') + ' / ' + hi.toLocaleString('en-US') : ''; } }      // the banner's bar: the way to the next step of the road
   const kd = document.getElementById('karmaDot'); if (kd) kd.hidden = !karmaOpen(); questUi();
   const ai = document.getElementById('acctIcon'); if (ai) { const l = levelOf(); ai.textContent = l.lv; ai.style.setProperty('--p', Math.round(l.into / l.need * 100)); ai.title = '레벨 ' + l.lv + ' · ' + l.into + ' / ' + l.need; } }
 /* ---------- progression: karma road, boxes, player level, character mastery ---------- */
 /* karma road: [karma needed, kind, amount]. kinds: g gold · rx mastery points for a random character · cx mastery points for the picked character · box / ebox · skin (amount = dearest tier). Taken steps are kept in COS.kr */
-const KARMA_ROAD = [[15, 'g', 100], [30, 'rx', 200], [50, 'box'], [100, 'g', 200], [250, 'cx', 300], [500, 'box'], [1000, 'ebox'], [1500, 'g', 500], [2000, 'box'], [2500, 'cx', 600], [3000, 'ebox'], [3500, 'g', 800], [4000, 'box'], [4500, 'rx', 800], [5000, 'ebox'],
-  [5500, 'g', 1200], [6000, 'box'], [8000, 'ebox'], [10000, 'skin', 4000]];
+const KARMA_ROAD = (() => {      // paced like a trophy road (user 2026-11-12): a reward every 10 to 20 karma at first (a match pays about 5), then every 50, 100, 250, 500 and 1,000; the big steps hold an epic box or a skin
+  const at = [10, 20, 30, 40, 50, 60, 80, 100], big = { 500: ['ebox'], 1500: ['ebox'], 5000: ['skin', 2500], 10000: ['skin', 4000], 15000: ['ebox'], 20000: ['skin', 4000] }, out = [];
+  for (const [to, gap] of [[500, 50], [1500, 100], [5000, 250], [10000, 500], [20000, 1000]]) for (let n = at[at.length - 1] + gap; n <= to; n += gap) at.push(n);
+  const amt = (gap, t) => t[gap <= 20 ? 0 : gap <= 50 ? 1 : gap <= 100 ? 2 : gap <= 250 ? 3 : gap <= 500 ? 4 : 5];
+  let i = 0, prev = 0;
+  for (const n of at) {
+    const gap = n - prev, kind = ['g', 'rx', 'g', 'box', 'cx'][i % 5]; prev = n;
+    if (big[n]) { out.push([n, big[n][0], big[n][1], 1]); continue; }      // a big step does not use up a turn of the cycle
+    i++;
+    out.push(kind === 'box' ? [n, gap >= 500 ? 'ebox' : 'box'] : [n, kind, kind === 'g' ? amt(gap, [50, 150, 300, 500, 800, 1200]) : amt(gap, [100, 200, 300, 500, 700, 1000])]);
+  }
+  return out;
+})();
 /* what a box can hold: [chance weight, kind, least, most] */
-const BOX_LOOT = { box: [[50, 'g', 150, 400], [30, 'rx', 150, 300], [12, 'cx', 150, 250], [8, 'skin', 1000, 1000]], ebox: [[35, 'g', 600, 1200], [20, 'rx', 500, 800], [20, 'cx', 400, 600], [25, 'skin', 2500, 2500]] };
+const BOX_LOOT = { box: [[50, 'g', 150, 400], [20, 'rx', 150, 300], [10, 'sh', 2, 4], [12, 'cx', 150, 250], [8, 'skin', 1000, 1000]], ebox: [[35, 'g', 600, 1200], [10, 'rx', 500, 800], [10, 'sh', 5, 8], [20, 'cx', 400, 600], [25, 'skin', 2500, 2500]] };
 /* character mastery: every step is MP_STEP points (about 16 matches at ~50 a match) */
 const MP_STEP = 800, MASTERY = [];
 for (const [nm, n, col] of [['브론즈', 3, '#c8803a'], ['실버', 3, '#c0c8d4'], ['골드', 3, '#ffd34d'], ['플래티넘', 3, '#6fe0d0'], ['다이아', 3, '#6fb8ff'], ['아메시스트', 3, '#b07cff'], ['마스터', 5, '#ff8a4d'], ['그랜드마스터', 5, '#ff4d6d']]) for (let i = 0; i < n; i++) MASTERY.push({ name: nm + ' ' + ['I', 'II', 'III', 'IV', 'V'][i], col });
@@ -134,12 +148,14 @@ function streakStep(win, draw, place) {
 }
 /* gives one reward and says what it was: { kind, n, hero, skin } */
 function giveReward(kind, n) {
-  if (kind === 'box' || kind === 'ebox') { const L = BOX_LOOT[kind]; let r = Math.random() * L.reduce((a, l) => a + l[0], 0), l = L[0]; for (const x of L) { if ((r -= x[0]) < 0) { l = x; break; } } return giveReward(l[1], Math.round((l[2] + Math.random() * (l[3] - l[2])) / 10) * 10); }
+  if (kind === 'box' || kind === 'ebox') { const L = BOX_LOOT[kind]; let r = Math.random() * L.reduce((a, l) => a + l[0], 0), l = L[0]; for (const x of L) { if ((r -= x[0]) < 0) { l = x; break; } } const tr = Math.random(), tier = l[1] === 'skin' ? 2 : kind === 'ebox' ? (tr < .25 ? 2 : 1) : tr < .05 ? 2 : tr < .25 ? 1 : 0;      // a box opens as common, rare or legendary: rare doubles what is inside, legendary gives four times (a skin is always legendary)
+    const got = giveReward(l[1], l[1] === 'skin' ? l[2] : l[1] === 'sh' ? Math.round(l[2] + Math.random() * (l[3] - l[2])) * (tier + 1) : Math.round((l[2] + Math.random() * (l[3] - l[2])) * (kind === 'ebox' ? [1, 1, 2] : [1, 2, 4])[tier] / 10) * 10); got.box = kind; got.tier = tier; return got; }
   if (kind === 'skin') {      // a skin not owned yet, from the dearest tier allowed; nothing left to give: its worth in gold
     const pool = COS_IDS('skin').filter(id => HEROES[COSMETICS[id].char] && !skinOwned(id) && skinPrice(id) <= n), top = Math.max(0, ...pool.map(skinPrice)), best = pool.filter(id => skinPrice(id) === top);
     if (best.length) { const id = pick(best); COS.own.push(id); return { kind, skin: id, hero: COSMETICS[id].char }; }
     kind = 'g';
   }
+  if (kind === 'sh') { const L = lockedIds(); if (L.length) { const hero = pick(L); addShard(hero, n); return { kind, n, hero }; } kind = 'g'; n *= SHARD_GOLD; }      // shards of a locked character (gear.js); none locked: their gold
   if (kind === 'g') { COS.gold += n; return { kind, n }; }
   if (kind === 'px') { COS.xp += n; return { kind, n }; }
   if (kind === 'k') { COS.karma += n; return { kind, n }; }
@@ -152,7 +168,7 @@ function karmaTake(r) {
   try { sfx(880, .18, 'triangle', .06); } catch (e) {}
   saveCos(); goldUi(); return got;
 }
-const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin' };
+const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin', sh: 'ic-shard' };
 function rewardIcon(kind) { const i = document.createElement('i'); if (kind === 'k') { i.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>'; return i; } i.className = kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[kind]; return i; }
 function renderKarma(got) {
   const tr = document.getElementById('karmaTrack'); tr.textContent = '';
@@ -162,7 +178,7 @@ function renderKarma(got) {
   for (const r of KARMA_ROAD) {
     const b = document.createElement('button'), box = document.createElement('span'), pin = document.createElement('span'), num = document.createElement('span');
     const done = COS.kr.includes(r[0]), reach = !done && COS.karma >= r[0];
-    b.type = 'button'; b.className = 'kStep ' + (done ? 'done' : reach ? 'reach' : 'lock') + ' k-' + r[1]; b.dataset.k = r[0]; box.className = 'kBox'; pin.className = 'kPin'; num.className = 'kNum'; num.textContent = r[0].toLocaleString('en-US');
+    b.type = 'button'; b.className = 'kStep ' + (done ? 'done' : reach ? 'reach' : 'lock') + ' k-' + r[1] + (r[3] ? ' big' : ''); b.dataset.k = r[0]; box.className = 'kBox'; pin.className = 'kPin'; num.className = 'kNum'; num.textContent = r[0].toLocaleString('en-US');
     box.append(rewardIcon(r[1]), r[1] === 'g' || r[1] === 'rx' || r[1] === 'cx' ? r[2].toLocaleString('en-US') : LBL[r[1]]);
     b.setAttribute('aria-label', r[0] + ' 카르마: ' + LBL[r[1]] + (r[2] && r[1] !== 'skin' ? ' ' + r[2] : '')); b.title = LBL[r[1]];
     b.disabled = !reach; b.append(box, pin, num);
@@ -177,12 +193,33 @@ function renderKarma(got) {
   showGot(document.getElementById('karmaGot'), got);
 }
 /* the line that says what a reward turned out to be */
-function showGot(g, got) {
-  const cvs = g.querySelector('canvas'), ic = g.querySelector('i'), nm = g.querySelector('b'); g.hidden = !got; if (!got) return;
-  cvs.hidden = !got.skin; ic.hidden = !!got.skin; ic.textContent = ''; ic.className = got.skin || got.kind === 'k' ? '' : got.kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[got.kind];
-  if (got.kind === 'k') ic.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>';
-  if (got.skin) { nm.textContent = HEROES[got.hero].name + ' · ' + COSMETICS[got.skin].name; try { drawItemPreview(cvs, got.skin, performance.now()); } catch (e) {} }
-  else nm.textContent = (got.hero ? HEROES[got.hero].name + ' ' : '') + '+' + got.n.toLocaleString('en-US');
+function showGot(g, got) { g.hidden = true; if (got) rewardFx(got); }
+/* the burst over the whole screen when a reward is taken (head.html #rwFx): a box shakes and opens first, then the prize pops in with rays, sparks, a little tune and its number counting up. A tap puts it away */
+let rwTimer = 0, rwRaf = 0;
+function rewardFx(got) {
+  const fx = document.getElementById('rwFx'); if (!fx) return;
+  const ic = fx.querySelector('.rwIc'), cvs = fx.querySelector('canvas'), txt = fx.querySelector('.rwTxt'), spk = fx.querySelector('.rwSpk');
+  const setIcon = kind => { cvs.hidden = true; ic.hidden = false; ic.textContent = ''; ic.className = 'rwIc ' + (kind === 'k' ? '' : kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[kind]); if (kind === 'k') ic.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>'; };
+  const note = (f, at) => setTimeout(() => { try { sfx(f, .16, 'triangle', .07); } catch (e) {} }, at);
+  const close = () => { clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.classList.add('out'); rwTimer = setTimeout(() => { fx.hidden = true; fx.classList.remove('out', 'open', 'shake'); }, 220); for (const el of document.querySelectorAll('.goldPill, #karma, #acctIcon')) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } };
+  const open = () => {
+    fx.classList.remove('shake'); void fx.offsetWidth; fx.classList.add('open');
+    if (got.skin) { ic.hidden = true; cvs.hidden = false; try { drawItemPreview(cvs, got.skin, performance.now()); } catch (e) {} txt.textContent = HEROES[got.hero].name + ' · ' + COSMETICS[got.skin].name; }
+    else {
+      setIcon(got.kind); const pre = (got.hero ? HEROES[got.hero].name + ' ' : '') + '+', n = got.n | 0, t0 = performance.now();
+      const tick = now => { const k = Math.min(1, (now - t0) / 650), e = 1 - Math.pow(1 - k, 3); txt.textContent = pre + Math.round(n * e).toLocaleString('en-US'); if (k < 1) rwRaf = requestAnimationFrame(tick); };
+      txt.textContent = pre + '0'; rwRaf = requestAnimationFrame(tick);
+    }
+    spk.textContent = ''; const cols = tier === 2 ? ['#ffe07a', '#fff', '#ffb020', '#ff7ad9', '#7fe0ff'] : tier === 1 ? ['#d9a8ff', '#a45cff', '#fff', '#7fb4ff'] : got.kind === 'k' ? ['#e3c4ff', '#a45cff', '#fff'] : ['#ffe07a', '#fff3b0', '#ff9a3d', '#7fe0a0'], np = [22, 34, 56][tier];
+    for (let i = 0; i < np; i++) { const p = document.createElement('i'), a = Math.PI * 2 * i / np + Math.random() * .3, r = (110 + Math.random() * 120) * (1 + tier * .25); p.style.setProperty('--x', Math.round(Math.cos(a) * r) + 'px'); p.style.setProperty('--y', Math.round(Math.sin(a) * r) + 'px'); p.style.setProperty('--c', cols[i % cols.length]); p.style.setProperty('--d', (Math.random() * .12).toFixed(2) + 's'); spk.append(p); }
+    note(660, 0); note(880, 90); note(1320, 180); if (got.skin || got.box === 'ebox' || tier) note(1760, 300); if (tier === 2) { note(2090, 420); note(2640, 560); }
+    rwTimer = setTimeout(close, got.skin || tier === 2 ? 2800 : 1900);
+  };
+  clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.hidden = false; fx.classList.remove('out', 'open', 'shake', 't1', 't2'); txt.textContent = ''; spk.textContent = '';
+  const tier = got.box ? got.tier | 0 : 0, tg = fx.querySelector('.rwTier'); if (tier) fx.classList.add('t' + tier); if (tg) tg.textContent = got.box ? ['', '희귀', '전설'][tier] : '';
+  fx.onclick = () => { if (fx.classList.contains('shake')) { clearTimeout(rwTimer); open(); } else close(); };
+  if (got.box) { setIcon(got.box); void fx.offsetWidth; fx.classList.add('shake'); const sh = [720, 1000, 1500][tier]; fx.style.setProperty('--sh', sh + 'ms'); for (let i = 0; i < sh / 130 - 1; i++) note(300 + i * (40 + tier * 15), 150 + i * 120); rwTimer = setTimeout(open, sh); }
+  else open();
 }
 /* ---------- daily quests: three a day (one easy, one middling, one hard), picked by the date on this device. COS.dq = { d: day, p: progress x3, c: taken x3 } ---------- */
 const dqDay = () => { const d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
@@ -206,6 +243,7 @@ function dqMatch(m) {
     const add = q.t === 'play' ? 1 : q.t === 'win' ? (m.win ? 1 : 0) : q.t === 'kill' ? m.kills | 0 : q.t === 'dmg' ? Math.round(m.dealt || 0) : q.t === 'top3' ? (m.place >= 1 && m.place <= 3 ? 1 : 0) : 0;
     st.p[i] = Math.min(q.n, (+st.p[i] || 0) + Math.max(0, add));
   });
+  { const ws = wqState(); wqList(ws.d).forEach((q, i) => { ws.p[i] = Math.min(q.n, (+ws.p[i] || 0) + qAdd(q, m)); }); }
   saveCos(); questUi();
 }
 function dqTake(i) {
@@ -214,10 +252,70 @@ function dqTake(i) {
   try { sfx(880, .18, 'triangle', .06); } catch (e) {}
   saveCos(); goldUi(); return got;
 }
+/* what a finished match adds to a quest */
+function qAdd(q, m) {
+  if ((q.mode && q.mode !== m.mode) || (q.hero && q.hero !== m.hero)) return 0;
+  return Math.max(0, q.t === 'play' ? 1 : q.t === 'win' ? (m.win ? 1 : 0) : q.t === 'kill' ? m.kills | 0 : q.t === 'dmg' ? Math.round(m.dealt || 0) : q.t === 'top3' ? (m.place >= 1 && m.place <= 3 ? 1 : 0) : 0);
+}
+const dayRnd = n => { let sd = (n * 2654435761) >>> 0; return () => { sd = (sd + 0x6D2B79F5) >>> 0; let t = Math.imul(sd ^ sd >>> 15, 1 | sd); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
+/* ---------- weekly quests: three bigger ones, new every Monday. COS.wq has the shape of COS.dq (d is the Monday) ---------- */
+const wqWeek = () => { const d = new Date(); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
+function wqList(week) {
+  const rnd = dayRnd(week + 7), pk = a => a[Math.floor(rnd() * a.length)];
+  const modes = (typeof MODES !== 'undefined' ? MODES : []).filter(m => m.ready !== false), m = pk(modes), h = pk(ROSTER), solo = modes.find(x => x.id === 'solo'), hn = HEROES[h] ? HEROES[h].name : h;
+  const a = pk([{ t: 'play', n: 20, txt: '20판 하기' }, { t: 'kill', n: 60, txt: '60킬' }]);
+  const b = pk([{ t: 'win', n: 10, txt: '10승' }, m && { t: 'play', n: 8, mode: m.id, txt: m.name + ' 8판' }, m && { t: 'win', n: 4, mode: m.id, txt: m.name + ' 4승' }].filter(Boolean));
+  const c = pk([h && { t: 'win', n: 5, hero: h, txt: hn + ' 5승' }, h && { t: 'kill', n: 30, hero: h, txt: hn + ' 30킬' }, solo && { t: 'top3', n: 6, mode: 'solo', txt: solo.name + ' 3등 안 6번' }].filter(Boolean));
+  a.rw = ['g', 500]; b.rw = ['k', 30]; c.rw = ['ebox'];
+  return [a, b, c];
+}
+function wqState() { const d = wqWeek(), q = COS.wq; if (!q || q.d !== d || !Array.isArray(q.p) || !Array.isArray(q.c)) COS.wq = { d, p: [0, 0, 0], c: [0, 0, 0] }; return COS.wq; }
+function wqTake(i) {
+  const st = wqState(), q = wqList(st.d)[i]; if (!q || st.c[i] || !(st.p[i] >= q.n)) return null;
+  st.c[i] = 1; const got = giveReward(q.rw[0], q.rw[1]); saveCos(); goldUi(); return got;
+}
+const wqOpen = () => { const st = wqState(); return wqList(st.d).some((q, i) => st.p[i] >= q.n && !st.c[i]); };
+/* ---------- attendance: one reward a day, seven in a row then round again. A missed day loses nothing. COS.att = { d: the day last taken, n: how many taken } ---------- */
+const ATT = [['g', 100], ['k', 5], ['g', 150], ['rx', 150], ['g', 200], ['k', 10], ['box']];
+const attSt = () => { if (!COS.att || typeof COS.att !== 'object') COS.att = { d: 0, n: 0 }; COS.att.n = Math.max(0, COS.att.n | 0); return COS.att; };
+const attOpen = () => attSt().d !== dqDay();
+function attTake() { const a = attSt(); if (!attOpen()) return null; const r = ATT[a.n % 7]; a.d = dqDay(); a.n++; const got = giveReward(r[0], r[1]); saveCos(); goldUi(); return got; }
+/* ---------- today's shop: three skins a day at a lower price ---------- */
+const DEAL_OFF = .3;
+let dealMemo = null;
+function dealIds() {
+  const d = dqDay(); if (dealMemo && dealMemo.d === d) return dealMemo.ids;
+  const rnd = dayRnd(d + 3), pool = COS_IDS('skin').filter(id => HEROES[COSMETICS[id].char] && skinPrice(id) > 0).sort(), ids = [];
+  while (ids.length < 3 && pool.length) ids.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]);
+  dealMemo = { d, ids }; return ids;
+}
+const cosPrice = id => { const p = skinPrice(id); return p > 0 && dealIds().includes(id) ? Math.round(p * (1 - DEAL_OFF) / 10) * 10 : p; };
+/* ---------- titles: an achievement reached gives a title to wear under the name. COS.title = the achievement's id ---------- */
+const TITLES = { modes: '탐험가', k100: '사냥꾼', w10: '승부사', mk7: '연쇄 처치', nd1: '무결점', solo1: '최후의 1인', duel5: '결투가', flag5: '깃발 도둑', silver: '실버', lv10: '베테랑',
+  k1000: '학살자', w100: '백전노장', mk10: '폭풍', solo10: '원 레프트 고수', allhero: '만능', dia: '다이아', karma1k: '카르마 부자', k10000: '전설의 학살자', w1000: '불패 신화', mk15: '재앙', soloall: '원 레프트 지배자', champ: '챔피언' };
+const titleOk = id => !!(id && TITLES[id] && COS.ach && COS.ach[id]);
+const myTitle = () => titleOk(COS.title) ? TITLES[COS.title] : '';
+/* ---------- the profile card: level, lifetime numbers, the character played most, titles to pick ---------- */
+function favHero() { const st = achSt(); let best = null, bv = 0; for (const h of Object.keys(HEROES)) { const v = (st.hg[h] | 0) * 1e6 + mpOf(h); if (v > bv) { bv = v; best = h; } } return best || (HEROES[chosen] ? chosen : Object.keys(HEROES)[0]); }
+function renderProfile() {
+  const $i = id => document.getElementById(id), st = achSt(), l = levelOf(), h = favHero(), tier = ['#9aa3b5', '#7fb4ff', '#c17bff', '#ffd34d'];
+  $i('profName').textContent = PROF.name; $i('profName').style.color = nameColorFor(COS.name); $i('profTitle').textContent = myTitle(); $i('profTitle').hidden = !myTitle();
+  $i('profLv').textContent = 'Lv ' + l.lv; $i('profLvBar').style.width = Math.round(l.into / l.need * 100) + '%';
+  $i('profHero').textContent = HEROES[h].name + ' · ' + masteryOf(h).name; $i('profHero').style.color = masteryOf(h).col;
+  { const cvs = $i('profCv'), c = cvs.getContext('2d'), cos = myCos(h); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cvs.width, cvs.height); c.translate(cvs.width / 2, cvs.height - 34); c.scale(2.6, 2.6); try { drawStick(c, h, bodyColor(cos, '#cfd3dc'), .3, 0, 0, 0, cos); } catch (e) {} }
+  const box = $i('profStats'); box.textContent = '';
+  for (const [k, v] of [['경기', st.g], ['승리', st.w], ['승률', st.g ? Math.round(st.w / st.g * 100) + '%' : '-'], ['킬', st.k], ['최고 킬', st.mk], ['도전과제', ACHS.filter(a => COS.ach && COS.ach[a.id]).length + ' / ' + ACHS.length]]) {
+    const d = document.createElement('div'), b = document.createElement('b'), sm = document.createElement('small'); b.textContent = typeof v === 'number' ? v.toLocaleString('en-US') : v; sm.textContent = k; d.append(b, sm); box.append(d);
+  }
+  const tb = $i('profTitles'); tb.textContent = '';
+  for (const a of ACHS) { if (!titleOk(a.id)) continue; const b = document.createElement('button'); b.type = 'button'; b.textContent = TITLES[a.id]; b.style.setProperty('--tc', tier[a.t]); b.setAttribute('aria-pressed', String(COS.title === a.id));
+    b.addEventListener('click', () => { COS.title = COS.title === a.id ? null : a.id; saveCos(); renderProfile(); accountUi(); }); tb.append(b); }
+  tb.hidden = !tb.children.length;
+}
 /* ---------- achievements ----------
    [id, tier 0 basic · 1 normal · 2 hard · 3 extreme, text, goal, value now]. Lifetime numbers live in COS.st; COS.ach[id] = 1 reached · 2 reward taken.
    The ids also go to the server that counts how many players have each one, so never reuse or rename one. */
-const achSt = () => { const s = COS.st && typeof COS.st === 'object' ? COS.st : (COS.st = {}); for (const k of ['k', 'w', 'g', 'mk', 'nd', 'sa']) s[k] = Math.max(0, Math.floor(+s[k] || 0)); for (const k of ['mw', 'mg', 'hw']) if (!s[k] || typeof s[k] !== 'object') s[k] = {}; return s; };
+const achSt = () => { const s = COS.st && typeof COS.st === 'object' ? COS.st : (COS.st = {}); for (const k of ['k', 'w', 'g', 'mk', 'nd', 'sa']) s[k] = Math.max(0, Math.floor(+s[k] || 0)); for (const k of ['mw', 'mg', 'hw', 'hk', 'hg', 'hn', 'hb']) if (!s[k] || typeof s[k] !== 'object') s[k] = {}; return s; };
 const achTopRank = () => Math.max(0, ...Object.keys(HEROES).map(h => masteryOf(h).i));
 const ACH_PAY = [['g', 100], ['g', 300], ['box'], ['ebox']];
 const ACHS = [
@@ -238,6 +336,7 @@ const achOpen = () => !!COS.ach && ACHS.some(a => COS.ach[a.id] === 1);
 function achMatch(m) {
   const s = achSt(), k = Math.max(0, m.kills | 0); if (m.mode === 'flag5') m = Object.assign({}, m, { mode: 'flag' });      // one capture the flag count, whatever the team size
   s.g++; s.k += k; s.mk = Math.max(s.mk, k); s.mg[m.mode] = (s.mg[m.mode] | 0) + 1;
+  if (HEROES[m.hero]) { const h = m.hero; s.hg[h] = (s.hg[h] | 0) + 1; s.hk[h] = (s.hk[h] | 0) + k; s.hb[h] = Math.max(s.hb[h] | 0, k); if (m.win) s.hn[h] = (s.hn[h] | 0) + 1; }      // per character: games, kills, best kills, wins (the character screen and the profile card show them)
   if (m.win) { s.w++; s.mw[m.mode] = (s.mw[m.mode] | 0) + 1; if (HEROES[m.hero]) s.hw[m.hero] = 1; if (m.mode === 'team' && !m.deaths) s.nd++; if (m.mode === 'solo' && m.n > 1 && k >= m.n - 1) s.sa++; }
   if (achScan()) achSync(true);
   saveCos(); questUi();
@@ -291,30 +390,43 @@ function renderAch(got) {
   box.scrollTop = got === undefined ? 0 : keep;
   showGot(document.getElementById('questGot'), got); questUi();
 }
-function questTab(ach) {
-  document.getElementById('qTabD').classList.toggle('on', !ach); document.getElementById('qTabA').classList.toggle('on', !!ach);
-  document.getElementById('questList').hidden = !!ach; document.getElementById('achList').hidden = !ach;
-  if (ach) { renderAch(); achSync(); } else renderQuests();
+let qTab = 'd';
+function questTab(t) {      // 'd' daily (with the attendance strip) · 'w' weekly · 'a' achievements
+  t = t === true ? 'a' : t || 'd'; qTab = t;
+  for (const [id, k] of [['qTabD', 'd'], ['qTabW', 'w'], ['qTabA', 'a']]) { const el = document.getElementById(id); if (el) el.classList.toggle('on', k === t); }
+  document.getElementById('questList').hidden = t === 'a'; document.getElementById('achList').hidden = t !== 'a';
+  if (t === 'a') { renderAch(); achSync(); } else renderQuests();
 }
 const dqOpen = () => { const st = dqState(); return dqList(st.d).some((q, i) => st.p[i] >= q.n && !st.c[i]); };
 function questUi() {
   const n = document.getElementById('questN'), dot = document.getElementById('questDot'); if (!n) return;
   const st = dqState(), L = dqList(st.d);
-  n.textContent = L.filter((q, i) => st.p[i] >= q.n).length + '/3'; dot.hidden = !(L.some((q, i) => st.p[i] >= q.n && !st.c[i]) || achOpen());
+  n.textContent = L.filter((q, i) => st.p[i] >= q.n).length + '/3'; dot.hidden = !(L.some((q, i) => st.p[i] >= q.n && !st.c[i]) || achOpen() || wqOpen() || attOpen());
   const ad = document.getElementById('achDot'); if (ad) ad.hidden = !achOpen();
+  const wd = document.getElementById('wqDot'); if (wd) wd.hidden = !wqOpen();
 }
 function renderQuests(got) {
-  const st = dqState(), box = document.getElementById('questList'); box.textContent = '';
-  dqList(st.d).forEach((q, i) => {
+  const wk = qTab === 'w', st = wk ? wqState() : dqState(), box = document.getElementById('questList'); box.textContent = '';
+  if (!wk) {      // attendance: seven days in a row, today's one glows
+    const a = attSt(), open = attOpen(), done = open ? a.n % 7 : (a.n - 1) % 7 + 1, row = document.createElement('div'); row.className = 'attRow';
+    ATT.forEach((r, i) => {
+      const b = document.createElement('button'), d = document.createElement('small'); b.type = 'button'; b.className = 'attDay' + (i < done ? ' took' : open && i === done ? ' now' : ''); b.disabled = !(open && i === done);
+      d.textContent = i + 1; b.append(d, rewardIcon(r[0])); if (r[1]) b.append(String(r[1])); b.setAttribute('aria-label', (i + 1) + '일째 출석 보상');
+      if (open && i === done) b.addEventListener('click', () => renderQuests(attTake() || null));
+      row.append(b);
+    });
+    box.append(row);
+  }
+  (wk ? wqList(st.d) : dqList(st.d)).forEach((q, i) => {
     const row = document.createElement('div'), t = document.createElement('span'), bar = document.createElement('div'), fill = document.createElement('i'), num = document.createElement('span'), rw = document.createElement('button');
     const p = Math.min(q.n, +st.p[i] || 0), done = p >= q.n, took = !!st.c[i];
     row.className = 'qRow' + (took ? ' took' : done ? ' done' : ''); t.className = 'qTxt'; t.textContent = q.txt; bar.className = 'qBar'; fill.style.width = Math.round(p / q.n * 100) + '%'; num.textContent = p.toLocaleString('en-US') + ' / ' + q.n.toLocaleString('en-US'); bar.append(fill, num);
     rw.type = 'button'; rw.className = 'qRw'; rw.disabled = !done || took; rw.append(rewardIcon(q.rw[0])); if (q.rw[1]) rw.append(String(q.rw[1]));
     rw.setAttribute('aria-label', took ? '받음' : '보상 받기');
-    if (done && !took) rw.addEventListener('click', () => renderQuests(dqTake(i) || null));
+    if (done && !took) rw.addEventListener('click', () => renderQuests((wk ? wqTake(i) : dqTake(i)) || null));
     row.append(t, bar, rw); box.append(row);
   });
-  showGot(document.getElementById('questGot'), got);
+  showGot(document.getElementById('questGot'), got); questUi();
 }
 /* karma: 1 per kill, 3 per win; it only goes up */
 function addKarma(n) { COS.karma = Math.max(0, COS.karma + Math.round(n)); saveCos(); goldUi(); }
@@ -465,7 +577,7 @@ function cosEquipped(id) {
 function cosToggle(id) {
   const it = COSMETICS[id];
   if (cosLocked(id)) {
-    const p = skinPrice(id);
+    const p = cosPrice(id);
     if (COS.gold < p) { cosBuy = null; try { sfx(150, .12, 'square', .04); } catch (e) {} const el = document.getElementById('cos-' + id); if (el) { el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); } return; }
     if (cosBuy !== id) { cosBuy = id; renderCos(); return; }
     cosBuy = null; COS.own.push(id); COS.gold -= p; if (it.cat === 'skin') COS.skin[it.char] = id; else COS[COS_SLOT[it.cat]] = id; try { sfx(880, .18, 'triangle', .06); } catch (e) {}
@@ -482,10 +594,10 @@ function renderCos() {
   const tabs = document.getElementById('cosTabs'), grid = document.getElementById('cosGrid'), hint = document.getElementById('cosHint');
   tabs.textContent = '';
   for (const [k, nm] of COS_TABS) { const b = document.createElement('button'); b.type = 'button'; b.textContent = nm; b.setAttribute('aria-pressed', String(k === cosTab)); b.addEventListener('click', () => { cosTab = k; cosBuy = null; renderCos(); }); tabs.append(b); }
-  let ids = COS_IDS(cosTab);
+  let ids = COS_IDS(cosTab); const deal = cosTab === 'skin' ? dealIds().filter(id => !skinOwned(id)) : [];      // today's cheaper skins come first, under their own heading
   if (cosTab === 'skin') {      // every character's skins, the picked character first
     const order = [chosen, ...Object.keys(HEROES).filter(h => h !== chosen)];
-    ids = ids.filter(id => HEROES[COSMETICS[id].char]).sort((a, b) => order.indexOf(COSMETICS[a].char) - order.indexOf(COSMETICS[b].char) || skinPrice(a) - skinPrice(b));
+    ids = ids.filter(id => HEROES[COSMETICS[id].char]).sort((a, b) => deal.includes(b) - deal.includes(a) || order.indexOf(COSMETICS[a].char) - order.indexOf(COSMETICS[b].char) || skinPrice(a) - skinPrice(b));
   }
   else if (cosTab === 'bcol' || cosTab === 'name' || cosTab === 'kfx') ids = ids.slice().sort((a, b) => skinPrice(a) - skinPrice(b));
   goldUi();
@@ -495,18 +607,20 @@ function renderCos() {
   let grp = null;
   for (const id of ids) {
     const it = COSMETICS[id], b = document.createElement('button');
-    if (it.cat === 'skin' && it.char !== grp) { grp = it.char; const hd = document.createElement('h3'); hd.className = 'cosGrp'; hd.textContent = HEROES[grp].name; grid.append(hd); }
+    const g = deal.includes(id) ? '*' : it.char;
+    if (it.cat === 'skin' && g !== grp) { grp = g; const hd = document.createElement('h3'); hd.className = 'cosGrp' + (g === '*' ? ' deal' : ''); hd.textContent = g === '*' ? '오늘의 할인' : HEROES[g].name; grid.append(hd); }
     b.type = 'button'; b.className = 'cosCard'; b.id = 'cos-' + id; b.setAttribute('aria-pressed', String(cosEquipped(id)));
     const pv = document.createElement('div'); pv.className = 'cosPv';
     if (it.cat === 'emo') { pv.textContent = it.em; if (cosEquipped(id)) { const off = document.createElement('span'); off.className = 'cosOff'; off.textContent = '선택해제'; b.append(pv, off); } }
     else if (it.cat === 'kfx' || it.cat === 'pose') pv.textContent = it.icon || '';
     else if (it.cat === 'name') { pv.textContent = 'Aa'; pv.style.color = nameColorFor(id); pv.style.fontWeight = '700'; }
     else { const cv2 = document.createElement('canvas'); try { drawItemPreview(cv2, id, performance.now()); } catch (e) {} pv.append(cv2); }
-    const nm = document.createElement('span'); nm.textContent = it.name;
+    const nm = document.createElement('span'); nm.textContent = (deal.includes(id) ? HEROES[it.char].name + ' · ' : '') + it.name;
     b.append(pv, nm);
     if (cosLocked(id)) {
-      const pr = document.createElement('span'), co = document.createElement('i'), p = skinPrice(id);
+      const pr = document.createElement('span'), co = document.createElement('i'), p = cosPrice(id);
       pr.className = 'cosPrice' + (COS.gold < p ? ' poor' : ''); co.className = 'coin'; pr.append(co, cosBuy === id ? '구매 ' + p.toLocaleString('en-US') : p.toLocaleString('en-US'));
+      if (p < skinPrice(id) && cosBuy !== id) { const was = document.createElement('s'); was.textContent = skinPrice(id).toLocaleString('en-US'); pr.prepend(was); b.classList.add('deal'); }
       b.classList.add('lock'); if (cosBuy === id) b.classList.add('buy'); b.append(pr);
     }
     b.addEventListener('click', () => cosToggle(id));

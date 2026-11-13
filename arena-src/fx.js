@@ -403,7 +403,7 @@ function drawDarkVeil(dt) {            // trapped in an enemy's lump: the pictur
   g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(.6, 'rgba(0,0,0,.7)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(sx, sy, r, 0, 7); c.fill();
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(kdVeilCv, 0, 0); ctx.restore();
 }
-function drawScreenVeil() { const now = performance.now(), dt = Math.min(.05, (now - (drawScreenVeil.last || now)) / 1000); drawScreenVeil.last = now; drawDarkVeil(dt); drawHurtVignette(now); }
+function drawScreenVeil() { const now = performance.now(), dt = Math.min(.05, (now - (drawScreenVeil.last || now)) / 1000); drawScreenVeil.last = now; drawDarkVeil(dt); drawHurtVignette(now); drawUltSparks(now); }
 function drawZoneArt(z, menu) {       // tail.js asks this for every zone first; true = drawn here
   if ((z.kind === 'sprout' || z.kind === 'vine') && typeof drawGardenZone === 'function') return drawGardenZone(z);      // (정원사: gardener.js)
   if (z.col === '#9a4cff' && !z.kind) { drawDarkLump(z); return true; }
@@ -445,7 +445,7 @@ function drawKanWings(now) {           // 칸's ultimate: two wings of quetzal f
 }
 function drawBuffAuras(dt) {
   const now = performance.now(), T = now / 1000, menu = state === 'menu';
-  drawMuzzles(); drawImpacts(); doveFeathers(dt); predictHits(); deathWatch(); drawHaraldAxes(now); drawLeapCracks(now); bombFrame(); mkCheck(); hatPops();
+  drawMuzzles(); drawUltRings(now); ultSparkWatch(dt); flagWatch(); drawImpacts(); doveFeathers(dt); predictHits(); deathWatch(); drawHaraldAxes(now); drawLeapCracks(now); bombFrame(); mkCheck(); hatPops();
   for (const f of fighters) { if (f && !f.dead && !f.minion && f.st && f.st.pz && (menu || (visibleTo(f, VIEW) && !bushAt(f.x, f.y)))) drawPizarroAura(f, now); }
   for (const f of fighters) {
     const a = f && f.fxAura; if (!a || f.minion) continue;
@@ -746,4 +746,78 @@ function ultPunch(e) {                  // every ultimate: a hard shake and a de
   if (typeof shakeFrom === 'function') shakeFrom(e.x, e.y, mine ? 9 : 4, 900);
   snd({ n: mine ? .12 : .06, nt: 'lowpass', nf: 1200, nd: .35, b: mine ? .28 : .12, bf: 220, be: 40, bd: .45, bt: 'triangle' });
   if (mine) buzz(40);
+}
+
+/* ---------- 궁극기 ready: a turning dotted ring at the feet (mine and my team's), and every hit sends a spark flying into the ultimate button ---------- */
+function drawUltRings(now) {
+  if (state !== 'play') return;
+  for (const f of fighters) {
+    if (!f || f.dead || f.minion || f.ucd > 0 || f.team !== VIEW || f.form === 'gone') continue;
+    if (f !== player && NET.role === 'guest') continue;           // a guest only knows its own charge
+    if (!visibleTo(f, VIEW)) continue;
+    const x = f.x, y = f.y + 16, p = .5 + .5 * Math.sin(now / 160);
+    ctx.save();
+    ctx.globalAlpha = .18 + .1 * p; ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.ellipse(x, y, 34, 13, 0, 0, 7); ctx.fill();
+    ctx.globalAlpha = .95; ctx.strokeStyle = '#ffd34d'; ctx.lineWidth = 3; ctx.setLineDash([7, 6]); ctx.lineDashOffset = -now / 40;
+    ctx.beginPath(); ctx.ellipse(x, y, 34 + p * 2, 13 + p, 0, 0, 7); ctx.stroke();
+    ctx.restore();
+  }
+}
+const USP = []; let uPrev = null, uBtnPulse = 0;
+function ultSparkWatch(dt) {           // the charge jumps (a basic attack landed): fly a spark from me to the button
+  if (state !== 'play' || !player || player.dead) { uPrev = null; return; }
+  const u = player.ucd;
+  if (uPrev !== null && uPrev - u > (dt || .016) * 1.5 + .05 && uPrev > 0) {
+    const b = document.getElementById('ultBtn'); if (b && !b.hidden && b.getClientRects().length) {
+      const r = b.getBoundingClientRect(), sx = (player.x - cam.x) * cam.s + W / 2, sy = (player.y + BODY - cam.y) * cam.s + H / 2;
+      const n = lowFx() ? 1 : 3; for (let i = 0; i < n; i++) USP.push({ x0: sx + RND(-12, 12), y0: sy + RND(-12, 12), x1: r.left + r.width / 2, y1: r.top + r.height / 2, cx: sx + RND(-140, 140), cy: sy - RND(60, 180), t0: performance.now() + i * 50, d: RND(340, 460), full: u <= 0 });
+    }
+  }
+  uPrev = u;
+}
+function drawUltSparks(now) {
+  if (!USP.length) return;
+  ctx.save(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.globalCompositeOperation = 'lighter';
+  for (let i = USP.length - 1; i >= 0; i--) {
+    const q = USP[i], t = (now - q.t0) / q.d; if (t < 0) continue;
+    if (t >= 1) { USP.splice(i, 1); const b = document.getElementById('ultBtn'); if (b && b.animate && now - uBtnPulse > 90) { uBtnPulse = now; b.animate([{ transform: 'scale(1.14)', filter: 'brightness(1.6)' }, { transform: 'scale(1)', filter: 'brightness(1)' }], { duration: 220, easing: 'ease-out' }); } continue; }
+    const e = t * t * (3 - 2 * t), m = 1 - e;
+    for (let k = 0; k < 4; k++) {          // the spark and a short fading tail
+      const tt = Math.max(0, e - k * .04), mm = 1 - tt, x = mm * mm * q.x0 + 2 * mm * tt * q.cx + tt * tt * q.x1, y = mm * mm * q.y0 + 2 * mm * tt * q.cy + tt * tt * q.y1, r = (6 - k * 1.3) * (q.full ? 1.3 : 1);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r * 2.2); g.addColorStop(0, 'rgba(255,248,210,' + (1 - k * .22) + ')'); g.addColorStop(.4, 'rgba(255,211,77,' + (.8 - k * .18) + ')'); g.addColorStop(1, 'rgba(255,211,77,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 2.2, 0, 7); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+/* ---------- 캡쳐 플래그: grabbing the enemy flag or scoring with it gets a big banner with the carrier's name and team-coloured fireworks ---------- */
+let flagPrev = null, flagEl = null;
+function flagWatch() {
+  if (state !== 'play' || !FLAGS.length) { flagPrev = null; return; }
+  const cur = FLAGS.map(g => g.by), sc = score ? score.slice() : [];
+  if (flagPrev && flagPrev.by.length === cur.length) {
+    cur.forEach((by, t) => {
+      const was = flagPrev.by[t];
+      if (by >= 0 && was < 0 && fighters[by]) flagShow(fighters[by], false);
+      else if (by < 0 && was >= 0 && FLAGS[t].home && fighters[was] && sc[fighters[was].team] > (flagPrev.sc[fighters[was].team] || 0)) flagShow(fighters[was], true);
+    });
+  }
+  flagPrev = { by: cur, sc };
+}
+function flagShow(f, scored) {
+  mkEnsure();
+  if (!flagEl) { flagEl = document.createElement('div'); flagEl.id = 'multiKillBig'; flagEl.style.top = '22%'; document.body.append(flagEl); }
+  const c = TC(f.team), name = f.nick || (f.h0 && f.h0.name) || f.h.name || '';
+  const vw = Math.min(innerWidth, innerHeight * 1.8), px = Math.round((scored ? 86 : 64) * Math.min(1, vw / 900));
+  flagEl.className = ''; flagEl.style.fontSize = Math.max(32, px) + 'px'; flagEl.style.color = c; flagEl.style.textShadow = '0 0 18px ' + c + ', 0 0 44px ' + c + ', 0 4px 0 rgba(0,0,0,.6)';
+  flagEl.textContent = scored ? '득점!' : '깃발 획득!'; const sub = document.createElement('div'); sub.className = 'mkSub'; sub.textContent = name; flagEl.append(sub);
+  void flagEl.offsetWidth; flagEl.classList.add('show'); clearTimeout(flagEl._t); flagEl._t = setTimeout(() => flagEl.classList.remove('show'), 2200);
+  const x0 = f.x, y0 = f.y + BODY, N = lowFx() ? 2 : scored ? 6 : 3;
+  for (let k = 0; k < N; k++) setTimeout(() => {      // fireworks: bursts popping around the carrier, team colour and white
+    const x = x0 + RND(-120, 120), y = y0 - RND(40, 160), cols = [c, '#ffffff', c];
+    addP({ x, y, life: .25, color: '#ffffff', shape: 'flash', size: 60 });
+    addP({ x, y, life: .5, color: c, shape: 'ring', r0: 6, r1: 70, lw: 4 });
+    for (let i = 0; i < (lowFx() ? 10 : 22); i++) { const a = i / 22 * 6.283, sp = RND(160, 300); addP({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: 2.2, grav: 160, life: RND(.6, 1), size: RND(2, 3.4), color: cols[i % 3], shape: 'dot' }); }
+    try { sfx(scored ? 880 : 660, .16, 'triangle', .05, 1.4); } catch (e) { }
+  }, k * 160);
 }
