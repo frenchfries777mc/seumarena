@@ -87,7 +87,7 @@ function addText(o) { texts.push(o); evt(['t', Math.round(o.x), Math.round(o.y),
 function addPart(p) { parts.push(p); evt(['p', Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy), +p.life.toFixed(2), p.color, +(p.r || 3).toFixed(1)]); }
 const OT_MAX = 60;       // sudden-death overtime when the clock runs out level: first kill wins, a draw if nobody scores within this many seconds
 const STAT_X = 10;       // every hp and every damage/heal/shield number written in the kits is multiplied by this (damage() and heal() do it, so kit code keeps the original small numbers)
-const WIN_SCORE = 10, MATCH_TIME = 150, MAX_HP = 600, ULT_CD = 45, CD1 = 5, CD2 = 10, DASH_D = 3.2 * T, SPEED = 205;
+const WIN_SCORE = 10, MATCH_TIME = 150, MAX_HP = 600, ULT_CD = 45, ULT_KILL = 10, CD1 = 5, CD2 = 10, DASH_D = 3.2 * T, SPEED = 205;
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -346,14 +346,17 @@ function damage(e, dmg, by, o) {
   if (e.dead || !(dmg > 0)) return 0;
   if (!o.px) { dmg *= STAT_X; const ow = by && (by.minion ? by.by : by); if (ow && ow.h && ow.h.xm) dmg *= ow.h.xm; }   // o.px: already in scaled units (re-entry from onDmg / onDeal) · h.xm = per-hero damage multiplier (balance knob, kits2.js DMG_MUL)
   if (by && !by.minion && !o.raw) dmg *= V(by, 'dmg', 1);
+  { const ow = by && (by.minion ? by.by : by); if (ow && hasGear(ow, 'back') && gearBehind(ow)) dmg *= 1.08; }      // gear (gear.js)
   if (e.minion) { if (e.onDmg) return e.onDmg(e, dmg, by, o); e.hp -= dmg; if (e.hp <= 0) { e.dead = true; burst(e.x, e.y + BODY, '#cfd3dc', 10, 200); } return dmg; }
   if (e.inv > 0 || B(e, 'inv')) return 0;
   if (e.h.onHurt) { const r = e.h.onHurt(e, dmg, by, o); if (r === 0) return 0; if (r > 0) dmg = r; }
   dmg *= V(e, 'dr', 1) * (B(e, 'expose') ? 1.1 : 1);
+  if (e.st.gBand > time) dmg *= .7; if (!by && hasGear(e, 'lava') && /용암|분출|안전 구역/.test(o.src || SRC || '')) dmg *= .6;      // gear (gear.js)
   if (e.h.resist && o.el) dmg *= .7;
   if (e.shield > 0) { const a = Math.min(e.shield, dmg); e.shield -= a; dmg -= a; if (e.shield <= 0 && e.onShieldBreak) { const fn = e.onShieldBreak; e.onShieldBreak = null; fn(e); } if (dmg <= 0) return 0; }
-  e.hp -= dmg; e.lastHit = time; e.recent.push([time, dmg / STAT_X]); e.taken = (e.taken || 0) + dmg;
+  e.hp -= dmg; if (e.hp > 0 && e.hp < e.mhp * .3 && hasGear(e, 'band') && !e.st.gBand) e.st.gBand = time + 2; e.lastHit = time; e.recent.push([time, dmg / STAT_X]); e.taken = (e.taken || 0) + dmg;
   ultCharge(by, e, o);
+  { const ow = by && (by.minion ? by.by : by); if (ow && ow !== e && ow.h && ow.team !== e.team) e.lastAtk = { f: ow, t: time }; }
   e.lastDmg = { src: o.src || SRC || (o.basic ? '기본 공격' : '패시브'), t: time };
   if (by && by !== e) { by.dealt = (by.dealt || 0) + dmg; if (!by.minion && by.h.onDeal) by.h.onDeal(by, e, dmg, o); }
   if (o.quiet) { e.acc += dmg; if (e.acc >= 8 * STAT_X) { addText({ x: e.x + rnd(-10, 10), y: e.y - 70, txt: String(Math.round(e.acc)), life: .6, color: '#ffb347' }); e.acc = 0; } }
@@ -461,13 +464,14 @@ function setup(withPlayer, humans) {
   curMode = modeOf(modeChoice).id; const MODE = modeNow(); RD = { n: 1, pause: 0, win: -1, out: [] }; SZ.on = false; FLAGS = [];
   loadMap(mapChoice < 0 || !MODE.maps.includes(mapChoice) ? pick(MODE.maps) : mapChoice);
   fighters = []; bullets = []; parts = []; texts = []; rings = []; zones = []; minions = []; timers = []; strikes = []; score = new Array(MODE.teams).fill(0); timeLeft = MODE.time; overtime = false; otT = 0; player = null; VIEW = 0;
-  humans = humans || (withPlayer ? [{ hero: chosen, lo: loadoutOf(chosen), local: true, cos: myCos(chosen), name: PROF.name }] : []);
+  humans = humans || (withPlayer ? [{ hero: chosen, lo: loadoutOf(chosen), gear: myGear(chosen), local: true, cos: myCos(chosen), name: PROF.name }] : []);
   const per = MODE.per, nt = MODE.teams, grid = Array.from({ length: nt }, () => new Array(per).fill(null)), ORDER = per === 3 ? [1, 0, 2] : [...Array(per).keys()];
   humans.forEach((h, i) => { grid[i % nt][ORDER[Math.floor(i / nt)]] = h; });
   const used = new Set(humans.map(h => h.hero)), pool = ROSTER.filter(k => !used.has(k)).sort(() => Math.random() - .5);
   for (let team = 0; team < nt; team++) for (let i = 0; i < per; i++) {
     const hm = grid[team][i];
     const f = makeFighter(team, per === 1 ? 1 : i, hm ? hm.hero : pool.pop(), !!(hm && hm.local), hm && hm.lo, hm && hm.cos, hm && hm.name);
+    f.gear = hm ? cleanGear(hm.gear) : [];
     if (hm) { f.human = true; if (hm.local) player = f; if (hm.remote) { f.remote = hm.remote; f.netIn = null; hm.remote.f = f; hm.remote.fi = fighters.length; } }
     fighters.push(f);
   }
@@ -503,7 +507,7 @@ function useSkill(f, i) {
   if (state === 'play' && (f.isPlayer || visibleTo(f, VIEW))) sfx(def.k === 'buff' ? 520 : def.k === 'move' ? 380 : 260, .16, 'triangle', .05, 1.6);
   return true;
 }
-function skillCd(f, i) { const def = f.sk[i]; let cd = i === 0 ? (def.cd1 || CD1) : CD2; if (f.h.cdMul) cd *= f.h.cdMul(f); return cd; }
+function skillCd(f, i) { const def = f.sk[i]; let cd = i === 0 ? (def.cd1 || CD1) : CD2; if (f.h.cdMul) cd *= f.h.cdMul(f); if (i === 1 && hasGear(f, 'sk2')) cd *= .88; return cd; }
 function useUlt(f) {
   const u = f.h.ult;
   if (f.ucd > 0 || !canAct(f) || B(f, 'charm') || f.noSkill) return false;
@@ -515,7 +519,7 @@ function useUlt(f) {
   if (state === 'play') sfx(220, .35, 'sawtooth', .06, 3);
   return true;
 }
-function dashCdOf(f) { return f.h.dashCd ? f.h.dashCd(f) : 1.5; }
+function dashCdOf(f) { return (f.h.dashCd ? f.h.dashCd(f) : 1.5) * (hasGear(f, 'dash') ? .85 : 1); }
 function tryDash(f, dx, dy) {
   if (f.dcd > 0 || !canAct(f) || B(f, 'root') || f.form === 'sub' || (!dx && !dy)) return false;
   f.dash = { t: .16, dx, dy, v: DASH_D / .16 }; f.dcd = dashCdOf(f); f.lastDash = time;
@@ -524,6 +528,9 @@ function tryDash(f, dx, dy) {
   return true;
 }
 function kill(e, by) {
+  // 2026-11-12 (user): a death with no enemy killer (safe zone, lava, vents, self) goes to the last enemy who hit them within 5 s
+  if ((!by || by === e || !by.h) && e.lastAtk && time - e.lastAtk.t <= 5 && fighters.includes(e.lastAtk.f)) by = e.lastAtk.f;
+  e.lastAtk = null;
   if (e.h.onDeath) e.h.onDeath(e);
   const ki = by && by !== e ? fighters.indexOf(by) : -1, src = e.lastDmg && time - e.lastDmg.t < .6 ? e.lastDmg.src : '패시브';
   e.killer = { i: ki, src }; fxPlay('killinfo', fighters.indexOf(e), ki, src);
@@ -534,6 +541,7 @@ function kill(e, by) {
   fxAt(e, 'death', { color: TC(e.team) });
   if (by && by !== e) {
     by.kos++; if (by.h.onKill) by.h.onKill(by, e);
+    if (by.ucd > 0) by.ucd = Math.max(0, by.ucd - ULT_KILL - (hasGear(by, 'ult') ? 4 : 0));      // 2026-11-12 (user): a kill refills the ult by ULT_KILL seconds
     if (by.cos && by.cos.kfx) fxPlay('kfx', by.cos.kfx, Math.round(e.x), Math.round(e.y + BODY), Math.round(e.y + 16), bodyColor(e.cos, TC(e.team)));
     if (!by.human && Math.random() < .3) later(.4, () => doEmote(by, pick([0, 1, 4, 5])), by);
   }
@@ -653,7 +661,24 @@ function ai0(f, dt) {
 }
 
 /* ---------- player ---------- */
-function autoAim(f) { const e = nearest(f, Math.max((f.h.range || 300) * 1.15, 4 * T), null, 0, false); return e ? angTo(f, e) : f.aim; }
+function autoAim(f) {       // phone tap: aim at the nearest enemy, leading a moving target for shots (2026-11-12: plain aim missed anyone walking)
+  const e = nearest(f, Math.max((f.h.range || 300) * 1.15, 4 * T), null, 0, false); if (!e) return f.aim;
+  return leadAng(f, e);
+}
+function leadAng(f, e) {
+  if (f.h.type === 'melee' || e.minion) return angTo(f, e);
+  const spd = f.h.bspd || 800, vx = clamp(e.vx || 0, -600, 600), vy = clamp(e.vy || 0, -600, 600);
+  let t = Math.hypot(e.x - f.x, e.y - f.y) / spd; for (let k = 0; k < 2; k++) t = Math.hypot(e.x + vx * t - f.x, e.y + vy * t - f.y) / spd;
+  t = Math.min(t, .8) * .85; return Math.atan2(e.y + vy * t - f.y, e.x + vx * t - f.x);
+}
+/* PC aim assist (2026-11-12, user: shooting while moving misses): the camera follows me, so while I walk the cursor slides off the enemy
+   I pointed at. A visible enemy within 52 px of the cursor pulls the aim onto itself (leading it if it moves). */
+function pcAssist(f, wx, wy) {
+  if (f.h.type === 'melee') return null;
+  let best = null, bd = 52;
+  for (const e of fighters) { if (e.dead || e.team === f.team || !visibleTo(e, f.team)) continue; const d = Math.hypot(e.x - wx, e.y - wy); if (d < bd) { bd = d; best = e; } }
+  return best;
+}
 function readLocal(f) {       // what this screen's controls say right now, for the fighter it drives (its own, or a puppet)
   let mx = 0, my = 0;
   if (keys.KeyW || keys.ArrowUp) my -= 1;
@@ -673,6 +698,7 @@ function readLocal(f) {       // what this screen's controls say right now, for 
   } else {
     const wx = (mouse.x - W / 2) / cam.s + cam.x, wy = (mouse.y - H / 2) / cam.s + cam.y;
     aim = Math.atan2(wy - (f.y + BODY), wx - f.x); tx = wx; ty = wy - BODY;
+    const ae = pcAssist(f, wx, wy - BODY); if (ae) { aim = leadAng(f, ae); const dl = Math.hypot(wx - f.x, wy - BODY - f.y); tx = f.x + Math.cos(aim) * dl; ty = f.y + Math.sin(aim) * dl; }
   }
   if (pendingFire && pendingFire.len != null && f.h.splash && f.h.w.shape === 'bomb') { const dl = clamp(pendingFire.len, .3, 1) * f.h.range; tx = f.x + Math.cos(pendingFire.ang) * dl; ty = f.y + Math.sin(pendingFire.ang) * dl; }      // phone: the drag length sets the bomb's distance
   if (mouseRel) { mouseRel = false; if (!f.h.fireHeld && !touchMode) pendingFire = { ang: aim }; }      // PC: the basic attack goes out when the button is released, towards the cursor
@@ -703,7 +729,7 @@ const driven = () => (player && player.st.ctrl && !player.st.ctrl.dead && B(play
 
 /* ---------- update ---------- */
 /* walking speed with every modifier (net.js uses the same function to predict a guest's own movement) */
-function moveSpeed(f) { const h = f.h; return SPEED * V(f, 'haste', 1) * V(f, 'slow', 1) * V(f, 'pad', 1) * (B(f, 'infect') ? .9 : 1) * (h.spd ? h.spd(f) : 1) * (carrying(f) ? .85 : 1); }
+function moveSpeed(f) { const h = f.h; return SPEED * V(f, 'haste', 1) * V(f, 'slow', 1) * V(f, 'pad', 1) * (B(f, 'infect') ? .9 : 1) * (h.spd ? h.spd(f) : 1) * (carrying(f) && !hasGear(f, 'flag') ? .85 : 1); }
 function updateFighter(f, dt) {
   if (f.dead) { if (!modeNow().respawn) return; f.respawnT -= dt; if (f.respawnT <= 0) respawn(f); return; }
   const h = f.h;
@@ -1083,8 +1109,8 @@ function envReset() { GALE.until = 0; const e = MAPS[curMap].env || {}; envNext.
 function padStep(f, dt) {
   if (f.minion || flying(f)) return;
   const t = tileAt(f.x, f.y);
-  if (t === 'p') { if (!B(f, 'pad')) burst(f.x, f.y + 16, '#c6ff3d', 6, 150); buff(f, 'pad', .9, 1.5); f.padT = 0; }
-  else if (t === 'h') { f.padT = (f.padT || 0) + dt; if (f.padT >= .5) { f.padT -= .5; if (f.hp < f.mhp) withSrc('치유 패드', () => heal(f, f.mhp * .025 / STAT_X)); } }
+  if (t === 'p') { if (!B(f, 'pad')) burst(f.x, f.y + 16, '#c6ff3d', 6, 150); buff(f, 'pad', .9, hasGear(f, 'pad') ? 1.8 : 1.5); f.padT = 0; }
+  else if (t === 'h') { f.padT = (f.padT || 0) + dt; if (f.padT >= .5) { f.padT -= .5; if (f.hp < f.mhp) withSrc('치유 패드', () => heal(f, f.mhp * .025 / STAT_X * (hasGear(f, 'pad') ? 1.6 : 1))); } }
   else f.padT = 0;
 }
 function envStep(dt) {
