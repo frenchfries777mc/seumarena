@@ -357,6 +357,7 @@ function modeApply() {
   if (mapChoice >= 0 && !modeMaps().includes(mapChoice)) mapChoice = -1;
 }
 try { const s = JSON.parse(localStorage.getItem('seumArena') || '{}'); if (HEROES[s.c]) chosen = s.c; if (s.m >= -1 && s.m < MAPS.length) mapChoice = s.m | 0; if (s.l && typeof s.l === 'object') loadouts = s.l; if (typeof s.g === 'string') modeSel = s.g; if (s.mm && typeof s.mm === 'object') mapByMode = s.mm; } catch (e) {}
+if (!unlocked(chosen)) chosen = UNLOCK_START[0];      // a locked character can not be the pick (gear.js)
 const savePrefs = () => { mapByMode[modeSel] = mapChoice; try { localStorage.setItem('seumArena', JSON.stringify({ c: chosen, m: mapChoice, l: loadouts, g: modeSel, mm: mapByMode })); } catch (e) {} if (typeof cloudMark === 'function') cloudMark(); };
 const KIND_LABEL = { melee: '근접', shot: '원거리', flame: '방사', cone: '흡입' }, SK_LABEL = { hit: '공격', move: '이동', buff: '강화' };
 function attackText(h) {
@@ -443,7 +444,7 @@ function buildChars() {
   markSel(); markMastery();
 }
 /* every card of the list: mastery rank with its bar */
-function markMastery() { for (const el of $('weaponGrid').children) { const m = masteryOf(el.dataset.wid); el.style.setProperty('--mc', m.col); el.querySelector('.wm b').textContent = m.name; el.querySelector('.wmBar i').style.width = Math.round(m.into / m.need * 100) + '%'; } }
+function markMastery() { for (const el of $('weaponGrid').children) { const m = masteryOf(el.dataset.wid); el.style.setProperty('--mc', m.col); el.querySelector('.wm b').textContent = m.name; el.querySelector('.wmBar i').style.width = Math.round(m.into / m.need * 100) + '%'; } markLocks(); }
 function markSel() { for (const el of $('weaponGrid').children) el.classList.toggle('sel', el.dataset.wid === chosen); }
 function renderLoadout(id) {
   const h = HEROES[id], box = $('weaponLoadout'), lo = loadoutOf(id); box.textContent = '';
@@ -477,9 +478,11 @@ function openDetail(id) {
     const m = masteryOf(id), row = document.createElement('div'), nm = document.createElement('b'), bar = document.createElement('span'), fl = document.createElement('i'), num = document.createElement('small');
     row.className = 'mRow'; row.style.setProperty('--mc', m.col); nm.textContent = m.name; fl.style.width = Math.round(m.into / m.need * 100) + '%'; bar.className = 'mBar'; bar.append(fl); num.textContent = m.top ? m.mp.toLocaleString('en-US') : m.into + ' / ' + m.need;
     row.append(nm, bar, num); d.prepend(row);
+    const st = achSt(), rec = line('기록', (st.hg[id] | 0) + '판 · ' + (st.hn[id] | 0) + '승 · ' + (st.hk[id] | 0).toLocaleString('en-US') + '킬 · 최고 ' + (st.hb[id] | 0) + '킬'); rec.className = 'mRec'; row.after(rec);      // this character's own numbers (social.js achMatch counts them)
   }
   renderLoadout(id);
   $('weaponLockBtn').textContent = id === chosen ? '확인' : '이 캐릭터로 정하기'; $('weaponLockBtn').disabled = false;
+  gearPick = null; renderGear(id);
   $('weaponScreen').scrollTop = 0;
 }
 function closeDetail() { viewing = null; $('weaponScreen').classList.remove('wDetail'); }
@@ -487,7 +490,7 @@ $('weaponSearch').addEventListener('input', e => {
   const q = e.target.value.trim().toLowerCase();
   for (const el of $('weaponGrid').children) { const h = HEROES[el.dataset.wid]; el.style.display = (!q || (h.name + ' ' + h.wname + ' ' + h.id).toLowerCase().includes(q)) ? '' : 'none'; }
 });
-$('weaponLockBtn').addEventListener('click', () => { chosen = viewing; savePrefs(); markSel(); closeDetail(); showScreen('menuScreen'); });
+$('weaponLockBtn').addEventListener('click', () => { if (!unlocked(viewing)) { if (unlockBuy(viewing)) { markMastery(); openDetail(viewing); } return; } chosen = viewing; savePrefs(); markSel(); closeDetail(); showScreen('menuScreen'); });
 $('weaponBackListBtn').addEventListener('click', closeDetail);
 $('weaponBrowseBackBtn').addEventListener('click', () => { closeDetail(); showScreen('menuScreen'); });
 $('goCharBtn').addEventListener('click', () => { showScreen('weaponScreen'); openDetail(chosen); });       // one button: the picked character's skills first, the list one tap away
@@ -636,8 +639,10 @@ $('modePickBtn').addEventListener('click', modePick);
 $('modeBackBtn').addEventListener('click', () => showScreen('menuScreen'));
 $('karma').addEventListener('click', () => { showScreen('karmaScreen'); renderKarma(); });
 $('karmaBackBtn').addEventListener('click', () => showScreen('menuScreen'));
-$('quest').addEventListener('click', () => { showScreen('questScreen'); questTab(achOpen() && !dqOpen()); });
-$('qTabD').addEventListener('click', () => questTab(false)); $('qTabA').addEventListener('click', () => questTab(true));
+$('quest').addEventListener('click', () => { showScreen('questScreen'); questTab(attOpen() || dqOpen() ? 'd' : wqOpen() ? 'w' : achOpen() ? 'a' : 'd'); });
+$('qTabD').addEventListener('click', () => questTab('d')); $('qTabW').addEventListener('click', () => questTab('w')); $('qTabA').addEventListener('click', () => questTab('a'));
+for (const id of ['acctId', 'acctIcon']) $(id).addEventListener('click', () => { showScreen('profScreen'); renderProfile(); });
+$('profBackBtn').addEventListener('click', () => showScreen('menuScreen'));
 $('questBackBtn').addEventListener('click', () => showScreen('menuScreen'));
 $('mapBackBtn').addEventListener('click', () => showScreen('menuScreen'));
 
@@ -649,6 +654,31 @@ function enterPlay() {
   lobby.hidden = true; cv.classList.remove('inLobby'); showPlayUi(true);
 }
 function startMatch(humans) { setup(true, humans); enterPlay(); }
+/* the best fighter of the match, shown big for a moment before the result (head.html #mvpFx): the best of the winning team (of everyone on a draw), in solo the one left standing. A tap puts it away */
+const mvpVal = f => (f.kos || 0) * 100 + (f.dealt || 0) / (10 * SX) - (f.deaths || 0) * 30;
+function matchMvp(win, draw) {
+  const fs = fighters.filter(f => !f.minion && f.h0); if (fs.length < 2) return null;
+  if (curMode === 'solo') return state === 'play' ? null : fs.find(f => f.team === RD.win) || null;
+  const pool = draw ? fs : fs.filter(f => f.team === (win ? VIEW : 1 - VIEW)), m = pool.length ? pool.reduce((a, b) => mvpVal(b) > mvpVal(a) ? b : a) : null;
+  return m && mvpVal(m) > 0 ? m : null;
+}
+let mvpRun = 0, mvpTimer = 0;
+function mvpFx(win, draw) {
+  const fx = $('mvpFx'), f = matchMvp(win, draw), run = ++mvpRun; clearTimeout(mvpTimer); fx.classList.remove('out'); fx.hidden = !f; if (!f) return;
+  const cvs = fx.querySelector('canvas'), c = cvs.getContext('2d'), wid = f.h0.id, sk = skinOf(f.cos, wid), tint = sk ? COSMETICS[sk].tint : undefined, col = bodyColor(f.cos, f.team === VIEW ? TEAM[0] : TEAM[1]);
+  const nm = fx.querySelector('.mvName'); nm.textContent = f.nick || f.h0.name; nm.style.color = f === player ? '#ffd34d' : '';
+  fx.querySelector('.mvStat').textContent = (f.kos || 0) + '킬 · ' + Math.round(f.dealt || 0).toLocaleString('en-US');
+  const close = () => { if (run !== mvpRun) return; mvpRun++; clearTimeout(mvpTimer); fx.classList.add('out'); mvpTimer = setTimeout(() => { fx.hidden = true; fx.classList.remove('out'); }, 220); };
+  fx.onclick = close; mvpTimer = setTimeout(close, 2400);
+  [523, 659, 784, 1047].forEach((n, i) => setTimeout(() => { try { if (run === mvpRun) sfx(n, .2, 'triangle', .06); } catch (e) {} }, i * 110));
+  (function fr(now) {
+    if (run !== mvpRun) return;
+    c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cvs.width, cvs.height); c.translate(cvs.width / 2, cvs.height - 40); c.scale(2.7, 2.7);
+    c.shadowColor = col; c.shadowBlur = 10; c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 5; c.lineCap = 'round'; c.lineJoin = 'round';
+    try { drawWinPose(c, (f.cos && f.cos.pose) || 'pose_cheer', now / 1000, wid, tint); } catch (e) {}
+    requestAnimationFrame(fr);
+  })(performance.now());
+}
 /* result table: every fighter's kills/deaths and damage dealt; the MVP is the best fighter of the winning team (of everyone on a draw) */
 function buildOverStats(win, draw) {
   const box = $('overStats'); box.textContent = ''; box.classList.remove('noDmg');
@@ -687,7 +717,7 @@ function soloWatch(on) { lobby.hidden = on; cv.classList.toggle('inLobby', !on);
 function endGame(keepRunning) {
   if (keepRunning !== true) { state = 'over'; if (NET.role === 'guest' && NET.stats) applyMatchStats(NET.stats); hostEnd(); }
   if (soloOutShown) {      // this player already got the result screen (and the pay) when knocked out: now the match is really over, so the whole table is known
-    showPlayUi(false); buildOverStats(false, false); $('specBtn').hidden = true; soloWatch(false); return;
+    showPlayUi(false); buildOverStats(false, false); $('specBtn').hidden = true; soloWatch(false); mvpFx(false, false); return;
   }
   if (curMode === 'solo' && player && player.dead) soloOutShown = true;
   showPlayUi(false);
@@ -712,9 +742,9 @@ function endGame(keepRunning) {
   $('specBtn').hidden = !(soloOutShown && state === 'play'); $('specBack').hidden = true;
   lobby.hidden = false; cv.classList.add('inLobby'); showScreen('overScreen');
   emoteWheel(false); chatOpen(false);
-  winScreen(win, draw);
+  winScreen(win, draw); mvpFx(win, draw);
 }
-function toMenu() { netReset(); VIEW = 0; state = 'menu'; setup(false); showPlayUi(false); lobby.hidden = false; cv.classList.add('inLobby'); showScreen('menuScreen'); }
+function toMenu() { mvpRun++; $('mvpFx').hidden = true; netReset(); VIEW = 0; state = 'menu'; setup(false); showPlayUi(false); lobby.hidden = false; cv.classList.add('inLobby'); showScreen('menuScreen'); }
 $('startBtn').addEventListener('click', startOnline);
 $('againBtn').addEventListener('click', () => { netReset(); if (state !== 'menu') { VIEW = 0; state = 'menu'; setup(false); } startOnline(); });
 $('lobbyBtn').addEventListener('click', toMenu);
@@ -820,7 +850,7 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => lobb
 setTimeout(lobbyCharPlace, 60);
 for (let i = 0; i < 90; i++) step(.033);
 requestAnimationFrame(frame);
-window.__arena = { modes: MODE_LIST, ACHS, achMatch, achScan, achSt, renderAch, questTab, setAchRates(r) { achRates = r; }, dqList, dqMatch, dqState, renderQuests, goldUi, matchPay, masteryOf, levelOf, KARMA_ROAD, MASTERY, giveReward, COSMETICS, skinPrice, get COS() { return COS; }, get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
+window.__arena = { modes: MODE_LIST, ACHS, achMatch, achScan, achSt, renderAch, questTab, setAchRates(r) { achRates = r; }, dqList, dqMatch, dqState, renderQuests, wqList, wqState, attSt, attTake, dealIds, cosPrice, TITLES, renderProfile, renderCos, rewardFx, matchMvp, endGame, goldUi, matchPay, masteryOf, levelOf, KARMA_ROAD, MASTERY, giveReward, COSMETICS, skinPrice, get COS() { return COS; }, get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
   setChar(id) { chosen = id; }, setMap(i) { mapChoice = i; }, auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get PV() { return { sk: PV.sk, ult: PV.ult, dash: PV.dash }; }, get bullets() { return bullets; }, offline() { netReset(); startMatch(null); } };
 })();
 </script>
