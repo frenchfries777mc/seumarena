@@ -17,7 +17,7 @@ const PVS = {
   'bat:1': R('self', { r: 90 }), 'bat:2': R('line', { len: 512, w: 26 }), 'bat:3': R('dash', { len: 410, w: 44 }),
   'shuriken:1': R('dash', { len: 192, w: 30 }), 'shuriken:2': R('fan', { len: 384, half: .25, n: 5 }), 'shuriken:3': R('fan', { len: 320, half: .55, n: 5 }), 'shuriken:4': R('line', { len: 512, w: 26 }), 'shuriken:u': R('line', { len: 576, w: 26 }),
   'shotgun:1': R('self', { r: 120 }), 'shotgun:2': R('line', { len: 384, w: 36 }), 'shotgun:3': R('fan', { len: 422, half: .14, n: 5 }), 'shotgun:u': R('fan', { len: 352, half: .25, n: 5 }),
-  'rifle:1': R('pts', { pts: [[44, 1.2], [44, -1.2]], r: 26 }), 'rifle:2': R('ground', { max: 448, r: 80 }), 'rifle:4': R('ground', { max: 576, r: 66 }), 'rifle:5': R('self', { r: 110 }),
+  'rifle:u': R('ground', { max: 12 * T, r: 130 }), 'rifle:1': R('pts', { pts: [[44, 1.2], [44, -1.2]], r: 26 }), 'rifle:2': R('ground', { max: 448, r: 80 }), 'rifle:4': R('ground', { max: 576, r: 66 }), 'rifle:5': R('self', { r: 110 }),
   'smg:1': R('ground', { max: 448, r: 100 }), 'smg:2': R('ground', { max: 448, r: 120 }), 'smg:3': R('dash', { len: 141, w: 44 }), 'smg:u': R('wall', { d: 102, w: 192, th: 64 }),
   'gloves:1': R('arc', { len: 90, half: 1.2 }), 'gloves:3': R('arc', { len: 80, half: 1 }), 'gloves:4': R('arc', { len: 90, half: 1.4 }),
   'portalgun:1': R('ring'), 'portalgun:2': R('ground', { max: 320, r: 40 }), 'portalgun:3': R('bounce', { len: 1024, n: 6, w: 24 }), 'portalgun:4': R('ground', { max: 384, r: 95 }), 'portalgun:5': R('ring'), 'portalgun:u': R('ground', { max: 576, r: 34 }),

@@ -68,7 +68,7 @@ function netReset() {
   const shut = () => { for (const c of cs) try { c.close(); } catch (e) {} if (pr) try { pr.destroy(); } catch (e) {} };
   if (linger) setTimeout(shut, 600); else shut();      // give the last message time to leave before the connections go
   if (NET.hostConn) try { NET.hostConn.close(); } catch (e) {}
-  Object.assign(NET, { role: null, peer: null, conns: [], hostConn: null, members: [], phase: 'idle', rec: false, evs: [], room: -1, me: -1, waitEnd: 0, onRoomGone: null, heard: 0, ps: null, rtt: 0, tOff: null, jit: .02, delay: .1 });
+  Object.assign(NET, { role: null, peer: null, conns: [], hostConn: null, members: [], phase: 'idle', rec: false, evs: [], room: -1, me: -1, waitEnd: 0, onRoomGone: null, heard: 0, ps: null, rtt: 0, tOff: null, jit: .02, delay: .1, tok: null, rc: null, gone: [] }); netBadge(false);
   netOut = null; netSq = 0; inHist = [];
 }
 const newPeer = id => new Peer(id, Object.assign({ debug: 0 }, PEER_SERVER, PEERJS_ICE_CONFIG));
@@ -89,10 +89,13 @@ function startOnline() {
   showScreen('roomScreen');
   netSearch();
 }
-function netSearch() {
+function netSearch(again) {
   const tok = netToken;
   roomUi('방 찾는 중', '빈자리가 있는 방을 찾고 있어요');
-  if (typeof Peer === 'undefined') return netFallback('온라인 모듈을 불러오지 못했어요.');
+  if (typeof Peer === 'undefined') {      // PeerJS loads in the background (head.html): wait for it once, up to 8 s
+    if (!again && window.__peerLoad) { Promise.race([window.__peerLoad(), new Promise(r => setTimeout(r, 8000))]).then(() => { if (tok === netToken) netSearch(true); }); return; }
+    return netFallback('온라인 모듈을 불러오지 못했어요.');
+  }
   let p; try { p = newPeer(undefined); } catch (e) { return netFallback('온라인에 연결할 수 없어요.'); }
   NET.peer = p; NET.phase = 'search'; keepAlive(p);
   const to = setTimeout(() => { if (tok === netToken && NET.phase === 'search' && !p.open) netFallback('온라인 서버에 연결할 수 없어요.'); }, 7000);
@@ -116,7 +119,7 @@ function netProbeAll(tok) {
     let best = -1; R.forEach((r, k) => { if (r.s === 'avail' && (best < 0 || r.n > R[best].n)) best = k; });      // the fullest waiting room
     if (best < 0) return false;
     joining = best; const r = R[best];
-    try { r.c.send({ t: 'hello', lite: NET_LITE ? 1 : 0, mode: NET.mode, hero: chosen, lo: loadoutOf(chosen), gear: myGear(chosen), name: PROF.name, cos: myCos(chosen) }); } catch (e) { r.s = 'busy'; joining = -1; return false; }
+    try { r.c.send({ t: 'hello', lite: NET_LITE ? 1 : 0, mode: NET.mode, hero: chosen, lo: loadoutOf(chosen), name: PROF.name, cos: myCos(chosen) }); } catch (e) { r.s = 'busy'; joining = -1; return false; }
     r.jt = setTimeout(() => { if (alive() && joining === best) { r.s = 'busy'; joining = -1; decide(); } }, 4500);
     return true;
   };
@@ -145,7 +148,7 @@ function netProbeAll(tok) {
     });
     c.on('close', () => {
       if (tok !== netToken) return;
-      if (NET.hostConn === c) return hostLost();
+      if (NET.hostConn === c) return guestLink();
       if (!decided && (r.s === 'pend' || r.s === 'avail')) { r.s = 'busy'; if (joining === k) joining = -1; decide(); }
     });
   });
@@ -193,12 +196,24 @@ function hostAccept(c, tok) {
     } else if (m.t === 'hello') {
       if (NET.members.some(x => x.conn === c)) return;
       if (NET.phase !== 'wait' || hostN() >= NET.max || m.mode !== NET.mode || typeof m.hero !== 'string' || !Object.prototype.hasOwnProperty.call(HEROES, m.hero)) { try { c.send({ t: 'busy' }); } catch (e) {} setTimeout(() => { try { c.close(); } catch (e) {} }, 500); return; }
-      const mem = { conn: c, hero: m.hero, lo: Array.isArray(m.lo) ? m.lo : null, gear: cleanGear(m.gear), name: cleanName(m.name) || '게스트', cos: cleanCos(m.cos, m.hero), f: null, fi: -1, heard: performance.now(), inAt: 0, sq: 0, sqAt: 0, lite: !!m.lite, evq: [], mv: -1 };
+      const mem = { conn: c, hero: m.hero, lo: Array.isArray(m.lo) ? m.lo : null, name: cleanName(m.name) || '게스트', cos: cleanCos(m.cos, m.hero), f: null, fi: -1, heard: performance.now(), inAt: 0, sq: 0, sqAt: 0, lite: !!m.lite, evq: [], mv: -1 };
       NET.members.push(mem); NET.conns.push(c);
       if (NET.waitEnd - performance.now() < 5000) NET.waitEnd = performance.now() + 5000;      // someone just arrived: leave time for the next one to find the room too
-      c.send({ t: 'welcome', room: NET.room });
+      mem.tok = Math.random().toString(36).slice(2, 12); c.send({ t: 'welcome', room: NET.room, tok: mem.tok });
       hostLobby();
       if (hostN() >= NET.max) hostStart();
+    } else if (m.t === 'rejoin') {      // a guest whose connection broke comes back to its own fighter
+      const now = performance.now();
+      const old = typeof m.tok === 'string' && NET.members.find(x => x.tok === m.tok); if (old) hostDrop(old.conn, tok);      // the old link may still look open on this side
+      NET.gone = (NET.gone || []).filter(g => now - g.at < 60000);
+      const g = NET.phase === 'play' && state === 'play' && typeof m.tok === 'string' ? NET.gone.find(x => x.mem.tok === m.tok) : null;
+      if (!g || !g.mem.f || !fighters.includes(g.mem.f)) { try { c.send({ t: 'busy' }); } catch (e) {} setTimeout(() => { try { c.close(); } catch (e) {} }, 500); return; }
+      NET.gone = NET.gone.filter(x => x !== g);
+      const mem = Object.assign(g.mem, { conn: c, heard: now, inAt: 0, sq: 0, sqAt: 0, evq: [], mv: -1, lite: !!m.lite });
+      mem.f.remote = mem; mem.f.human = true; mem.f.netIn = null; mem.fi = fighters.indexOf(mem.f);
+      NET.members.push(mem); NET.conns.push(c); NET.rec = true; NET.rejoins = (NET.rejoins || 0) + 1;
+      const roster = fighters.map(f => ({ nm: f.nick, cos: f.cos, hu: f.human ? 1 : 0 }));
+      try { c.send({ t: 'start', re: 1, you: mem.fi, team: mem.f.team, map: curMap, mode: NET.mode, roster, tok: mem.tok }); } catch (e) {}
     } else if (m.t === 'in' || m.t === 'ping') {
       const mem = NET.members.find(x => x.conn === c); if (!mem) return;
       const now = performance.now(); mem.heard = now;
@@ -221,6 +236,7 @@ function hostDrop(c, tok) {
     try { c.close(); } catch (e) {}
     const mem = NET.members[i]; NET.members.splice(i, 1); NET.conns = NET.conns.filter(x => x !== c);
     if (mem.f) { mem.f.remote = null; mem.f.human = false; mem.f.netIn = null; }      // a player who left mid-match: a bot takes over the fighter
+    if (mem.f && mem.tok && NET.phase === 'play') (NET.gone || (NET.gone = [])).push({ mem, at: performance.now() });      // ...until the same player comes back (rejoin) within a minute
     if (NET.phase === 'wait') hostLobby();
     NET.rec = NET.members.length > 0 && state === 'play';
 }
@@ -232,11 +248,11 @@ function hostLobby() {
 function hostStart() {
   if (NET.phase !== 'wait') return;
   NET.phase = 'play';
-  const humans = (DED ? [] : [{ hero: chosen, lo: loadoutOf(chosen), gear: myGear(chosen), local: true, cos: myCos(chosen), name: PROF.name }]).concat(NET.members.map(m => ({ hero: m.hero, lo: m.lo, gear: m.gear, remote: m, cos: m.cos, name: m.name })));
+  const humans = (DED ? [] : [{ hero: chosen, lo: loadoutOf(chosen), local: true, cos: myCos(chosen), name: PROF.name }]).concat(NET.members.map(m => ({ hero: m.hero, lo: m.lo, remote: m, cos: m.cos, name: m.name })));
   startMatchIn(NET.mode, humans);
   if (!NET.members.length) { const p = NET.peer; NET.peer = null; NET.role = null; NET.phase = 'idle'; try { p.destroy(); } catch (e) {} return; }      // nobody came: the room closes, the match is offline
   NET.rec = true; NET.evs = []; snapAcc = 0; mapSentVer = -1;
-  const roster = fighters.map(f => ({ nm: f.nick, cos: f.cos, hu: f.human ? 1 : 0, gr: f.gear && f.gear.length ? f.gear : undefined }));
+  const roster = fighters.map(f => ({ nm: f.nick, cos: f.cos, hu: f.human ? 1 : 0 }));
   for (const m of NET.members) try { m.conn.send({ t: 'start', you: m.fi, team: m.f.team, map: curMap, mode: NET.mode, roster }); } catch (e) {}
 }
 const r1 = v => Math.round(v * 10) / 10, r2 = v => Math.round(v * 100) / 100, r3 = v => Math.round(v * 1000) / 1000;
@@ -305,7 +321,7 @@ function hostEnd() {
 
 /* guest */
 function becomeGuest(c, k, m) {
-  Object.assign(NET, { role: 'guest', hostConn: c, room: k, phase: 'joined' });
+  Object.assign(NET, { role: 'guest', hostConn: c, room: k, phase: 'joined', tok: m && typeof m.tok === 'string' ? m.tok : null, rc: null });
   roomUi('방에 들어왔어요', (k + 1) + '번 방 · 방장이 경기를 시작하기를 기다리고 있어요');
 }
 function guestMsg(m) {
@@ -316,7 +332,43 @@ function guestMsg(m) {
   else if (m.t === 's' && state === 'play' && NET.phase === 'play') applySnap(m);
   else if (m.t === 'over' && NET.phase === 'play') { if (m.e) replayEvents(m.e); if (m.md !== undefined && typeof applyModeSnap === 'function') try { applyModeSnap(m.md); } catch (e) {} score = m.sc; NET.stats = m.st; NET.phase = 'over'; endGame(); const tok = netToken; setTimeout(() => { if (tok === netToken) netReset(); }, 300); }
 }
+/* reconnect: when the link to the host breaks mid-match (wifi <-> LTE, a tunnel, a dropped packet storm), the host's bot keeps the fighter
+   going and this screen keeps trying a new connection to the same room for 20 s, then takes the fighter back */
+function netBadge(on) {
+  let b = document.getElementById('netBadge');
+  if (!b && on) { b = document.createElement('div'); b.id = 'netBadge'; b.style.cssText = 'position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:60;padding:4px 12px;border-radius:12px;background:rgba(20,20,30,.78);color:#ffd36a;font:600 13px/1.4 sans-serif;pointer-events:none'; b.textContent = '연결 다시 잇는 중…'; document.body.append(b); }
+  if (b) b.hidden = !on;
+}
+function guestLink() {
+  if (NET.role !== 'guest' || NET.phase !== 'play' || state !== 'play' || !NET.tok) return hostLost();
+  if (NET.rc) return;
+  const now = performance.now(); NET.rc = { until: now + 20000, next: now + 300, n: 0, c: null };
+  try { NET.hostConn && NET.hostConn.close(); } catch (e) {} NET.hostConn = null; netOut = null;
+  netBadge(true);
+}
+function rejoinTry() {
+  const rc = NET.rc, tok = netToken; rc.next = performance.now() + 2500; rc.n++;
+  if (rc.c) try { rc.c.close(); } catch (e) {}
+  let p = NET.peer;
+  if (!p || p.destroyed) { try { p = NET.peer = newPeer(undefined); keepAlive(p); } catch (e) { return; } }
+  else if (p.disconnected) { try { p.reconnect(); } catch (e) {} if (rc.n % 3) return; try { p.destroy(); } catch (e) {} try { p = NET.peer = newPeer(undefined); keepAlive(p); } catch (e) { return; } }      // a new network: the old signalling link is dead, a fresh peer is quicker
+  const go = () => {
+    if (tok !== netToken || NET.rc !== rc) return;
+    let c; try { c = rc.c = p.connect(roomId(NET.room), { reliable: true }); } catch (e) { return; }
+    c.on('open', () => { try { c.send({ t: 'rejoin', tok: NET.tok, lite: NET_LITE ? 1 : 0 }); } catch (e) {} });
+    c.on('data', m => {
+      if (tok !== netToken || !m) return;
+      if (NET.hostConn === c) return guestMsg(m);
+      if (NET.rc !== rc) return;
+      if (m.t === 'start' && m.re) { NET.rc = null; NET.hostConn = c; NET.heard = performance.now(); NET.rejoined = (NET.rejoined || 0) + 1; netBadge(false); guestStart(m); }
+      else if (m.t === 'busy') { NET.rc = null; netBadge(false); hostLost(); }
+    });
+    c.on('close', () => { if (tok === netToken && NET.hostConn === c) guestLink(); });
+  };
+  if (p.open) go(); else p.once('open', go);
+}
 function hostLost() {
+  NET.rc = null; netBadge(false);
   const was = NET.phase; netReset();
   if (was === 'play' && state === 'play' && NET.mode === 'solo') endGame();      // 원 레프트: the result as it stands (the host's tab went away without a word)
   else if (was === 'play' && state === 'play') { state = 'over'; notice.hidden = false; notice.textContent = '방장이 나가서 경기가 끝났어요'; setTimeout(() => { if (state === 'over' && !NET.role) toMenu(); }, 2200); }
@@ -337,7 +389,7 @@ function guestFighter(i, s) {
       inv: 0, tapT: 0, hold: false, scd: [0, 0], sk: [null, null], queue: [], minion: false, isPlayer: i === NET.me, lastFire: -9, lastHit: -9, swing: 0, spin: 0, shield: 0, hp: s.hp, mhp: s.mh };
     fighters[i] = f;
     if (i === NET.me) player = f;
-    const r = (NET.roster || [])[i] || {}; f.nick = r.nm ? cleanName(r.nm) : null; f.cos = cleanCos(r.cos, s.h0); f.gear = cleanGear(r.gr);
+    const r = (NET.roster || [])[i] || {}; f.nick = r.nm ? cleanName(r.nm) : null; f.cos = cleanCos(r.cos, s.h0);
   }
   return f;
 }
@@ -464,9 +516,10 @@ function netTick(dt) {
     if (now - (m.heard || now) > 10000) hostDrop(m.conn, netToken);      // nothing from a guest for 6 s: gone
     else if (m.f && m.f.netIn && m.inAt && now - m.inAt > (m.lite ? 700 : 500)) { m.f.netIn.mx = 0; m.f.netIn.my = 0; m.f.netIn.hold = false; }      // controls gone quiet (frozen tab, bad link): stand still instead of walking on
   }
+  if (NET.role === 'guest' && NET.rc) { if (now > NET.rc.until) hostLost(); else if (now > NET.rc.next) rejoinTry(); }      // reconnecting: no way back for 20 s means the host is gone
   if (NET.role === 'guest' && NET.hostConn) {
     if ((pingAcc += dt) > 1) { pingAcc = 0; try { NET.hostConn.send({ t: 'ping', ts: now }); } catch (e) {} }
-    if (NET.phase === 'play' && NET.heard && now - NET.heard > 8000) hostLost();       // no snapshot for 5 s: the host is gone
+    if (NET.phase === 'play' && NET.heard && now - NET.heard > 4000 && !NET.rc) guestLink();       // no snapshot for 4 s: the link is probably broken, try a fresh one
     if (NET.phase === 'joined') { if (!NET.heard) NET.heard = now; if (now - NET.heard > 8000) hostLost(); }
   }
   if (NET.role === 'host' && NET.phase === 'wait') {

@@ -99,7 +99,7 @@ hero('shotgun', { p: ['명사수의 위협', '알갱이를 모두 맞히면 상�
 
 hero('rifle', { p: ['지뢰밭', '지뢰를 밟은 상대는 3초 동안 이동속도 10% 감소'],
   pre(f, o) { o.pad = 10; return o; },      // basic shots: hit radius 25 -> 35 (the user found the rifle too fussy to land)
-  ult: ['미사일 폭격', '상대 근처 랜덤 3곳에 미사일이 떨어짐 (발당 750 피해, 벽 통과, 나는 피해 없음)', [0, 12 * T], f => { const es = foes(f); seq(f, 3, .3, i => { const e = es.length ? es[i % es.length] : fwd(f, 4 * T); const x = e.x + rnd(-60, 60), y = e.y + rnd(-60, 60); fx('warn', x, y, { dur: .8 }); strike(f, x, y, 75, .8, () => boom(f, x, y, 75, 60)); }); }],
+  ult: ['미사일 폭격', '조준한 곳 주변에 미사일 3발이 떨어짐 (발당 750 피해, 벽 통과, 나는 피해 없음)', [100, 12 * T], f => { const p = aimPt(f, 12 * T); seq(f, 3, .3, i => { const a = i * 2.1 + rnd(-.3, .3), d = i ? 55 : 0; const x = p.x + Math.cos(a) * d, y = p.y + Math.sin(a) * d; fx('warn', x, y, { dur: .8 }); strike(f, x, y, 75, .8, () => boom(f, x, y, 75, 60)); }); }],
   skills: [
     [1, '지뢰 설치', 'hit', '바닥에 지뢰 2개를 설치 (최대 2개, 25초) · 밟은 적은 250 피해와 0.5초 기절 · 지뢰는 상대에게도 보임 (1스킬 칸에서는 쿨타임 2배)', [0, 6 * T], f => { for (const s of [-1, 1]) { const p = fwd(f, 44, f.aim + s * 1.2); trap(f, p.x, p.y, 25, 2, 'mine', e => { damage(e, 20, f); buff(e, 'stun', .5); buff(e, 'slow', 3, .9); }, '#ff5d5d'); } }, { cd1: 10 }],
     [2, '수류탄 투척', 'hit', '수류탄을 던져 떨어진 곳에서 폭발 (500 피해)', [100, 7 * T], f => { const p = aimPt(f, 7 * T); strike(f, p.x, p.y, 80, .5, () => boom(f, p.x, p.y, 80, 40)); }],
