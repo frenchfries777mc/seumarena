@@ -48,6 +48,18 @@ function siteChrome(page) {
   document.title = document.title.replace('SeumArena', SITE.name.join(''));
 }
 
+/* 게임으로 돌아가기: when this tab was opened from the game, close it and go back to the game tab instead of loading a second game */
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href="' + SITE.game + '"]');
+  if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return;
+  let op = null; try { op = window.opener; } catch (er) {}
+  if (!op || op.closed) return;
+  e.preventDefault();
+  try { op.focus(); } catch (er) {}
+  window.close();
+  setTimeout(() => { location.href = SITE.game; }, 300);
+});
+
 /* login state in the header (FFAuth from frenchfries777.com; missing = guest, the site still works) */
 function siteAuth(onChange) {
   const box = $('#acct'); if (!box) return;
