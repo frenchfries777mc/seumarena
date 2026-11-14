@@ -1191,6 +1191,7 @@ canvas.rwI{background:none}
     <symbol id="mi-m-flag" viewBox="0 0 24 24"><path d="M6 21V4M6 5h12l-3 4 3 4H6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="mi-m-flag5" viewBox="0 0 24 24"><path d="M4 21V5M4 6h8l-2 3 2 3H4M14 21V9M14 10h7l-2 2.5 2 2.5h-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="mi-m-duel" viewBox="0 0 24 24"><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14 6l-4 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="mi-m-ball" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.6l4 2.9-1.5 4.7h-5L8 10.5z" fill="currentColor"/></symbol>
     <symbol id="mi-m-hot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4.2 2.8"/><path d="M12 7.5c1.9 2 3 3.4 3 5.2a3 3 0 0 1-6 0c0-1.1.5-2 1.3-2.8.1 1 .6 1.6 1.3 1.9-.3-1.5-.1-2.9.4-4.3z" fill="currentColor"/></symbol>
     <symbol id="mi-m-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
     <symbol id="mi-quest" viewBox="0 0 24 24"><rect x="4.5" y="4" width="15" height="17" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="8.5" y="2" width="7" height="4" rx="1.2" fill="currentColor"/><path d="m8.3 13.2 2.6 2.6 4.8-5.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -4665,6 +4666,10 @@ const MAPS = [
   { id:'flag_canal', name:'대운하', desc:'맵 가운데를 큰 운하가 가로지르고, 한가운데 다리 하나와 양 끝 둑길로만 건널 수 있어요. 깃발은 운하 양 끝 둑에 있고, 위아래 길의 가속 발판을 타면 상대 진영까지 빠르게 돌아 들어가요.', big:1, flag5:1,
     th:{ f1:'#4b5563', f2:'#525c6b', wt:'#c9a46e', ws:'#8f7347', b1:'#2f7a3a', b2:'#45984f', wa:'#1f6fa8', wa2:'#4fa3d9' },
     rows:['############################','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','#ggg#.................####..','#ggg#.......................','#ggg#..ppppppppppppp........','#####.......................','#...........................','#.....................####..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#.....................####..','#...........................','#####.......................','#ggg#..ppppppppppppp........','#ggg#.......................','#ggg#.................####..','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','############################'] }
+,
+  { id:'pitch', name:'초록 구장', desc:'양쪽 끝에 골대가 있는 축구장. 골대 앞 낮은 벽과 네 모서리 덤불을 끼고 공을 몰아요.', ball:1,
+    th:{ f1:'#3f8f3a', f2:'#46993f', wt:'#eef2f5', ws:'#9aa8b5', b1:'#2a6f2a', b2:'#3c8f39', wa:'#3a7fc4', wa2:'#63a4e0' },
+    rows:['##############','##..gg........','##..gg........','##............','##.......##...','##............','#.............','#.............','#.............','#.............','#.............','##............','##.......##...','##............','##..gg........','##..gg........','##############'] },
 ];
 for (const m of MAPS) m.grid = m.rows.map(r => r + [...r.slice(0, r.length - 1)].reverse().join(''));
 let COLS = 25, ROWS = 17, WW = COLS * T, WH = ROWS * T;      // set by loadMap(): the big 원 레프트 maps are larger
@@ -4718,6 +4723,7 @@ const MODES = [
   { id: 'duo', name: '투 레프트', size: '4팀', teams: 4, per: 2, respawn: false, win: 1, time: 150, rounds: 0, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },      // 2026-11-14 (developer): 4 pairs (was 5); a fallen fighter comes back next to a living partner after DUO_BACK s, both down = the pair is out. Same maps as 원 레프트      // 2026-11-13 (developer): 3 x 4 teams around one circle; maps = every MAPS entry with hot:1
   { id: 'flag', name: '캡쳐 플래그', size: '5v5', teams: 2, per: 5, respawn: true, win: 3, time: 240, rounds: 0, maps: [11, 12, 13, 14, 15, 16, 25], ready: true },      // 2026-11-12: the 3v3 version was dropped, 캡쳐 플래그 is 5v5 on the 5 big flag maps
   { id: 'duel', name: '듀얼 배틀', size: '1v1', teams: 2, per: 1, respawn: false, win: DUEL_N, time: 60, rounds: DUEL_N, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true },      // 듀얼 배틀 and 팀 아웃 share one map list (user 2026-11-13): keep the two lists the same
+  { id: 'ball', name: '볼 배틀', size: '3v3', teams: 2, per: 3, respawn: true, win: 3, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.ball ? i : -1).filter(i => i >= 0), ready: true },      // 2026-11-14 (user): 축구, ball.js
   { id: 'hot4', name: '배틀 존', size: '4팀', teams: 4, per: 3, respawn: true, win: 100, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.hot ? i : -1).filter(i => i >= 0), ready: true }
 ];
 for (const m of MODES) m.max = m.teams * m.per;
@@ -4736,12 +4742,13 @@ const HZ = { on: false, x: 0, y: 0, r: 0, own: -1, p: [0, 0, 0, 0], n: [0, 0, 0,
 const modeOf = id => MODES.find(m => m.id === id && m.ready) || MODES[0];
 const modeNow = () => modeOf(curMode);
 /* the small mode state that rides in every snapshot (net.js: `md`) so guests can draw it: round number, and later the flags / safe zone */
-function modeSnap() { const o = { rn: RD.n, rp: RD.pause > 0 ? 1 : 0 }; if (DUEL.line) { o.dl = DUEL.line; o.di = DUEL.li; } if (SZ.on) { o.z = [Math.round(SZ.x), Math.round(SZ.y), Math.round(SZ.r)]; o.w = RD.win; o.o = RD.out; } if (FLAGS.length) o.f = FLAGS.map(g => [Math.round(g.x), Math.round(g.y), g.by, g.home ? 1 : 0, Math.round(g.back * 10) / 10]); if (HZ.on) o.h = [HZ.own, Math.round(HZ.x), Math.round(HZ.y), Math.round(HZ.r)]; return o; }
+function modeSnap() { const o = { rn: RD.n, rp: RD.pause > 0 ? 1 : 0 }; if (DUEL.line) { o.dl = DUEL.line; o.di = DUEL.li; } if (SZ.on) { o.z = [Math.round(SZ.x), Math.round(SZ.y), Math.round(SZ.r)]; o.w = RD.win; o.o = RD.out; } if (FLAGS.length) o.f = FLAGS.map(g => [Math.round(g.x), Math.round(g.y), g.by, g.home ? 1 : 0, Math.round(g.back * 10) / 10]); if (HZ.on) o.h = [HZ.own, Math.round(HZ.x), Math.round(HZ.y), Math.round(HZ.r)]; if (BALL.on) o.bl = [Math.round(BALL.x), Math.round(BALL.y), Math.round(BALL.vx), Math.round(BALL.vy), BALL.gt]; return o; }
 function applyModeSnap(o) {
   if (!o || typeof o !== 'object') return;
   if (o.rn > 0) RD.n = o.rn | 0; RD.pause = o.rp ? 1 : 0;
   if (Array.isArray(o.dl) && o.dl.length === 2 && Array.isArray(o.di)) { DUEL.line = o.dl.map(l => Array.isArray(l) ? l.slice(0, DUEL_N).map(id => HEROES[id] ? id : null) : []); DUEL.li = [o.di[0] | 0, o.di[1] | 0]; } else DUEL.line = null;
   SZ.on = Array.isArray(o.z) && o.z.length === 3;
+  if (Array.isArray(o.bl) && o.bl.length === 5) { if (!BALL.on) ballStart(); BALL.x = +o.bl[0] || 0; BALL.y = +o.bl[1] || 0; BALL.vx = +o.bl[2] || 0; BALL.vy = +o.bl[3] || 0; BALL.gt = o.bl[4] | 0; BALL.st = performance.now(); } else BALL.on = false;
   HZ.on = Array.isArray(o.h) && o.h.length === 4; if (HZ.on) { HZ.own = clamp(o.h[0] | 0, -2, 3); HZ.x = +o.h[1] || 0; HZ.y = +o.h[2] || 0; HZ.r = Math.max(0, +o.h[3] || 0); }
   if (Array.isArray(o.f) && o.f.length === 2) { if (FLAGS.length !== 2) flagsReset(); o.f.forEach((v, t) => { if (!Array.isArray(v)) return; const g = FLAGS[t]; g.x = +v[0] || 0; g.y = +v[1] || 0; g.by = v[2] | 0; g.home = !!v[3]; g.back = +v[4] || 0; }); } else FLAGS = [];
   if (SZ.on) { SZ.x = +o.z[0] || 0; SZ.y = +o.z[1] || 0; SZ.r = Math.max(0, +o.z[2] || 0); RD.win = o.w | 0; RD.out = Array.isArray(o.o) ? o.o.slice(0, 8).map(v => v | 0) : []; }
@@ -4855,7 +4862,7 @@ function later(t, fn, f) { timers.push({ t, fn, f, src: SRC }); }
 function seq(f, n, gap, fn) { for (let i = 0; i < n; i++) later(i * gap, () => fn(i), f); }
 
 /* ---------- world helpers ---------- */
-const spawnPos = (team, slot) => curMode === 'solo' && SOLO_SP[team] ? SOLO_SP[team] : curMode === 'duo' && DUO_SP[team] ? DUO_SP[team][slot % 2] : curMode === 'hot4' && HZ.SP[team] ? HZ.SP[team][slot % 3] : ({ x: (team === 0 ? 1.5 : COLS - 1.5) * T, y: (ROWS / 2 - 2 + slot * 2) * T });
+const spawnPos = (team, slot) => curMode === 'ball' ? ballSpawn(team, slot) : curMode === 'solo' && SOLO_SP[team] ? SOLO_SP[team] : curMode === 'duo' && DUO_SP[team] ? DUO_SP[team][slot % 2] : curMode === 'hot4' && HZ.SP[team] ? HZ.SP[team][slot % 3] : ({ x: (team === 0 ? 1.5 : COLS - 1.5) * T, y: (ROWS / 2 - 2 + slot * 2) * T });
 function los(ax, ay, bx, by, walk) {
   const d = Math.hypot(bx - ax, by - ay), n = Math.ceil(d / 14), test = walk ? blockedAt : solidAt;
   for (let i = 1; i < n; i++) { const t = i / n; if (test(ax + (bx - ax) * t, ay + (by - ay) * t)) return false; }
@@ -5035,6 +5042,7 @@ function arc(f, ang, range, half, dmg, o) {
     o.by = f; status(e, o);
     damage(e, dmg, f, o); if (o.fn) o.fn(e); out.push(e);
   }
+  if (BALL.on) ballArc(f, ang, range, half, o.kb);
   return out;
 }
 function circ(by, x, y, r, dmg, o) {
@@ -5046,6 +5054,7 @@ function circ(by, x, y, r, dmg, o) {
     o.by = by; status(e, o);
     if (dmg) damage(e, dmg, by, o); if (o.fn) o.fn(e); out.push(e);
   }
+  if (BALL.on) ballCirc(by, x, y, r, dmg, o);
   return out;
 }
 function boom(by, x, y, r, dmg, o) { if (o && o.col) { fx('skillring', x, y, { color: o.col, r }); burst(x, y, o.col, 12, 260); } else fx(r >= 70 ? 'explosion' : 'bombexplode', x, y, { gy: y + 30 }); return circ(by, x, y, r, dmg, Object.assign({ kb: 160 }, o)); }
@@ -5056,6 +5065,7 @@ function pathHit(f, x0, y0, x1, y1, w, dmg, o) {       // everybody close to the
     if (d > w + 18) continue;
     o.by = f; status(e, o); if (dmg) damage(e, dmg, f, o); if (o.fn) o.fn(e); out.push(e);
   }
+  if (BALL.on && (dmg || o.kb)) ballPath(f, x0, y0, x1, y1, w);
   return out;
 }
 function emit(f, ang, o) {
@@ -5246,7 +5256,7 @@ function respawn(f) {
 }
 
 /* ---------- AI ---------- */
-function ai(f, dt) { const mv = ai0(f, dt), fl = envFlee(f) || zoneFlee(f) || flagGoal(f) || hotGoal(f, mv) || duoGoal(f); return fl || mv; }
+function ai(f, dt) { const mv = ai0(f, dt), fl = envFlee(f) || zoneFlee(f) || ballBot(f) || flagGoal(f) || hotGoal(f, mv) || duoGoal(f); return fl || mv; }
 /* ranged bots kite: when an enemy gets close they back off along the safest open direction (away from every nearby enemy, not into walls or
    corners) while still shooting, and dash away from a melee enemy that is about to land a hit */
 let AI_KITE = true;
@@ -5511,6 +5521,7 @@ function updateBullets(dt) {
           if (b.boom) { b.phase = 1; b.hit.clear(); } else { dead = true; b.wall = b.life > 0; if (!b.splash && fxInView(b.x, b.y) && b.life > 0) { const hx = solidAt(b.x, by0), hy = solidAt(bx0, b.y); fxPlay('wspark', Math.round(b.x), Math.round(b.y), +b.ang.toFixed(2), hx && !hy ? 1 : hy && !hx ? 2 : 0, TC(b.team)); } break; }      // (killfx.js: sparks, chips and a tink off the wall)
         }
       }
+      if (BALL.on && !dead && ballShot(b)) { dead = true; if (!b.splash) b.silent = 1; break; }
       for (const e of foes({ team: b.team, b: {} })) {
         if (e === b.owner || b.hit.has(e)) continue;
         if (Math.hypot(e.x - b.x, e.y + BODY - b.y) >= 20 + b.r + (o.pad || 0)) continue;      // o.pad: a more forgiving hitbox (군인)
@@ -5566,6 +5577,7 @@ function step(dt) {
     if (MODE.rounds) { roundStep(dt); return; }
     if (isLeft(MODE.id)) { soloStep(dt); return; }
     if (MODE.id === 'hot4') { hotStep(dt); return; }
+    if (MODE.id === 'ball' && ballStep(dt)) return;
     if (isFlagMode(MODE.id)) flagStep(dt);
     if (overtime) otT += dt; else timeLeft = Math.max(0, timeLeft - dt);
     if (score[0] >= MODE.win || score[1] >= MODE.win) endGame();
@@ -5602,6 +5614,7 @@ function newRound() {
    RD.win = the winner (the last one standing; if the last two fall together, the one who fell last). ===== */
 function modeStart() {
   if (isFlagMode(curMode)) flagsReset();
+  BALL.on = false; if (curMode === 'ball') ballStart();
   if (curMode === 'hot4') Object.assign(HZ, { on: true, x: WW / 2, y: WH / 2, r: (MAPS[curMap].hz || 4) * T, own: -1, p: [0, 0, 0, 0], n: [0, 0, 0, 0] });
   if (!isLeft(curMode)) return;
   const g = freeNear(WW / 2, WH / 2);
@@ -5780,6 +5793,7 @@ function hotGoal(f, mv) {
 /* the circle and the corner pads, in world space under the fighters (tail.js render, right after the floor). Empty: gold rim; one team: that team's
    colour, filled and pulsing; contested: the rim flashes through the colours of the teams inside. Light on phones: no gradients, no particles */
 function drawHotZone(c) {
+  drawPitch(c);      // (볼 배틀, ball.js)
   if (!HZ.on) return;
   c.save();
   for (let t = 0; t < 4; t++) { const sp = HZ.SP[t]; if (!sp) continue; const x = (sp[0].x + sp[1].x + sp[2].x) / 3, y = (sp[0].y + sp[1].y + sp[2].y) / 3; c.globalAlpha = .2; c.fillStyle = TC(t); c.beginPath(); c.arc(x, y, 1.45 * T, 0, 7); c.fill(); }
@@ -5849,7 +5863,7 @@ function drawSafeZone() {       // screen space
 const inOvertime = () => state === 'play' && timeLeft <= 0;       // true on host and guests: the clock sits at 0 only while sudden death runs
 function startOvertime() {
   overtime = true; otT = 0; timeLeft = 0;
-  for (const f of fighters) if (!f.dead) say(f, curMode === 'hot4' ? '연장전!' : '연장전! 먼저 잡으면 승리', '#ffd34d');
+  for (const f of fighters) if (!f.dead) say(f, curMode === 'hot4' ? '연장전!' : curMode === 'ball' ? '연장전! 먼저 골 넣으면 승리' : '연장전! 먼저 잡으면 승리', '#ffd34d');
   sfx(330, .5, 'sawtooth', .07, 2);
 }
 /* kos, deaths, damage dealt, damage taken, healing: one row per fighter in `fighters` order (JSON-safe, rides along with the end-of-match message) */
@@ -5929,7 +5943,7 @@ function drawSpecialTile(c, t, x, y, cc, r) {       // painted on top of the flo
   }
 }
 function drawEnvOverlay() {       // screen space, called by tail.js render() after the world is drawn
-  drawSafeZone(); drawFlags(); drawPortals();
+  drawSafeZone(); drawFlags(); drawPortals(); drawBallOverlay();
   if (state !== 'play' || !galeOn()) return;
   const left = GALE.until - time, a = clamp(Math.min(left, GALE.dur - left) / .8, 0, 1);
   ctx.fillStyle = 'rgba(216,180,106,' + (.34 * a) + ')'; ctx.fillRect(0, 0, W, H);
@@ -5941,6 +5955,212 @@ function drawEnvOverlay() {       // screen space, called by tail.js render() af
     ctx.moveTo(x, y); ctx.lineTo(x + dx * 70, y + dy * 70);
   }
   ctx.stroke();
+}
+
+/* ===== 볼 배틀 (mode 'ball'): 3v3 on the pitch map (MAPS entry with ball:1). Nobody carries the ball: walking into it dribbles it, a dash kicks it,
+   basic attacks and skills hit it (melee swings send it where you aim, shots along the shot, blasts away from the blast). A goal = the ball's centre
+   inside a goal mouth (the floor tiles in column 1 / COLS-2). After a goal everyone goes back to their side for a kickoff after BALL_PAUSE s.
+   First to MODE.win goals, or the most when the clock runs out; level = the usual overtime (next goal wins, a draw after OT_MAX).
+   The host runs the ball; it rides in the mode snapshot (`bl`) and guests slide it along its speed between snapshots. ===== */
+const BALL_R = 18, BALL_MAX = 1150, BALL_FRIC = 1.15, BALL_PAUSE = 3;
+const BALL = { on: false, x: 0, y: 0, vx: 0, vy: 0, rot: 0, last: null, gt: -1, gy0: 0, gy1: 0, pp: new Map(), dx: 0, dy: 0, st: 0 };
+function ballStart() {
+  BALL.on = true; let r0 = 1e9, r1 = -1;
+  for (let r = 1; r < ROWS - 1; r++) if (MAP[r][1] !== '#') { r0 = Math.min(r0, r); r1 = Math.max(r1, r); }
+  if (r1 < 0) { r0 = (ROWS >> 1) - 2; r1 = r0 + 4; }
+  BALL.gy0 = r0 * T; BALL.gy1 = (r1 + 1) * T; ballReset();
+}
+function ballReset() { Object.assign(BALL, { scf: null, x: WW / 2, y: WH / 2, vx: 0, vy: 0, last: null, gt: -1, dx: WW / 2, dy: WH / 2 }); BALL.pp.clear(); }
+const ballSpawn = (team, slot) => freeNear((team === 0 ? 4.5 : COLS - 4.5) * T, (ROWS / 2 + ((slot | 0) - 1) * 2.6) * T);
+const ballGoalOf = t => ({ x: (t === 0 ? 1.2 : COLS - 1.2) * T, y: (BALL.gy0 + BALL.gy1) / 2 });      // the goal team t defends
+/* every kick: the ball's speed along (nx, ny) becomes at least p (kicks do not stack into a rocket); by = who touched it last */
+function ballKick(by, nx, ny, p) {
+  if (!BALL.on || RD.pause > 0 || !(p > 0)) return;
+  const d = Math.hypot(nx, ny); if (d < 1e-4) return; nx /= d; ny /= d;
+  const vn = BALL.vx * nx + BALL.vy * ny; if (vn < p) { BALL.vx += nx * (p - vn); BALL.vy += ny * (p - vn); }
+  const s = Math.hypot(BALL.vx, BALL.vy); if (s > BALL_MAX) { BALL.vx *= BALL_MAX / s; BALL.vy *= BALL_MAX / s; }
+  const ow = by && (by.minion ? by.by : by); if (ow && ow.h) BALL.last = ow;
+}
+function ballArc(f, ang, range, half, kb) {
+  const dx = BALL.x - f.x, dy = BALL.y - f.y, d = Math.hypot(dx, dy);
+  if (d > range + BALL_R + 6) return;
+  let da = Math.atan2(dy, dx) - ang; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) > half + .25 && d > 30) return;
+  if (!los(f.x, f.y, BALL.x, BALL.y)) return;
+  ballKick(f, Math.cos(ang), Math.sin(ang), clamp(520 + (kb || 0) * 1.2, 520, 1050));
+}
+function ballCirc(by, x, y, r, dmg, o) {
+  if (!(dmg > 0) && !o.kb) return;
+  const dx = BALL.x - x, dy = BALL.y - y, d = Math.hypot(dx, dy);
+  if (d > r + BALL_R) return;
+  const a = d > 8 ? null : (by && by.aim) || 0;
+  ballKick(by, a === null ? dx : Math.cos(a), a === null ? dy : Math.sin(a), clamp((dmg > 12 || o.kb ? 380 : 240) + (o.kb || 0) * 1.6 + (dmg || 0) * 1.5, 240, 1050));
+}
+function ballPath(f, x0, y0, x1, y1, w) {
+  const dx = x1 - x0, dy = y1 - y0, l2 = dx * dx + dy * dy || 1, t = clamp(((BALL.x - x0) * dx + (BALL.y - y0) * dy) / l2, 0, 1);
+  if (Math.hypot(BALL.x - (x0 + dx * t), BALL.y - (y0 + dy * t)) > w + BALL_R) return;
+  ballKick(f, dx, dy, 650);
+}
+/* a shot touching the ball: true = the shot stops there */
+function ballShot(b) {
+  if (b.hitBall || Math.hypot(BALL.x - b.x, BALL.y + BODY - b.y) >= BALL_R + (b.r || 5) + 6) return false;
+  b.hitBall = 1; ballKick(b.owner, b.vx, b.vy, clamp(300 + (b.dmg || 0) * 5, 320, 950));
+  if (fxInView(b.x, b.y)) burst(BALL.x, BALL.y + BODY, '#ffffff', 5, 160);
+  return !b.boom && !(b.pierce > 0);
+}
+function ballMove(dt) {
+  const s = Math.hypot(BALL.vx, BALL.vy), n = Math.max(1, Math.ceil(s * dt / 10)), h = dt / n;
+  for (let i = 0; i < n; i++) {
+    BALL.x += BALL.vx * h;
+    if (solidAt(BALL.x + Math.sign(BALL.vx) * BALL_R, BALL.y) || solidAt(BALL.x + Math.sign(BALL.vx) * BALL_R, BALL.y - BALL_R * .7) || solidAt(BALL.x + Math.sign(BALL.vx) * BALL_R, BALL.y + BALL_R * .7)) { BALL.x -= BALL.vx * h; BALL.vx *= -.72; }
+    BALL.y += BALL.vy * h;
+    if (solidAt(BALL.x, BALL.y + Math.sign(BALL.vy) * BALL_R) || solidAt(BALL.x - BALL_R * .7, BALL.y + Math.sign(BALL.vy) * BALL_R) || solidAt(BALL.x + BALL_R * .7, BALL.y + Math.sign(BALL.vy) * BALL_R)) { BALL.y -= BALL.vy * h; BALL.vy *= -.72; }
+  }
+  BALL.x = clamp(BALL.x, BALL_R, WW - BALL_R); BALL.y = clamp(BALL.y, BALL_R, WH - BALL_R);
+  const k = Math.exp(-BALL_FRIC * dt); BALL.vx *= k; BALL.vy *= k; if (Math.hypot(BALL.vx, BALL.vy) < 6) BALL.vx = BALL.vy = 0;
+  BALL.rot += Math.hypot(BALL.vx, BALL.vy) * dt / BALL_R * Math.sign(BALL.vx || 1);
+}
+/* bodies: walking into the ball dribbles it ahead a little faster than you walk; a dash kicks it */
+function ballBodies(dt) {
+  for (const f of fighters) {
+    if (f.dead || f.ghost || f.form === 'gone' || f.form === 'sub' || (f.dash && f.dash.fly)) { BALL.pp.delete(f); continue; }
+    const p = BALL.pp.get(f), fvx = p && dt > 0 ? (f.x - p[0]) / dt : 0, fvy = p && dt > 0 ? (f.y - p[1]) / dt : 0;
+    BALL.pp.set(f, [f.x, f.y]);
+    const dx = BALL.x - f.x, dy = BALL.y - f.y, d = Math.hypot(dx, dy), md = BALL_R + 20;
+    if (d >= md) continue;
+    const nx = d > 1e-3 ? dx / d : Math.cos(f.aim || 0), ny = d > 1e-3 ? dy / d : Math.sin(f.aim || 0);
+    if (!solidAt(f.x + nx * md, f.y + ny * md)) { BALL.x = f.x + nx * md; BALL.y = f.y + ny * md; }
+    const fv = Math.min(700, fvx * nx + fvy * ny);
+    ballKick(f, nx, ny, f.dash ? 780 : Math.max(60, fv * 1.3 + 40));
+  }
+}
+/* true while a goal is being celebrated (step() skips its own end checks then) */
+function ballStep(dt) {
+  if (!BALL.on) return false;
+  ballMove(dt);
+  if (RD.pause > 0) {
+    RD.pause -= dt; BALL.vx *= .9; BALL.vy *= .9;
+    if (RD.pause > 0) return true;
+    const MODE = modeNow();
+    if (score[0] >= MODE.win || score[1] >= MODE.win || (overtime && score[0] !== score[1])) { endGame(); return true; }
+    ballKickoff(); return true;
+  }
+  ballBodies(dt);
+  if (BALL.y > BALL.gy0 && BALL.y < BALL.gy1) {
+    const t = BALL.x < 2 * T - BALL_R * .4 ? 1 : BALL.x > WW - 2 * T + BALL_R * .4 ? 0 : -1;      // into team 0's goal (left) = a goal for team 1
+    if (t >= 0) ballGoal(t);
+  }
+  return RD.pause > 0;
+}
+function ballGoal(t) {
+  score[t]++; BALL.gt = t; RD.pause = BALL_PAUSE; BALL.vx *= .25; BALL.vy *= .25;
+  const sc = BALL.last && BALL.last.team === t ? BALL.last : null; BALL.scf = sc;
+  if (sc) { sc.goals = (sc.goals | 0) + 1; addText({ x: sc.x, y: sc.y - 110, txt: '골!', life: 1.6, color: '#ffd34d' }); }
+  const g = ballGoalOf(1 - t);
+  fx('respawn', g.x, g.y - 20, { color: TC(t) }); burst(BALL.x, BALL.y, '#ffd34d', 26, 380); burst(BALL.x, BALL.y, TC(t), 18, 300);
+  shake = Math.max(shake, 9); sfx(660, .5, 'triangle', .08, 1.6); later(.18, () => sfx(880, .45, 'triangle', .07, 1.4));
+}
+/* everybody back to their side, full health; the ball in the middle */
+function ballKickoff() {
+  ballReset(); bullets = []; zones = []; minions = []; strikes = []; timers = []; tempWalls.clear(); NET.mapVer++;
+  for (const f of fighters) { f.queue = []; f.dash = null; if (f.h !== f.h0) { f.h = f.h0; f.sk = f.sk0; } respawn(f); f.inv = 1; }
+}
+/* bots: the one nearest the ball goes for it from behind (pushing / kicking it at the other goal), the next one comes along ahead of it,
+   the last one waits between the ball and our goal and clears it when it comes close */
+function ballBot(f) {
+  if (curMode !== 'ball' || !BALL.on || f.dead || f.minion || B(f, 'charm') || state !== 'play') return null;
+  if (RD.pause > 0) { const s = ballSpawn(f.team, f.slot); return pathTo(f, s.x, s.y); }
+  const mates = fighters.filter(o => !o.dead && !o.minion && o.team === f.team).sort((a, b) => Math.hypot(a.x - BALL.x, a.y - BALL.y) - Math.hypot(b.x - BALL.x, b.y - BALL.y));
+  const role = mates.indexOf(f), OG = ballGoalOf(f.team), EG = ballGoalOf(1 - f.team), bd = f.ai.bd || 1e9;
+  const nearOwn = Math.hypot(BALL.x - OG.x, BALL.y - OG.y) < 7 * T;
+  const last = role === mates.length - 1 && mates.length > 1;
+  if (role === 0 || (last && nearOwn)) {
+    if (bd < 1.6 * T) return null;      // somebody is in my face: fight
+    const [dx, dy] = role === 0 && !(nearOwn && last) ? norm(EG.x - BALL.x, EG.y - BALL.y) : norm(BALL.x - OG.x, BALL.y - OG.y);
+    const fx0 = BALL.x - f.x, fy0 = BALL.y - f.y, d = Math.hypot(fx0, fy0), along = fx0 * dx + fy0 * dy, side = fx0 * dy - fy0 * dx;
+    if (along > 0 && Math.abs(side) < 30) {      // lined up behind the ball: run through it, and hit it
+      const reach = f.h.type === 'melee' ? (f.h.range || 60) + BALL_R : Math.min(f.h.range || 400, 6 * T);
+      if (d < reach && Math.random() < .5) fire(f, Math.atan2(fy0, fx0));
+      return pathTo(f, BALL.x + dx * 40, BALL.y + dy * 40);
+    }
+    const bx = BALL.x - dx * (BALL_R + 40), by = BALL.y - dy * (BALL_R + 40);
+    if (d < 90 && along < 0) { const s = side >= 0 ? 1 : -1; return pathTo(f, bx - dy * s * 70, by + dx * s * 70); }      // on the wrong side: go round it
+    return pathTo(f, bx, by);
+  }
+  if (last) {
+    if (bd < 4 * T) return null;
+    const [ux, uy] = norm(BALL.x - OG.x, BALL.y - OG.y); return pathTo(f, OG.x + ux * 3.5 * T, OG.y + uy * 3.5 * T);
+  }
+  if (bd < 5 * T) return null;
+  const [ux, uy] = norm(EG.x - BALL.x, EG.y - BALL.y), sd = f.slot % 2 ? 1 : -1;
+  const tx = clamp(BALL.x + ux * 3 * T - uy * sd * 2 * T, 2.5 * T, WW - 2.5 * T), ty = clamp(BALL.y + uy * 3 * T + ux * sd * 2 * T, 1.5 * T, WH - 1.5 * T);
+  const p = freeNear(tx, ty); return pathTo(f, p.x, p.y);
+}
+/* ----- drawing ----- */
+function drawPitch(c) {       // world space, on the floor: lines, centre circle, goal mouths with nets
+  if (!BALL.on) return;
+  const x0 = 2 * T, x1 = WW - 2 * T, y0 = T, y1 = WH - T, gy0 = BALL.gy0, gy1 = BALL.gy1;
+  c.save(); c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = 5;
+  c.strokeRect(x0, y0, x1 - x0, y1 - y0);
+  c.beginPath(); c.moveTo(WW / 2, y0); c.lineTo(WW / 2, y1); c.stroke();
+  c.beginPath(); c.arc(WW / 2, WH / 2, 1.8 * T, 0, 7); c.stroke();
+  c.fillStyle = 'rgba(255,255,255,.6)'; c.beginPath(); c.arc(WW / 2, WH / 2, 7, 0, 7); c.fill();
+  for (const s of [0, 1]) {
+    const bx = s ? x1 - 3 * T : x0, gx = s ? x1 : T;
+    c.strokeRect(bx, gy0 - T, 3 * T, gy1 - gy0 + 2 * T);
+    c.beginPath(); c.arc(s ? x1 - 3 * T : x0 + 3 * T, WH / 2, T * .9, s ? Math.PI / 2 : -Math.PI / 2, s ? Math.PI * 1.5 : Math.PI / 2); c.stroke();
+    c.fillStyle = TC(s); c.globalAlpha = .28; c.fillRect(gx, gy0, T, gy1 - gy0); c.globalAlpha = 1;
+    c.save(); c.strokeStyle = 'rgba(255,255,255,.28)'; c.lineWidth = 2; c.beginPath();
+    for (let y = gy0 + 14; y < gy1; y += 16) { c.moveTo(gx, y); c.lineTo(gx + T, y); }
+    for (let x = gx + 14; x < gx + T; x += 16) { c.moveTo(x, gy0); c.lineTo(x, gy1); }
+    c.stroke(); c.restore();
+    c.strokeStyle = TC(s); c.lineWidth = 7; c.beginPath(); c.moveTo(gx + (s ? 0 : T), gy0); c.lineTo(gx + (s ? T : 0), gy0); c.lineTo(gx + (s ? T : 0), gy1); c.lineTo(gx + (s ? 0 : T), gy1); c.stroke();
+    c.strokeStyle = '#ffffff'; c.lineWidth = 6; c.beginPath(); c.moveTo(s ? x1 : x0, gy0); c.lineTo(s ? x1 : x0, gy1); c.stroke();
+    c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = 5;
+  }
+  c.restore();
+}
+function ballPos() {       // where to draw: the host draws the real ball; a guest slides it along its last known speed between snapshots
+  if (NET.role !== 'guest') return [BALL.x, BALL.y];
+  const now = performance.now(), e = clamp((now - BALL.st) / 1000, 0, .15), tx = BALL.x + BALL.vx * e, ty = BALL.y + BALL.vy * e, k = clamp(((now - (BALL.dt0 || now)) / 1000) * 18, 0, 1);
+  BALL.dt0 = now; if (Math.hypot(tx - BALL.dx, ty - BALL.dy) > 3 * T) { BALL.dx = tx; BALL.dy = ty; } else { BALL.dx += (tx - BALL.dx) * k; BALL.dy += (ty - BALL.dy) * k; }
+  BALL.rot += Math.hypot(BALL.vx, BALL.vy) * .016 / BALL_R * Math.sign(BALL.vx || 1);
+  return [BALL.dx, BALL.dy];
+}
+function drawBall(c) {       // world space, after the walls and before the fighters
+  if (!BALL.on) return;
+  const [x, y] = ballPos(), s = Math.hypot(BALL.vx, BALL.vy);
+  c.save();
+  if (s > 260 && !lowFx()) { const [ux, uy] = norm(BALL.vx, BALL.vy), l = Math.min(70, s * .07); c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineCap = 'round'; c.lineWidth = BALL_R * 1.1; c.beginPath(); c.moveTo(x, y - 4); c.lineTo(x - ux * l, y - 4 - uy * l); c.stroke(); }
+  c.fillStyle = 'rgba(0,0,0,.3)'; c.beginPath(); c.ellipse(x + 3, y + BALL_R - 3, BALL_R * 1.05, BALL_R * .4, 0, 0, 7); c.fill();
+  c.translate(x, y - 4); c.fillStyle = '#ffffff'; c.strokeStyle = '#1b1d24'; c.lineWidth = 3; c.beginPath(); c.arc(0, 0, BALL_R, 0, 7); c.fill();
+  c.save(); c.clip(); c.rotate(BALL.rot); c.fillStyle = '#1b1d24';
+  c.beginPath(); for (let i = 0; i < 5; i++) { const a = i * 1.2566 - 1.5708; c.lineTo(Math.cos(a) * 6.5, Math.sin(a) * 6.5); } c.closePath(); c.fill();
+  for (let i = 0; i < 5; i++) { const a = i * 1.2566 + .628; c.beginPath(); c.arc(Math.cos(a) * 16, Math.sin(a) * 16, 5.5, 0, 7); c.fill(); }
+  c.restore(); c.beginPath(); c.arc(0, 0, BALL_R, 0, 7); c.stroke();
+  c.fillStyle = 'rgba(255,255,255,.7)'; c.beginPath(); c.arc(-6, -7, 4, 0, 7); c.fill();
+  c.restore();
+}
+function drawBallOverlay() {       // screen space: an arrow to the ball when it is off screen, and GOAL! after a goal
+  if (!BALL.on || state !== 'play') return;
+  const [bx, by] = ballPos(), sx = (bx - cam.x) * cam.s + W / 2, sy = (by - cam.y) * cam.s + H / 2, m = 34;
+  if (sx < 0 || sy < 0 || sx > W || sy > H) {
+    const ax = clamp(sx, m, W - m), ay = clamp(sy, m + 50, H - m), a = Math.atan2(sy - ay, sx - ax);
+    ctx.save(); ctx.translate(ax, ay); ctx.fillStyle = 'rgba(12,14,19,.6)'; ctx.beginPath(); ctx.arc(0, 0, 17, 0, 7); ctx.fill();
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(0, 0, 9, 0, 7); ctx.fill(); ctx.rotate(a); ctx.beginPath(); ctx.moveTo(26, 0); ctx.lineTo(16, -8); ctx.lineTo(16, 8); ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  if (RD.pause > 0 && BALL.gt >= 0) {      // GOAL!: a slanted ribbon in the scoring team's colour, with the scorer's name
+    const col = TC(BALL.gt), k = Math.min(W / 760, 1.25), sc = BALL.scf && BALL.scf.team === BALL.gt ? BALL.scf : null, nm = sc ? (sc.nick || sc.h0.name) : '';
+    const txt = (s, x, y, size, fill, lw, font) => { ctx.font = (font || '800 ') + Math.round(size) + 'px Rajdhani, "Black Han Sans", "IBM Plex Sans KR", sans-serif'; ctx.lineWidth = lw; ctx.strokeStyle = '#0c0e13'; ctx.strokeText(s, x, y); ctx.fillStyle = fill; ctx.fillText(s, x, y); };
+    ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+    ctx.translate(W / 2, H * .46); ctx.rotate(-.08);
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(-W, 8 * k, W * 2, 110 * k);
+    const g = ctx.createLinearGradient(-W / 2, 0, W / 2, 0); g.addColorStop(0, col); g.addColorStop(.5, '#ffffff'); g.addColorStop(1, col);
+    ctx.fillStyle = col; ctx.fillRect(-W, -60 * k, W * 2, 120 * k); ctx.globalAlpha = .25; ctx.fillStyle = g; ctx.fillRect(-W, -60 * k, W * 2, 120 * k); ctx.globalAlpha = 1;
+    ctx.fillStyle = '#ffd34d'; ctx.fillRect(-W, -66 * k, W * 2, 6 * k); ctx.fillRect(-W, 60 * k, W * 2, 6 * k);
+    txt('GOAL!', 0, -6 * k, 96 * k, '#ffffff', 12 * k);
+    txt(nm ? nm + ' 골!' : BALL.gt === VIEW ? '우리 팀 골!' : '상대 팀 골', 0, 44 * k, 22 * k, '#ffd34d', 6 * k, '700 ');
+    ctx.restore();
+  }
 }
 
 /* ===== characters: passives, skill pools, ultimates (Stickseum kits, adapted to the top-down arena) ===== */
@@ -6632,13 +6852,14 @@ function addMp(h, n) { if (!HEROES[h]) return; COS.mp[h] = mpOf(h) + Math.max(0,
 /* player level: level L needs 150 + 50 (L - 1) xp to pass */
 function levelOf() { let xp = Math.max(0, Math.floor(+COS.xp || 0)), lv = 1; while (xp >= 150 + 50 * (lv - 1) && lv < 999) { xp -= 150 + 50 * (lv - 1); lv++; } return { lv, into: xp, need: 150 + 50 * (lv - 1) }; }
 /* what a match pays, by mode: kk karma per kill, kw karma for the win, mm mastery multiplier */
-const MODE_PAY = { team: { kk: 1, kw: 3, mm: 1 }, flag: { kk: 1, kw: 4, mm: 1.2 }, duel: { kk: 1, kw: 2, mm: .7 }, solo: { kk: 2, kw: 6, mm: 1 }, hot4: { kk: 1, kw: 4, mm: 1.1 }, duo: { kk: 1, kw: 5, mm: 1.1 } };
+const MODE_PAY = { team: { kk: 1, kw: 3, mm: 1 }, flag: { kk: 1, kw: 4, mm: 1.2 }, duel: { kk: 1, kw: 2, mm: .7 }, solo: { kk: 2, kw: 6, mm: 1 }, hot4: { kk: 1, kw: 4, mm: 1.1 }, ball: { kk: 1, kw: 3, mm: 1 }, duo: { kk: 1, kw: 5, mm: 1.1 } };
 /* karma by mode (user 2026-11-14: "모드마다 얻는 카르마 다르게"). Edit numbers here only.
    team modes: [win, draw, loss]; place modes: [1st, 2nd, 3rd, ...]; plus kill karma per kill up to killMax */
 const KARMA_TABLE = {
   team: { res: [5, 2, 1], kill: 1, killMax: 3 },             // 팀 아웃 3v3, 2:30
   duel: { res: [4, 1, 1], kill: 1, killMax: 2 },             // 듀얼 배틀 1v1, short
   flag: { res: [8, 4, 2], kill: 1, killMax: 3 },             // 캡쳐 플래그 5v5, 4:00
+  ball: { res: [5, 2, 1], kill: 1, killMax: 3 },             // 볼 배틀 3v3, 2:30
   hot4: { place: [7, 4, 2, 1], kill: 1, killMax: 3 },        // 배틀 존, 4 teams
   duo:  { place: [8, 5, 2, 1], kill: 1, killMax: 3 },        // 투 레프트, 4 pairs
   solo: { place: [9, 7, 5, 3, 2, 1, 0, 0], kill: 1, killMax: 3 }   // 원 레프트, 8 players
@@ -11138,6 +11359,7 @@ function render() {
   for (const s of strikes) { const k = 1 - s.t / s.max; ctx.globalAlpha = .18; ctx.fillStyle = s.col; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.3); ctx.fill(); ctx.globalAlpha = .9; ctx.strokeStyle = s.col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(s.x, s.y, s.r * k, 0, 6.3); ctx.stroke(); ctx.globalAlpha = 1; }
 
   drawTiles(ctx, c0, c1, r0, r1, 1);      // walls go under the fighters, so a wall never covers a player
+  if (typeof drawBall === 'function') drawBall(ctx);      // (볼 배틀, ball.js)
   const inBush = [];
   if (me && state === 'play') { if (!drawPreviews(me)) drawBasicGuide(me); }
   const order = fighters.filter(f => !f.dead).concat(minions.filter(m => m.kind !== 'dragon' && m.kind !== 'crow')).sort((a, b) => a.y - b.y);
@@ -11314,7 +11536,7 @@ if (!DEVICE && $('devPick')) {
 /* game modes: the engine's MODES registry ({id,name,size,maps,ready}) when it exists; until then the same four, with only the current rules playable */
 const MODE_FALLBACK = [{ id: 'team', name: '팀 아웃', size: '3v3' }, { id: 'solo', name: '원 레프트', size: '8명', ready: false }, { id: 'flag', name: '캡쳐 플래그', size: '3v3', ready: false }, { id: 'duel', name: '듀얼 배틀', size: '1v1', ready: false }];
 const MODE_LIST = typeof MODES !== 'undefined' && Array.isArray(MODES) && MODES.length ? MODES : MODE_FALLBACK;
-const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'], hot4: ['mi-m-hot', '#ff8a3d'], duo: ['mi-m-last', '#c77dff'] };
+const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'], hot4: ['mi-m-hot', '#ff8a3d'], ball: ['mi-m-ball', '#5fd36a'], duo: ['mi-m-last', '#c77dff'] };
 let modeSel = typeof modeChoice === 'string' ? modeChoice : MODE_LIST[0].id, modeView = modeSel;
 const modeOk = m => !!m && m.ready !== false;
 const modeCur = () => MODE_LIST.find(m => m.id === modeSel && modeOk(m)) || MODE_LIST.find(modeOk) || MODE_LIST[0];
@@ -11528,8 +11750,8 @@ $('mapPickBtn').addEventListener('click', () => { mapChoice = mapList[mapIdx]; s
 
 /* mode picker. PC: a row of event cards, tap one to look at it, the button below (or a double click) confirms.
    touch or small screens: big posters, a tap picks the mode right away. Each card: mode art, headcount, two rules, the mode's current map */
-const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a', hot4: '#7a3510', duo: '#55207a' };
-const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1, hot4: MAPS.findIndex(m => m.hot), duo: 8 };      // map drawn behind the figures while the mode's map is random
+const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a', hot4: '#7a3510', ball: '#1f5a26', duo: '#55207a' };
+const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1, hot4: MAPS.findIndex(m => m.hot), ball: MAPS.findIndex(m => m.ball), duo: 8 };      // map drawn behind the figures while the mode's map is random
 const MODE_FFA = ['#4d9dff', '#ff5d5d', '#ffd34d', '#3ddbb4', '#b48cff', '#ff9a3d'];
 const RULE_ICO = {
   kill: '<circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>',
@@ -11537,6 +11759,7 @@ const RULE_ICO = {
   crown: '<path d="M4 8l4 4 4-7 4 7 4-4-1.5 10h-13z"/>',
   flag: '<path d="M6 21V4M6 5h12l-3 4 3 4H6"/>',
   zone: '<circle cx="12" cy="12" r="9" stroke-dasharray="4 3"/><circle cx="12" cy="12" r="3.5"/>',
+  ball: '<circle cx="12" cy="12" r="9"/><path d="M12 8.5l3.3 2.4-1.3 3.9h-4l-1.3-3.9z" fill="currentColor"/>',
   rounds: '<circle cx="5" cy="12" r="3" fill="currentColor"/><circle cx="12" cy="12" r="3" fill="currentColor"/><circle cx="19" cy="12" r="3"/>'
 };
 const mmss = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
@@ -11547,6 +11770,7 @@ function modeRules(m) {
   else if (isFlagMode(m.id) && m.win) r.push(['flag', '깃발 ' + m.win + '점']);
   else if (m.id === 'duel' && m.win) r.push(['rounds', m.win + '선승']);
   else if (m.id === 'hot4') r.push(['zone', (m.win || 100) + '%']);
+  else if (m.id === 'ball') r.push(['ball', m.win + '골']);
   else if (m.win) r.push(['kill', m.win + '킬']);
   if (m.time) r.push(['clock', (m.rounds ? '판당 ' : '') + mmss(m.time)]);
   return r;
@@ -11597,6 +11821,13 @@ function modeScene(cv, m, mi, cx) {
     g.save(); g.fillStyle = 'rgba(255,138,61,.22)'; g.beginPath(); g.ellipse(zx, zy, zr, zr * .45, 0, 0, 7); g.fill();
     g.strokeStyle = '#ffb36b'; g.lineWidth = 3 * k; g.setLineDash([10 * k, 6 * k]); g.beginPath(); g.ellipse(zx, zy, zr, zr * .45, 0, 0, 7); g.stroke(); g.restore();
     [['sword', -1.25, 4, 1], ['bow', -.55, -26, 1], ['rifle', .55, -26, -1], ['harald', 1.25, 4, -1]].forEach(([id, dx, dy, face], t) => fig(id, TEAM[t], zx + dx * 70 * s, base + dy * s, s * .95, face, .4));
+  } else if (m.id === 'ball') {      // a ball in the middle, one side running at it
+    const bx = x0 + 6 * s, by = base - 8 * s, br = 13 * s;
+    fig('sword', B, x0 - 50 * s, base, s * 1.1, 1, .5); fig('bow', B, x0 - 120 * s, base - 22 * s, s * .9, 1, .3);
+    fig('harald', R, x0 + 80 * s, base - 4 * s, s * 1.05, -1, .4); fig('rifle', R, x0 + 140 * s, base - 26 * s, s * .9, -1, .3);
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(bx + 2 * s, by + br, br, br * .4, 0, 0, 7); g.fill();
+    g.fillStyle = '#fff'; g.strokeStyle = '#1b1d24'; g.lineWidth = 2.5 * s; g.beginPath(); g.arc(bx, by, br, 0, 7); g.fill(); g.stroke();
+    g.fillStyle = '#1b1d24'; g.beginPath(); for (let i = 0; i < 5; i++) { const a = i * 1.2566 - 1.5708; g.lineTo(bx + Math.cos(a) * 5 * s, by + Math.sin(a) * 5 * s); } g.closePath(); g.fill();
   } else if (m.id === 'duel') {
     fig('sword', B, x0 - 62 * s, base, s * 1.25, 1, .6); fig('magiccard', R, x0 + 62 * s, base, s * 1.25, -1, .6);
     g.save(); g.translate(x0, base - 44 * s); g.globalCompositeOperation = 'lighter';
@@ -11925,7 +12156,7 @@ function duelHud() {
   });
 }
 window.__arena = { sqList, sqState, sqTake, sqOpen, swList, swState, PASS, GAME_VER, passXp, passAdd, passTake, renderPass, passLimited, modes: MODE_LIST, ACHS, achMatch, achScan, achSt, renderAch, questTab, setAchRates(r) { achRates = r; }, dqList, dqMatch, dqState, renderQuests, wqList, wqState, attSt, attTake, dealIds, cosPrice, TITLES, renderProfile, renderCos, rewardFx, matchMvp, endGame, goldUi, matchPay, masteryOf, levelOf, KARMA_ROAD, MASTERY, giveReward, COSMETICS, skinPrice, get COS() { return COS; }, get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
-  setChar(id) { chosen = id; }, setMap(i) { mapChoice = i; }, tileAt: (x, y) => tile(Math.floor(x / T), Math.floor(y / T)), auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get PV() { return { sk: PV.sk, ult: PV.ult, dash: PV.dash }; }, get bullets() { return bullets; }, offline() { netReset(); startMatch(null); } };
+  setChar(id) { chosen = id; }, setMap(i) { mapChoice = i; }, tileAt: (x, y) => tile(Math.floor(x / T), Math.floor(y / T)), auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get PV() { return { sk: PV.sk, ult: PV.ult, dash: PV.dash }; }, get bullets() { return bullets; }, BALL, offline() { netReset(); startMatch(null); } };
 /* ---------- settings: 배터리 절약, touch button size and place (kept in seumArenaSet: bat, bsz, bpos) ---------- */
 const BPOS_IDS = ['dashBtn', 'sk1Btn', 'sk2Btn', 'ultBtn'];
 function mobSetApply() {
