@@ -7,7 +7,7 @@ function hero(id, k) {
   const h = { id, w, name: WEAPON_PERSONA_NAME[id] || w.name, wname: w.name, hp: MAX_HP, count: 1, burst: w.burst || 1, bdelay: w.burstDelay || 0, fan: 0, spread: w.spread || 0, dmg: w.dmg, cd: Math.max(.25, w.cd) };
   if (w.kind === 'melee') { h.type = 'melee'; h.range = w.range * .95 + 12; h.half = w.thrust ? .42 : .95; h.kb = 240 * (w.kbMult || 1); }
   else {
-    h.type = 'shot'; h.bspd = (w.bulletSpeed || 800) * .8; h.range = clamp((w.bulletSpeed || 800) * (w.life || 1.2) * .5, 4.5 * T, 11 * T);
+    h.type = 'shot'; h.bspd = (w.bulletSpeed || 800) * .9; h.range = clamp((w.bulletSpeed || 800) * (w.life || 1.2) * .5, 4.5 * T, 11 * T);      // 2026-11-14: bspd .8 -> .9 (faster shots)
     if (w.kind === 'shotgun') { h.count = 5; h.fan = .5; h.range = 5.5 * T; }
     if (w.kind === 'cards') { h.count = 3; h.fan = .3; }
     if (w.kind === 'explosive') h.splash = w.splash * U;
@@ -39,9 +39,9 @@ hero('sword', { p: ['기사도', '상대에게 피해를 줄 때마다 5% 확률
     }]
   ] });
 
-hero('pistol', { p: ['붉은 탄환', '6번째 발사마다 탄환이 붉게 변하고 피해와 크기가 1.25배'],
-  pre(f, o) { if (f.st.big) { f.st.big = 0; return Object.assign(o, { dmg: 66, r: 12, pierce: 99, wb: 1, spd: f.h.bspd * 1.5, range: 11 * T, shape: 'kdgun' }); }
-    f.st.n = (f.st.n || 0) + 1; if (f.st.n % 6 === 0) { o.dmg = f.h.dmg * 1.25; o.r = 7; o.shape = 'chip'; } if (B(f, 'auto')) { o.homing = true; o.turn = 2.5; } return o; },
+hero('pistol', { p: ['붉은 탄환', '5번째 발사마다 탄환이 붉게 변하고 피해와 크기가 1.25배'],
+  pre(f, o) { if (f.st.big) { f.st.big = 0; return Object.assign(o, { dmg: 66, r: 12, pierce: 99, wb: 1, spd: f.h.bspd * 1.5, range: 11 * T, shape: 'redshot' }); }
+    f.st.n = (f.st.n || 0) + 1; if (f.st.n % 5 === 0) { o.dmg = f.h.dmg * 1.25; o.r = 7; o.shape = 'redshot'; } if (B(f, 'auto')) { o.homing = true; o.turn = 2.5; } return o; },
   tick(f) { if (B(f, 'auto')) { const e = nearest(f, f.h.range, null, 0); if (e) f.aim = angTo(f, e); } },
   ult: ['강화탄', '다음 발사 때 데미지 924의 크고 빠른 탄환 1발 (플레이어와 벽을 뚫고 나아감)', [0, 9 * T], f => { f.st.big = 1; f.fireCd = 0; }],
   skills: [
@@ -49,7 +49,7 @@ hero('pistol', { p: ['붉은 탄환', '6번째 발사마다 탄환이 붉게 변
     [2, '정확한 발사', 'hit', '유도 총알 발사 · 0.75초 동안 상대를 따라가고 그 뒤로는 마지막 방향으로 일직선', [100, 9 * T], (f, a) => emit(f, a, { skill: 1, dmg: 17, homing: true, homeT: .75, turn: 7, range: 10 * T, r: 6 })],
     [3, '양손 권총', 'buff', '1초 동안 양손에 권총 · 기본공격 쿨타임 50% 감소', [0, 8 * T], f => buff(f, 'rapid', 1, .5)],
     [4, '자동 조준', 'buff', '1.5초 동안 권총이 가장 가까운 상대를 자동 조준(커서 무시) · 발사한 탄은 약간 유도됨', [0, 8 * T], f => buff(f, 'auto', 1.5)],
-    [5, '마지막 한 발', 'hit', '지난 3초 동안 자신이 받은 피해와 같은 피해의 대형 탄 1발 (받은 피해가 없으면 발동 안 됨)', [0, 9 * T], (f, a) => { const d = taken3(f); if (d < 1) return false; emit(f, a, { skill: 1, dmg: d, r: 13, range: 11 * T, shape: 'chip' }); }, { ok: f => taken3(f) > 30 }]
+    [5, '마지막 한 발', 'hit', '지난 3초 동안 자신이 받은 피해와 같은 피해의 대형 탄 1발 (받은 피해가 없으면 발동 안 됨)', [0, 9 * T], (f, a) => { const d = taken3(f); if (d < 1) return false; emit(f, a, { skill: 1, dmg: d, r: 13, range: 11 * T, shape: 'redshot' }); }, { ok: f => taken3(f) > 30 }]
   ] });
 
 hero('bow', { p: ['원거리 사격', '화살이 멀리 날아갈수록 피해가 커짐 (가까울수록 작고 멀수록 큼, 최소 125 ~ 최대 450)'],

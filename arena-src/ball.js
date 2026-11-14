@@ -3,7 +3,7 @@
    inside a goal mouth (the floor tiles in column 1 / COLS-2). After a goal everyone goes back to their side for a kickoff after BALL_PAUSE s.
    First to MODE.win goals, or the most when the clock runs out; level = the usual overtime (next goal wins, a draw after OT_MAX).
    The host runs the ball; it rides in the mode snapshot (`bl`) and guests slide it along its speed between snapshots. ===== */
-const BALL_R = 18, BALL_MAX = 1150, BALL_FRIC = 1.15, BALL_PAUSE = 3;
+const BALL_R = 18, BALL_MAX = 1150, BALL_FRIC = 1, BALL_PAUSE = 3;
 const BALL = { on: false, x: 0, y: 0, vx: 0, vy: 0, rot: 0, last: null, gt: -1, gy0: 0, gy1: 0, pp: new Map(), dx: 0, dy: 0, st: 0 };
 function ballStart() {
   BALL.on = true; let r0 = 1e9, r1 = -1;
@@ -11,7 +11,7 @@ function ballStart() {
   if (r1 < 0) { r0 = (ROWS >> 1) - 2; r1 = r0 + 4; }
   BALL.gy0 = r0 * T; BALL.gy1 = (r1 + 1) * T; ballReset();
 }
-function ballReset() { Object.assign(BALL, { scf: null, x: WW / 2, y: WH / 2, vx: 0, vy: 0, last: null, gt: -1, dx: WW / 2, dy: WH / 2 }); BALL.pp.clear(); }
+function ballReset() { Object.assign(BALL, { sci: -1, x: WW / 2, y: WH / 2, vx: 0, vy: 0, last: null, gt: -1, dx: WW / 2, dy: WH / 2 }); BALL.pp.clear(); }
 const ballSpawn = (team, slot) => freeNear((team === 0 ? 4.5 : COLS - 4.5) * T, (ROWS / 2 + ((slot | 0) - 1) * 2.6) * T);
 const ballGoalOf = t => ({ x: (t === 0 ? 1.2 : COLS - 1.2) * T, y: (BALL.gy0 + BALL.gy1) / 2 });      // the goal team t defends
 /* every kick: the ball's speed along (nx, ny) becomes at least p (kicks do not stack into a rocket); by = who touched it last */
@@ -27,7 +27,7 @@ function ballArc(f, ang, range, half, kb) {
   if (d > range + BALL_R + 6) return;
   let da = Math.atan2(dy, dx) - ang; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) > half + .25 && d > 30) return;
   if (!los(f.x, f.y, BALL.x, BALL.y)) return;
-  ballKick(f, Math.cos(ang), Math.sin(ang), clamp(520 + (kb || 0) * 1.2, 520, 1050));
+  ballKick(f, Math.cos(ang), Math.sin(ang), clamp(720 + (kb || 0) * 1.2, 720, 1100));
 }
 function ballCirc(by, x, y, r, dmg, o) {
   if (!(dmg > 0) && !o.kb) return;
@@ -44,7 +44,7 @@ function ballPath(f, x0, y0, x1, y1, w) {
 /* a shot touching the ball: true = the shot stops there */
 function ballShot(b) {
   if (b.hitBall || Math.hypot(BALL.x - b.x, BALL.y + BODY - b.y) >= BALL_R + (b.r || 5) + 6) return false;
-  b.hitBall = 1; ballKick(b.owner, b.vx, b.vy, clamp(300 + (b.dmg || 0) * 5, 320, 950));
+  b.hitBall = 1; ballKick(b.owner, b.vx, b.vy, clamp(480 + (b.dmg || 0) * 5, 520, 1000));
   if (fxInView(b.x, b.y)) burst(BALL.x, BALL.y + BODY, '#ffffff', 5, 160);
   return !b.boom && !(b.pierce > 0);
 }
@@ -88,13 +88,19 @@ function ballStep(dt) {
   ballBodies(dt);
   if (BALL.y > BALL.gy0 && BALL.y < BALL.gy1) {
     const t = BALL.x < 2 * T - BALL_R * .4 ? 1 : BALL.x > WW - 2 * T + BALL_R * .4 ? 0 : -1;      // into team 0's goal (left) = a goal for team 1
-    if (t >= 0) ballGoal(t);
+    if (t >= 0) {
+      if (BALL.last && BALL.last.team === t) ballGoal(t);
+      else {      // no own goals: the ball bounces back out of your own goal (2026-11-14, user)
+        BALL.x = t === 1 ? 2 * T + BALL_R * .2 : WW - 2 * T - BALL_R * .2; BALL.vx = (t === 1 ? 1 : -1) * Math.max(380, Math.abs(BALL.vx) * .7);
+        if (fxInView(BALL.x, BALL.y)) ring(BALL.x, BALL.y, 46, '#ffffff', .25);
+      }
+    }
   }
   return RD.pause > 0;
 }
 function ballGoal(t) {
   score[t]++; BALL.gt = t; RD.pause = BALL_PAUSE; BALL.vx *= .25; BALL.vy *= .25;
-  const sc = BALL.last && BALL.last.team === t ? BALL.last : null; BALL.scf = sc;
+  const sc = BALL.last && BALL.last.team === t ? BALL.last : null; BALL.sci = sc ? fighters.indexOf(sc) : -1;
   if (sc) { sc.goals = (sc.goals | 0) + 1; addText({ x: sc.x, y: sc.y - 110, txt: '골!', life: 1.6, color: '#ffd34d' }); }
   const g = ballGoalOf(1 - t);
   fx('respawn', g.x, g.y - 20, { color: TC(t) }); burst(BALL.x, BALL.y, '#ffd34d', 26, 380); burst(BALL.x, BALL.y, TC(t), 18, 300);
@@ -115,12 +121,12 @@ function ballBot(f) {
   const nearOwn = Math.hypot(BALL.x - OG.x, BALL.y - OG.y) < 7 * T;
   const last = role === mates.length - 1 && mates.length > 1;
   if (role === 0 || (last && nearOwn)) {
-    if (bd < 1.6 * T) return null;      // somebody is in my face: fight
+    if (bd < 1.0 * T) return null;      // somebody is in my face: fight
     const [dx, dy] = role === 0 && !(nearOwn && last) ? norm(EG.x - BALL.x, EG.y - BALL.y) : norm(BALL.x - OG.x, BALL.y - OG.y);
     const fx0 = BALL.x - f.x, fy0 = BALL.y - f.y, d = Math.hypot(fx0, fy0), along = fx0 * dx + fy0 * dy, side = fx0 * dy - fy0 * dx;
-    if (along > 0 && Math.abs(side) < 30) {      // lined up behind the ball: run through it, and hit it
+    if (along > 0 && Math.abs(side) < Math.max(34, along * .35)) {      // lined up behind the ball: run through it, and hit it
       const reach = f.h.type === 'melee' ? (f.h.range || 60) + BALL_R : Math.min(f.h.range || 400, 6 * T);
-      if (d < reach && Math.random() < .5) fire(f, Math.atan2(fy0, fx0));
+      if (d < reach) fire(f, Math.atan2(fy0, fx0));
       return pathTo(f, BALL.x + dx * 40, BALL.y + dy * 40);
     }
     const bx = BALL.x - dx * (BALL_R + 40), by = BALL.y - dy * (BALL_R + 40);
@@ -190,7 +196,7 @@ function drawBallOverlay() {       // screen space: an arrow to the ball when it
     ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(0, 0, 9, 0, 7); ctx.fill(); ctx.rotate(a); ctx.beginPath(); ctx.moveTo(26, 0); ctx.lineTo(16, -8); ctx.lineTo(16, 8); ctx.closePath(); ctx.fill(); ctx.restore();
   }
   if (RD.pause > 0 && BALL.gt >= 0) {      // GOAL!: a slanted ribbon in the scoring team's colour, with the scorer's name
-    const col = TC(BALL.gt), k = Math.min(W / 760, 1.25), sc = BALL.scf && BALL.scf.team === BALL.gt ? BALL.scf : null, nm = sc ? (sc.nick || sc.h0.name) : '';
+    const col = TC(BALL.gt), k = Math.min(W / 760, 1.25), sc = fighters[BALL.sci] && fighters[BALL.sci].team === BALL.gt ? fighters[BALL.sci] : null, nm = sc ? (sc.nick || sc.h0.name) : '';
     const txt = (s, x, y, size, fill, lw, font) => { ctx.font = (font || '800 ') + Math.round(size) + 'px Rajdhani, "Black Han Sans", "IBM Plex Sans KR", sans-serif'; ctx.lineWidth = lw; ctx.strokeStyle = '#0c0e13'; ctx.strokeText(s, x, y); ctx.fillStyle = fill; ctx.fillText(s, x, y); };
     ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
     ctx.translate(W / 2, H * .46); ctx.rotate(-.08);

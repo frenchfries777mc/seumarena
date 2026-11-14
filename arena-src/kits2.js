@@ -19,13 +19,13 @@ hero('samurai', { p: ['명상', '가만히 2초만 서 있어도 치유가 시�
   ] });
 
 hero('harald', { p: ['강인한 맷집', '방패와 도끼로 앞에서 버티는 근접 전사 · 방어 스킬이 많음'], hp: 540,
-  ult: ['도끼 돌진', '도끼를 조준 방향으로 던져 박고, 방패를 들고 박힌 도끼 쪽으로 돌진 (돌진 중 받는 피해 59% 감소) · 돌진하다 부딪힌 상대는 아주 크게 밀려나고 1초 기절 + 333 피해', [60, 7 * T], (f, a) => { buff(f, 'dr', .8, .5); fxAt(f, 'dash', { dir: 1, rot: +a.toFixed(2), color: '#cfd8e3' }); lunge(f, a, 7 * T, .55, { dmg: 35, stun: 1, onHit: e => knock(e, f.x, f.y, 1100) }); }],
+  ult: ['도끼 돌진', '도끼를 조준 방향으로 던져 박고, 방패를 들고 박힌 도끼 쪽으로 돌진 (돌진 중 받는 피해 50% 감소) · 돌진하다 부딪힌 상대는 크게 밀려나고 0.6초 기절 + 266 피해', [60, 6 * T], (f, a) => { buff(f, 'dr', .8, .5); fxAt(f, 'dash', { dir: 1, rot: +a.toFixed(2), color: '#cfd8e3' }); lunge(f, a, 6 * T, .5, { dmg: 28, stun: .6, onHit: e => knock(e, f.x, f.y, 800) }); }],
   skills: [
     [1, '분노', 'buff', '2초 동안 받는 피해 12% 감소', [0, 5 * T], f => buff(f, 'dr', 2, .9)],
-    [2, '방패 강타', 'hit', '방패로 앞의 상대를 밀며 0.5초 기절 (95 피해) · 맞히면 대쉬 쿨타임이 바로 참', [0, 100], (f, a) => { f.swing = .22; if (arc(f, a, 100, .9, 10, { kb: 520, stun: .5 }).length) f.dcd = 0; }],
-    [3, '도끼 휘두르기', 'hit', '도끼를 크게 한 바퀴 휘둘러 주변 상대에게 247 피해 + 밀쳐냄', [0, 120], f => { f.spin = .4; circ(f, f.x, f.y, 120, 26, { kb: 360 }); }],
-    [4, '방패 올리기', 'buff', '2초 동안 정면에서 날아오는 투사체를 막음', [150, 9 * T], f => buff(f, 'block', 2)],
-    [5, '내려찍기', 'hit', '높이 뛰어올랐다가 내려찍어 주변 적에게 190 피해 + 0.5초 기절', [0, 3 * T], (f, a) => lunge(f, a, 2 * T, .35, { fly: 1, end: g => boom(g, g.x, g.y, 100, 20, { stun: .5, kb: 0, col: '#cfd3dc' }) })]
+    [2, '방패 강타', 'hit', '방패로 앞의 상대를 밀며 0.3초 기절 (95 피해) · 맞히면 대쉬 쿨타임이 절반으로 줄어듦', [0, 100], (f, a) => { f.swing = .22; if (arc(f, a, 100, .9, 10, { kb: 520, stun: .3 }).length) f.dcd *= .5; }],
+    [3, '도끼 휘두르기', 'hit', '도끼를 크게 한 바퀴 휘둘러 주변 상대에게 209 피해 + 밀쳐냄', [0, 105], f => { f.spin = .4; circ(f, f.x, f.y, 105, 22, { kb: 360 }); }],
+    [4, '방패 올리기', 'buff', '1.5초 동안 정면에서 날아오는 투사체를 막음', [150, 9 * T], f => buff(f, 'block', 1.5)],
+    [5, '내려찍기', 'hit', '높이 뛰어올랐다가 내려찍어 주변 적에게 162 피해 + 0.3초 기절', [0, 3 * T], (f, a) => lunge(f, a, 2 * T, .35, { fly: 1, end: g => boom(g, g.x, g.y, 100, 17, { stun: .3, kb: 0, col: '#cfd3dc' }) })]
   ] });
 
 hero('horemheb', { p: ['사막의 장군', '모래바람에 맞은 상대를 3초 안에 공격하면 피해 1.5배'],
@@ -247,9 +247,9 @@ function portalPair(f, ax, ay, bx, by, t) {
   const a = mk(ax, ay), b = mk(bx, by); a.other = b; b.other = a; return [a, b];
 }
 const landAt = (x, y) => blockedAt(x, y) ? freeNear(x, y) : { x, y };
-hero('portalgun', { p: ['차원 반사', '포탈건 탄환은 벽에 닿으면 최대 3번까지 튕기고, 튕길 때마다 피해가 30% 증가 (최대 495) · 튕긴 탄환이 상대에게 맞으면 대쉬 쿨타임 0.5초 감소'],
+hero('portalgun', { p: ['차원 반사', '포탈건 탄환은 벽에 닿으면 최대 3번까지 튕기고, 튕길 때마다 피해가 30% 증가 (최대 495) · 튕긴 탄환이 상대에게 맞으면 대쉬 쿨타임 0.7초 감소'],
   range: 9 * T,
-  pre(f, o) { o.bmul = 1.3; o.bcap = 30; o.onHit = (e, b) => { if (b.nb > 0) f.dcd = Math.max(0, f.dcd - .5); }; return o; },
+  pre(f, o) { o.bmul = 1.3; o.bcap = 30; o.onHit = (e, b) => { if (b.nb > 0) f.dcd = Math.max(0, f.dcd - .7); }; return o; },
   ult: ['포탈 연결', '내 자리와 조준한 곳에 보라색 포탈 한 쌍을 8초 동안 엶 · 한쪽에 닿으면 반대쪽으로 순간이동 (나만 사용 가능, 나올 때 근처 적에게 198 피해와 약한 넉백, 새로 열면 기존 포탈은 사라짐)', [0, 9 * T], f => {
     const p = aimPt(f, 9 * T), q = landAt(p.x, p.y); f.st.ptT = time + .9; portalPair(f, f.x, f.y, q.x, q.y, 8); }],
   skills: [
@@ -279,7 +279,7 @@ const HEROES_OFF = {};
 const DMG_MUL = { harald: .95, shade: .85, sword: 1.2, grenade: .6, shotgun: .8, magiccard: 1.2, kadas: 1.6, wizard: 1.5, rifle: .95, tionis: 2, bow: 1.25, pistol: 1.4, smg: 1.1, shuriken: 1.6, portalgun: 1.65, gloves: 1.25 };      // 2026-11-13 duel + team bot sim retune (gardener: gardener.js)
 for (const id in DMG_MUL) HEROES[id].xm = DMG_MUL[id];
 /* per-hero max hp in the original (small) units, ×STAT_X applied here. Tuned 2026-11-10 with bots that kite (14-hero sim: all win rates 46–55%). */
-const HP_TABLE = { sword: 580, shade: 490, harald: 540, grenade: 540, shotgun: 600, rifle: 600, magiccard: 610, kadas: 630, wizard: 640, bow: 690, pistol: 700, smg: 760, shuriken: 780, tionis: 830, portalgun: 700, gloves: 850 };
+const HP_TABLE = { sword: 580, shade: 490, harald: 500, grenade: 540, shotgun: 600, rifle: 600, magiccard: 610, kadas: 630, wizard: 640, bow: 690, pistol: 720, smg: 760, shuriken: 780, tionis: 830, portalgun: 770, gloves: 850 };
 for (const id in HP_TABLE) HEROES[id].hp = HP_TABLE[id] * STAT_X;
 for (const id of Object.keys(HEROES)) if (!ACTIVE_HEROES.includes(id)) { HEROES_OFF[id] = HEROES[id]; delete HEROES[id]; }
 ROSTER.splice(0, ROSTER.length, ...ACTIVE_HEROES.filter(id => HEROES[id]));
