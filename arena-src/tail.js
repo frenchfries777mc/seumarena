@@ -420,7 +420,7 @@ if (!DEVICE && $('devPick')) {
 
 /* ---------- lobby ---------- */
 /* game modes: the engine's MODES registry ({id,name,size,maps,ready}) when it exists; until then the same four, with only the current rules playable */
-const MODE_FALLBACK = [{ id: 'team', name: '팀 아웃', size: '3v3' }, { id: 'solo', name: '원 레프트', size: '6명', ready: false }, { id: 'flag', name: '캡쳐 플래그', size: '3v3', ready: false }, { id: 'duel', name: '듀얼 배틀', size: '1v1', ready: false }];
+const MODE_FALLBACK = [{ id: 'team', name: '팀 아웃', size: '3v3' }, { id: 'solo', name: '원 레프트', size: '8명', ready: false }, { id: 'flag', name: '캡쳐 플래그', size: '3v3', ready: false }, { id: 'duel', name: '듀얼 배틀', size: '1v1', ready: false }];
 const MODE_LIST = typeof MODES !== 'undefined' && Array.isArray(MODES) && MODES.length ? MODES : MODE_FALLBACK;
 const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'], hot4: ['mi-m-hot', '#ff8a3d'], duo: ['mi-m-last', '#c77dff'] };
 let modeSel = typeof modeChoice === 'string' ? modeChoice : MODE_LIST[0].id, modeView = modeSel;
@@ -727,8 +727,7 @@ function modeMark() {      // which card is being looked at, which mode is picke
 }
 function modePick() {
   if (modeView !== modeSel) {
-    mapByMode[mapKey(modeCur())] = mapChoice; modeSel = modeView;
-    const m = modeCur(), i = mapByMode[mapKey(m)]; mapChoice = Number.isInteger(i) && modeMapsOf(m).includes(i) ? i : -1;
+    mapByMode = {}; modeSel = modeView; mapChoice = -1;      // 2026-11-14 (developer): changing the mode forgets every picked map, so each mode starts on a random map again
     modeApply(); savePrefs(); setup(false);
   }
   showScreen('menuScreen');
