@@ -141,7 +141,7 @@ const KARMA_TABLE = {
   flag: { res: [8, 4, 2], kill: 1, killMax: 3 },             // 캡쳐 플래그 5v5, 4:00
   hot4: { place: [7, 4, 2, 1], kill: 1, killMax: 3 },        // 배틀 존, 4 teams
   duo:  { place: [8, 5, 2, 1], kill: 1, killMax: 3 },        // 투 레프트, 4 pairs
-  solo: { place: [9, 6, 4, 2, 1, 0], kill: 1, killMax: 3 }   // 원 레프트, 6 players
+  solo: { place: [9, 7, 5, 3, 2, 1, 0, 0], kill: 1, killMax: 3 }   // 원 레프트, 8 players
 };
 function modeKarma(o) { const t = KARMA_TABLE[o.mode] || KARMA_TABLE.team, k = Math.min(t.killMax, Math.max(0, o.kills | 0)) * t.kill;
   if (t.place) return k + (t.place[(o.place | 0) - 1] || 0);
