@@ -4758,6 +4758,13 @@ function resize() {
   cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
 }
 addEventListener('resize', resize); resize();
+/* the picture must always match the window: a resize event can be missed (an embedded page growing, a move to a screen with another pixel ratio),
+   and a size set while the window was still changing leaves the game drawn in one corner. render() checks every frame and fixes it */
+function fitCanvas() {
+  const d = Math.min(window.devicePixelRatio || 1, mobileMode() ? RSCALE : PCSCALE);
+  if (W !== window.innerWidth || H !== window.innerHeight || DPR !== d || cv.width !== Math.round(W * d) || cv.height !== Math.round(H * d)) resize();
+}
+if (window.ResizeObserver) try { new ResizeObserver(() => fitCanvas()).observe(cv); } catch (e) {}
 { const d = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'shadowBlur');      // mobile: blurred glows are the most expensive thing a phone can be asked to draw, so the game canvas ignores them
   if (d && d.set && d.get) try { Object.defineProperty(ctx, 'shadowBlur', { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, liteMode() ? 0 : v); } }); } catch (e) {} }
 
@@ -11808,7 +11815,8 @@ function duelHud() {
   });
 }
 window.__arena = { sqList, sqState, sqTake, sqOpen, PASS, GAME_VER, passXp, passAdd, passTake, renderPass, passLimited, modes: MODE_LIST, ACHS, achMatch, achScan, achSt, renderAch, questTab, setAchRates(r) { achRates = r; }, dqList, dqMatch, dqState, renderQuests, wqList, wqState, attSt, attTake, dealIds, cosPrice, TITLES, renderProfile, renderCos, rewardFx, matchMvp, endGame, goldUi, matchPay, masteryOf, levelOf, KARMA_ROAD, MASTERY, giveReward, COSMETICS, skinPrice, get COS() { return COS; }, get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
-  setChar(id) { chosen = id; }, setMap(i) { mapChoice = i; }, tileAt: (x, y) => tile(Math.floor(x / T), Math.floor(y / T)), auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get /* ---------- settings: 배터리 절약, touch button size and place (kept in seumArenaSet: bat, bsz, bpos) ---------- */
+  setChar(id) { chosen = id; }, setMap(i) { mapChoice = i; }, tileAt: (x, y) => tile(Math.floor(x / T), Math.floor(y / T)), auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get PV() { return { sk: PV.sk, ult: PV.ult, dash: PV.dash }; }, get bullets() { return bullets; }, offline() { netReset(); startMatch(null); } };
+/* ---------- settings: 배터리 절약, touch button size and place (kept in seumArenaSet: bat, bsz, bpos) ---------- */
 const BPOS_IDS = ['dashBtn', 'sk1Btn', 'sk2Btn', 'ultBtn'];
 function mobSetApply() {
   const on = document.body.classList.contains('touchUi');
@@ -11858,6 +11866,9 @@ for (const t of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'to
   }
 }, { capture: true, passive: false });
 
-P
+})();
+</script>
+
+
 <script>if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 </body></html>

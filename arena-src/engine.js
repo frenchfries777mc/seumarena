@@ -215,6 +215,13 @@ function resize() {
   cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
 }
 addEventListener('resize', resize); resize();
+/* the picture must always match the window: a resize event can be missed (an embedded page growing, a move to a screen with another pixel ratio),
+   and a size set while the window was still changing leaves the game drawn in one corner. render() checks every frame and fixes it */
+function fitCanvas() {
+  const d = Math.min(window.devicePixelRatio || 1, mobileMode() ? RSCALE : PCSCALE);
+  if (W !== window.innerWidth || H !== window.innerHeight || DPR !== d || cv.width !== Math.round(W * d) || cv.height !== Math.round(H * d)) resize();
+}
+if (window.ResizeObserver) try { new ResizeObserver(() => fitCanvas()).observe(cv); } catch (e) {}
 { const d = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'shadowBlur');      // mobile: blurred glows are the most expensive thing a phone can be asked to draw, so the game canvas ignores them
   if (d && d.set && d.get) try { Object.defineProperty(ctx, 'shadowBlur', { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, liteMode() ? 0 : v); } }); } catch (e) {} }
 
