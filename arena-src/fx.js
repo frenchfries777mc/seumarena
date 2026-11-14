@@ -440,7 +440,7 @@ function wizCircleArt(R, inner) {
   return (WIZ_ART[key] = cv);
 }
 function drawWizCircle(z) {      // calm version (2026-11-13): soft floor, one clear edge, a thin slowly turning rune band; nothing crosses the fighters
-  if (z.t0 === undefined) z.t0 = z.t;
+  if (z.t0 === undefined) z.t0 = z.t > 9.7 ? Math.max(10, z.t) : z.t;      // joined late (guest): show it fully open
   const age = z.t0 - z.t, low = lowFx(), now = performance.now() / 1000;
   const op = Math.min(1, age / .3) * Math.min(1, z.t * 2);
   const e = Math.min(1, age / .35), R = Math.max(8, z.r * (1 - Math.pow(1 - e, 3)));      // opens smoothly, no bounce

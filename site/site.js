@@ -16,7 +16,6 @@ const HEROES = [
   ['magiccard', '마술사', '탈출 마법', ['카드 일렬 발사', '비둘기 변신', '모자 던지기', '꽃 마술', '카드 날리기']],
   ['bow', '로빈 후드', '불화살', ['갈고리 화살', '화살비', '폭발 화살', '덫 화살']],
   ['shade', '네온', '네온 점멸', ['대검 돌진', '분노', '찌르기']],
-  ['kadas', '카다스', '암흑 덩어리', ['연발', '악마의 날개', '블랙홀 친화', '암흑 구슬', '악마의 계약']],
   ['tionis', '티오니스', '분신 연극', ['말솜씨', '무대 조명']],
   ['harald', '하랄드', '도끼 돌진', ['분노', '방패 강타', '방패 올리기', '내려찍기']],
   ['pistol', '제임스', '강화탄', ['속사', '정확한 발사', '양손 권총', '자동 조준', '마지막 한 발']],
@@ -37,8 +36,9 @@ function siteChrome(page) {
   const h = document.createElement('header'); h.className = 'top';
   h.innerHTML = '<div class="wrap"><a class="brand" href="index.html">' + NAME_HTML + '</a><nav aria-label="사이트 메뉴">' +
     nav.map(n => '<a href="' + n[0] + '"' + (n[2] === page ? ' class="on" aria-current="page"' : '') + '>' + n[1] + '</a>').join('') +
-    '</nav><span class="acct" id="acct"></span><a class="toGame" href="' + SITE.game + '">게임으로 돌아가기</a></div>';
+    '</nav><button type="button" class="codeBtn" id="codeBtn">코드 입력</button><span class="acct" id="acct"></span><a class="toGame" href="' + SITE.game + '">게임으로 돌아가기</a></div>';
   document.body.prepend(h);
+  h.querySelector('#codeBtn').onclick = codeDialog;
   const f = document.createElement('footer'); f.className = 'foot';
   f.innerHTML = '<div class="wrap"><div><b style="color:#eef1f6;font-size:18px">' + NAME_HTML.replace('<b>', '<b style="color:#ff5266">') + '</b><br>Frenchfries777이 만든 Stickseum의 캐릭터들이 나오는 게임이에요.</div>' +
     '<nav aria-label="바깥 링크"><a href="' + SITE.game + '">게임</a><a href="https://frenchfries777.com/">Frenchfries777 허브</a><a href="https://frenchfries777.com/community/">허브 커뮤니티</a></nav>' +
@@ -120,4 +120,37 @@ function newsHtml(n, full) {
   return '<article class="card news"><div class="k"><span style="background:' + (NEWS_KIND[n.kind] || '#c3c9d5') + '">' + esc(n.kind || '공지') + '</span><time>' + esc(String(n.date || '').replace(/-/g, '.')) + '</time></div>' +
     '<h3>' + esc(n.title) + '</h3>' + (full && n.body ? '<p>' + esc(n.body) + '</p>' : '') +
     (full && n.link && /^https:\/\//.test(n.link.url || '') ? '<a href="' + esc(n.link.url) + '" target="_blank" rel="noopener">' + esc(n.link.label || '자세히') + '</a>' : '') + '</article>';
+}
+
+/* reward code: 6 letters/digits -> public.seumarena_redeem (one use per account); the game picks the reward up from seumarena_code_uses */
+const CODE_RW = { g: '코인', px: '플레이어 XP', box: '랜덤 상자', ebox: '에픽 상자', rx: '랜덤 캐릭터 XP', cx: '캐릭터 XP', skin: '스킨' };
+const CODE_MSG = { bad: '없는 코드예요', used: '이미 받은 코드예요', once: '이미 코드를 사용했어요 (계정당 1번)', full: '사용 횟수가 다 찼어요' };
+function codeDialog() {
+  let d = $('#codeDlg');
+  if (!d) {
+    d = document.createElement('dialog'); d.id = 'codeDlg'; d.className = 'codeDlg';
+    d.innerHTML = '<form method="dialog"><h3>코드 입력</h3><input id="codeIn" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" aria-label="6자리 코드" placeholder="XXXXXX">' +
+      '<p id="codeOut" role="status"></p><div class="codeRow"><button type="button" class="slant" id="codeGo">받기</button><button value="x" class="pill">닫기</button></div></form>';
+    document.body.append(d);
+    const inp = d.querySelector('#codeIn'), out = d.querySelector('#codeOut'), go = d.querySelector('#codeGo');
+    inp.oninput = () => { inp.value = inp.value.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 6); out.textContent = ''; };
+    inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); go.click(); } };
+    go.onclick = async () => {
+      const A = window.FFAuth; let sb = null, u = null; try { sb = A && A.client && A.client(); u = A && A.user && A.user(); } catch (e) {}
+      if (!sb || !u) { out.innerHTML = '로그인하면 받을 수 있어요 <button type="button" class="pill" id="codeLogin">로그인</button>'; out.querySelector('#codeLogin').onclick = () => { try { A.openLogin(); } catch (e) { location.href = 'https://frenchfries777.com/log-in/'; } }; return; }
+      if (inp.value.length !== 6) { out.textContent = '6자리를 입력해 주세요'; return; }
+      go.disabled = true; out.textContent = '확인 중…';
+      try {
+        const { data, error } = await sb.rpc('seumarena_redeem', { p_code: inp.value });
+        if (error) throw error;
+        if (data && data.r === 'ok') { out.textContent = '받았어요! 게임에 들어가면 들어와요 · ' + (data.rewards || []).map(r => CODE_RW[r[0]] + (r[0] === 'skin' || r[0].endsWith('box') ? ' ' + (r[0] === 'skin' ? 1 : r[1]) + '개' : ' +' + r[1])).join(', '); inp.value = ''; }
+        else if (data && data.r === 'login') out.textContent = '로그인하면 받을 수 있어요';
+        else out.textContent = CODE_MSG[data && data.r] || '잠시 후 다시 해 주세요';
+      } catch (e) { out.textContent = '잠시 후 다시 해 주세요'; }
+      go.disabled = false;
+    };
+  }
+  d.querySelector('#codeOut').textContent = '';
+  try { d.showModal(); } catch (e) { d.setAttribute('open', ''); }
+  d.querySelector('#codeIn').focus();
 }

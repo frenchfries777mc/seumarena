@@ -143,13 +143,16 @@ function matchPay(o) {      // o: { mode, win, draw, kills, place }
     mp: Math.round(([30, 42, 55][good] + 3 * Math.min(10, k)) * pm.mm), xp: [40, 55, 70][good] + 4 * Math.min(10, k) };
 }
 /* streaks: every win in a row after the first adds 1 karma to the next win (up to +5); after three losses in a row the next match pays half as much gold again.
-   A draw, or a top 3 place in solo, leaves the streaks as they are. COS.ws wins in a row, COS.ls losses in a row */
-function streakStep(win, draw, place) {
+   A draw, or a kept place (원 레프트 2-3등, 투 레프트 / 4팀 핫존 2등), leaves the streaks as they are. COS.ws wins in a row, COS.ls losses in a row.
+   st says what happened to the win streak: 'up', 'keep' (kept and above 0), 'lost' (a streak of 2+ ended) or '' */
+function streakStep(win, draw, keep) {
   COS.ws = Math.max(0, COS.ws | 0); COS.ls = Math.max(0, COS.ls | 0); const comfort = COS.ls >= 3; let karma = 0;
-  if (win) { COS.ws++; COS.ls = 0; karma = Math.min(5, COS.ws - 1); }
-  else if (!draw && !(place >= 1 && place <= 3)) { COS.ws = 0; COS.ls++; }
+  const was = COS.ws; let st = '';
+  if (win) { COS.ws++; COS.ls = 0; karma = Math.min(5, COS.ws - 1); st = 'up'; }
+  else if (!draw && !keep) { COS.ws = 0; COS.ls++; st = was >= 2 ? 'lost' : ''; }
+  else st = was > 0 ? 'keep' : '';
   if (comfort) COS.ls = 0;
-  return { karma, gm: comfort ? 1.5 : 1 };
+  return { karma, gm: comfort ? 1.5 : 1, st, ws: COS.ws };
 }
 /* gives one reward and says what it was: { kind, n, hero, skin } */
 function giveReward(kind, n) {

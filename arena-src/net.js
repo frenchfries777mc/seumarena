@@ -471,7 +471,10 @@ function applySnap(s) {
   fighters.length = s.f.length;
   for (const f of fighters) { f.st.thread = f.st.th >= 0 ? fighters[f.st.th] : null; f.st.mark = f.st.mk >= 0 ? fighters[f.st.mk] : null; }
   bullets = s.b.map(b => ({ x: b[0], y: b[1], vx: b[2], vy: b[3], ang: b[4], shape: b[5], team: b[6], r: b[7], wid: b[8] || null }));
-  zones = s.z.map(z => ({ x: z[0], y: z[1], r: z[2], t: z[3], col: z[4], op: z[5], kind: z[6] || null, key: z[7] ? 'k' : null, team: z[8], hidden: !!z[9] }));
+  { const old = zones;      // keep each zone's own start time (t0) across snapshots, so drawings that grow in (마법진) don't restart every packet
+    zones = s.z.map(z => { const n = { x: z[0], y: z[1], r: z[2], t: z[3], col: z[4], op: z[5], kind: z[6] || null, key: z[7] ? 'k' : null, team: z[8], hidden: !!z[9] };
+      const o = old.find(q => q.t0 !== undefined && q.kind === n.kind && q.col === n.col && Math.abs(q.x - n.x) < 2 && Math.abs(q.y - n.y) < 2 && q.r === n.r);
+      if (o) n.t0 = o.t0; return n; }); }
   minions = s.m.map(m => ({ minion: true, kind: m[0], x: m[1], y: m[2], team: m[3], hp: m[4], max: m[5], hit: !!m[6], aim: m[7], a: m[7], sw: time - m[8], side: m[9], b: {}, dead: false, bob: time * 8 }));
   strikes = s.k.map(k => ({ x: k[0], y: k[1], r: k[2], t: k[3], max: k[4], col: k[5] }));
   if (s.md !== undefined && typeof applyModeSnap === 'function') try { applyModeSnap(s.md); } catch (e) {}
