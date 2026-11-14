@@ -467,6 +467,15 @@ function renderDuelLine() {
 }
 const savePrefs = () => { mapByMode[mapKey(modeCur())] = mapChoice; try { localStorage.setItem('seumArena', JSON.stringify({ c: chosen, m: mapChoice, l: loadouts, g: modeSel, mm: mapByMode, dl: duelMore })); } catch (e) {} if (typeof cloudMark === 'function') cloudMark(); };
 const KIND_LABEL = { melee: '근접', shot: '원거리', flame: '방사', cone: '흡입' }, SK_LABEL = { hit: '공격', move: '이동', buff: '강화' };
+/* skill / passive / ult texts are written in melee units; ranged heroes really deal DMG_RANGED more (engine.js damage), so their damage numbers are scaled when shown */
+function dmgDesc(h, t) {
+  const m = h && h.type !== 'melee' && typeof DMG_RANGED === 'number' ? DMG_RANGED : 1; if (m === 1 || !t) return t;
+  const r = v => String(Math.round(+v * m));
+  return t.replace(/(최소\s*)(\d+)(\s*~\s*최대\s*)(\d+)/g, (a, p, x, s, y) => p + r(x) + s + r(y))
+    .replace(/(피해가[^()]*\(최대\s*)(\d{2,})(?=\))/g, (a, p, x) => p + r(x))
+    .replace(/(?<![\d.])(\d{2,})(?![\d.%배초칸])(?=\s*피해)(?!\s*피해를\s*막)/g, r)
+    .replace(/((?:피해|데미지)\s*\+?)(\d{2,})(?![\d.%배초칸])/g, (a, p, x) => p + r(x));
+}
 function attackText(h) {
   const SX = (typeof STAT_X === 'number' ? STAT_X : 1) * (h.xm || 1) * (h.type !== 'melee' && typeof DMG_RANGED === 'number' ? DMG_RANGED : 1), rd = v => Math.round(v);      // h.xm: this character's own damage multiplier
   const tiles = (h.range / T).toFixed(1) + '칸';
@@ -562,7 +571,7 @@ function renderLoadout(id) {
     const t = document.createElement('div'); t.className = 'skText';
     const nm = document.createElement('b'); nm.textContent = nameOf(s);
     const tag = document.createElement('i'); tag.textContent = SK_LABEL[s.k];
-    const d = document.createElement('p'); d.textContent = s.d;
+    const d = document.createElement('p'); d.textContent = dmgDesc(h, s.d);
     t.append(nm, tag, d);
     const btns = document.createElement('div'); btns.className = 'skBtns';
     for (let slot = 0; slot < 2; slot++) {
@@ -580,7 +589,7 @@ function openDetail(id) {
   $('weaponPortraitName').textContent = h.name;
   const d = $('weaponDetail'); d.textContent = '';
   const line = (label, text) => { const p = document.createElement('p'), s = document.createElement('strong'); s.textContent = label; p.append(s, text); return p; };
-  d.append(line('무기', h.wname + ' · ' + attackText(h)), line('패시브', h.p[0] + ' · ' + h.p[1]), line('궁극기', h.ult.name + ' · ' + h.ult.d + (id === 'medium' ? '' : ' (쿨타임 ' + ULT_CD + '초)')), line('체력', h.hp + ' · 대쉬 쿨타임 ' + (h.dashCd ? h.dashCd({ st: {}, b: {} }) : 1.5) + '초'));
+  d.append(line('무기', h.wname + ' · ' + attackText(h)), line('패시브', h.p[0] + ' · ' + dmgDesc(h, h.p[1])), line('궁극기', h.ult.name + ' · ' + dmgDesc(h, h.ult.d) + (id === 'medium' ? '' : ' (쿨타임 ' + ULT_CD + '초)')), line('체력', h.hp + ' · 대쉬 쿨타임 ' + (h.dashCd ? h.dashCd({ st: {}, b: {} }) : 1.5) + '초'));
   { /* mastery of this character: rank, bar, points */
     const m = masteryOf(id), row = document.createElement('div'), nm = document.createElement('b'), bar = document.createElement('span'), fl = document.createElement('i'), num = document.createElement('small');
     row.className = 'mRow'; row.style.setProperty('--mc', m.col); nm.textContent = m.name; fl.style.width = Math.round(m.into / m.need * 100) + '%'; bar.className = 'mBar'; bar.append(fl); num.textContent = m.top ? m.mp.toLocaleString('en-US') : m.into + ' / ' + m.need;
@@ -767,6 +776,7 @@ $('quest').addEventListener('click', () => { showScreen('questScreen'); questTab
 $('qTabD').addEventListener('click', () => questTab('d')); $('qTabW').addEventListener('click', () => questTab('w')); $('qTabA').addEventListener('click', () => questTab('a'));
 for (const id of ['acctId', 'acctIcon']) $(id).addEventListener('click', () => { showScreen('profScreen'); renderProfile(); });
 $('profBackBtn').addEventListener('click', () => showScreen('menuScreen'));
+for (const b of document.querySelectorAll('#profScreen .pfTabs button')) b.addEventListener('click', () => { for (const x of document.querySelectorAll('#profScreen .pfTabs button')) x.setAttribute('aria-selected', String(x === b)); for (const p of document.querySelectorAll('#profScreen .pfTab')) p.hidden = p.id !== b.dataset.pt; });
 $('questBackBtn').addEventListener('click', () => showScreen('menuScreen'));
 $('mapBackBtn').addEventListener('click', () => showScreen('menuScreen'));
 
@@ -856,7 +866,7 @@ function endGame(keepRunning) {
   $('fb').textContent = solo ? oc.place + '등' : mine; $('fr').textContent = theirs;
   { const q4 = curMode === 'hot4', fq = $('fq'); document.querySelector('#overScreen .final').classList.toggle('q4', q4); fq.textContent = '';
     if (q4) [0, 1, 2, 3].sort((a, b) => (score[b] | 0) - (score[a] | 0)).forEach(t => { const b = document.createElement('b'); b.textContent = (score[t] | 0) + '%'; b.style.color = TC(t); if (t === VIEW) b.className = 'me'; fq.append(b); }); }
-  $('mine').textContent = player ? MAPS[curMap].name + ' · ' + player.h0.name + ' · ' + player.kos + '킬 ' + player.deaths + '데스' : MAPS[curMap].name;
+  $('mine').textContent = modeNow().name + ' · ' + (player ? MAPS[curMap].name + ' · ' + player.h0.name + ' · ' + player.kos + '킬 ' + player.deaths + '데스' : MAPS[curMap].name);
   buildOverStats(win, draw);
   { /* what the match pays (social.js matchPay): gold, karma, mastery points for the character played, player xp */
     const pay = player ? matchPay({ mode: curMode, win, draw, kills: player.kos || 0, place: oc.place }) : null, hid = player ? player.h0.id : null;
@@ -865,7 +875,7 @@ function endGame(keepRunning) {
     { const e = $('streakGain'); e.hidden = !(sk && sk.st); if (sk && sk.st) { e.className = sk.st; e.textContent = sk.st === 'up' ? '🔥 ' + sk.ws + '연승' : sk.st === 'keep' ? '🔥 ' + sk.ws + '연승 유지' : '연승 끊김'; } }
     $('goldGain').hidden = !pay;
     if (pay) {
-      COS.gold += pay.gold; COS.karma += pay.karma; COS.xp += pay.xp; addMp(hid, pay.mp); dqMatch({ mode: curMode, win, kills: player.kos || 0, place: solo ? oc.place : 0, hero: hid, dealt: player.dealt || 0 }); achMatch({ mode: curMode, win, kills: player.kos || 0, deaths: player.deaths || 0, hero: hid, n: fighters.length }); saveCos(); goldUi();
+      COS.gold += pay.gold; COS.karma += pay.karma; COS.xp += pay.xp; addMp(hid, pay.mp); dqMatch({ mode: curMode, win, kills: player.kos || 0, place: solo ? oc.place : 0, hero: hid, dealt: player.dealt || 0 }); achMatch({ mode: curMode, win, kills: player.kos || 0, deaths: player.deaths || 0, hero: hid, n: fighters.length, mvp: matchMvp(win, draw) === player }); saveCos(); goldUi();
       $('goldGainN').textContent = '+' + pay.gold; $('karmaGain').hidden = !pay.karma; $('karmaGainN').textContent = '+' + pay.karma; $('mpGainN').textContent = '+' + pay.mp; $('xpGainN').textContent = '+' + pay.xp;
       $('mpGain').style.color = masteryOf(hid).col;
     }
@@ -884,7 +894,7 @@ $('specBack').addEventListener('click', () => soloWatch(false));
 $('roomCancelBtn').addEventListener('click', () => { netReset(); showScreen('menuScreen'); });
 $('goCosBtn').addEventListener('click', () => { showScreen('cosScreen'); renderCos(); });
 $('cosBackBtn').addEventListener('click', () => showScreen('menuScreen'));
-$('acctBtn').addEventListener('click', () => { const A = window.FFAuth; if (!A) return; try { if (PROF.guest) A.openLogin(); else A.openProfile(); } catch (e) {} });
+$('acctBtn').addEventListener('click', () => { const A = window.FFAuth; if (!A) return; if (!PROF.guest) { showScreen('profScreen'); renderProfile(); return; } try { A.openLogin(); } catch (e) {} });
 tapBtnUi($('emoteBtn'), () => emoteWheel());
 tapBtnUi($('chatBtn'), () => chatOpen(true));
 $('chatSend').addEventListener('click', () => { sendChat($('chatInput').value); chatOpen(false); });
@@ -1023,7 +1033,7 @@ function duelHud() {
     });
   });
 }
-window.__arena = { sqList, sqState, sqTake, sqOpen, PASS, GAME_VER, passXp, passAdd, passTake, renderPass, passLimited, modes: MODE_LIST, ACHS, achMatch, achScan, achSt, renderAch, questTab, setAchRates(r) { achRates = r; }, dqList, dqMatch, dqState, renderQuests, wqList, wqState, attSt, attTake, dealIds, cosPrice, TITLES, renderProfile, renderCos, rewardFx, matchMvp, endGame, goldUi, matchPay, masteryOf, levelOf, KARMA_ROAD, MASTERY, giveReward, COSMETICS, skinPrice, get COS() { return COS; }, get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
+window.__arena = { sqList, sqState, sqTake, sqOpen, swList, swState, PASS, GAME_VER, passXp, passAdd, passTake, renderPass, passLimited, modes: MODE_LIST, ACHS, achMatch, achScan, achSt, renderAch, questTab, setAchRates(r) { achRates = r; }, dqList, dqMatch, dqState, renderQuests, wqList, wqState, attSt, attTake, dealIds, cosPrice, TITLES, renderProfile, renderCos, rewardFx, matchMvp, endGame, goldUi, matchPay, masteryOf, levelOf, KARMA_ROAD, MASTERY, giveReward, COSMETICS, skinPrice, get COS() { return COS; }, get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
   setChar(id) { chosen = id; }, setMap(i) { mapChoice = i; }, tileAt: (x, y) => tile(Math.floor(x / T), Math.floor(y / T)), auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get PV() { return { sk: PV.sk, ult: PV.ult, dash: PV.dash }; }, get bullets() { return bullets; }, offline() { netReset(); startMatch(null); } };
 })();
 </script>
