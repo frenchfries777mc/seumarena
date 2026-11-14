@@ -246,6 +246,7 @@ function render() {
   for (const s of strikes) { const k = 1 - s.t / s.max; ctx.globalAlpha = .18; ctx.fillStyle = s.col; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.3); ctx.fill(); ctx.globalAlpha = .9; ctx.strokeStyle = s.col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(s.x, s.y, s.r * k, 0, 6.3); ctx.stroke(); ctx.globalAlpha = 1; }
 
   drawTiles(ctx, c0, c1, r0, r1, 1);      // walls go under the fighters, so a wall never covers a player
+  if (typeof drawBall === 'function') drawBall(ctx);      // (볼 배틀, ball.js)
   const inBush = [];
   if (me && state === 'play') { if (!drawPreviews(me)) drawBasicGuide(me); }
   const order = fighters.filter(f => !f.dead).concat(minions.filter(m => m.kind !== 'dragon' && m.kind !== 'crow')).sort((a, b) => a.y - b.y);
@@ -422,7 +423,7 @@ if (!DEVICE && $('devPick')) {
 /* game modes: the engine's MODES registry ({id,name,size,maps,ready}) when it exists; until then the same four, with only the current rules playable */
 const MODE_FALLBACK = [{ id: 'team', name: '팀 아웃', size: '3v3' }, { id: 'solo', name: '원 레프트', size: '8명', ready: false }, { id: 'flag', name: '캡쳐 플래그', size: '3v3', ready: false }, { id: 'duel', name: '듀얼 배틀', size: '1v1', ready: false }];
 const MODE_LIST = typeof MODES !== 'undefined' && Array.isArray(MODES) && MODES.length ? MODES : MODE_FALLBACK;
-const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'], hot4: ['mi-m-hot', '#ff8a3d'], duo: ['mi-m-last', '#c77dff'] };
+const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'], hot4: ['mi-m-hot', '#ff8a3d'], ball: ['mi-m-ball', '#5fd36a'], duo: ['mi-m-last', '#c77dff'] };
 let modeSel = typeof modeChoice === 'string' ? modeChoice : MODE_LIST[0].id, modeView = modeSel;
 const modeOk = m => !!m && m.ready !== false;
 const modeCur = () => MODE_LIST.find(m => m.id === modeSel && modeOk(m)) || MODE_LIST.find(modeOk) || MODE_LIST[0];
@@ -636,8 +637,8 @@ $('mapPickBtn').addEventListener('click', () => { mapChoice = mapList[mapIdx]; s
 
 /* mode picker. PC: a row of event cards, tap one to look at it, the button below (or a double click) confirms.
    touch or small screens: big posters, a tap picks the mode right away. Each card: mode art, headcount, two rules, the mode's current map */
-const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a', hot4: '#7a3510', duo: '#55207a' };
-const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1, hot4: MAPS.findIndex(m => m.hot), duo: 8 };      // map drawn behind the figures while the mode's map is random
+const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a', hot4: '#7a3510', ball: '#1f5a26', duo: '#55207a' };
+const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1, hot4: MAPS.findIndex(m => m.hot), ball: MAPS.findIndex(m => m.ball), duo: 8 };      // map drawn behind the figures while the mode's map is random
 const MODE_FFA = ['#4d9dff', '#ff5d5d', '#ffd34d', '#3ddbb4', '#b48cff', '#ff9a3d'];
 const RULE_ICO = {
   kill: '<circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>',
@@ -645,6 +646,7 @@ const RULE_ICO = {
   crown: '<path d="M4 8l4 4 4-7 4 7 4-4-1.5 10h-13z"/>',
   flag: '<path d="M6 21V4M6 5h12l-3 4 3 4H6"/>',
   zone: '<circle cx="12" cy="12" r="9" stroke-dasharray="4 3"/><circle cx="12" cy="12" r="3.5"/>',
+  ball: '<circle cx="12" cy="12" r="9"/><path d="M12 8.5l3.3 2.4-1.3 3.9h-4l-1.3-3.9z" fill="currentColor"/>',
   rounds: '<circle cx="5" cy="12" r="3" fill="currentColor"/><circle cx="12" cy="12" r="3" fill="currentColor"/><circle cx="19" cy="12" r="3"/>'
 };
 const mmss = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
@@ -655,6 +657,7 @@ function modeRules(m) {
   else if (isFlagMode(m.id) && m.win) r.push(['flag', '깃발 ' + m.win + '점']);
   else if (m.id === 'duel' && m.win) r.push(['rounds', m.win + '선승']);
   else if (m.id === 'hot4') r.push(['zone', (m.win || 100) + '%']);
+  else if (m.id === 'ball') r.push(['ball', m.win + '골']);
   else if (m.win) r.push(['kill', m.win + '킬']);
   if (m.time) r.push(['clock', (m.rounds ? '판당 ' : '') + mmss(m.time)]);
   return r;
@@ -705,6 +708,13 @@ function modeScene(cv, m, mi, cx) {
     g.save(); g.fillStyle = 'rgba(255,138,61,.22)'; g.beginPath(); g.ellipse(zx, zy, zr, zr * .45, 0, 0, 7); g.fill();
     g.strokeStyle = '#ffb36b'; g.lineWidth = 3 * k; g.setLineDash([10 * k, 6 * k]); g.beginPath(); g.ellipse(zx, zy, zr, zr * .45, 0, 0, 7); g.stroke(); g.restore();
     [['sword', -1.25, 4, 1], ['bow', -.55, -26, 1], ['rifle', .55, -26, -1], ['harald', 1.25, 4, -1]].forEach(([id, dx, dy, face], t) => fig(id, TEAM[t], zx + dx * 70 * s, base + dy * s, s * .95, face, .4));
+  } else if (m.id === 'ball') {      // a ball in the middle, one side running at it
+    const bx = x0 + 6 * s, by = base - 8 * s, br = 13 * s;
+    fig('sword', B, x0 - 50 * s, base, s * 1.1, 1, .5); fig('bow', B, x0 - 120 * s, base - 22 * s, s * .9, 1, .3);
+    fig('harald', R, x0 + 80 * s, base - 4 * s, s * 1.05, -1, .4); fig('rifle', R, x0 + 140 * s, base - 26 * s, s * .9, -1, .3);
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(bx + 2 * s, by + br, br, br * .4, 0, 0, 7); g.fill();
+    g.fillStyle = '#fff'; g.strokeStyle = '#1b1d24'; g.lineWidth = 2.5 * s; g.beginPath(); g.arc(bx, by, br, 0, 7); g.fill(); g.stroke();
+    g.fillStyle = '#1b1d24'; g.beginPath(); for (let i = 0; i < 5; i++) { const a = i * 1.2566 - 1.5708; g.lineTo(bx + Math.cos(a) * 5 * s, by + Math.sin(a) * 5 * s); } g.closePath(); g.fill();
   } else if (m.id === 'duel') {
     fig('sword', B, x0 - 62 * s, base, s * 1.25, 1, .6); fig('magiccard', R, x0 + 62 * s, base, s * 1.25, -1, .6);
     g.save(); g.translate(x0, base - 44 * s); g.globalCompositeOperation = 'lighter';
@@ -1033,7 +1043,7 @@ function duelHud() {
   });
 }
 window.__arena = { sqList, sqState, sqTake, sqOpen, swList, swState, PASS, GAME_VER, passXp, passAdd, passTake, renderPass, passLimited, modes: MODE_LIST, ACHS, achMatch, achScan, achSt, renderAch, questTab, setAchRates(r) { achRates = r; }, dqList, dqMatch, dqState, renderQuests, wqList, wqState, attSt, attTake, dealIds, cosPrice, TITLES, renderProfile, renderCos, rewardFx, matchMvp, endGame, goldUi, matchPay, masteryOf, levelOf, KARMA_ROAD, MASTERY, giveReward, COSMETICS, skinPrice, get COS() { return COS; }, get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
-  setChar(id) { chosen = id; }, setMap(i) { mapChoice = i; }, tileAt: (x, y) => tile(Math.floor(x / T), Math.floor(y / T)), auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get PV() { return { sk: PV.sk, ult: PV.ult, dash: PV.dash }; }, get bullets() { return bullets; }, offline() { netReset(); startMatch(null); } };
+  setChar(id) { chosen = id; }, setMap(i) { mapChoice = i; }, tileAt: (x, y) => tile(Math.floor(x / T), Math.floor(y / T)), auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get PV() { return { sk: PV.sk, ult: PV.ult, dash: PV.dash }; }, get bullets() { return bullets; }, BALL, offline() { netReset(); startMatch(null); } };
 })();
 </script>
 

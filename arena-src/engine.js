@@ -83,6 +83,10 @@ const MAPS = [
   { id:'flag_canal', name:'대운하', desc:'맵 가운데를 큰 운하가 가로지르고, 한가운데 다리 하나와 양 끝 둑길로만 건널 수 있어요. 깃발은 운하 양 끝 둑에 있고, 위아래 길의 가속 발판을 타면 상대 진영까지 빠르게 돌아 들어가요.', big:1, flag5:1,
     th:{ f1:'#4b5563', f2:'#525c6b', wt:'#c9a46e', ws:'#8f7347', b1:'#2f7a3a', b2:'#45984f', wa:'#1f6fa8', wa2:'#4fa3d9' },
     rows:['############################','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','#ggg#.................####..','#ggg#.......................','#ggg#..ppppppppppppp........','#####.......................','#...........................','#.....................####..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#.....................####..','#...........................','#####.......................','#ggg#..ppppppppppppp........','#ggg#.......................','#ggg#.................####..','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','############################'] }
+,
+  { id:'pitch', name:'초록 구장', desc:'양쪽 끝에 골대가 있는 축구장. 골대 앞 낮은 벽과 네 모서리 덤불을 끼고 공을 몰아요.', ball:1,
+    th:{ f1:'#3f8f3a', f2:'#46993f', wt:'#eef2f5', ws:'#9aa8b5', b1:'#2a6f2a', b2:'#3c8f39', wa:'#3a7fc4', wa2:'#63a4e0' },
+    rows:['##############','##..gg........','##..gg........','##............','##.......##...','##............','#.............','#.............','#.............','#.............','#.............','##............','##.......##...','##............','##..gg........','##..gg........','##############'] },
 ];
 for (const m of MAPS) m.grid = m.rows.map(r => r + [...r.slice(0, r.length - 1)].reverse().join(''));
 let COLS = 25, ROWS = 17, WW = COLS * T, WH = ROWS * T;      // set by loadMap(): the big 원 레프트 maps are larger
@@ -136,6 +140,7 @@ const MODES = [
   { id: 'duo', name: '투 레프트', size: '4팀', teams: 4, per: 2, respawn: false, win: 1, time: 150, rounds: 0, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },      // 2026-11-14 (developer): 4 pairs (was 5); a fallen fighter comes back next to a living partner after DUO_BACK s, both down = the pair is out. Same maps as 원 레프트      // 2026-11-13 (developer): 3 x 4 teams around one circle; maps = every MAPS entry with hot:1
   { id: 'flag', name: '캡쳐 플래그', size: '5v5', teams: 2, per: 5, respawn: true, win: 3, time: 240, rounds: 0, maps: [11, 12, 13, 14, 15, 16, 25], ready: true },      // 2026-11-12: the 3v3 version was dropped, 캡쳐 플래그 is 5v5 on the 5 big flag maps
   { id: 'duel', name: '듀얼 배틀', size: '1v1', teams: 2, per: 1, respawn: false, win: DUEL_N, time: 60, rounds: DUEL_N, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true },      // 듀얼 배틀 and 팀 아웃 share one map list (user 2026-11-13): keep the two lists the same
+  { id: 'ball', name: '볼 배틀', size: '3v3', teams: 2, per: 3, respawn: true, win: 3, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.ball ? i : -1).filter(i => i >= 0), ready: true },      // 2026-11-14 (user): 축구, ball.js
   { id: 'hot4', name: '배틀 존', size: '4팀', teams: 4, per: 3, respawn: true, win: 100, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.hot ? i : -1).filter(i => i >= 0), ready: true }
 ];
 for (const m of MODES) m.max = m.teams * m.per;
@@ -154,12 +159,13 @@ const HZ = { on: false, x: 0, y: 0, r: 0, own: -1, p: [0, 0, 0, 0], n: [0, 0, 0,
 const modeOf = id => MODES.find(m => m.id === id && m.ready) || MODES[0];
 const modeNow = () => modeOf(curMode);
 /* the small mode state that rides in every snapshot (net.js: `md`) so guests can draw it: round number, and later the flags / safe zone */
-function modeSnap() { const o = { rn: RD.n, rp: RD.pause > 0 ? 1 : 0 }; if (DUEL.line) { o.dl = DUEL.line; o.di = DUEL.li; } if (SZ.on) { o.z = [Math.round(SZ.x), Math.round(SZ.y), Math.round(SZ.r)]; o.w = RD.win; o.o = RD.out; } if (FLAGS.length) o.f = FLAGS.map(g => [Math.round(g.x), Math.round(g.y), g.by, g.home ? 1 : 0, Math.round(g.back * 10) / 10]); if (HZ.on) o.h = [HZ.own, Math.round(HZ.x), Math.round(HZ.y), Math.round(HZ.r)]; return o; }
+function modeSnap() { const o = { rn: RD.n, rp: RD.pause > 0 ? 1 : 0 }; if (DUEL.line) { o.dl = DUEL.line; o.di = DUEL.li; } if (SZ.on) { o.z = [Math.round(SZ.x), Math.round(SZ.y), Math.round(SZ.r)]; o.w = RD.win; o.o = RD.out; } if (FLAGS.length) o.f = FLAGS.map(g => [Math.round(g.x), Math.round(g.y), g.by, g.home ? 1 : 0, Math.round(g.back * 10) / 10]); if (HZ.on) o.h = [HZ.own, Math.round(HZ.x), Math.round(HZ.y), Math.round(HZ.r)]; if (BALL.on) o.bl = [Math.round(BALL.x), Math.round(BALL.y), Math.round(BALL.vx), Math.round(BALL.vy), BALL.gt]; return o; }
 function applyModeSnap(o) {
   if (!o || typeof o !== 'object') return;
   if (o.rn > 0) RD.n = o.rn | 0; RD.pause = o.rp ? 1 : 0;
   if (Array.isArray(o.dl) && o.dl.length === 2 && Array.isArray(o.di)) { DUEL.line = o.dl.map(l => Array.isArray(l) ? l.slice(0, DUEL_N).map(id => HEROES[id] ? id : null) : []); DUEL.li = [o.di[0] | 0, o.di[1] | 0]; } else DUEL.line = null;
   SZ.on = Array.isArray(o.z) && o.z.length === 3;
+  if (Array.isArray(o.bl) && o.bl.length === 5) { if (!BALL.on) ballStart(); BALL.x = +o.bl[0] || 0; BALL.y = +o.bl[1] || 0; BALL.vx = +o.bl[2] || 0; BALL.vy = +o.bl[3] || 0; BALL.gt = o.bl[4] | 0; BALL.st = performance.now(); } else BALL.on = false;
   HZ.on = Array.isArray(o.h) && o.h.length === 4; if (HZ.on) { HZ.own = clamp(o.h[0] | 0, -2, 3); HZ.x = +o.h[1] || 0; HZ.y = +o.h[2] || 0; HZ.r = Math.max(0, +o.h[3] || 0); }
   if (Array.isArray(o.f) && o.f.length === 2) { if (FLAGS.length !== 2) flagsReset(); o.f.forEach((v, t) => { if (!Array.isArray(v)) return; const g = FLAGS[t]; g.x = +v[0] || 0; g.y = +v[1] || 0; g.by = v[2] | 0; g.home = !!v[3]; g.back = +v[4] || 0; }); } else FLAGS = [];
   if (SZ.on) { SZ.x = +o.z[0] || 0; SZ.y = +o.z[1] || 0; SZ.r = Math.max(0, +o.z[2] || 0); RD.win = o.w | 0; RD.out = Array.isArray(o.o) ? o.o.slice(0, 8).map(v => v | 0) : []; }
@@ -273,7 +279,7 @@ function later(t, fn, f) { timers.push({ t, fn, f, src: SRC }); }
 function seq(f, n, gap, fn) { for (let i = 0; i < n; i++) later(i * gap, () => fn(i), f); }
 
 /* ---------- world helpers ---------- */
-const spawnPos = (team, slot) => curMode === 'solo' && SOLO_SP[team] ? SOLO_SP[team] : curMode === 'duo' && DUO_SP[team] ? DUO_SP[team][slot % 2] : curMode === 'hot4' && HZ.SP[team] ? HZ.SP[team][slot % 3] : ({ x: (team === 0 ? 1.5 : COLS - 1.5) * T, y: (ROWS / 2 - 2 + slot * 2) * T });
+const spawnPos = (team, slot) => curMode === 'ball' ? ballSpawn(team, slot) : curMode === 'solo' && SOLO_SP[team] ? SOLO_SP[team] : curMode === 'duo' && DUO_SP[team] ? DUO_SP[team][slot % 2] : curMode === 'hot4' && HZ.SP[team] ? HZ.SP[team][slot % 3] : ({ x: (team === 0 ? 1.5 : COLS - 1.5) * T, y: (ROWS / 2 - 2 + slot * 2) * T });
 function los(ax, ay, bx, by, walk) {
   const d = Math.hypot(bx - ax, by - ay), n = Math.ceil(d / 14), test = walk ? blockedAt : solidAt;
   for (let i = 1; i < n; i++) { const t = i / n; if (test(ax + (bx - ax) * t, ay + (by - ay) * t)) return false; }
@@ -453,6 +459,7 @@ function arc(f, ang, range, half, dmg, o) {
     o.by = f; status(e, o);
     damage(e, dmg, f, o); if (o.fn) o.fn(e); out.push(e);
   }
+  if (BALL.on) ballArc(f, ang, range, half, o.kb);
   return out;
 }
 function circ(by, x, y, r, dmg, o) {
@@ -464,6 +471,7 @@ function circ(by, x, y, r, dmg, o) {
     o.by = by; status(e, o);
     if (dmg) damage(e, dmg, by, o); if (o.fn) o.fn(e); out.push(e);
   }
+  if (BALL.on) ballCirc(by, x, y, r, dmg, o);
   return out;
 }
 function boom(by, x, y, r, dmg, o) { if (o && o.col) { fx('skillring', x, y, { color: o.col, r }); burst(x, y, o.col, 12, 260); } else fx(r >= 70 ? 'explosion' : 'bombexplode', x, y, { gy: y + 30 }); return circ(by, x, y, r, dmg, Object.assign({ kb: 160 }, o)); }
@@ -474,6 +482,7 @@ function pathHit(f, x0, y0, x1, y1, w, dmg, o) {       // everybody close to the
     if (d > w + 18) continue;
     o.by = f; status(e, o); if (dmg) damage(e, dmg, f, o); if (o.fn) o.fn(e); out.push(e);
   }
+  if (BALL.on && (dmg || o.kb)) ballPath(f, x0, y0, x1, y1, w);
   return out;
 }
 function emit(f, ang, o) {
@@ -664,7 +673,7 @@ function respawn(f) {
 }
 
 /* ---------- AI ---------- */
-function ai(f, dt) { const mv = ai0(f, dt), fl = envFlee(f) || zoneFlee(f) || flagGoal(f) || hotGoal(f, mv) || duoGoal(f); return fl || mv; }
+function ai(f, dt) { const mv = ai0(f, dt), fl = envFlee(f) || zoneFlee(f) || ballBot(f) || flagGoal(f) || hotGoal(f, mv) || duoGoal(f); return fl || mv; }
 /* ranged bots kite: when an enemy gets close they back off along the safest open direction (away from every nearby enemy, not into walls or
    corners) while still shooting, and dash away from a melee enemy that is about to land a hit */
 let AI_KITE = true;
@@ -929,6 +938,7 @@ function updateBullets(dt) {
           if (b.boom) { b.phase = 1; b.hit.clear(); } else { dead = true; b.wall = b.life > 0; if (!b.splash && fxInView(b.x, b.y) && b.life > 0) { const hx = solidAt(b.x, by0), hy = solidAt(bx0, b.y); fxPlay('wspark', Math.round(b.x), Math.round(b.y), +b.ang.toFixed(2), hx && !hy ? 1 : hy && !hx ? 2 : 0, TC(b.team)); } break; }      // (killfx.js: sparks, chips and a tink off the wall)
         }
       }
+      if (BALL.on && !dead && ballShot(b)) { dead = true; if (!b.splash) b.silent = 1; break; }
       for (const e of foes({ team: b.team, b: {} })) {
         if (e === b.owner || b.hit.has(e)) continue;
         if (Math.hypot(e.x - b.x, e.y + BODY - b.y) >= 20 + b.r + (o.pad || 0)) continue;      // o.pad: a more forgiving hitbox (군인)
@@ -984,6 +994,7 @@ function step(dt) {
     if (MODE.rounds) { roundStep(dt); return; }
     if (isLeft(MODE.id)) { soloStep(dt); return; }
     if (MODE.id === 'hot4') { hotStep(dt); return; }
+    if (MODE.id === 'ball' && ballStep(dt)) return;
     if (isFlagMode(MODE.id)) flagStep(dt);
     if (overtime) otT += dt; else timeLeft = Math.max(0, timeLeft - dt);
     if (score[0] >= MODE.win || score[1] >= MODE.win) endGame();
@@ -1020,6 +1031,7 @@ function newRound() {
    RD.win = the winner (the last one standing; if the last two fall together, the one who fell last). ===== */
 function modeStart() {
   if (isFlagMode(curMode)) flagsReset();
+  BALL.on = false; if (curMode === 'ball') ballStart();
   if (curMode === 'hot4') Object.assign(HZ, { on: true, x: WW / 2, y: WH / 2, r: (MAPS[curMap].hz || 4) * T, own: -1, p: [0, 0, 0, 0], n: [0, 0, 0, 0] });
   if (!isLeft(curMode)) return;
   const g = freeNear(WW / 2, WH / 2);
@@ -1198,6 +1210,7 @@ function hotGoal(f, mv) {
 /* the circle and the corner pads, in world space under the fighters (tail.js render, right after the floor). Empty: gold rim; one team: that team's
    colour, filled and pulsing; contested: the rim flashes through the colours of the teams inside. Light on phones: no gradients, no particles */
 function drawHotZone(c) {
+  drawPitch(c);      // (볼 배틀, ball.js)
   if (!HZ.on) return;
   c.save();
   for (let t = 0; t < 4; t++) { const sp = HZ.SP[t]; if (!sp) continue; const x = (sp[0].x + sp[1].x + sp[2].x) / 3, y = (sp[0].y + sp[1].y + sp[2].y) / 3; c.globalAlpha = .2; c.fillStyle = TC(t); c.beginPath(); c.arc(x, y, 1.45 * T, 0, 7); c.fill(); }
@@ -1267,7 +1280,7 @@ function drawSafeZone() {       // screen space
 const inOvertime = () => state === 'play' && timeLeft <= 0;       // true on host and guests: the clock sits at 0 only while sudden death runs
 function startOvertime() {
   overtime = true; otT = 0; timeLeft = 0;
-  for (const f of fighters) if (!f.dead) say(f, curMode === 'hot4' ? '연장전!' : '연장전! 먼저 잡으면 승리', '#ffd34d');
+  for (const f of fighters) if (!f.dead) say(f, curMode === 'hot4' ? '연장전!' : curMode === 'ball' ? '연장전! 먼저 골 넣으면 승리' : '연장전! 먼저 잡으면 승리', '#ffd34d');
   sfx(330, .5, 'sawtooth', .07, 2);
 }
 /* kos, deaths, damage dealt, damage taken, healing: one row per fighter in `fighters` order (JSON-safe, rides along with the end-of-match message) */
@@ -1347,7 +1360,7 @@ function drawSpecialTile(c, t, x, y, cc, r) {       // painted on top of the flo
   }
 }
 function drawEnvOverlay() {       // screen space, called by tail.js render() after the world is drawn
-  drawSafeZone(); drawFlags(); drawPortals();
+  drawSafeZone(); drawFlags(); drawPortals(); drawBallOverlay();
   if (state !== 'play' || !galeOn()) return;
   const left = GALE.until - time, a = clamp(Math.min(left, GALE.dur - left) / .8, 0, 1);
   ctx.fillStyle = 'rgba(216,180,106,' + (.34 * a) + ')'; ctx.fillRect(0, 0, W, H);

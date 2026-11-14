@@ -132,13 +132,14 @@ function addMp(h, n) { if (!HEROES[h]) return; COS.mp[h] = mpOf(h) + Math.max(0,
 /* player level: level L needs 150 + 50 (L - 1) xp to pass */
 function levelOf() { let xp = Math.max(0, Math.floor(+COS.xp || 0)), lv = 1; while (xp >= 150 + 50 * (lv - 1) && lv < 999) { xp -= 150 + 50 * (lv - 1); lv++; } return { lv, into: xp, need: 150 + 50 * (lv - 1) }; }
 /* what a match pays, by mode: kk karma per kill, kw karma for the win, mm mastery multiplier */
-const MODE_PAY = { team: { kk: 1, kw: 3, mm: 1 }, flag: { kk: 1, kw: 4, mm: 1.2 }, duel: { kk: 1, kw: 2, mm: .7 }, solo: { kk: 2, kw: 6, mm: 1 }, hot4: { kk: 1, kw: 4, mm: 1.1 }, duo: { kk: 1, kw: 5, mm: 1.1 } };
+const MODE_PAY = { team: { kk: 1, kw: 3, mm: 1 }, flag: { kk: 1, kw: 4, mm: 1.2 }, duel: { kk: 1, kw: 2, mm: .7 }, solo: { kk: 2, kw: 6, mm: 1 }, hot4: { kk: 1, kw: 4, mm: 1.1 }, ball: { kk: 1, kw: 3, mm: 1 }, duo: { kk: 1, kw: 5, mm: 1.1 } };
 /* karma by mode (user 2026-11-14: "모드마다 얻는 카르마 다르게"). Edit numbers here only.
    team modes: [win, draw, loss]; place modes: [1st, 2nd, 3rd, ...]; plus kill karma per kill up to killMax */
 const KARMA_TABLE = {
   team: { res: [5, 2, 1], kill: 1, killMax: 3 },             // 팀 아웃 3v3, 2:30
   duel: { res: [4, 1, 1], kill: 1, killMax: 2 },             // 듀얼 배틀 1v1, short
   flag: { res: [8, 4, 2], kill: 1, killMax: 3 },             // 캡쳐 플래그 5v5, 4:00
+  ball: { res: [5, 2, 1], kill: 1, killMax: 3 },             // 볼 배틀 3v3, 2:30
   hot4: { place: [7, 4, 2, 1], kill: 1, killMax: 3 },        // 배틀 존, 4 teams
   duo:  { place: [8, 5, 2, 1], kill: 1, killMax: 3 },        // 투 레프트, 4 pairs
   solo: { place: [9, 7, 5, 3, 2, 1, 0, 0], kill: 1, killMax: 3 }   // 원 레프트, 8 players
