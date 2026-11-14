@@ -51,7 +51,7 @@ hero('herbal', { p: ['약초 향기', '물약이 깨진 자리 근처 아군(나
       if (t) heal(t, 90); else heal(f, 60);
       const g = t || f; fxPlay('hbbandage', fighters.indexOf(f), fighters.indexOf(g));
     }, { ok: f => f.hp < f.mhp * .6 || !!hbMostHurt(f, 6 * T) && hbMostHurt(f, 6 * T).hp < hbMostHurt(f, 6 * T).mhp * .6 }],
-    [4, '물약 소나기', 'hit', '조준한 곳 근처로 물약 5병을 한꺼번에 던짐 · 병마다 떨어지는 자리가 조금씩 흩어짐 · 한 병당 상대 130 피해, 깨진 자리 아군 40 회복', [0, 7 * T], (f, a) => {
+    [4, '물약 소나기', 'hit', '조준한 곳 근처로 물약 5병을 한꺼번에 던짐 · 병마다 떨어지는 자리가 조금씩 흩어짐 · 한 병당 상대 126 피해, 깨진 자리 아군 40 회복', [0, 7 * T], (f, a) => {
       const p = aimPt(f, 6 * T), d0 = Math.max(1.5 * T, Math.hypot(p.x - f.x, p.y - f.y));
       const off = [[0, 0], [-.22, -.12], [.22, -.08], [-.1, .16], [.12, .2]];
       off.forEach(([da, dd], i) => later(i * .06, () => { if (!f.dead) hbPotion(f, a + da, d0 * (1 + dd)); }, f));

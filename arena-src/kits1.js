@@ -43,7 +43,7 @@ hero('pistol', { p: ['붉은 탄환', '6번째 발사마다 탄환이 붉게 변
   pre(f, o) { if (f.st.big) { f.st.big = 0; return Object.assign(o, { dmg: 66, r: 12, pierce: 99, wb: 1, spd: f.h.bspd * 1.5, range: 11 * T, shape: 'kdgun' }); }
     f.st.n = (f.st.n || 0) + 1; if (f.st.n % 6 === 0) { o.dmg = f.h.dmg * 1.25; o.r = 7; o.shape = 'chip'; } if (B(f, 'auto')) { o.homing = true; o.turn = 2.5; } return o; },
   tick(f) { if (B(f, 'auto')) { const e = nearest(f, f.h.range, null, 0); if (e) f.aim = angTo(f, e); } },
-  ult: ['강화탄', '다음 발사 때 데미지 990의 크고 빠른 탄환 1발 (플레이어와 벽을 뚫고 나아감)', [0, 9 * T], f => { f.st.big = 1; f.fireCd = 0; }],
+  ult: ['강화탄', '다음 발사 때 데미지 924의 크고 빠른 탄환 1발 (플레이어와 벽을 뚫고 나아감)', [0, 9 * T], f => { f.st.big = 1; f.fireCd = 0; }],
   skills: [
     [1, '속사', 'buff', '2.2초 동안 연사 속도 2배', [0, 8 * T], f => buff(f, 'rapid', 2.2, .5)],
     [2, '정확한 발사', 'hit', '유도 총알 발사 · 0.75초 동안 상대를 따라가고 그 뒤로는 마지막 방향으로 일직선', [100, 9 * T], (f, a) => emit(f, a, { skill: 1, dmg: 17, homing: true, homeT: .75, turn: 7, range: 10 * T, r: 6 })],
@@ -52,7 +52,7 @@ hero('pistol', { p: ['붉은 탄환', '6번째 발사마다 탄환이 붉게 변
     [5, '마지막 한 발', 'hit', '지난 3초 동안 자신이 받은 피해와 같은 피해의 대형 탄 1발 (받은 피해가 없으면 발동 안 됨)', [0, 9 * T], (f, a) => { const d = taken3(f); if (d < 1) return false; emit(f, a, { skill: 1, dmg: d, r: 13, range: 11 * T, shape: 'chip' }); }, { ok: f => taken3(f) > 30 }]
   ] });
 
-hero('bow', { p: ['원거리 사격', '화살이 멀리 날아갈수록 피해가 커짐 (가까울수록 작고 멀수록 큼, 최소 150 ~ 최대 540)'],
+hero('bow', { p: ['원거리 사격', '화살이 멀리 날아갈수록 피해가 커짐 (가까울수록 작고 멀수록 큼, 최소 125 ~ 최대 450)'],
   pre(f, o) { o.dmgAt = (b, e) => clamp(10 + 26 * Math.hypot(e.x - b.x0, e.y - b.y0) / (f.h.range * .85), 10, 36); return o; },
   ult: ['불화살', '불화살 3발 동시 발사, 맞으면 지속 피해', [100, 9 * T], (f, a) => emit(f, a, { skill: 1, count: 3, fan: .3, dmg: 30, burn: [4, 3], el: 1, shape: 'arrow' })],
   skills: [
@@ -60,9 +60,9 @@ hero('bow', { p: ['원거리 사격', '화살이 멀리 날아갈수록 피해�
       onHit: e => { const ang = angTo(f, e); lunge(f, ang, Math.max(20, dist(f, e) - 30), .22, { fly: 1, end: g => { if (!e.dead) { damage(e, 20, g); knock(e, g.x, g.y, 420); buff(e, 'stun', .8); } } }); },
       onEnd: b => { if (b.wall && !b.target) lunge(f, Math.atan2(b.y - f.y - BODY, b.x - f.x), Math.max(20, Math.hypot(b.x - f.x, b.y - f.y - BODY) - 30), .25, { fly: 1 }); } })],
     [2, '화살비', 'hit', '조준한 곳에 화살 8발이 쏟아짐 (발당 피해 100)', [100, 8 * T], f => { const p = aimPt(f, 8 * T); fx('arrowwarn', p.x, p.y); seq(f, 8, .1, () => { const x = p.x + rnd(-70, 70), y = p.y + rnd(-70, 70); strike(f, x, y, 40, .25, () => { circ(f, x, y, 40, 8); burst(x, y, '#c9a463', 4, 120); }, '#c9a463'); }); }],
-    [3, '폭발 화살', 'hit', '맞은 자리에서 폭발하는 화살을 쏨 · 폭발 범위 안 상대에게 190 피해 + 넉백', [100, 9 * T], (f, a) => emit(f, a, { skill: 1, dmg: 15, splash: 70, kb: 380 })],
+    [3, '폭발 화살', 'hit', '맞은 자리에서 폭발하는 화살을 쏨 · 폭발 범위 안 상대에게 188 피해 + 넉백', [100, 9 * T], (f, a) => emit(f, a, { skill: 1, dmg: 15, splash: 70, kb: 380 })],
     [4, '덫 화살', 'hit', '화살이 멈춘 자리에 덫이 깔림 · 덫을 밟은 상대를 3초 동안 속박 (덫은 15초 유지, 최대 3개)', [100, 8 * T], (f, a) => emit(f, a, { skill: 1, dmg: 0, range: Math.min(8 * T, Math.max(2 * T, Math.hypot(f.tx - f.x, f.ty - f.y))), onEnd: b => trap(f, clamp(b.x - Math.cos(b.ang) * 20, T * 1.3, WW - T * 1.3), clamp(b.y - Math.sin(b.ang) * 20 - BODY, T * 1.3, WH - T * 1.3), 15, 3, 'bowtrap', e => buff(e, 'root', 3)) })],
-    [5, '연속 사격', 'hit', '조준 방향으로 화살 3발을 빠르게 연속으로 쏨 (발당 120 피해)', [100, 9 * T], f => seq(f, 3, .12, () => emit(f, f.aim, { skill: 1, dmg: 10, shape: 'arrow' }))]
+    [5, '연속 사격', 'hit', '조준 방향으로 화살 3발을 빠르게 연속으로 쏨 (발당 125 피해)', [100, 9 * T], f => seq(f, 3, .12, () => emit(f, f.aim, { skill: 1, dmg: 10, shape: 'arrow' }))]
   ] });
 
 hero('bat', { p: ['4번 타자', '상대를 4번 연속 맞히면 다음 공격이 매우 큰 넉백과 피해 1.25배'],
@@ -81,7 +81,7 @@ hero('shuriken', { p: ['치고 빠지기', '대쉬 후 1초 안에 표창을 맞
   ult: ['회심의 일격', '다음 표창이 적중하면 데미지 2배 + 뒤로 짧게 순간이동', [0, 9 * T], f => { f.st.crit = 1; }],
   skills: [
     [1, '그림자 이동', 'move', '조준 방향으로 짧게 순간이동하고 1초 은신', [0, 6 * T], (f, a) => { blink(f, a, 3 * T); buff(f, 'stealth', 1); }],
-    [2, '수리검 부채', 'hit', '조준 방향으로 수리검 5발을 부채꼴로 발사 (발당 피해 130)', [0, 6 * T], (f, a) => emit(f, a, { skill: 1, count: 5, fan: .5, dmg: 8 })],
+    [2, '수리검 부채', 'hit', '조준 방향으로 수리검 5발을 부채꼴로 발사 (발당 피해 128)', [0, 6 * T], (f, a) => emit(f, a, { skill: 1, count: 5, fan: .5, dmg: 8 })],
     [3, '부채꼴 표창', 'hit', '표창 다섯 발을 넓은 부채꼴로 던짐 (발당 피해 160)', [0, 5 * T], (f, a) => emit(f, a, { skill: 1, count: 5, fan: 1.1, dmg: 10 })],
     [4, '연속 던지기', 'hit', '표창 세 발을 같은 방향 일직선으로 연속해서 던짐 (발당 일반 공격 피해)', [0, 8 * T], (f, a) => seq(f, 3, .1, () => emit(f, a, { skill: 1, dmg: 14 }))],
     [5, '담장 넘기', 'buff', '4초 동안 이동속도 7.5% 증가, 물과 용암 위를 넘어 다닐 수 있음', [0, 7 * T], f => { buff(f, 'haste', 4, 1.075); buff(f, 'fly', 4); }]
@@ -91,7 +91,7 @@ hero('shotgun', { p: ['명사수의 위협', '알갱이를 모두 맞히면 상�
   onShot(f, e, b) { const k = 'v' + b.born; if (f.st.vk !== k) { f.st.vk = k; f.st.vn = 0; } if (++f.st.vn >= 5) buff(e, 'slow', 3, .8); },
   ult: ['삼연발', '산탄을 0.2초 간격으로 3연속 발사', [0, 5 * T], (f, a) => seq(f, 3, .2, () => emit(f, f.aim))],
   skills: [
-    [1, '충격파', 'hit', '주변 적에게 140 피해 + 강하게 밀쳐냄', [0, 110], f => { ring(f.x, f.y, 120, '#ffe27a'); circ(f, f.x, f.y, 120, 18, { kb: 620 }); }],
+    [1, '충격파', 'hit', '주변 적에게 144 피해 + 강하게 밀쳐냄', [0, 110], f => { ring(f.x, f.y, 120, '#ffe27a'); circ(f, f.x, f.y, 120, 18, { kb: 620 }); }],
     [2, '올가미 줄', 'hit', '올가미를 던져 맞은 적을 내 앞으로 끌어당기고 0.4초 기절', [100, 6 * T], (f, a) => emit(f, a, { skill: 1, dmg: 0, range: 6 * T, spd: 700, r: 9, shape: 'boomerang', onHit: e => { const p = fwd(f, 46, angTo(f, e)); if (!e.minion) blinkTo(e, p.x, p.y); buff(e, 'stun', .4); } })],
     [3, '집속 발사', 'hit', '산탄이 45% 좁게 모이고 사거리 20% 늘어난 샷건을 즉시 발사', [0, 6 * T], (f, a) => emit(f, a, { fan: .5 * .55, range: 5.5 * T * 1.2 })],
     [4, '분노의 질주', 'buff', '지난 3초 동안 받은 피해만큼 이동속도 증가(받은 피해 8당 이속 +1%, 최대 40%) · 3초 지속', [0, 7 * T], f => buff(f, 'haste', 3, 1 + Math.min(.4, taken3(f) / 100)), { ok: f => taken3(f) > 15 }],
@@ -105,8 +105,8 @@ hero('rifle', { p: ['지뢰밭', '지뢰를 밟은 상대는 3초 동안 이동�
     [1, '지뢰 설치', 'hit', '바닥에 지뢰 2개를 설치 (최대 2개, 25초) · 밟은 적은 190 피해와 0.5초 기절 · 지뢰는 상대에게도 보임 (1스킬 칸에서는 쿨타임 2배)', [0, 6 * T], f => { for (const s of [-1, 1]) { const p = fwd(f, 44, f.aim + s * 1.2); trap(f, p.x, p.y, 25, 2, 'mine', e => { damage(e, 20, f); buff(e, 'stun', .5); buff(e, 'slow', 3, .9); }, '#ff5d5d'); } }, { cd1: 10 }],
     [2, '수류탄 투척', 'hit', '수류탄을 던져 떨어진 곳에서 폭발 (380 피해)', [100, 7 * T], f => { const p = aimPt(f, 7 * T); strike(f, p.x, p.y, 80, .5, () => boom(f, p.x, p.y, 80, 40)); }],
     [3, '돌격', 'buff', '2초 동안 받는 데미지 20% 감소, 이동속도 20% 증가', [0, 7 * T], f => { buff(f, 'dr', 2, .8); buff(f, 'haste', 2, 1.2); }],
-    [4, '지원', 'hit', '조준한 곳에 하늘에서 미사일 한 발이 떨어짐 (피해 660, 벽 통과, 나는 피해 없음)', [100, 9 * T], f => { const p = aimPt(f, 9 * T); fx('warn', p.x, p.y, { dur: .8 }); strike(f, p.x, p.y, px(110), .8, () => boom(f, p.x, p.y, px(110), 70)); }],
-    [5, '방탄 방어막', 'buff', '몸 주변에 초록색 원이 생겨 최대 380 피해를 막아줌 (최대 2.5초) · 다 막으면 폭발해 주변 적에게 380 피해와 넉백 (나는 피해 없음)', [0, 6 * T], f => { f.shield = 50 * STAT_X; f.onShieldBreak = g => boom(g, g.x, g.y, 110, 40, { kb: 500, col: '#7ef0a8' }); later(2.5, () => { f.shield = 0; f.onShieldBreak = null; }, f); }]
+    [4, '지원', 'hit', '조준한 곳에 하늘에서 미사일 한 발이 떨어짐 (피해 665, 벽 통과, 나는 피해 없음)', [100, 9 * T], f => { const p = aimPt(f, 9 * T); fx('warn', p.x, p.y, { dur: .8 }); strike(f, p.x, p.y, px(110), .8, () => boom(f, p.x, p.y, px(110), 70)); }],
+    [5, '방탄 방어막', 'buff', '몸 주변에 초록색 원이 생겨 최대 500 피해를 막아줌 (최대 2.5초) · 다 막으면 폭발해 주변 적에게 380 피해와 넉백 (나는 피해 없음)', [0, 6 * T], f => { f.shield = 50 * STAT_X; f.onShieldBreak = g => boom(g, g.x, g.y, 110, 40, { kb: 500, col: '#7ef0a8' }); later(2.5, () => { f.shield = 0; f.onShieldBreak = null; }, f); }]
   ] });
 
 hero('smg', { p: ['일제사격', '연발을 8발 이상 맞히면 주위 상대를 밀치고 3초 동안 이동속도 1.75배'],
@@ -125,20 +125,20 @@ hero('gloves', { p: ['맷집', '피격마다 받는 피해가 1%씩 줄고, 10%�
     if (o.quiet) return d; f.st.tough = (f.st.tough || 0) + 1; const r = d * (1 - f.st.tough / 100); if (f.st.tough >= 10) { f.st.tough = 0; buff(f, 'haste', 2.5, 1.5); buff(f, 'dmg', 2.5, 1.25); } return r; },
   ult: ['연타 러시', '4초 동안 공격 속도 2배 · 이동속도 1.35배 · 받는 피해 25% 감소 · 끝나는 순간 앞의 상대에게 KO 펀치 (375 피해, 크게 밀치고 0.6초 기절)', [0, 4 * T], f => { fxPlay('trail', fighters.indexOf(f), 4, '#ff3d3d', 'haste'); buff(f, 'rapid', 4, .5); buff(f, 'haste', 4, 1.35); buff(f, 'dr', 4, .75); later(4, () => { if (f.dead) return; f.swing = .25; fxPlay('bxko', fighters.indexOf(f), +f.aim.toFixed(2)); arc(f, f.aim, 110, .9, 30, { kb: 900, stun: .6 }); }, f); }],
   skills: [
-    [1, '어퍼컷', 'hit', '가까운 적에게 215 피해를 주고 공중으로 띄움 (0.6초 기절)', [0, 90], (f, a) => { const e = nearest(f, 90, a, 1.2); if (!e) return false; f.swing = .22; damage(e, 17, f); buff(e, 'stun', .6); }],
+    [1, '어퍼컷', 'hit', '가까운 적에게 213 피해를 주고 공중으로 띄움 (0.6초 기절)', [0, 90], (f, a) => { const e = nearest(f, 90, a, 1.2); if (!e) return false; f.swing = .22; damage(e, 17, f); buff(e, 'stun', .6); }],
     [2, '가드', 'buff', '1초 동안 가드를 올려 받는 피해 50% 감소 · 올린 직후 0.25초 안에 맞으면 100% 막고 이동속도 20% 증가', [0, 5 * T], f => { buff(f, 'guard', 1); f.st.gt = time; f.st.perf = 0; }],
     [3, '잽 연타', 'hit', '앞으로 살짝 파고들며 3연타 (각 75 피해)', [0, 130], (f, a) => { lunge(f, a, 50, .1, {}); seq(f, 3, .1, () => { f.swing = .12; arc(f, f.aim, 80, 1, 6); }); }],
     [4, '클린치', 'hit', '가까운 적을 붙잡아 1초 동안 서로 고정 · 붙잡는 순간 100 피해, 1초 뒤 100 피해', [0, 90], (f, a) => { const e = nearest(f, 90, a, 1.4); if (!e) return false; buff(e, 'root', 1); buff(f, 'root', 1); damage(e, 8, f); later(1, () => { if (!e.dead) damage(e, 8, f); }, f); }],
-    [5, '훅 돌진', 'move', '조준 방향으로 3칸 파고들며 훅 · 부딪힌 상대에게 190 피해 + 밀쳐냄', [0, 3 * T], (f, a) => lunge(f, a, 3 * T, .25, { dmg: 15, onHit: e => knock(e, f.x, f.y, 520) })]
+    [5, '훅 돌진', 'move', '조준 방향으로 3칸 파고들며 훅 · 부딪힌 상대에게 188 피해 + 밀쳐냄', [0, 3 * T], (f, a) => lunge(f, a, 3 * T, .25, { dmg: 15, onHit: e => knock(e, f.x, f.y, 520) })]
   ] });
 
 hero('grenade', { p: ['폭발광', '폭발 점프로 피해를 주면 착지 때 근처 상대를 밀치고 0.4초 기절'],
   ult: ['집속탄', '소형 수류탄 5개를 부채꼴로 투척', [100, 6 * T], (f, a) => emit(f, a, { skill: 1, count: 5, fan: 1, dmg: 30, splash: 60, shape: 'bomb' })],
   skills: [
-    [1, '폭발 점프', 'move', '폭발로 조준 방향으로 높이 뛰어올라(벽도 뛰어넘음) 주변에 340 피해', [0, 110], (f, a) => { const hit = boom(f, f.x, f.y, 100, 56).length; lunge(f, a, 3 * T, .35, { fly: 2, end: g => { if (hit) circ(g, g.x, g.y, 90, 0, { kb: 420, stun: .4 }); } }); }],
+    [1, '폭발 점프', 'move', '폭발로 조준 방향으로 높이 뛰어올라(벽도 뛰어넘음) 주변에 336 피해', [0, 110], (f, a) => { const hit = boom(f, f.x, f.y, 100, 56).length; lunge(f, a, 3 * T, .35, { fly: 2, end: g => { if (hit) circ(g, g.x, g.y, 90, 0, { kb: 420, stun: .4 }); } }); }],
     [2, '폭격', 'hit', '내 앞과 뒤로 폭탄을 2개씩 바로 발사', [0, 5 * T], (f, a) => { for (const s of [0, Math.PI]) emit(f, a + s, { count: 2, fan: .35, full: 1 }); }],
-    [3, '끈끈이 폭탄', 'hit', '조준 방향으로 끈끈한 폭탄을 쏨 · 맞은 상대에게 달라붙어(92 피해) 1.5초 뒤 그 상대 자리에서 크게 터짐 (주변 420 피해, 넉백) · 붙은 동안 상대 위에 빨간 고리가 깜빡임', [0, 6 * T], (f, a) => emit(f, a, { skill: 1, dmg: 15, spd: 620, range: 6 * T, r: 9, shape: 'potion', onHit: e => { seq(f, 3, .5, () => { if (!e.dead) ring(e.x, e.y, 46, '#ff5d5d', .25); }); later(1.5, () => { const x = e.dead ? e.x : e.x, y = e.y; boom(f, x, y, 90, 70, { kb: 300 }); }); } })],
-    [4, '강력한 폭탄', 'hit', '조준한 곳으로 큰 폭탄을 던짐 (일반 공격처럼 날아가 떨어진 곳에서 터짐, 340 피해) · 터지면 근처 벽과 덤불이 경기가 끝날 때까지 사라짐 (테두리 벽은 그대로)', [100, 7 * T], (f, a) => { const p = aimPt(f, 7 * T); emit(f, Math.atan2(p.y - f.y, p.x - f.x), { skill: 1, shape: 'bomb', wp: true, r: 9, dmg: 56, splash: 100, range: Math.max(T, Math.hypot(p.x - f.x, p.y - f.y)), onBoom: (x, y) => { let bz = 0; for (let r = Math.floor((y - 100) / T); r <= Math.floor((y + 100) / T); r++) for (let c = Math.floor((x - 100) / T); c <= Math.floor((x + 100) / T); c++) { if (c <= 0 || r <= 0 || c >= COLS - 1 || r >= ROWS - 1 || Math.hypot((c + .5) * T - x, (r + .5) * T - y) > 100) continue; const t = MAP[r][c]; if (t === 'G' && typeof GD !== 'undefined') { const e = GD.plants.get(c + ',' + r); if (e) e.until = time; } else if (t === 'g') { MAP[r][c] = '.'; bz = 1; burst((c + .5) * T, (r + .5) * T, '#4f8a3a', 10, 200); } } if (bz) NET.mapVer++;      // the blast burns away bushes too (the map's own for the rest of the match, planted ones wither)
+    [3, '끈끈이 폭탄', 'hit', '조준 방향으로 끈끈한 폭탄을 쏨 · 맞은 상대에게 달라붙어(90 피해) 1.5초 뒤 그 상대 자리에서 크게 터짐 (주변 420 피해, 넉백) · 붙은 동안 상대 위에 빨간 고리가 깜빡임', [0, 6 * T], (f, a) => emit(f, a, { skill: 1, dmg: 15, spd: 620, range: 6 * T, r: 9, shape: 'potion', onHit: e => { seq(f, 3, .5, () => { if (!e.dead) ring(e.x, e.y, 46, '#ff5d5d', .25); }); later(1.5, () => { const x = e.dead ? e.x : e.x, y = e.y; boom(f, x, y, 90, 70, { kb: 300 }); }); } })],
+    [4, '강력한 폭탄', 'hit', '조준한 곳으로 큰 폭탄을 던짐 (일반 공격처럼 날아가 떨어진 곳에서 터짐, 336 피해) · 터지면 근처 벽과 덤불이 경기가 끝날 때까지 사라짐 (테두리 벽은 그대로)', [100, 7 * T], (f, a) => { const p = aimPt(f, 7 * T); emit(f, Math.atan2(p.y - f.y, p.x - f.x), { skill: 1, shape: 'bomb', wp: true, r: 9, dmg: 56, splash: 100, range: Math.max(T, Math.hypot(p.x - f.x, p.y - f.y)), onBoom: (x, y) => { let bz = 0; for (let r = Math.floor((y - 100) / T); r <= Math.floor((y + 100) / T); r++) for (let c = Math.floor((x - 100) / T); c <= Math.floor((x + 100) / T); c++) { if (c <= 0 || r <= 0 || c >= COLS - 1 || r >= ROWS - 1 || Math.hypot((c + .5) * T - x, (r + .5) * T - y) > 100) continue; const t = MAP[r][c]; if (t === 'G' && typeof GD !== 'undefined') { const e = GD.plants.get(c + ',' + r); if (e) e.until = time; } else if (t === 'g') { MAP[r][c] = '.'; bz = 1; burst((c + .5) * T, (r + .5) * T, '#4f8a3a', 10, 200); } } if (bz) NET.mapVer++;      // the blast burns away bushes too (the map's own for the rest of the match, planted ones wither)
       const c0 = Math.floor(x / T), r0 = Math.floor(y / T); for (let r = r0 - 1; r <= r0 + 1; r++) for (let c = c0 - 1; c <= c0 + 1; c++) if (c > 0 && r > 0 && c < COLS - 1 && r < ROWS - 1 && MAP[r][c] === '#' && Math.hypot((c + .5) * T - x, (r + .5) * T - y) < 1.3 * T) { MAP[r][c] = '.'; NET.mapVer++; burst((c + .5) * T, (r + .5) * T, TH.wt, 14, 260); } } }); }],
     [5, '화염병', 'hit', '조준한 곳에 화염병을 던짐 · 3초 동안 불길이 남아 안에 있는 상대는 초당 120 피해', [100, 7 * T], f => { const p = aimPt(f, 7 * T); strike(f, p.x, p.y, 90, .4, () => { burst(p.x, p.y, '#ff7a2a', 14, 220); zone({ by: f, x: p.x, y: p.y, r: 90, t: 3, col: '#ff7a2a', op: .3, fn: (z, dt) => { z.acc += dt; if (z.acc >= .5) { z.acc -= .5; circ(f, z.x, z.y, z.r, 10, { quiet: 1 }); } } }); }, '#ff7a2a'); }]
   ] });
@@ -176,21 +176,21 @@ hero('dracula', { p: ['흡혈귀', '공격이 적중할 때마다 체력 50 흡�
 
 hero('wizard', { p: ['마법진의 파동', '마법진 안에서는 스킬 밀쳐내는 힘 2배 · 일반 공격과 스킬 탄은 상대와 벽을 관통'], pierce: 99, wallPass: 1,
   tick(f, dt) { const o = f.st.orb; if (o && o.n > 0) { o.t -= dt; if (o.t <= 0) { o.n = 0; return; } for (let i = 0; i < o.n; i++) { const a = time * 3 + i * 6.283 / 5, x = f.x + Math.cos(a) * 54, y = f.y + Math.sin(a) * 54; const e = foes(f).find(e => Math.hypot(e.x - x, e.y - y) < 30); if (e) { withSrc(o.src, () => damage(e, 14, f)); o.n--; break; } } } },
-  ult: ['마법진', '자신의 위치에 거대한 마법진 소환(10초): 나와 아군은 공격력 30% 증가 + 초당 120 회복, 안에 들어온 적은 초당 130 피해', [0, 6 * T], f => (fx('magiccircle', f.x, f.y), zone)({ by: f, x: f.x, y: f.y, r: px(330), t: 10, col: '#b98cff', kind: 'circle', fn: (z, dt) => { z.acc += dt; const tk = z.acc >= .5; if (tk) z.acc -= .5; for (const a of allies(f)) if (inZone(z, a)) { buff(a, 'dmg', .2, 1.3); if (tk) heal(a, 6); } if (tk) circ(f, z.x, z.y, z.r, 4.5, { quiet: 1 }); } })],
+  ult: ['마법진', '자신의 위치에 거대한 마법진 소환(10초): 나와 아군은 공격력 30% 증가 + 초당 120 회복, 안에 들어온 적은 초당 135 피해', [0, 6 * T], f => (fx('magiccircle', f.x, f.y), zone)({ by: f, x: f.x, y: f.y, r: px(330), t: 10, col: '#b98cff', kind: 'circle', fn: (z, dt) => { z.acc += dt; const tk = z.acc >= .5; if (tk) z.acc -= .5; for (const a of allies(f)) if (inZone(z, a)) { buff(a, 'dmg', .2, 1.3); if (tk) heal(a, 6); } if (tk) circ(f, z.x, z.y, z.r, 4.5, { quiet: 1 }); } })],
   skills: [
     [1, '충격파', 'hit', '주변 상대를 아주 크게 밀쳐내는 충격파 (150 피해)', [0, 120], f => { const inC = zones.some(z => z.kind === 'circle' && z.by === f && inZone(z, f)); ring(f.x, f.y, 130, '#b98cff'); circ(f, f.x, f.y, 130, 10, { kb: inC ? 1800 : 900 }); }],
     [2, '마력 압축', 'hit', '기존 탄환보다 2배 큰 탄환을 발사 · 무한정 관통 · 관통과 상관없이 피해 300', [100, 8 * T], (f, a) => emit(f, a, { skill: 1, dmg: 20, r: 10, pierce: 99 })],
     [3, '마력 연사', 'hit', '조준 방향으로 마법 탄환을 세 발 연속으로 쏨 (발당 일반 공격 피해)', [100, 8 * T], f => seq(f, 3, .15, () => emit(f, f.aim, { skill: 1, dmg: 14, pierce: 99 }))],
-    [4, '파동 쏘기', 'hit', '마법 탄환 2개가 엇갈린 파동 궤적을 그리며 날아감 (각 일반 공격 피해) · 두 발 다 같은 상대에게 맞으면 추가 피해 +195', [100, 8 * T], (f, a) => { const got = new Set(); for (const s of [-1, 1]) emit(f, a, { skill: 1, dmg: 14, wave: s, onHit: e => { if (got.has(e)) damage(e, 15, f); got.add(e); } }); }],
+    [4, '파동 쏘기', 'hit', '마법 탄환 2개가 엇갈린 파동 궤적을 그리며 날아감 (각 일반 공격 피해) · 두 발 다 같은 상대에게 맞으면 추가 피해 +225', [100, 8 * T], (f, a) => { const got = new Set(); for (const s of [-1, 1]) emit(f, a, { skill: 1, dmg: 14, wave: s, onHit: e => { if (got.has(e)) damage(e, 15, f); got.add(e); } }); }],
     [5, '마력 보호', 'buff', '자기 주위에 마력 탄환 5개가 8초 동안 빙글빙글 돎 · 상대에 닿으면 사라지며 일반 공격 피해', [0, 5 * T], f => { f.st.orb = { n: 5, t: 8, src: SRC }; }]
   ] });
 
-hero('magiccard', { p: ['카드 마술', '기본 공격은 맞은 상대를 느리게 하고 3장이 모두 맞으면 +47 피해와 0.5초 기절 · 스킬 카드 5장이 모두 한 상대에게 맞으면 기절'],
+hero('magiccard', { p: ['카드 마술', '기본 공격은 맞은 상대를 느리게 하고 3장이 모두 맞으면 +48 피해와 0.5초 기절 · 스킬 카드 5장이 모두 한 상대에게 맞으면 기절'],
   pre(f, o) { if (f.st.flower) { f.st.flower = 0; return Object.assign(o, { count: 1, fan: 0, dmg: 5, mute: 1, shape: 'cleonorb', r: 8 }); } const got = new Map(); o.slow = [.75, 1.2]; o.onHit = e => { const n = (got.get(e) || 0) + 1; got.set(e, n); if (n === 3) { damage(e, 4, f); buff(e, 'stun', .5); } }; return o; },
   tick(f) { if (f.st.flower && time > f.st.flower) f.st.flower = 0; },
   ult: ['탈출 마법', '가장 가까운 상대 위치로 순간이동해 1초 동안 쿨타임 없이 카드를 2번 연속 발사, 1초 뒤 원래 있던 자리로 되돌아옴', [100, 8 * T], f => { const e = nearest(f, 9 * T, null, 0, false); if (!e) return false; const x0 = f.x, y0 = f.y; blinkTo(f, e.x - Math.cos(angTo(f, e)) * 70, e.y - Math.sin(angTo(f, e)) * 70); seq(f, 2, .4, () => { if (!e.dead) f.aim = angTo(f, e); emit(f, f.aim); }); later(1, () => blinkTo(f, x0, y0), f); }],
   skills: [
-    [1, '카드 일렬 발사', 'hit', '조준 방향으로 카드 5장을 일렬로 연달아 발사 (장당 94 피해)', [100, 7 * T], f => { const got = new Map(); seq(f, 5, .08, () => emit(f, f.aim, { skill: 1, count: 1, fan: 0, dmg: 8, onHit: e => { const n = (got.get(e) || 0) + 1; got.set(e, n); if (n === 5) { buff(e, 'stun', .8); fxAt(e, 'combo'); } } })); }],
+    [1, '카드 일렬 발사', 'hit', '조준 방향으로 카드 5장을 일렬로 연달아 발사 (장당 96 피해)', [100, 7 * T], f => { const got = new Map(); seq(f, 5, .08, () => emit(f, f.aim, { skill: 1, count: 1, fan: 0, dmg: 8, onHit: e => { const n = (got.get(e) || 0) + 1; got.set(e, n); if (n === 5) { buff(e, 'stun', .8); fxAt(e, 'combo'); } } })); }],
     [2, '비둘기 변신', 'move', '1.5초 동안 모자 쓴 비둘기로 변해 물 위를 지나 상대에게 날아감 · 돌진 중 상대에게 닿으면 바로 변신이 풀리고 상대 0.9초 기절', [100, 8 * T], f => { f.form = 'dove'; buff(f, 'fly', 1.5); buff(f, 'haste', 1.5, 2.1); f.b.fly.end = g => { if (g.form === 'dove') g.form = null; unstick(g); }; f.st.dove = 1; }],
     [3, '모자 던지기', 'move', '모자를 던지고 사라짐 · 모자는 조준 방향으로 일직선으로 빠르게 날아가고(벽과 물 앞에서 멈춤), 모자가 멈추면 그 자리에 마술사가 다시 나타남 (이동기)', [0, 7 * T], (f, a) => {
       f.form = 'gone'; f.ghost = true; const x0 = f.x, y0 = f.y, p = { x: x0, y: y0 }, max = 5.5 * T, side = [0, 12, -12]; f.st.hat = p;

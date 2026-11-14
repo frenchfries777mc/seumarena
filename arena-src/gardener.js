@@ -52,7 +52,7 @@ hero('gardener', { p: ['초록 손', '내가 심은 덤불(덤불 심기, 숲 �
   spd: f => plantAt(f.x, f.y) ? 1.15 : 1,
   reveal: f => plantAt(f.x, f.y) ? .4 : .8,
   pre(f, o) { o.onEnd = b => gdSprout(f, b.x, b.y - BODY); return o; },
-  ult: ['숲 폭발', '내 주변 반지름 4칸이 7초 동안 덤불로 바뀜 · 펼쳐지는 순간 그 안의 상대는 넝쿨에 1초 속박되고 600 피해 · 덤불 안의 상대는 아주 가까이 가야만 보임', [0, 3.5 * T], f => {
+  ult: ['숲 폭발', '내 주변 반지름 4칸이 7초 동안 덤불로 바뀜 · 펼쳐지는 순간 그 안의 상대는 넝쿨에 1초 속박되고 720 피해 · 덤불 안의 상대는 아주 가까이 가야만 보임', [0, 3.5 * T], f => {
     const x = f.x, y = f.y; gdPlant(cellsInCircle(x, y, 4 * T), 7);
     fxPlay('garden', 'forest', Math.round(x), Math.round(y), 4 * T);
     circ(f, x, y, 4 * T, 60, { root: 1, kb: 0 });
@@ -67,7 +67,7 @@ hero('gardener', { p: ['초록 손', '내가 심은 덤불(덤불 심기, 숲 �
       list.push(keys);
       fxPlay('garden', 'grow', Math.round(p.x), Math.round(p.y), 2);
     }, { ok: (f, e, d) => d < 7 * T }],
-    [2, '가시 넝쿨', 'hit', '조준 방향으로 4칸 길이의 가시 넝쿨을 깔아 4초 동안 남김 · 밟은 상대는 초당 150 피해와 30% 둔화 · 처음 닿으면 0.5초 속박 (벽에서 멈춤, 1스킬 칸에서는 쿨타임 9초)', [0, 4.5 * T], (f, a) => {
+    [2, '가시 넝쿨', 'hit', '조준 방향으로 4칸 길이의 가시 넝쿨을 깔아 4초 동안 남김 · 밟은 상대는 초당 180 피해와 30% 둔화 · 처음 닿으면 0.5초 속박 (벽에서 멈춤, 1스킬 칸에서는 쿨타임 9초)', [0, 4.5 * T], (f, a) => {
       const S = { hit: new Set(), acc: new Map(), at: new Map() }, n = 5, gap = .82 * T;
       for (let i = 0; i < n; i++) {
         const d = .55 * T + i * gap, x = f.x + Math.cos(a) * d, y = f.y + Math.sin(a) * d;

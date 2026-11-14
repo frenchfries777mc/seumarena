@@ -133,13 +133,23 @@ function addMp(h, n) { if (!HEROES[h]) return; COS.mp[h] = mpOf(h) + Math.max(0,
 function levelOf() { let xp = Math.max(0, Math.floor(+COS.xp || 0)), lv = 1; while (xp >= 150 + 50 * (lv - 1) && lv < 999) { xp -= 150 + 50 * (lv - 1); lv++; } return { lv, into: xp, need: 150 + 50 * (lv - 1) }; }
 /* what a match pays, by mode: kk karma per kill, kw karma for the win, mm mastery multiplier */
 const MODE_PAY = { team: { kk: 1, kw: 3, mm: 1 }, flag: { kk: 1, kw: 4, mm: 1.2 }, duel: { kk: 1, kw: 2, mm: .7 }, solo: { kk: 2, kw: 6, mm: 1 }, hot4: { kk: 1, kw: 4, mm: 1.1 }, duo: { kk: 1, kw: 5, mm: 1.1 } };
-/* 원 레프트 karma by finishing place (user 2026-11-11): the last three places (4th to 6th of 6) get only their kills (no place bonus);
-   1st gets kills + the win bonus, 2nd and 3rd kills + a smaller bonus */
-function soloKarma(place, k, pm) { const n = 6; return k * pm.kk + (place >= 1 && place <= n - 3 ? [pm.kw, 4, 2][place - 1] : 0); }
+/* karma by mode (user 2026-11-14: "모드마다 얻는 카르마 다르게"). Edit numbers here only.
+   team modes: [win, draw, loss]; place modes: [1st, 2nd, 3rd, ...]; plus kill karma per kill up to killMax */
+const KARMA_TABLE = {
+  team: { res: [5, 2, 1], kill: 1, killMax: 3 },             // 팀 아웃 3v3, 2:30
+  duel: { res: [4, 1, 1], kill: 1, killMax: 2 },             // 듀얼 배틀 1v1, short
+  flag: { res: [8, 4, 2], kill: 1, killMax: 3 },             // 캡쳐 플래그 5v5, 4:00
+  hot4: { place: [7, 4, 2, 1], kill: 1, killMax: 3 },        // 배틀 존, 4 teams
+  duo:  { place: [8, 5, 2, 1], kill: 1, killMax: 3 },        // 투 레프트, 4 pairs
+  solo: { place: [9, 6, 4, 2, 1, 0], kill: 1, killMax: 3 }   // 원 레프트, 6 players
+};
+function modeKarma(o) { const t = KARMA_TABLE[o.mode] || KARMA_TABLE.team, k = Math.min(t.killMax, Math.max(0, o.kills | 0)) * t.kill;
+  if (t.place) return k + (t.place[(o.place | 0) - 1] || 0);
+  return k + t.res[o.win ? 0 : o.draw ? 1 : 2]; }
 function matchPay(o) {      // o: { mode, win, draw, kills, place }
   if (o.mode === 'flag5') o = Object.assign({}, o, { mode: 'flag' });      // capture the flag pays the same whatever the team size
   const pm = MODE_PAY[o.mode] || MODE_PAY.team, solo = o.mode === 'solo', k = Math.max(0, o.kills | 0), good = o.win ? 2 : o.draw || (solo && o.place <= 3) || (o.mode === 'hot4' && o.place === 2) || (o.mode === 'duo' && o.place === 2) ? 1 : 0;      // 4팀 핫존: 2nd of 4 pays like a draw
-  return { gold: Math.round(([30, 40, 60][good] + 5 * Math.min(10, k)) * (o.mode === 'duel' ? .6 : 1)), karma: solo ? soloKarma(o.place, k, pm) : k * pm.kk + (o.win ? pm.kw : 0),
+  return { gold: Math.round(([30, 40, 60][good] + 5 * Math.min(10, k)) * (o.mode === 'duel' ? .6 : 1)), karma: modeKarma(o),
     mp: Math.round(([30, 42, 55][good] + 3 * Math.min(10, k)) * pm.mm), xp: [40, 55, 70][good] + 4 * Math.min(10, k) };
 }
 /* streaks: every win in a row after the first adds 1 karma to the next win (up to +5); after three losses in a row the next match pays half as much gold again.
@@ -271,7 +281,7 @@ function dqMatch(m) {
     st.p[i] = Math.min(q.n, (+st.p[i] || 0) + Math.max(0, add));
   });
   { const ws = wqState(); wqList(ws.d).forEach((q, i) => { ws.p[i] = Math.min(q.n, (+ws.p[i] || 0) + qAdd(q, m)); }); }
-  { const ss = sqState(); sqList(ss.d).forEach((q, i) => { ss.p[i] = Math.min(q.n, (+ss.p[i] || 0) + qAdd(q, m)); }); }
+  for (const [ss, ls] of [[sqState(), sqList], [swState(), swList]]) ls(ss.d).forEach((q, i) => { ss.p[i] = Math.min(q.n, (+ss.p[i] || 0) + qAdd(q, m)); });
   passMatch(m); saveCos(); questUi();
 }
 function dqTake(i) {
@@ -326,24 +336,46 @@ const myTitle = () => titleOk(COS.title) ? TITLES[COS.title] : '';
 /* ---------- the profile card: level, lifetime numbers, the character played most, titles to pick ---------- */
 function favHero() { const st = achSt(); let best = null, bv = 0; for (const h of Object.keys(HEROES)) { const v = (st.hg[h] | 0) * 1e6 + mpOf(h); if (v > bv) { bv = v; best = h; } } return best || (HEROES[chosen] ? chosen : Object.keys(HEROES)[0]); }
 function renderProfile() {
-  const $i = id => document.getElementById(id), st = achSt(), l = levelOf(), h = favHero(), tier = ['#9aa3b5', '#7fb4ff', '#c17bff', '#ffd34d'];
-  $i('profName').textContent = PROF.name; $i('profName').style.color = nameColorFor(COS.name); $i('profTitle').textContent = myTitle(); $i('profTitle').hidden = !myTitle();
-  $i('profLv').textContent = 'Lv ' + l.lv; $i('profLvBar').style.width = Math.round(l.into / l.need * 100) + '%';
-  $i('profHero').textContent = HEROES[h].name + ' · ' + masteryOf(h).name; $i('profHero').style.color = masteryOf(h).col;
-  { const cvs = $i('profCv'), c = cvs.getContext('2d'), cos = myCos(h); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cvs.width, cvs.height); c.translate(cvs.width / 2, cvs.height - 34); c.scale(2.6, 2.6); try { drawStick(c, h, bodyColor(cos, '#cfd3dc'), .3, 0, 0, 0, cos); } catch (e) {} }
+  const $i = id => document.getElementById(id), st = achSt(), l = levelOf(), h = favHero(), ms = masteryOf(h), tier = ['#9aa3b5', '#7fb4ff', '#c17bff', '#ffd34d'];
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }, num = v => typeof v === 'number' ? v.toLocaleString('en-US') : v;
+  const stick = (cvs, id, sc, foot) => { const c = cvs.getContext('2d'), cos = myCos(id); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cvs.width, cvs.height); c.translate(cvs.width * .4, cvs.height - foot); c.scale(sc, sc); try { drawStick(c, id, bodyColor(cos, '#cfd3dc'), .3, 0, 0, 0, cos); } catch (e) {} };
+  $i('profName').textContent = PROF.name; $i('profName').style.color = nameColorFor(COS.name) || '#ffb84d';
+  { const t = $i('profTitle'), a = ACHS.find(x => x.id === COS.title); t.textContent = myTitle(); t.hidden = !myTitle(); if (a) t.style.setProperty('--tc', tier[a.t]); }
+  $i('profLv').textContent = l.lv; $i('profRing').style.background = 'conic-gradient(#4aa6ff 0 ' + Math.round(l.into / l.need * 100) + '%,#2a3456 0)';
+  { const e = $i('profHero'), i = el('i', '', ms.name); i.style.color = ms.col; e.textContent = '주력 · ' + HEROES[h].name + ' '; e.append(i); }
+  stick($i('profCv'), h, 3.4, 40);
+  const px = n => { const m = PF_PX[n], s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 8 8'); s.setAttribute('shape-rendering', 'crispEdges'); s.setAttribute('aria-hidden', 'true');
+    m.forEach((row, y) => [...row].forEach((ch, x) => { if (!PF_PC[ch]) return; const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect'); r.setAttribute('x', x); r.setAttribute('y', y); r.setAttribute('width', 1); r.setAttribute('height', 1); r.setAttribute('fill', PF_PC[ch]); s.append(r); })); return s; };
   const box = $i('profStats'); box.textContent = '';
-  for (const [k, v] of [['경기', st.g], ['승리', st.w], ['승률', st.g ? Math.round(st.w / st.g * 100) + '%' : '-'], ['킬', st.k], ['최고 킬', st.mk], ['도전과제', ACHS.filter(a => COS.ach && COS.ach[a.id]).length + ' / ' + ACHS.length]]) {
-    const d = document.createElement('div'), b = document.createElement('b'), sm = document.createElement('small'); b.textContent = typeof v === 'number' ? v.toLocaleString('en-US') : v; sm.textContent = k; d.append(b, sm); box.append(d);
-  }
+  for (const [ic, v, k] of [['cross', st.g, '경기'], ['trophy', st.w, '승리 · ' + (st.g ? Math.round(st.w / st.g * 100) : 0) + '%'], ['skull', st.k, '총 킬'], ['fire', st.mk, '한 판 최고 킬'], ['heart', st.d ? (st.dk / st.d).toFixed(2) : st.dk ? st.dk.toFixed(2) : '-', '킬 / 데스'], ['star', st.mv, 'MVP']]) {
+    const d = el('div', 'pfT'), w = el('div'); w.append(el('b', '', num(v)), el('small', '', k)); d.append(px(ic), w); box.append(d); }
+  const bars = $i('profBars'); bars.textContent = '';
+  { const kb = Math.max(COS.kb | 0, COS.karma | 0), nx = KARMA_ROAD.find(r => r[0] > COS.karma), pv = [...KARMA_ROAD].reverse().find(r => r[0] <= COS.karma), lo = pv ? pv[0] : 0, hi = nx ? nx[0] : lo || 1;
+    const pl = Math.min(PASS_N, Math.floor(passXp() / PASS_STEP));
+    for (const [lab, big, col, pct] of [['카르마 · 최고 ' + num(kb), num(COS.karma | 0), '#c17bff', nx ? (COS.karma - lo) / Math.max(1, hi - lo) : 1], ['시즌 패스 · ' + pl + ' / ' + PASS_N + ' 단계', pl + '단계', '#ffd34d', pl / PASS_N]]) {
+      const d = el('div', 'pfT'), b = el('b', '', big), bar = el('div', 'pfBar'), i = el('i'); b.style.color = col; i.style.width = Math.round(Math.max(0, Math.min(1, pct)) * 100) + '%'; i.style.background = col; bar.append(i); d.append(el('small', '', lab), b, bar); bars.append(d); } }
+  const mb = $i('profModes'); mb.textContent = '';
+  for (const m of MODES) { const w = st.mw[m.id] | 0, g = st.mg[m.id] | 0, d = el('div', 'pfM', m.name), sp = el('span', '', w + '승 / ' + g + '판'), bar = el('div', 'pfBar'), i = el('i'); i.style.width = (g ? Math.round(w / g * 100) : 0) + '%'; i.style.background = PF_MODE_COL[m.id] || '#4aa6ff'; bar.append(i); d.append(sp, bar); mb.append(d); }
+  { const a = $i('profAch'), n = ACHS.filter(x => COS.ach && COS.ach[x.id]).length, w = el('div'), bar = el('div', 'pfBar'), i = el('i'); a.textContent = ''; w.append(el('small', '', '도전과제'), el('b', '', n + ' / ' + ACHS.length)); i.style.width = Math.round(n / ACHS.length * 100) + '%'; i.style.background = 'linear-gradient(90deg,#7fb4ff,#ffd34d)'; bar.append(i); a.append(w, bar); }
+  const hb = $i('profHeroes'); hb.textContent = '';
+  const ids = (typeof ACTIVE_HEROES !== 'undefined' ? ACTIVE_HEROES.concat(HEROES.gardener ? ['gardener'] : []) : Object.keys(HEROES)).filter(x => HEROES[x]);
+  ids.sort((a, b) => ((st.hg[b] | 0) - (st.hg[a] | 0)) || (mpOf(b) - mpOf(a))).slice(0, 8).forEach(id => {
+    const m = masteryOf(id), d = el('div', 'pfH'), cv = el('canvas'), rk = el('div', 'rk', m.name); cv.width = 160; cv.height = 150; d.style.borderColor = m.col + '55'; rk.style.background = m.col;
+    d.append(el('div', 'hn', HEROES[id].name), cv, el('div', 'hs', (st.hg[id] | 0) + '판 · ' + (st.hk[id] | 0) + '킬'), rk); hb.append(d); stick(cv, id, 1.5, 18); });
   const tb = $i('profTitles'); tb.textContent = '';
-  for (const a of ACHS) { if (!titleOk(a.id)) continue; const b = document.createElement('button'); b.type = 'button'; b.textContent = TITLES[a.id]; b.style.setProperty('--tc', tier[a.t]); b.setAttribute('aria-pressed', String(COS.title === a.id));
+  for (const a of ACHS) { if (!TITLES[a.id]) continue; const b = el('button', '', TITLES[a.id]); b.type = 'button'; b.style.setProperty('--c', tier[a.t]); b.disabled = !titleOk(a.id); b.setAttribute('aria-pressed', String(COS.title === a.id));
     b.addEventListener('click', () => { COS.title = COS.title === a.id ? null : a.id; saveCos(); renderProfile(); accountUi(); }); tb.append(b); }
-  tb.hidden = !tb.children.length;
+  goldUi();
 }
+const PF_MODE_COL = { team: '#4aa6ff', solo: '#ff5d6c', flag: '#5dffb0', duel: '#ffb84d', hot4: '#c17bff', duo: '#6fe0d0' };
+const PF_PC = { y: '#c98a12', Y: '#ffd34d', w: '#eef2ff', b: '#8a5a2b', r: '#c0303f', R: '#ff5d6c' };
+const PF_PX = { cross: ['w......w', '.w....w.', '..w..w..', '...ww...', '...ww...', '..b..b..', '.bb..bb.', 'bb....bb'], trophy: ['yyyyyyyy', 'yYYYYYYy', 'yYYYYYYy', '.yYYYYy.', '..yYYy..', '...yy...', '..yyyy..', '.yyyyyy.'],
+  skull: ['.wwwwww.', 'wwwwwwww', 'w..ww..w', 'w..ww..w', 'wwwwwwww', '.ww..ww.', '.wwwwww.', '.w.w.w..'], fire: ['...r....', '..rr..r.', '..rRr.r.', '.rRRrrr.', '.rRyRRr.', 'rRyyyRRr', 'rRyyyyRr', '.rrrrrr.'],
+  heart: ['.rr..rr.', 'rRRrrRRr', 'rRRRRRRr', 'rRRRRRRr', '.rRRRRr.', '..rRRr..', '...rr...', '........'], star: ['...yy...', '...yy...', 'yyyYYyyy', '.yYYYYy.', '..yYYy..', '.yYyyYy.', '.yy..yy.', '........'] };
 /* ---------- achievements ----------
    [id, tier 0 basic · 1 normal · 2 hard · 3 extreme, text, goal, value now]. Lifetime numbers live in COS.st; COS.ach[id] = 1 reached · 2 reward taken.
    The ids also go to the server that counts how many players have each one, so never reuse or rename one. */
-const achSt = () => { const s = COS.st && typeof COS.st === 'object' ? COS.st : (COS.st = {}); for (const k of ['k', 'w', 'g', 'mk', 'nd', 'sa']) s[k] = Math.max(0, Math.floor(+s[k] || 0)); for (const k of ['mw', 'mg', 'hw', 'hk', 'hg', 'hn', 'hb']) if (!s[k] || typeof s[k] !== 'object') s[k] = {}; return s; };
+const achSt = () => { const s = COS.st && typeof COS.st === 'object' ? COS.st : (COS.st = {}); for (const k of ['k', 'w', 'g', 'mk', 'nd', 'sa', 'd', 'dk', 'mv']) s[k] = Math.max(0, Math.floor(+s[k] || 0)); for (const k of ['mw', 'mg', 'hw', 'hk', 'hg', 'hn', 'hb']) if (!s[k] || typeof s[k] !== 'object') s[k] = {}; return s; };
 const achTopRank = () => Math.max(0, ...Object.keys(HEROES).map(h => masteryOf(h).i));
 const ACH_PAY = [['g', 100], ['g', 300], ['box'], ['ebox']];
 const ACHS = [
@@ -364,6 +396,7 @@ const achOpen = () => !!COS.ach && ACHS.some(a => COS.ach[a.id] === 1);
 function achMatch(m) {
   const s = achSt(), k = Math.max(0, m.kills | 0); if (m.mode === 'flag5') m = Object.assign({}, m, { mode: 'flag' });      // one capture the flag count, whatever the team size
   s.g++; s.k += k; s.mk = Math.max(s.mk, k); s.mg[m.mode] = (s.mg[m.mode] | 0) + 1;
+  s.dk += k; s.d += Math.max(0, m.deaths | 0); if (m.mvp) s.mv++; COS.kb = Math.max(COS.kb | 0, COS.karma | 0);      // kills/deaths (counted together from 2026-11-14 for the profile K/D), MVPs, best karma
   if (HEROES[m.hero]) { const h = m.hero; s.hg[h] = (s.hg[h] | 0) + 1; s.hk[h] = (s.hk[h] | 0) + k; s.hb[h] = Math.max(s.hb[h] | 0, k); if (m.win) s.hn[h] = (s.hn[h] | 0) + 1; }      // per character: games, kills, best kills, wins (the character screen and the profile card show them)
   if (m.win) { s.w++; s.mw[m.mode] = (s.mw[m.mode] | 0) + 1; if (HEROES[m.hero]) s.hw[m.hero] = 1; if (m.mode === 'team' && !m.deaths) s.nd++; if (m.mode === 'solo' && m.n > 1 && k >= m.n - 1) s.sa++; }
   if (achScan()) achSync(true);
@@ -489,24 +522,40 @@ const passXp = () => Math.max(0, Math.floor(+((COS.sx || {})[GAME_VER]) || 0));
 const passAdd = n => { if (!COS.sx || typeof COS.sx !== 'object') COS.sx = {}; COS.sx[GAME_VER] = passXp() + Math.max(0, Math.round(n)); };
 const passTaken = i => (COS.sk || []).includes(GAME_VER + ':' + i);
 const passOpen = () => PASS.some(r => passXp() >= r[0] * PASS_STEP && !passTaken(r[0]));
-/* season XP comes only from wins and season quests (user 2026-11-14: about 3~4 season quests make one step) */
-const PASS_WIN = 20, PASS_SQ = 60;
+/* season XP comes only from wins and season quests (user 2026-11-14) */
+const PASS_WIN = 20, PASS_SQ = 60, PASS_WQ = 150;
 function passMatch(m) { if (m.win) passAdd(PASS_WIN); }
-/* season quests: four a day, each worth PASS_SQ season XP. COS.sq has the shape of COS.dq */
+/* season quests (user 2026-11-14): six daily (PASS_SQ each, COS.sd) and six weekly (PASS_WQ each, new every Monday, COS.sw), shown under the pass road */
 function sqList(day) {
   const rnd = dayRnd(day + 31), pk = a => a[Math.floor(rnd() * a.length)];
-  const modes = (typeof MODES !== 'undefined' ? MODES : []).filter(m => m.ready !== false), m = pk(modes), h = pk(ROSTER), solo = modes.find(x => x.id === 'solo'), hn = HEROES[h] ? HEROES[h].name : h;
+  const modes = (typeof MODES !== 'undefined' ? MODES : []).filter(m => m.ready !== false), m = pk(modes), m2 = pk(modes), h = pk(ROSTER), solo = modes.find(x => x.id === 'solo'), hn = HEROES[h] ? HEROES[h].name : h;
   const a = pk([{ t: 'play', n: 3, txt: '3판 하기' }, { t: 'kill', n: 10, txt: '10킬' }]);
   const b = pk([{ t: 'win', n: 2, txt: '2승' }, { t: 'dmg', n: 8000, txt: '피해 8,000' }]);
   const c = pk([m && { t: 'play', n: 2, mode: m.id, txt: m.name + ' 2판' }, solo && { t: 'top3', n: 1, mode: 'solo', txt: solo.name + ' 3등 안' }].filter(Boolean));
   const d = pk([h && { t: 'kill', n: 6, hero: h, txt: hn + ' 6킬' }, h && { t: 'win', n: 1, hero: h, txt: hn + ' 1승' }].filter(Boolean));
-  return [a, b, c, d].filter(Boolean).map(q => Object.assign(q, { rw: ['sx', PASS_SQ] }));
+  const e = a.t === 'play' ? { t: 'kill', n: 15, txt: '15킬' } : { t: 'play', n: 4, txt: '4판 하기' };
+  const f = pk([m2 && { t: 'win', n: 1, mode: m2.id, txt: m2.name + ' 1승' }, { t: 'dmg', n: 15000, txt: '피해 15,000' }].filter(Boolean));
+  return [a, b, c, d, e, f].filter(Boolean).map(q => Object.assign(q, { rw: ['sx', PASS_SQ] }));
 }
-function sqState() { const d = dqDay(), q = COS.sq; if (!q || q.d !== d || !Array.isArray(q.p) || !Array.isArray(q.c)) COS.sq = { d, p: [0, 0, 0, 0], c: [0, 0, 0, 0] }; return COS.sq; }
-const sqOpen = () => { const st = sqState(); return sqList(st.d).some((q, i) => st.p[i] >= q.n && !st.c[i]); };
-function sqTake(i) {
-  const st = sqState(), q = sqList(st.d)[i]; if (!q || st.c[i] || !(st.p[i] >= q.n)) return null;
-  st.c[i] = 1; passAdd(PASS_SQ);
+function swList(week) {
+  const rnd = dayRnd(week + 53), pk = a => a[Math.floor(rnd() * a.length)];
+  const modes = (typeof MODES !== 'undefined' ? MODES : []).filter(m => m.ready !== false), m = pk(modes), m2 = pk(modes.filter(x => x !== m)) || m, h = pk(ROSTER), solo = modes.find(x => x.id === 'solo'), hn = HEROES[h] ? HEROES[h].name : h;
+  const a = { t: 'play', n: 25, txt: '25판 하기' };
+  const b = { t: 'win', n: 12, txt: '12승' };
+  const c = pk([{ t: 'kill', n: 80, txt: '80킬' }, { t: 'dmg', n: 100000, txt: '피해 100,000' }]);
+  const d = pk([m && { t: 'play', n: 10, mode: m.id, txt: m.name + ' 10판' }, m && { t: 'win', n: 5, mode: m.id, txt: m.name + ' 5승' }].filter(Boolean));
+  const e = pk([h && { t: 'win', n: 5, hero: h, txt: hn + ' 5승' }, h && { t: 'kill', n: 30, hero: h, txt: hn + ' 30킬' }].filter(Boolean));
+  const f = pk([solo && { t: 'top3', n: 5, mode: 'solo', txt: solo.name + ' 3등 안 5번' }, m2 && { t: 'win', n: 4, mode: m2.id, txt: m2.name + ' 4승' }].filter(Boolean));
+  return [a, b, c, d, e, f].filter(Boolean).map(q => Object.assign(q, { rw: ['sx', PASS_WQ] }));
+}
+const sqBlank = d => ({ d, p: [0, 0, 0, 0, 0, 0], c: [0, 0, 0, 0, 0, 0] });
+function sqState() { const d = dqDay(), q = COS.sd; if (!q || q.d !== d || !Array.isArray(q.p) || !Array.isArray(q.c)) COS.sd = sqBlank(d); return COS.sd; }
+function swState() { const d = wqWeek(), q = COS.sw; if (!q || q.d !== d || !Array.isArray(q.p) || !Array.isArray(q.c)) COS.sw = sqBlank(d); return COS.sw; }
+const sqOpenOf = (st, list) => list.some((q, i) => st.p[i] >= q.n && !st.c[i]);
+const sqOpen = () => { const a = sqState(), b = swState(); return sqOpenOf(a, sqList(a.d)) || sqOpenOf(b, swList(b.d)); };
+function sqTake(i, wk) {
+  const st = wk ? swState() : sqState(), q = (wk ? swList : sqList)(st.d)[i]; if (!q || st.c[i] || !(st.p[i] >= q.n)) return null;
+  st.c[i] = 1; passAdd(q.rw[1]);
   try { sfx(880, .18, 'triangle', .06); } catch (e) {}
   saveCos(); goldUi(); return null;
 }
@@ -518,19 +567,22 @@ function passTake(r) {
   saveCos(); goldUi(); return got;
 }
 function passUi() { try { { const b = document.getElementById('pass'), c = passCol(); if (b) { b.style.setProperty('--pc', c[0]); b.style.setProperty('--pl', c[1]); } } const n = document.getElementById('passN'), d = document.getElementById('passDot'); if (n) n.textContent = Math.min(PASS_N, Math.floor(passXp() / PASS_STEP)); if (d) d.hidden = !(passOpen() || sqOpen()); } catch (e) {} }
-/* the season quests live in the pass window: a 퀘스트 button opens a panel over the road */
+/* season quests sit under the pass road: daily on the left, weekly on the right (stacked on a narrow screen) */
+const leftTxt = ms => { const m = Math.max(1, Math.ceil(ms / 60000)), h = Math.floor(m / 60), d = Math.floor(h / 24); return d >= 1 ? d + '일 ' + (h % 24) + '시간' : h >= 1 ? h + '시간 ' + (m % 60) + '분' : m + '분'; };
 function renderPassQ() {
-  const box = document.getElementById('passQList'), dot = document.getElementById('passQDot'); if (!box) return;
-  const st = sqState(); box.textContent = '';
-  sqList(st.d).forEach((q, i) => {
-    const row = document.createElement('div'), t = document.createElement('span'), bar = document.createElement('div'), fill = document.createElement('i'), num = document.createElement('span'), rw = document.createElement('button');
-    const p = Math.min(q.n, +st.p[i] || 0), done = p >= q.n, took = !!st.c[i];
-    row.className = 'qRow' + (took ? ' took' : done ? ' done' : ''); t.className = 'qTxt'; t.textContent = q.txt; bar.className = 'qBar'; fill.style.width = Math.round(p / q.n * 100) + '%'; num.textContent = p.toLocaleString('en-US') + ' / ' + q.n.toLocaleString('en-US'); bar.append(fill, num);
-    rw.type = 'button'; rw.className = 'qRw'; rw.disabled = !done || took; rw.append(rewardIcon('sx'), String(PASS_SQ)); rw.setAttribute('aria-label', took ? '받음' : '보상 받기');
-    if (done && !took) rw.addEventListener('click', () => { sqTake(i); renderPass(); });
-    row.append(t, bar, rw); box.append(row);
-  });
-  if (dot) dot.hidden = !sqOpen();
+  const now = new Date(), nd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1), nw = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7 - (now.getDay() + 6) % 7);
+  for (const [wk, id, st, list, until] of [[0, 'passQd', sqState(), sqList, nd], [1, 'passQw', swState(), swList, nw]]) {
+    const sec = document.getElementById(id); if (!sec) continue;
+    const box = sec.querySelector('.pqL'), tm = sec.querySelector('em'); box.textContent = ''; if (tm) tm.textContent = leftTxt(until - now);
+    list(st.d).forEach((q, i) => {
+      const row = document.createElement('div'), t = document.createElement('span'), bar = document.createElement('div'), fill = document.createElement('i'), num = document.createElement('span'), rw = document.createElement('button');
+      const p = Math.min(q.n, +st.p[i] || 0), done = p >= q.n, took = !!st.c[i];
+      row.className = 'qRow' + (took ? ' took' : done ? ' done' : ''); t.className = 'qTxt'; t.textContent = q.txt; bar.className = 'qBar'; fill.style.width = Math.round(p / q.n * 100) + '%'; num.textContent = p.toLocaleString('en-US') + ' / ' + q.n.toLocaleString('en-US'); bar.append(fill, num);
+      rw.type = 'button'; rw.className = 'qRw'; rw.disabled = !done || took; rw.append(rewardIcon('sx'), String(q.rw[1])); rw.setAttribute('aria-label', took ? '받음' : '보상 받기');
+      if (done && !took) rw.addEventListener('click', () => { sqTake(i, wk); renderPass(null); });
+      row.append(t, bar, rw); box.append(row);
+    });
+  }
 }
 function renderPass(got) {
   const tr = document.getElementById('passTrack'); tr.textContent = '';
@@ -585,8 +637,7 @@ function fitBrand() {
 addEventListener('resize', () => requestAnimationFrame(fitBrand));
 try { new ResizeObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('topRight')); new MutationObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('brandDisplay'), { attributes: true, attributeFilter: ['class'] }); } catch (e) {}
 setTimeout(fitBrand, 300); setTimeout(fitBrand, 1500);
-{ const qb = document.getElementById('passQBtn'), qp = document.getElementById('passQ'); if (qb && qp) { const set = v => { qp.hidden = !v; qb.setAttribute('aria-expanded', v ? 'true' : 'false'); qb.classList.toggle('on', v); }; qb.addEventListener('click', () => set(qp.hidden)); qp.addEventListener('click', e => { if (e.target === qp) set(false); }); window.__passQSet = set; } }
-{ const b = document.getElementById('pass'); if (b) b.addEventListener('click', () => { showScreen('passScreen'); if (window.__passQSet) window.__passQSet(false); renderPass(); }); const k = document.getElementById('passBackBtn'); if (k) k.addEventListener('click', () => showScreen('menuScreen')); }
+{ const b = document.getElementById('pass'); if (b) b.addEventListener('click', () => { showScreen('passScreen'); renderPass(); }); const k = document.getElementById('passBackBtn'); if (k) k.addEventListener('click', () => showScreen('menuScreen')); }
 function botCos(hero) {
   const skins = COS_IDS('skin').filter(id => COSMETICS[id].char === hero);
   return cleanCos({ skin: skins.length && Math.random() < .4 ? pick(skins) : null, kfx: Math.random() < .3 ? pick(COS_IDS('kfx')) : null, pose: pick(COS_IDS('pose')), name: Math.random() < .2 ? pick(COS_IDS('name')) : null }, hero);
