@@ -271,15 +271,15 @@ hero('portalgun', { p: ['차원 반사', '포탈건 탄환은 벽에 닿으면 �
    The other kits stay defined (moved to HEROES_OFF) so re-enabling a character = adding its id here. ===
    기사 sword · 마법사 wizard · 마술사 magiccard · 로빈 후드 bow · 네온 shade · 카다스 kadas · 티오니스 tionis · 하랄드 harald
    제임스 pistol · 군인 rifle · 특수요원 smg · 닌자 shuriken · 폭발광 grenade · 보안관 shotgun
-   차원 여행자 portalgun */
-const ACTIVE_HEROES = ['sword', 'wizard', 'magiccard', 'bow', 'shade', 'kadas', 'tionis', 'harald', 'pistol', 'rifle', 'smg', 'shuriken', 'grenade', 'shotgun', 'portalgun'];
+   차원 여행자 portalgun · 복서 gloves (2026-11-13) */
+const ACTIVE_HEROES = ['sword', 'wizard', 'magiccard', 'bow', 'shade', 'tionis', 'harald', 'pistol', 'rifle', 'smg', 'shuriken', 'grenade', 'shotgun', 'portalgun', 'gloves'];
 const HEROES_OFF = {};
 /* per-hero damage multiplier (applied in damage() to everything the hero deals: basic attack, skills, ultimate, DoTs).
    Balance table from the 14-hero bot sim, 2026-11-10; skill description numbers in kits1/kits2 already include these. */
-const DMG_MUL = { harald: .95, shade: .85, sword: 1.2, grenade: .6, shotgun: .8, magiccard: 1.2, kadas: 1.6, wizard: 1.5, rifle: .95, tionis: 2, bow: 1.25, pistol: 1.4, smg: 1.1, shuriken: 1.6, portalgun: 1.65 };      // 2026-11-13 duel + team bot sim retune (gardener: gardener.js)
+const DMG_MUL = { harald: .95, shade: .85, sword: 1.2, grenade: .6, shotgun: .8, magiccard: 1.2, kadas: 1.6, wizard: 1.5, rifle: .95, tionis: 2, bow: 1.25, pistol: 1.4, smg: 1.1, shuriken: 1.6, portalgun: 1.65, gloves: 1.25 };      // 2026-11-13 duel + team bot sim retune (gardener: gardener.js)
 for (const id in DMG_MUL) HEROES[id].xm = DMG_MUL[id];
 /* per-hero max hp in the original (small) units, ×STAT_X applied here. Tuned 2026-11-10 with bots that kite (14-hero sim: all win rates 46–55%). */
-const HP_TABLE = { sword: 580, shade: 490, harald: 540, grenade: 540, shotgun: 600, rifle: 600, magiccard: 610, kadas: 630, wizard: 640, bow: 690, pistol: 700, smg: 760, shuriken: 780, tionis: 830, portalgun: 700 };
+const HP_TABLE = { sword: 580, shade: 490, harald: 540, grenade: 540, shotgun: 600, rifle: 600, magiccard: 610, kadas: 630, wizard: 640, bow: 690, pistol: 700, smg: 760, shuriken: 780, tionis: 830, portalgun: 700, gloves: 850 };
 for (const id in HP_TABLE) HEROES[id].hp = HP_TABLE[id] * STAT_X;
 for (const id of Object.keys(HEROES)) if (!ACTIVE_HEROES.includes(id)) { HEROES_OFF[id] = HEROES[id]; delete HEROES[id]; }
 ROSTER.splice(0, ROSTER.length, ...ACTIVE_HEROES.filter(id => HEROES[id]));

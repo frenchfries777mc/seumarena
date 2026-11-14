@@ -29,7 +29,7 @@ function ghostSprite(q){
   }catch(e){ return null; }
 }
 function drawParticles(){
-  const now=performance.now(); let dt=Math.min(0.05,(now-lastFxMs)/1000); lastFxMs=now; if(!(dt>0)) dt=0.016;
+  const now=performance.now(); let dt=Math.min(0.05,(now-lastFxMs)/1000); lastFxMs=now; if(!(dt>0)) dt=0.016; if(typeof FX_TS==='number') dt*=FX_TS;
   for(let i=particles.length-1;i>=0;i--){
     const q=particles[i]; q.life-=dt;
     if(q.life<=0){ particles[i]=particles[particles.length-1]; particles.pop(); continue; }

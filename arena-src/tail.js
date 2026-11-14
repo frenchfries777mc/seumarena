@@ -24,7 +24,7 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   const hx = ax * reach, hy = SH + 6 + ay * reach;
   if (id !== 'harald') { c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(hx, hy); c.stroke(); }      // (하랄드 draws both of his bent arms himself, in art/chars.js)
   if (id === 'kadas') { c.strokeStyle = '#c4182e'; c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(hx, hy); c.stroke(); }
-  c.save(); try { if (id === 'gardener' && typeof drawGardener === 'function') drawGardener(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) {} c.restore();      // (정원사's hat, slingshot and pouch: gardener.js)
+  c.save(); try { if (id === 'herbal' && typeof drawHerbal === 'function') drawHerbal(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'shieldman' && typeof drawShieldman === 'function') drawShieldman(c, { face, ax, ay, hx, hy, swing, t: now / 1000, HEADCY, HEADR, SH, HIP, tint, raise: 0 }); else if (id === 'gardener' && typeof drawGardener === 'function') drawGardener(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) {} c.restore();      // (정원사's hat, slingshot and pouch: gardener.js)
   if (it && it.fx) { c.save(); try { drawSkinFx(c, lux >= 4 ? 'sparkle' : it.fx, lux >= 4 ? auroraHex(now / 1000 * .9, 1) : tint, 0, HEADCY, HEADR * 1.3, now); } catch (e) {} c.restore(); }
   if (cos && cos.col && COSMETICS[cos.col] && COSMETICS[cos.col].shine) { c.save(); try { drawShineGlints(c, now, 0); } catch (e) {} c.restore(); }
   c.restore();
@@ -35,6 +35,7 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
 let hfCv = null;
 function drawFighter(f, alpha) {
   const flt = typeof hitFlashFilter === 'function' ? hitFlashFilter(f) : '';
+  if (typeof drawTauntMark === 'function') drawTauntMark(f);      // (방패병 도발 표식: herbshield.js)
   if (!flt) return drawFighter0(f, alpha);
   const main = ctx, m = main.getTransform(), k = Math.hypot(m.a, m.b), S = Math.min(2048, Math.ceil(400 * k)), px = m.a * f.x + m.c * (f.y - 30) + m.e, py = m.b * f.x + m.d * (f.y - 30) + m.f;
   if (!hfCv) hfCv = document.createElement('canvas');
@@ -210,6 +211,7 @@ function renderMapPreview(i, canvas) {
 }
 let specT = null;
 function render() {
+  fitCanvas(); if (ctx.canvas !== cv) ctx = cv.getContext('2d');      // (window size changed without a resize event / a borrowed drawing target left behind)
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.fillStyle = '#0c0e13'; ctx.fillRect(0, 0, W, H);
   const menu = state === 'menu', me = driven();
@@ -218,21 +220,22 @@ function render() {
     cam.s = Math.min(W, H) / (10.5 * T) * (H > W * 1.15 && W <= 600 ? 1.2 : 1);   // upright phone: zoom in a little so the fighters are bigger
     const hw = W / 2 / cam.s, hh = H / 2 / cam.s;
     let ft = me;      // no respawn (solo): once I am out the camera follows somebody who is still alive
-    if (curMode === 'solo' && player.dead && state === 'play') {
-      if (!specT || specT.dead || !fighters.includes(specT)) specT = fighters.filter(f => !f.dead).sort((a, b) => Math.hypot(a.x - cam.x, a.y - cam.y) - Math.hypot(b.x - cam.x, b.y - cam.y))[0] || null;
+    if (isLeft(curMode) && player.dead && state === 'play') {
+      if (!specT || specT.dead || !fighters.includes(specT)) specT = fighters.find(f => !f.dead && !f.minion && f.team === player.team) || fighters.filter(f => !f.dead).sort((a, b) => Math.hypot(a.x - cam.x, a.y - cam.y) - Math.hypot(b.x - cam.x, b.y - cam.y))[0] || null;
       if (specT) ft = specT;
     } else specT = null;
     if (typeof hatCamTarget === 'function') ft = hatCamTarget(ft);      // (fx.js: ride along with 마술사's thrown hat)
     cam.x = WW <= hw * 2 ? WW / 2 : clamp(ft.x, hw, WW - hw);
     cam.y = WH <= hh * 2 ? WH / 2 : clamp(ft.y, hh, WH - hh);
   }
+  if (typeof kcamCam === 'function') kcamCam();      // (killfx.js: the last knock-out, slowed down and zoomed in)
   const sh = lowFx() ? 0 : shake;
   ctx.translate(W / 2 + rnd(-sh, sh), H / 2 + rnd(-sh, sh)); ctx.scale(cam.s, cam.s); ctx.translate(-cam.x, -cam.y);
   const c0 = Math.max(0, Math.floor((cam.x - W / 2 / cam.s) / T) - 1), c1 = Math.min(COLS - 1, Math.ceil((cam.x + W / 2 / cam.s) / T));
   const r0 = Math.max(0, Math.floor((cam.y - H / 2 / cam.s) / T) - 1), r1 = Math.min(ROWS - 1, Math.ceil((cam.y + H / 2 / cam.s) / T));
   drawTiles(ctx, c0, c1, r0, r1, 0);
   if (typeof drawHotZone === 'function') drawHotZone(ctx);      // (4팀 핫존: the circle and the corner pads)
-  if ((curMode !== 'solo' || menu) && !(typeof HZ === 'object' && HZ.on)) for (let t = 0; t < 2; t++) { ctx.fillStyle = TC(t); ctx.globalAlpha = .18; ctx.beginPath(); ctx.roundRect((t ? COLS - 2 : 1) * T + 6, 6 * T, T - 12, 5 * T, 16); ctx.fill(); ctx.globalAlpha = 1; }
+  if ((!isLeft(curMode) || menu) && !(typeof HZ === 'object' && HZ.on)) for (let t = 0; t < 2; t++) { ctx.fillStyle = TC(t); ctx.globalAlpha = .18; ctx.beginPath(); ctx.roundRect((t ? COLS - 2 : 1) * T + 6, 6 * T, T - 12, 5 * T, 16); ctx.fill(); ctx.globalAlpha = 1; }
   for (const z of zones) {
     if (z.hidden && z.team !== VIEW && !menu) continue;
     if (typeof drawZoneArt === 'function' && drawZoneArt(z, menu)) continue;      // (Stickseum's own zone pictures, from fx.js)
@@ -255,10 +258,11 @@ function render() {
   drawFleet();
   drawTiles(ctx, c0, c1, r0, r1, 2);
   for (const f of inBush) drawFighter(f, f.team === VIEW ? .6 : .85);
-  for (const b of bullets) if (!(b.shape === 'seed' && typeof drawSeedShot === 'function' && drawSeedShot(b)) && !drawShot(b)) drawBullet(b);      // shots and swings over walls and bushes, so nothing hides them
+  for (const b of bullets) if (!(b.shape === 'potion' && typeof drawPotionShot === 'function' && drawPotionShot(b)) && !(b.shape === 'seed' && typeof drawSeedShot === 'function' && drawSeedShot(b)) && !drawShot(b)) drawBullet(b);      // shots and swings over walls and bushes, so nothing hides them
   { const now = performance.now(); drawSwings(Math.min(.05, (now - (render.last || now)) / 1000)); render.last = now; }
   for (const m of minions) if (m.kind === 'dragon' || m.kind === 'crow') drawMinion(m);
   for (const p of parts) { ctx.globalAlpha = clamp(p.life / p.max, 0, 1); ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.3); ctx.fill(); }
+  if (typeof drawWallMarks === 'function') drawWallMarks(ctx);
   drawParticles();
   if (typeof drawGardenTop === 'function') drawGardenTop();      // (gardener.js: leaves, pollen, forest burst, vines round the feet)
   for (const g of rings) { const k = 1 - g.life / g.max; ctx.globalAlpha = 1 - k; ctx.strokeStyle = g.color; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(g.x, g.y, g.r * (.4 + .6 * k), 0, 6.3); ctx.stroke(); }
@@ -275,6 +279,7 @@ function render() {
     const sx = (player.x - cam.x) * cam.s + W / 2, sy = (player.y + BODY - cam.y) * cam.s + H / 2, g = ctx.createRadialGradient(sx, sy, 60 * cam.s, sx, sy, 190 * cam.s);
     g.addColorStop(0, 'rgba(12,14,19,0)'); g.addColorStop(1, 'rgba(12,14,19,.96)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   }
+  if (typeof kcamOverlay === 'function') kcamOverlay();
   if (typeof drawScreenVeil === 'function') drawScreenVeil();      // (fx.js: the dark picture while trapped in an enemy 카다스's lump)
   drawEnvOverlay();
   if (!lowFx()) drawSamScreen();
@@ -309,7 +314,7 @@ function updateHud() {
   soloOutCheck(); if (soloOutShown) return;
   const tl = Math.max(0, Math.ceil(timeLeft)), c = cdInfo(p), pc = (v, m) => Math.round(clamp(1 - v / (m || 1), 0, 1) * 100);
   const up = pc(c.u, c.uM), dp = pc(c.d, c.dM), sp = [0, 1].map(i => pc(c.s[i], c.sM[i])), sn = c.sn;
-  const oc = modeOutcome(), solo = curMode === 'solo', dead = p.dead ? Math.ceil(p.respawnT) : 0, mine = oc.a, theirs = oc.b;      // solo: my kills and how many are left
+  const oc = modeOutcome(), solo = isLeft(curMode), dead = p.dead ? Math.ceil(p.respawnT) : 0, mine = oc.a, theirs = oc.b;      // solo: my kills and how many are left
   const ot = inOvertime();
   if (ot && !ovtSeen) ovtUntil = performance.now() + 2600; ovtSeen = ot;
   const ovtBanner = ot && !dead && performance.now() < ovtUntil, kl = dead ? p.killer : null, di = dead ? (kl ? { by: kl.i >= 0 ? fighters[kl.i] || null : null, src: kl.src || '' } : deathInfo) : null;
@@ -359,6 +364,7 @@ function setFill() {
   $('setVol').value = SET.vol; $('setVolV').textContent = SET.vol + '%';
   $('setAim').value = SET.aim; $('setAimV').textContent = (SET.aim / 100).toFixed(1) + '×';
   $('setFx').checked = SET.fx;
+  if (typeof mobSetFill === 'function') mobSetFill();
 }
 function setOpen(on) {
   if (on === undefined) on = setEl.hidden;
@@ -384,7 +390,7 @@ $('setVol').addEventListener('input', e => { SET.vol = +e.target.value; $('setVo
 $('setVol').addEventListener('change', setBeep);
 $('setAim').addEventListener('input', e => { SET.aim = +e.target.value; $('setAimV').textContent = (SET.aim / 100).toFixed(1) + '×'; saveSet(); });
 $('setFx').addEventListener('change', e => { SET.fx = e.target.checked; saveSet(); });
-$('setReset').addEventListener('click', () => { SET.vol = 100; SET.aim = 100; SET.fx = false; setFill(); saveSet(); setMusicVol(); });
+$('setReset').addEventListener('click', () => { SET.vol = 100; SET.aim = 100; SET.fx = false; SET.bat = false; SET.bsz = 100; SET.bpos = {}; if (typeof mobSetApply === 'function') mobSetApply(); setFill(); saveSet(); setMusicVol(); });
 $('setClose').addEventListener('click', () => setOpen(false));
 setEl.addEventListener('pointerdown', e => { e.stopPropagation(); if (e.target === setEl) setOpen(false); });
 $('setLobbyBtn').addEventListener('click', () => setOpen(true));
@@ -416,7 +422,7 @@ if (!DEVICE && $('devPick')) {
 /* game modes: the engine's MODES registry ({id,name,size,maps,ready}) when it exists; until then the same four, with only the current rules playable */
 const MODE_FALLBACK = [{ id: 'team', name: '팀 아웃', size: '3v3' }, { id: 'solo', name: '원 레프트', size: '6명', ready: false }, { id: 'flag', name: '캡쳐 플래그', size: '3v3', ready: false }, { id: 'duel', name: '듀얼 배틀', size: '1v1', ready: false }];
 const MODE_LIST = typeof MODES !== 'undefined' && Array.isArray(MODES) && MODES.length ? MODES : MODE_FALLBACK;
-const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'], hot4: ['mi-m-hot', '#ff8a3d'] };
+const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'], hot4: ['mi-m-hot', '#ff8a3d'], duo: ['mi-m-last', '#c77dff'] };
 let modeSel = typeof modeChoice === 'string' ? modeChoice : MODE_LIST[0].id, modeView = modeSel;
 const modeOk = m => !!m && m.ready !== false;
 const modeCur = () => MODE_LIST.find(m => m.id === modeSel && modeOk(m)) || MODE_LIST.find(modeOk) || MODE_LIST[0];
@@ -462,7 +468,7 @@ function renderDuelLine() {
 const savePrefs = () => { mapByMode[mapKey(modeCur())] = mapChoice; try { localStorage.setItem('seumArena', JSON.stringify({ c: chosen, m: mapChoice, l: loadouts, g: modeSel, mm: mapByMode, dl: duelMore })); } catch (e) {} if (typeof cloudMark === 'function') cloudMark(); };
 const KIND_LABEL = { melee: '근접', shot: '원거리', flame: '방사', cone: '흡입' }, SK_LABEL = { hit: '공격', move: '이동', buff: '강화' };
 function attackText(h) {
-  const SX = (typeof STAT_X === 'number' ? STAT_X : 1) * (h.xm || 1), rd = v => Math.round(v);      // h.xm: this character's own damage multiplier
+  const SX = (typeof STAT_X === 'number' ? STAT_X : 1) * (h.xm || 1) * (h.type !== 'melee' && typeof DMG_RANGED === 'number' ? DMG_RANGED : 1), rd = v => Math.round(v);      // h.xm: this character's own damage multiplier
   const tiles = (h.range / T).toFixed(1) + '칸';
   if (h.type === 'melee') return '데미지 ' + rd(h.dmg * SX) + ' · 쿨타임 ' + h.cd + '초 · 근접 사거리 ' + tiles + (h.w.thrust ? ' · 앞으로 찌르기' : ' · 넓게 휘두르기') + (h.w.kbMult ? ' · 크게 밀쳐 냄' : '');
   if (h.type === 'flame') return '누르고 있는 동안 화염 방사 · 초당 ' + rd(FLAME_DIRECT_DPS * SX) + ' 피해 · 사거리 ' + tiles + ' · 쏜 시간이 합쳐서 9초가 되면 2초간 과열';
@@ -476,7 +482,7 @@ function showScreen(id) {
   if (id === 'roomScreen') { const m = modeCur(), el = $('roomMode'), ic = document.createElement('span'), nm = document.createElement('span'); ic.className = 'mIco'; nm.textContent = m.name; el.textContent = ''; el.append(modeIcon(ic, m), nm); }
   for (const s of lobby.querySelectorAll('.card')) s.classList.toggle('active', s.id === id);
   const menu = id === 'menuScreen'; if (id === 'weaponScreen') markMastery();
-  $('brandDisplay').classList.toggle('show', menu); $('lobbyChar').classList.toggle('show', menu); $('acct').hidden = !menu; $('karma').hidden = !menu; $('quest').hidden = !menu; $('topRight').hidden = !menu;
+  $('brandDisplay').classList.toggle('show', menu); $('lobbyChar').classList.toggle('show', menu); $('acct').hidden = !menu; $('karma').hidden = !menu; $('quest').hidden = !menu; if ($('pass')) $('pass').hidden = !menu; $('topRight').hidden = !menu;
   if (menu) { updatePick(); lobbyCharPlace(); }
 }
 /* the lobby figure stands on the bottom-left corner of the lowest menu button: its feet on the button's bottom edge, its body just left of the corner */
@@ -621,8 +627,8 @@ $('mapPickBtn').addEventListener('click', () => { mapChoice = mapList[mapIdx]; s
 
 /* mode picker. PC: a row of event cards, tap one to look at it, the button below (or a double click) confirms.
    touch or small screens: big posters, a tap picks the mode right away. Each card: mode art, headcount, two rules, the mode's current map */
-const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a', hot4: '#7a3510' };
-const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1, hot4: MAPS.findIndex(m => m.hot) };      // map drawn behind the figures while the mode's map is random
+const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a', hot4: '#7a3510', duo: '#55207a' };
+const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1, hot4: MAPS.findIndex(m => m.hot), duo: 8 };      // map drawn behind the figures while the mode's map is random
 const MODE_FFA = ['#4d9dff', '#ff5d5d', '#ffd34d', '#3ddbb4', '#b48cff', '#ff9a3d'];
 const RULE_ICO = {
   kill: '<circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>',
@@ -636,6 +642,7 @@ const mmss = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart
 function modeRules(m) {
   const r = [], solo = m.id === 'solo' || m.id === 'last';
   if (solo) r.push(['crown', '최후 1인']);
+  else if (m.id === 'duo') r.push(['crown', '최후 1팀']);
   else if (isFlagMode(m.id) && m.win) r.push(['flag', '깃발 ' + m.win + '점']);
   else if (m.id === 'duel' && m.win) r.push(['rounds', m.win + '선승']);
   else if (m.id === 'hot4') r.push(['zone', (m.win || 100) + '%']);
@@ -674,7 +681,12 @@ function modeScene(cv, m, mi, cx) {
     const zr = Math.min(w, h) * .62;
     g.save(); g.beginPath(); g.rect(0, 0, w, h); g.arc(x0, h * .55, zr, 0, 7, true); g.fillStyle = 'rgba(160,40,90,.35)'; g.fill('evenodd'); g.restore();
     g.strokeStyle = '#ffd34d'; g.lineWidth = 3 * k; g.setLineDash([10 * k, 7 * k]); g.beginPath(); g.arc(x0, h * .55, zr, 0, 7); g.stroke(); g.setLineDash([]);
-    ['sword', 'pistol', 'magiccard', 'kadas', 'rifle', 'shade'].forEach((id, n) => { const x = x0 + (n - 2.5) * 46 * s, y = base - (n % 2) * 22 * s; fig(id, MODE_FFA[n], x, y, s * .92, x < x0 ? 1 : -1, .3); });
+    ['sword', 'pistol', 'magiccard', 'bow', 'rifle', 'shade'].forEach((id, n) => { const x = x0 + (n - 2.5) * 46 * s, y = base - (n % 2) * 22 * s; fig(id, MODE_FFA[n], x, y, s * .92, x < x0 ? 1 : -1, .3); });
+  } else if (m.id === 'duo') {      // the closing circle with four pairs, each pair side by side in its colour
+    const zr = Math.min(w, h) * .62;
+    g.save(); g.beginPath(); g.rect(0, 0, w, h); g.arc(x0, h * .55, zr, 0, 7, true); g.fillStyle = 'rgba(160,40,90,.35)'; g.fill('evenodd'); g.restore();
+    g.strokeStyle = '#c77dff'; g.lineWidth = 3 * k; g.setLineDash([10 * k, 7 * k]); g.beginPath(); g.arc(x0, h * .55, zr, 0, 7); g.stroke(); g.setLineDash([]);
+    [['sword', 'bow'], ['rifle', 'wizard'], ['harald', 'shuriken'], ['magiccard', 'shotgun']].forEach((pr, n) => pr.forEach((id, j) => { const x = x0 + (n - 1.5) * 62 * s + (j - .5) * 22 * s, y = base - (n % 2) * 24 * s - j * 6 * s; fig(id, TEAM[n], x, y, s * .8, x < x0 ? 1 : -1, .3); }));
   } else if (isFlagMode(m.id)) {
     fig('bow', B, x0 - 110 * s, base - 22 * s, s * .9, 1, .4);
     fig('sword', B, x0 - 30 * s, base, s * 1.1, 1, .2); flag(x0 - 48 * s, base - 30 * s, s * 1.05, R);
@@ -771,6 +783,7 @@ const mvpVal = f => (f.kos || 0) * 100 + (f.dealt || 0) / (10 * SX) - (f.deaths 
 function matchMvp(win, draw) {
   const fs = fighters.filter(f => !f.minion && f.h0); if (fs.length < 2) return null;
   if (curMode === 'solo') return state === 'play' ? null : fs.find(f => f.team === RD.win) || null;
+  if (curMode === 'duo') { if (state === 'play') return null; const p = fs.filter(f => f.team === RD.win); return p.length ? p.reduce((a, b) => mvpVal(b) > mvpVal(a) ? b : a) : null; }
   const wt = curMode === 'hot4' ? hotTop() : win ? VIEW : 1 - VIEW, pool = draw ? fs : fs.filter(f => f.team === wt), m = pool.length ? pool.reduce((a, b) => mvpVal(b) > mvpVal(a) ? b : a) : null;
   return m && mvpVal(m) > 0 ? m : null;
 }
@@ -797,32 +810,33 @@ function buildOverStats(win, draw) {
   const fs = fighters.filter(f => !f.minion && f.h0); if (fs.length < 2) return;
   const val = f => (f.kos || 0) * 100 + (f.dealt || 0) / (10 * SX) - (f.deaths || 0) * 30;
   const wt = curMode === 'hot4' ? hotTop() : win ? VIEW : 1 - VIEW, pool = draw ? fs : fs.filter(f => f.team === wt), mvp = pool.length ? pool.reduce((a, b) => val(b) > val(a) ? b : a) : null;
-  const top = Math.max(1, ...fs.map(f => f.dealt || 0));
+  const top = Math.max(1, ...fs.map(f => f.dealt || 0)), topK = Math.max(1, ...fs.map(f => f.kos || 0)), topH = Math.max(1, ...fs.map(f => f.healed || 0));
   box.classList.toggle('noDmg', !fs.some(f => f.dealt > 0));
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
-  const head = el('div', 'osHead'); head.append(el('span', '', '이름'), el('span', '', '킬/데스'), el('span', '', '딜량')); box.append(head);
-  const solo = curMode === 'solo', rank = f => f.team === RD.win ? 0 : RD.out.includes(f.team) ? fs.length - RD.out.indexOf(f.team) : 1;      // solo: one list in finishing order
+  const head = el('div', 'osHead'); head.append(el('span', '', '이름'), el('span', '', '처치'), el('span', '', '피해'), el('span', '', '회복')); box.append(head);
+  const solo = isLeft(curMode), rank = f => f.team === RD.win ? 0 : RD.out.includes(f.team) ? fs.length - RD.out.indexOf(f.team) : 1, duo = curMode === 'duo';      // 투 레프트: pairs share a place
+  const ordered = fs.slice().sort((a, b) => rank(a) - rank(b) || a.team - b.team), tOrd = [...new Set(ordered.map(f => f.team))];      // solo: one list in finishing order
   const q4 = curMode === 'hot4', teams = q4 ? [VIEW].concat([0, 1, 2, 3].filter(t => t !== VIEW).sort((a, b) => (score[b] | 0) - (score[a] | 0))) : [VIEW, 1 - VIEW];
   for (const team of solo ? [-1] : teams) {
     if (!solo && team !== VIEW) box.append(el('div', 'osGap'));
-    for (const f of solo ? fs.slice().sort((a, b) => rank(a) - rank(b)).filter(f => state !== 'play' || RD.out.includes(f.team)) : fs.filter(f => f.team === team).sort((a, b) => val(b) - val(a))) {
-      const r = el('div', 'osRow ' + (f.team === VIEW ? 'b' : 'r') + (f === player ? ' me' : '')), nm = el('span', 'on'); if (q4 && f.team !== VIEW) r.style.borderLeftColor = TC(f.team);
-      if (solo) nm.append(el('span', 'rk', String(fs.slice().sort((a, b) => rank(a) - rank(b)).indexOf(f) + 1)));
+    for (const f of solo ? ordered.filter(f => state !== 'play' || RD.out.includes(f.team)) : fs.filter(f => f.team === team).sort((a, b) => val(b) - val(a))) {
+      const r = el('div', 'osRow ' + (f.team === VIEW ? 'b' : 'r') + (f === player ? ' me' : '')), nm = el('span', 'on'); if ((q4 || duo) && f.team !== VIEW) r.style.borderLeftColor = TC(f.team);
+      if (solo) nm.append(el('span', 'rk', String(duo ? tOrd.indexOf(f.team) + 1 : ordered.indexOf(f) + 1)));
       else if (f === mvp && val(f) > 0) nm.append(el('span', 'mvp', 'MVP'));
       nm.append(f.nick || f.h0.name); if (f.nick) nm.append(el('small', '', f.h0.name));
-      const dl = el('span', 'od'), bar = el('i'); bar.style.width = Math.round((f.dealt || 0) / top * 100) + '%'; dl.append(bar, el('em', '', String(Math.round(f.dealt || 0))));
-      if (f.taken > 0 || f.healed > 0) r.title = '받은 피해 ' + Math.round(f.taken || 0) + ' · 회복 ' + Math.round(f.healed || 0);
-      r.append(nm, el('span', 'ok', (f.kos || 0) + ' / ' + (f.deaths || 0)), dl); box.append(r);
+      const barC = (cls, v, mx, txt) => { const d = el('span', 'od ' + cls), b = el('i'); b.style.width = Math.round(v / mx * 100) + '%'; d.append(b, el('em', '', txt)); return d; };
+      if (f.taken > 0) r.title = '받은 피해 ' + Math.round(f.taken || 0);
+      r.append(nm, barC('ok', f.kos || 0, topK, (f.kos || 0) + '/' + (f.deaths || 0)), barC('', f.dealt || 0, top, String(Math.round(f.dealt || 0))), barC('oh', f.healed || 0, topH, String(Math.round(f.healed || 0)))); box.append(r);
     }
   }
 }
 /* solo (원 레프트): being knocked out ends the match for that player right away as a loss. A host with other people in the room only gets the result screen laid over the match, which keeps running for them until it is really over */
 let soloOutAt = 0, soloOutShown = false;
 function soloOutCheck() {
-  if (curMode !== 'solo' || state !== 'play' || !player || !player.dead || soloOutShown) { if (!player || !player.dead) soloOutAt = 0; return; }
+  if (!isLeft(curMode) || state !== 'play' || !player || !player.dead || soloOutShown || (curMode === 'duo' && !RD.out.includes(player.team))) { if (!player || !player.dead) soloOutAt = 0; return; }
   if (!soloOutAt) soloOutAt = performance.now();
   if (performance.now() - soloOutAt < 1400) return;      // long enough to see what happened
-  if (fighters.filter(f => !f.dead).length < 2) return;      // the match is ending anyway
+  if (new Set(fighters.filter(f => !f.dead && !f.minion).map(f => f.team)).size < 2) return;      // the match is ending anyway
   endGame(true);      // the match goes on (it can be watched): only this player's result is shown
 }
 /* watching on after being knocked out: the result screen is put away, the camera follows the ones still alive (render), a small button brings the result back */
@@ -832,9 +846,9 @@ function endGame(keepRunning) {
   if (soloOutShown) {      // this player already got the result screen (and the pay) when knocked out: now the match is really over, so the whole table is known
     showPlayUi(false); buildOverStats(false, false); $('specBtn').hidden = true; soloWatch(false); mvpFx(false, false); return;
   }
-  if (curMode === 'solo' && player && player.dead) soloOutShown = true;
+  if (isLeft(curMode) && player && player.dead && (curMode === 'solo' || RD.out.includes(player.team))) soloOutShown = true;
   showPlayUi(false);
-  const oc = modeOutcome(), solo = curMode === 'solo', mine = oc.a, theirs = oc.b;
+  const oc = modeOutcome(), solo = isLeft(curMode), mine = oc.a, theirs = oc.b;
   const win = oc.win, draw = oc.draw, rt = $('resultText');
   rt.textContent = draw ? '무승부' : win ? '승리' : '패배';
   document.querySelector('#overScreen .final').classList.toggle('solo', solo);
@@ -943,6 +957,7 @@ let MCAP = false, mcapAt = 0;      // mobile: at the lowest step and still slow 
 let rsT0 = 0, rsN = 0, rsLast = 0, rsGood = 0;
 function rsWatch(now) {
   const mob = mobileMode();
+  if (SET.bat && mob) return;      // 배터리 절약: the lowest step is kept (mobset.js)
   if (state !== 'play' || (!mob && PCQ !== 'auto') || now - rsLast > 250) { rsT0 = now; rsN = 0; rsLast = now; return; }      // (a pause, a hidden tab or the lobby does not count)
   rsLast = now; rsN++;
   const el = now - rsT0; if (el < 2000) return;
@@ -963,11 +978,11 @@ function rsWatch(now) {
 }
 let last = performance.now(), stillAt = 0, stillW = '';
 function frame(now) {
-  if (MCAP && state === 'play' && now - mcapAt < 30) { requestAnimationFrame(frame); return; }
+  if (((MCAP && state === 'play') || SET.bat) && now - mcapAt < 30) { requestAnimationFrame(frame); return; }
   mcapAt = now;
   lastFrameAt = performance.now();
   rsWatch(now);
-  const dt = Math.min(MCAP ? .05 : .033, (now - last) / 1000); last = now;
+  const dt = Math.min(MCAP || SET.bat ? .05 : .033, (now - last) / 1000); last = now;
   const still = state === 'menu' && !DED && mobileMode();      // mobile: the match behind the lobby stands still (drawn again once a second), so the lobby costs a phone almost nothing
   if (NET.role === 'guest' && state === 'play') { if (dt > 0) guestStep(dt); }
   else if (state !== 'over' && dt > 0 && !(performance.now() < hitStopUntil) && !still) { if (dt > .034) { step(dt / 2); if (state !== 'over') step(dt / 2); } else step(dt); }
@@ -1006,8 +1021,5 @@ function duelHud() {
     });
   });
 }
-window.__arena = { modes: MODE_LIST, ACHS, achMatch, achScan, achSt, renderAch, questTab, setAchRates(r) { achRates = r; }, dqList, dqMatch, dqState, renderQuests, wqList, wqState, attSt, attTake, dealIds, cosPrice, TITLES, renderProfile, renderCos, rewardFx, matchMvp, endGame, goldUi, matchPay, masteryOf, levelOf, KARMA_ROAD, MASTERY, giveReward, COSMETICS, skinPrice, get COS() { return COS; }, get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
-  setChar(id) { chosen = id; }, setMap(i) { mapChoice = i; }, tileAt: (x, y) => tile(Math.floor(x / T), Math.floor(y / T)), auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get PV() { return { sk: PV.sk, ult: PV.ult, dash: PV.dash }; }, get bullets() { return bullets; }, offline() { netReset(); startMatch(null); } };
-})();
-</script>
-
+window.__arena = { sqList, sqState, sqTake, sqOpen, PASS, GAME_VER, passXp, passAdd, passTake, renderPass, passLimited, modes: MODE_LIST, ACHS, achMatch, achScan, achSt, renderAch, questTab, setAchRates(r) { achRates = r; }, dqList, dqMatch, dqState, renderQuests, wqList, wqState, attSt, attTake, dealIds, cosPrice, TITLES, renderProfile, renderCos, rewardFx, matchMvp, endGame, goldUi, matchPay, masteryOf, levelOf, KARMA_ROAD, MASTERY, giveReward, COSMETICS, skinPrice, get COS() { return COS; }, get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
+  setChar(id) { chosen = id; }, setMap(i) { mapChoice = i; }, tileAt: (x, y) => tile(Math.floor(x / T), Math.floor(y / T)), auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get P

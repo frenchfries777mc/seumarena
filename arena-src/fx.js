@@ -327,6 +327,7 @@ function skillFx(f, def) {
 }
 function ultFx(f) {
   fxAt(f, 'ult', { name: f.h.ult.name });
+  if (!f.minion) fxPlay('cut', fighters.indexOf(f));
   fxAt(f, 'ultfx', { w: f.h.id });
   syncAuras(f, themeCol(f.h.id));
 }
@@ -438,39 +439,24 @@ function wizCircleArt(R, inner) {
   }
   return (WIZ_ART[key] = cv);
 }
-function drawWizCircle(z) {
+function drawWizCircle(z) {      // calm version (2026-11-13): soft floor, one clear edge, a thin slowly turning rune band; nothing crosses the fighters
   if (z.t0 === undefined) z.t0 = z.t;
   const age = z.t0 - z.t, low = lowFx(), now = performance.now() / 1000;
-  const op = Math.min(1, age / .25) * Math.min(1, z.t * 2);                      // fades in, fades out over the last half second
-  const pop = age < .7 ? 1 - Math.pow(1 - age / .7, 3) * Math.cos(age / .7 * 9) * .9 : 1, R = Math.max(8, z.r * Math.min(1.08, Math.max(.2, pop)));
-  const tick = z.acc !== undefined ? Math.max(0, 1 - z.acc / .18) : 0;           // a small pulse on every damage tick
+  const op = Math.min(1, age / .3) * Math.min(1, z.t * 2);
+  const e = Math.min(1, age / .35), R = Math.max(8, z.r * (1 - Math.pow(1 - e, 3)));      // opens smoothly, no bounce
   ctx.save(); ctx.translate(z.x, z.y);
-  ctx.globalAlpha = op * .55;                                                    // soft violet floor
-  const gr = ctx.createRadialGradient(0, 0, R * .1, 0, 0, R); gr.addColorStop(0, 'rgba(255,214,120,.35)'); gr.addColorStop(.55, 'rgba(160,100,255,.22)'); gr.addColorStop(1, 'rgba(120,60,230,.38)');
-  ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, R, 0, 7); ctx.fill();
-  ctx.globalCompositeOperation = 'lighter';
-  const outer = wizCircleArt(z.r, 0), inner = wizCircleArt(z.r, 1), k = R / z.r;
-  for (const [img, rot, col, a] of [[outer, now * .25, '#c9a2ff', .85], [inner, -now * .45, '#ffd34d', .75]]) {
-    ctx.save(); ctx.rotate(rot); ctx.scale(k, k); ctx.globalAlpha = op * (a + tick * .25);
-    if (!low) { ctx.shadowColor = col; ctx.shadowBlur = 14; }
-    ctx.drawImage(img, -img.width / 2, -img.height / 2);
-    ctx.restore();
-  }
-  ctx.globalAlpha = op * .9; ctx.strokeStyle = '#b98cff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, R - 2, 0, 7); ctx.stroke();
-  if (age < .7) { const q = age / .7; ctx.globalAlpha = (1 - q) * .9; ctx.strokeStyle = '#fff0c0'; ctx.lineWidth = 8 * (1 - q) + 1; ctx.beginPath(); ctx.arc(0, 0, z.r * (.3 + q * .85), 0, 7); ctx.stroke(); }
-  if (tick > 0) { ctx.globalAlpha = op * tick * .6; ctx.strokeStyle = '#ffd34d'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, R * (1 - tick * .08), 0, 7); ctx.stroke(); }
-  if (!low) {                                                                    // motes drifting up out of the circle
-    const n = 14;
-    for (let i = 0; i < n; i++) {
-      const ph = (now * .5 + i * .618) % 1, a = i * 2.399 + Math.floor(now * .5 + i * .618) * 1.7, rr = R * (.15 + .8 * ((i * .37) % 1));
-      const x = Math.cos(a) * rr, y = Math.sin(a) * rr - ph * 46, s = 2.6 * Math.sin(ph * Math.PI);
-      ctx.globalAlpha = op * Math.sin(ph * Math.PI) * .9; ctx.fillStyle = i % 3 ? '#d9c2ff' : '#ffe58a';
-      ctx.beginPath(); ctx.moveTo(x, y - s * 1.8); ctx.lineTo(x + s, y); ctx.lineTo(x, y + s * 1.8); ctx.lineTo(x - s, y); ctx.closePath(); ctx.fill();
-    }
+  ctx.globalAlpha = op * .32; ctx.fillStyle = '#9d6bff'; ctx.beginPath(); ctx.arc(0, 0, R, 0, 7); ctx.fill();
+  ctx.globalAlpha = op * .9; ctx.strokeStyle = '#d9c2ff'; ctx.lineWidth = 3; ctx.stroke();
+  const outer = wizCircleArt(z.r, 0), k = R / z.r;
+  ctx.save(); ctx.rotate(now * .12); ctx.scale(k, k); ctx.globalAlpha = op * .45; ctx.drawImage(outer, -outer.width / 2, -outer.height / 2); ctx.restore();
+  if (!low) for (let i = 0; i < 6; i++) {
+    const ph = (now * .4 + i * .618) % 1, a = i * 2.399 + Math.floor(now * .4 + i * .618) * 1.7, rr = R * (.3 + .6 * ((i * .37) % 1));
+    ctx.globalAlpha = op * Math.sin(ph * Math.PI) * .6; ctx.fillStyle = '#efe4ff'; ctx.beginPath(); ctx.arc(Math.cos(a) * rr, Math.sin(a) * rr - ph * 30, 2, 0, 7); ctx.fill();
   }
   ctx.restore(); ctx.globalAlpha = 1;
 }
 function drawZoneArt(z, menu) {       // tail.js asks this for every zone first; true = drawn here
+  if (z.kind && z.kind.startsWith('hb') && typeof drawHerbZone === 'function' && drawHerbZone(z)) return true;      // (약초꾼: herbshield.js)
   if ((z.kind === 'sprout' || z.kind === 'vine') && typeof drawGardenZone === 'function') return drawGardenZone(z);      // (정원사: gardener.js)
   if (z.col === '#9a4cff' && !z.kind) { drawDarkLump(z); return true; }
   if (z.kind === 'circle') { drawWizCircle(z); return true; }
@@ -1092,3 +1078,92 @@ function drawSyringe(b) {
   ctx.strokeStyle = '#c9ced6'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(5, 0); ctx.lineTo(13, 0); ctx.stroke();
   ctx.restore(); return true;
 }
+
+/* ultimate cut-in (2026-11-14): my own ult = mockup A, a diagonal band with my character and the ult name;
+   anyone else's = a face card slides in from the side (my team on the left, the others on the right). Plain DOM + CSS so phones only animate opacity/transform */
+let ucCss = false, ucCards = [];
+function ucStyle() {
+  if (ucCss) return; ucCss = true;
+  const st = document.createElement('style');
+  st.textContent = `
+.ucL{position:fixed;inset:0;pointer-events:none;z-index:5}
+.ucDark{opacity:0;animation:ucDark 1.1s ease-out forwards}
+.ucVig{opacity:0;animation:ucVig .9s ease-out forwards}
+.ucRing{position:fixed;pointer-events:none;z-index:5;border-radius:50%;transform:translate(-50%,-50%) scale(.2);opacity:0;animation:ucRing .6s ease-out forwards}
+.ucRays{position:fixed;pointer-events:none;z-index:5;border-radius:50%;transform:translate(-50%,-50%);opacity:0;animation:ucRays .8s linear forwards;
+ background:repeating-conic-gradient(#ffd23f99 0 4deg,transparent 4deg 18deg);-webkit-mask:radial-gradient(circle,transparent 0 30%,#000 32% 60%,transparent 70%);mask:radial-gradient(circle,transparent 0 30%,#000 32% 60%,transparent 70%)}
+.ucStamp{position:fixed;pointer-events:none;z-index:5;display:flex;align-items:center;gap:6px;padding:4px 16px 4px 6px;transform:translate(-50%,-100%) scale(2.4) rotate(-8deg);opacity:0;animation:ucStamp 1.5s cubic-bezier(.3,1.5,.5,1) forwards}
+.ucStamp::before{content:'';position:absolute;inset:0;border-radius:6px 22px 6px 22px;transform:skewX(-14deg);background:var(--uc2);box-shadow:0 0 0 2px #ffd23f,0 3px 0 2px #0006}
+.ucStamp canvas{position:relative;width:38px;height:38px;border-radius:50%;background:var(--uc2);border:2px solid #ffd23f;flex:none}
+.ucStamp b{position:relative;color:#fff;font:italic 900 24px 'IBM Plex Sans KR',sans-serif;white-space:nowrap;text-shadow:2px 2px 0 #000}
+.ucCard{position:fixed;pointer-events:none;z-index:4;height:52px;display:flex;align-items:center;gap:8px;padding:0 26px 0 6px;min-width:190px;transition:top .2s}
+.ucCard.l{left:0;clip-path:polygon(0 0,100% 0,92% 100%,0 100%);animation:ucInL 1.9s cubic-bezier(.2,.9,.2,1) forwards}
+.ucCard.r{right:calc(env(safe-area-inset-right,0px) + 62px);flex-direction:row-reverse;text-align:right;padding:0 6px 0 26px;border-radius:0 26px 26px 0;clip-path:polygon(0 0,100% 0,100% 100%,8% 100%);animation:ucInR 1.9s cubic-bezier(.2,.9,.2,1) forwards}
+.ucCard canvas{width:56px;height:56px;border-radius:50%;border:2px solid #fff;flex:none;position:relative;top:-3px}
+.ucCard span{color:#fff;line-height:1.05;text-shadow:0 1px 0 #0007;font-family:'IBM Plex Sans KR',sans-serif}
+.ucCard small{display:block;font-size:11px;font-weight:700;opacity:.92;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ucCard b{font-size:21px;font-weight:900;font-style:italic;white-space:nowrap}
+@keyframes ucDark{0%{opacity:0}12%,55%{opacity:1}100%{opacity:0}}
+@keyframes ucVig{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+@keyframes ucRing{8%{opacity:1}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}
+@keyframes ucRays{15%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) rotate(40deg)}}
+@keyframes ucStamp{12%{transform:translate(-50%,-100%) scale(1) rotate(-8deg);opacity:1}75%{transform:translate(-50%,-100%) scale(1) rotate(-8deg);opacity:1}100%{transform:translate(-50%,-125%) scale(1.08) rotate(-8deg);opacity:0}}
+@keyframes ucInL{0%{transform:translateX(-105%)}14%,80%{transform:translateX(0)}100%{transform:translateX(-105%)}}
+@keyframes ucInR{0%{transform:translateX(40%);opacity:0}14%,80%{transform:translateX(0);opacity:1}100%{transform:translateX(40%);opacity:0}}
+.ucA{position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden}
+.ucA>*{position:absolute}
+.ucA .d{display:none}
+.ucA .bd{left:-10%;right:-10%;top:calc(env(safe-area-inset-top,0px) + 62px);height:min(13vh,78px);transform:skewY(-3deg) translateX(-110%);background:linear-gradient(90deg,var(--uc2) 0%,color-mix(in srgb,var(--uc) 70%,#000) 45%,var(--uc) 70%,var(--uc2) 100%);box-shadow:0 0 0 2px #fff8,0 0 12px var(--uc);opacity:.92;animation:ucAb .95s cubic-bezier(.2,.9,.2,1) forwards}
+.ucA .bd::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 30px,#ffffff55 30px 34px,transparent 34px 80px);animation:ucAs .25s linear infinite}
+.ucA .who{left:8%;top:calc(env(safe-area-inset-top,0px) + 62px + min(6.5vh,39px));transform:translate(-160%,-50%) rotate(-6deg);filter:drop-shadow(6px 6px 0 #0008);animation:ucAw .95s cubic-bezier(.2,.9,.2,1) forwards}
+.ucA .who canvas{display:block}
+.ucA b{right:22%;top:calc(env(safe-area-inset-top,0px) + 62px + min(6.5vh,39px));font:italic 900 clamp(24px,4.6vw,48px) 'IBM Plex Sans KR',sans-serif;color:#fff;white-space:nowrap;letter-spacing:-.02em;text-shadow:3px 3px 0 var(--uc2),0 0 14px var(--uc);transform:translate(160%,-50%) skewX(-12deg);animation:ucAn .95s cubic-bezier(.2,.9,.2,1) forwards}
+.ucA em{display:none;font:normal 800 12px 'IBM Plex Sans KR',sans-serif;color:#ffd23f;letter-spacing:.2em;transform:translateX(250%);animation:ucAe 1.4s cubic-bezier(.2,.9,.2,1) forwards}
+.ucA .fl{display:none}
+.ucA.low .d,.ucA.low .fl,.ucA.low .bd::after{display:none}
+@keyframes ucAd{0%{opacity:0}12%,72%{opacity:.4}90%,100%{opacity:0}}
+@keyframes ucAb{0%{transform:skewY(-3deg) translateX(-110%)}18%,74%{transform:skewY(-3deg) translateX(0)}92%,100%{transform:skewY(-3deg) translateX(115%)}}
+@keyframes ucAs{to{background-position:-80px 0}}
+@keyframes ucAw{0%{transform:translate(-160%,-50%) rotate(-6deg)}20%{transform:translate(4%,-50%) rotate(-6deg)}74%{transform:translate(14%,-50%) rotate(-6deg);opacity:1}92%,100%{transform:translate(300%,-50%) rotate(-6deg);opacity:0}}
+@keyframes ucAn{0%{transform:translate(160%,-50%) skewX(-12deg)}22%{transform:translate(-3%,-50%) skewX(-12deg)}74%{transform:translate(0,-50%) skewX(-12deg);opacity:1}92%,100%{transform:translate(-260%,-50%) skewX(-12deg);opacity:0}}
+@keyframes ucAe{0%{transform:translateX(250%)}24%,74%{transform:translateX(0);opacity:1}92%,100%{transform:translateX(-300%);opacity:0}}
+@keyframes ucAf{0%,76%{opacity:0}80%{opacity:.5}92%,100%{opacity:0}}
+@media (max-height:420px){.ucCard{height:40px;min-width:150px}.ucCard canvas{width:44px;height:44px}.ucCard b{font-size:16px}.ucCard small{font-size:10px}.ucStamp b{font-size:18px}.ucStamp canvas{width:30px;height:30px}}`;
+  document.head.appendChild(st);
+}
+function ucFace(f, px, bg) {      // head and shoulders of the caster, in their skin
+  const cv = document.createElement('canvas'); cv.width = cv.height = px;
+  const c = cv.getContext('2d'); c.fillStyle = bg; c.fillRect(0, 0, px, px);
+  const k = px / 36; c.translate(px / 2, px / 2 + 46 * k); c.scale(k, k);
+  try { drawStick(c, f.h.id, f.team === VIEW ? '#3fe0c5' : '#ff8a7a', .3, 0, 0, performance.now() / 1000, f.cos); } catch (e) {}
+  return cv;
+}
+const ucAdd = (el, ms) => { document.body.appendChild(el); setTimeout(() => el.remove(), ms); return el; };
+function ultCut(f) {
+  if (!f || !f.h || !f.h.ult || state !== 'play') return;
+  ucStyle();
+  const col = TC(f.team), dk = f.team === VIEW ? '#0b2a66' : '#5a0f19', name = f.h.ult.name, low = lowFx();
+  if (f === player) {      // mockup A: a diagonal band sweeps across, my character big on it and the ult name from the other side
+    const w = document.createElement('div'); w.className = 'ucA' + (low ? ' low' : ''); w.style.setProperty('--uc', col); w.style.setProperty('--uc2', dk);
+    w.innerHTML = '<i class="d"></i><i class="bd"></i><i class="who"></i><em></em><b></b><i class="fl"></i>';
+    const cv = document.createElement('canvas'), ch = Math.round(Math.min(H * .24, 130)), k = ch / 120;
+    cv.width = Math.round(ch * .8); cv.height = ch; const c = cv.getContext('2d'); c.translate(cv.width * .45, ch * .97); c.scale(k * .95, k * .95);
+    try { drawStick(c, f.h.id, '#3fe0c5', -.9, 0, .6, performance.now() / 1000, f.cos); } catch (e) {}
+    w.querySelector('.who').appendChild(cv);
+    w.querySelector('em').textContent = (f.h.name || '') + ' · 궁극기'; w.querySelector('b').textContent = name + '!';
+    ucAdd(w, 1000);
+    return;
+  }
+  ucCards = ucCards.filter(e => e.isConnected);
+  if (ucCards.length >= 3) { const o = ucCards.shift(); o.remove(); }
+  const left = f.team === VIEW, el = document.createElement('div');
+  el.className = 'ucCard ' + (left ? 'l' : 'r');
+  el.style.background = `linear-gradient(${left ? 90 : 270}deg,${dk} 0%,${col}ee 70%,${col}00)`;
+  const side = ucCards.filter(e => e.classList.contains(left ? 'l' : 'r')).length;
+  el.style.top = (H < 420 ? 118 : 150) + side * (H < 420 ? 46 : 60) + 'px';      // under the kill feed (top 72) and clear of the right-hand buttons
+  el.appendChild(ucFace(f, 96, dk));
+  const t = document.createElement('span'), who = f.nick || f.h.name;
+  t.innerHTML = '<small></small><b></b>'; t.firstChild.textContent = who + (f.nick ? ' · ' + f.h.name : ''); t.lastChild.textContent = name + '!';
+  el.appendChild(t); ucCards.push(ucAdd(el, 2000));
+}
+FXF.cut = i => { try { ultCut(fighters[i]); } catch (e) {} };

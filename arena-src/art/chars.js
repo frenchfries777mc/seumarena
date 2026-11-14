@@ -128,6 +128,8 @@ function drawWeaponPersona(c,wid,hx,hy,r,shy,tint,concept){
     case 'tionis': drawSpacePersona(c,wid,hx,hy,r,shy,tint);
       if(concept==='janus'){ mythTunic(c,hx,shy,'#d9b648',false); mythLaurel(c,hx,hy,r); }      // 야누스 티오니스: only a white tunic and a laurel wreath are new
       break;
+    case 'herbal': if(typeof hbHood==='function') hbHood(c,hx,hy,r,1,tint); break;
+    case 'shieldman': if(typeof hbHelm==='function') hbHelm(c,hx,hy,r,1,tint,performance.now()/1000); break;
     case 'gardener': if(typeof gdHat==='function') gdHat(c,hx,hy,r,1,performance.now()/1000,tint); break;
     case 'shade': { // 네온: a thin glowing visor (the colour follows the skin)
       const vc=tint||'#7dffd8'; c.save(); c.shadowColor=vc; c.shadowBlur=6; c.fillStyle='#0b1018'; c.strokeStyle=vc; c.lineWidth=1.2; c.beginPath(); c.roundRect(hx-r*0.95,hy-r*0.42,r*1.9,r*0.62,2); c.fill(); c.stroke(); c.restore();

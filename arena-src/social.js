@@ -2,17 +2,17 @@
 const RND = (a, b) => a + Math.random() * (b - a);      // the Stickseum art uses these two
 let fxQuality = 2;
 /* settings (kept in this browser): volume, aim sensitivity (touch), fewer effects */
-const SET = { vol: 100, aim: 100, fx: false };
-try { const o = JSON.parse(localStorage.getItem('seumArenaSet') || '{}'); if (o.vol >= 0 && o.vol <= 100) SET.vol = o.vol | 0; if (o.aim >= 50 && o.aim <= 200) SET.aim = o.aim | 0; SET.fx = !!o.fx; } catch (e) {}
+const SET = { vol: 100, aim: 100, fx: false, bat: false, bsz: 100, bpos: {} };
+try { const o = JSON.parse(localStorage.getItem('seumArenaSet') || '{}'); if (o.vol >= 0 && o.vol <= 100) SET.vol = o.vol | 0; if (o.aim >= 50 && o.aim <= 200) SET.aim = o.aim | 0; SET.fx = !!o.fx; SET.bat = !!o.bat; if (o.bsz >= 70 && o.bsz <= 150) SET.bsz = o.bsz | 0; if (o.bpos && typeof o.bpos === 'object') SET.bpos = o.bpos; } catch (e) {}
 function saveSet() { try { localStorage.setItem('seumArenaSet', JSON.stringify(SET)); } catch (e) {} }
-function lowFx() { return reduceMotion || SET.fx; }
+function lowFx() { return reduceMotion || SET.fx || SET.bat; }
 /* the sound and particle functions are wrapped here so the settings work without touching engine.js or the art files */
 { const baseSfx = sfx; sfx = (f, d, t, v, sl) => { if (SET.vol <= 0) return; baseSfx(f, d, t, (v || .05) * SET.vol / 100, sl); }; }
 {
   const baseP = addP, THIN = { dot: .35, streak: .35, smoke: .3, square: .35, fire: .5, flash: .5 };
   const MTHIN = { dot: .4, streak: .4, smoke: .35, square: .4, fire: .55, flash: .6 };      // mobile (engine.js mobileMode): speed first, and no small bits past 140 at once
   addP = o => {
-    if (o && SET.fx) { const k = THIN[o.shape]; if (k !== undefined && (Math.random() > k || (o.shape === 'flash' && o.size >= 100))) return; }
+    if (o && (SET.fx || SET.bat)) { const k = THIN[o.shape]; if (k !== undefined && (Math.random() > k || (o.shape === 'flash' && o.size >= 100))) return; }
     else if (o && liteMode()) { const k = MTHIN[o.shape]; if (k !== undefined && (Math.random() > k || particles.length > 140)) return; }
     baseP(o);
   };
@@ -69,7 +69,7 @@ const COS_KEY = 'seumArenaCos';
 const cosDefault = () => ({ skin: {}, col: null, name: null, kfx: null, pose: 'pose_cheer', emo: [0, 1, 2, 3, 4, 5, 6, 7], gold: 500, own: null, v: 0 });
 function cosNorm(C) {      // the save-version fixes, run on this browser's save and on one that comes from the account (cloud.js)
   if (!Array.isArray(C.own) || !(C.v >= 2)) { C.own = []; C.skin = {}; C.gold = Math.max(500, +C.gold || 0); C.v = 2; }      // skins worn before gold existed are not owned: they have to be bought (v2 also takes back the ones an earlier build handed out)
-  C.gold = Math.max(0, Math.floor(+C.gold || 0)); C.karma = Math.max(0, Math.floor(+C.karma || 0)); if (!Array.isArray(C.kr) || C.v < 3) C.kr = [];
+  C.gold = Math.max(0, Math.floor(+C.gold || 0)); C.karma = Math.max(0, Math.floor(+C.karma || 0)); if (!Array.isArray(C.kr) || C.v < 3) C.kr = []; if (!Array.isArray(C.cd)) C.cd = [];
   if (C.v < 4) for (const k of ['col', 'name', 'kfx']) if (C[k] && !C.own.includes(C[k])) C[k] = null;      // v4: character colours, name colours and kill effects are bought with gold too
   C.v = 4;      // v3: the road got new steps, nothing on it is taken yet
   C.xp = Math.max(0, Math.floor(+C.xp || 0)); if (!C.mp || typeof C.mp !== 'object') C.mp = {};
@@ -103,7 +103,7 @@ if (COS.pose && cosLocked(COS.pose)) COS.pose = null;      // (victory poses use
 const COS_SLOT = { bcol: 'col', name: 'name', kfx: 'kfx', pose: 'pose' };
 function goldUi() { for (const el of document.querySelectorAll('.goldN')) el.textContent = COS.gold.toLocaleString('en-US'); for (const el of document.querySelectorAll('.karmaN')) el.textContent = COS.karma.toLocaleString('en-US'); const sk = document.getElementById('streak'); if (sk) { sk.hidden = !((COS.ws | 0) >= 2); sk.querySelector('b').textContent = COS.ws | 0; }
   { const kb = document.querySelector('#karmaBar i'); { let lo = 0, hi = 0; for (const r of KARMA_ROAD) { if (COS.karma >= r[0]) lo = r[0]; else { hi = r[0]; break; } } const w = (hi ? Math.round((COS.karma - lo) / (hi - lo) * 100) : 100) + '%'; if (kb) kb.style.width = w; const hb = document.querySelector('.khBar i'), hn = document.getElementById('karmaNextN'); if (hb) hb.style.width = w; if (hn) hn.textContent = hi ? COS.karma.toLocaleString('en-US') + ' / ' + hi.toLocaleString('en-US') : ''; } }      // the banner's bar: the way to the next step of the road
-  const kd = document.getElementById('karmaDot'); if (kd) kd.hidden = !karmaOpen(); questUi();
+  const kd = document.getElementById('karmaDot'); if (kd) kd.hidden = !karmaOpen(); questUi(); passUi();
   const ai = document.getElementById('acctIcon'); if (ai) { const l = levelOf(); ai.textContent = l.lv; ai.style.setProperty('--p', Math.round(l.into / l.need * 100)); ai.title = '레벨 ' + l.lv + ' · ' + l.into + ' / ' + l.need; } }
 /* ---------- progression: karma road, boxes, player level, character mastery ---------- */
 /* karma road: [karma needed, kind, amount]. kinds: g gold · rx mastery points for a random character · cx mastery points for the picked character · box / ebox · skin (amount = dearest tier). Taken steps are kept in COS.kr */
@@ -132,13 +132,13 @@ function addMp(h, n) { if (!HEROES[h]) return; COS.mp[h] = mpOf(h) + Math.max(0,
 /* player level: level L needs 150 + 50 (L - 1) xp to pass */
 function levelOf() { let xp = Math.max(0, Math.floor(+COS.xp || 0)), lv = 1; while (xp >= 150 + 50 * (lv - 1) && lv < 999) { xp -= 150 + 50 * (lv - 1); lv++; } return { lv, into: xp, need: 150 + 50 * (lv - 1) }; }
 /* what a match pays, by mode: kk karma per kill, kw karma for the win, mm mastery multiplier */
-const MODE_PAY = { team: { kk: 1, kw: 3, mm: 1 }, flag: { kk: 1, kw: 4, mm: 1.2 }, duel: { kk: 1, kw: 2, mm: .7 }, solo: { kk: 2, kw: 6, mm: 1 }, hot4: { kk: 1, kw: 4, mm: 1.1 } };
+const MODE_PAY = { team: { kk: 1, kw: 3, mm: 1 }, flag: { kk: 1, kw: 4, mm: 1.2 }, duel: { kk: 1, kw: 2, mm: .7 }, solo: { kk: 2, kw: 6, mm: 1 }, hot4: { kk: 1, kw: 4, mm: 1.1 }, duo: { kk: 1, kw: 5, mm: 1.1 } };
 /* 원 레프트 karma by finishing place (user 2026-11-11): the last three places (4th to 6th of 6) get only their kills (no place bonus);
    1st gets kills + the win bonus, 2nd and 3rd kills + a smaller bonus */
 function soloKarma(place, k, pm) { const n = 6; return k * pm.kk + (place >= 1 && place <= n - 3 ? [pm.kw, 4, 2][place - 1] : 0); }
 function matchPay(o) {      // o: { mode, win, draw, kills, place }
   if (o.mode === 'flag5') o = Object.assign({}, o, { mode: 'flag' });      // capture the flag pays the same whatever the team size
-  const pm = MODE_PAY[o.mode] || MODE_PAY.team, solo = o.mode === 'solo', k = Math.max(0, o.kills | 0), good = o.win ? 2 : o.draw || (solo && o.place <= 3) || (o.mode === 'hot4' && o.place === 2) ? 1 : 0;      // 4팀 핫존: 2nd of 4 pays like a draw
+  const pm = MODE_PAY[o.mode] || MODE_PAY.team, solo = o.mode === 'solo', k = Math.max(0, o.kills | 0), good = o.win ? 2 : o.draw || (solo && o.place <= 3) || (o.mode === 'hot4' && o.place === 2) || (o.mode === 'duo' && o.place === 2) ? 1 : 0;      // 4팀 핫존: 2nd of 4 pays like a draw
   return { gold: Math.round(([30, 40, 60][good] + 5 * Math.min(10, k)) * (o.mode === 'duel' ? .6 : 1)), karma: solo ? soloKarma(o.place, k, pm) : k * pm.kk + (o.win ? pm.kw : 0),
     mp: Math.round(([30, 42, 55][good] + 3 * Math.min(10, k)) * pm.mm), xp: [40, 55, 70][good] + 4 * Math.min(10, k) };
 }
@@ -156,7 +156,7 @@ function giveReward(kind, n) {
   if (kind === 'box' || kind === 'ebox') { const L = BOX_LOOT[kind]; let r = Math.random() * L.reduce((a, l) => a + l[0], 0), l = L[0]; for (const x of L) { if ((r -= x[0]) < 0) { l = x; break; } } const tr = Math.random(), tier = l[1] === 'skin' ? 2 : kind === 'ebox' ? (tr < .25 ? 2 : 1) : tr < .05 ? 2 : tr < .25 ? 1 : 0;      // a box opens as common, rare or legendary: rare doubles what is inside, legendary gives four times (a skin is always legendary)
     const got = giveReward(l[1], l[1] === 'skin' ? l[2] : Math.round((l[2] + Math.random() * (l[3] - l[2])) * (kind === 'ebox' ? [1, 1, 2] : [1, 2, 4])[tier] / 10) * 10); got.box = kind; got.tier = tier; return got; }
   if (kind === 'skin') {      // a skin not owned yet, from the dearest tier allowed; nothing left to give: its worth in gold
-    const pool = COS_IDS('skin').filter(id => HEROES[COSMETICS[id].char] && !skinOwned(id) && skinPrice(id) <= n), top = Math.max(0, ...pool.map(skinPrice)), best = pool.filter(id => skinPrice(id) === top);
+    const pool = COS_IDS('skin').filter(id => HEROES[COSMETICS[id].char] && !skinOwned(id) && !passLimited(id) && skinPrice(id) <= n), top = Math.max(0, ...pool.map(skinPrice)), best = pool.filter(id => skinPrice(id) === top);
     if (best.length) { const id = pick(best); COS.own.push(id); return { kind, skin: id, hero: COSMETICS[id].char }; }
     kind = 'g';
   }
@@ -173,7 +173,8 @@ function karmaTake(r) {
   saveCos(); goldUi(); return got;
 }
 const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin' };
-function rewardIcon(kind) { const i = document.createElement('i'); if (kind === 'k') { i.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>'; return i; } i.className = kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[kind]; return i; }
+function rewardIcon(kind) { const i = document.createElement('i'); if (kind === 'sx') { i.className = 'sxI'; i.innerHTML = '<svg aria-hidden="true"><use href="#mi-pass"/></svg>'; return i; } if (kind === 'k') { i.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>'; return i; } if (kind === 'skin') { const c = document.createElement('canvas'); c.width = c.height = 96; c.className = 'rwI'; try { const id = COS_IDS('skin').find(x => HEROES[COSMETICS[x].char] && skinPrice(x) > 0); drawItemPreview(c, id, 0); } catch (e) {} return c; }      // a skin reward shows a real worn skin, as in the shop
+  i.className = kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[kind]; return i; }
 function renderKarma(got) {
   const tr = document.getElementById('karmaTrack'); tr.textContent = '';
   const fill = document.createElement('div'); fill.id = 'karmaFill'; tr.append(fill);
@@ -194,7 +195,26 @@ function renderKarma(got) {
   [...tr.querySelectorAll('.kStep')].forEach((el, i) => { const n = KARMA_ROAD[i][0], cx = el.offsetLeft + el.offsetWidth / 2; if (COS.karma >= n) { fillW = lastX = cx; prevN = n; } else if (!open) { open = true; fillW = lastX + (cx - lastX) * Math.max(0, COS.karma - prevN) / (n - prevN); } });
   fill.style.width = Math.round(fillW) + 'px';
   const road = document.getElementById('karmaRoad'); if (got === undefined && focus) road.scrollLeft = Math.max(0, focus.offsetLeft - road.clientWidth / 2 + 46);
+  kDress(tr);
+  { let lo = 0, hi = 0; for (const r of KARMA_ROAD) { if (COS.karma >= r[0]) lo = r[0]; else { hi = r[0]; break; } } const hd = document.getElementById('karmaHead'); kRing(hd, hi ? (COS.karma - lo) / (hi - lo) : 1, ''); const ic = hd && hd.querySelector('.kmI'), rg = hd && hd.querySelector('.kRing'); if (ic && rg && ic.parentNode !== rg) rg.prepend(ic); }
   showGot(document.getElementById('karmaGot'), got);
+}
+/* dresses the steps of the karma road and the season pass like a Brawl pass: a shine and a 받기 tag on the steps ready to take, a padlock on the locked ones */
+function kDress(tr) {
+  for (const el of tr.querySelectorAll('.kStep')) {
+    const box = el.querySelector('.kBox'); if (!box) continue;
+    for (const n of [...box.childNodes]) if (n.nodeType === 3) { const t = n.textContent.trim(); if (!t) n.remove(); else { const b = document.createElement('b'); b.className = 'kAmt' + (t === el.title ? ' kName' : ''); b.textContent = t; n.replaceWith(b); } }
+    if (!box.querySelector('.kAmt') && el.title) { const b = document.createElement('b'); b.className = 'kAmt kName'; b.textContent = el.title.split(' · ').pop(); box.append(b); }
+    { const hd = document.createElement('span'); hd.className = 'kHd'; hd.textContent = el.title || ''; box.prepend(hd); const rays = document.createElement('i'); rays.className = 'kRays'; box.prepend(rays); }
+    if (el.classList.contains('reach')) { const sh = document.createElement('i'); sh.className = 'kShine'; box.append(sh); const g = document.createElement('b'); g.className = 'kGet'; g.textContent = '받기'; box.append(g); }
+    else if (el.classList.contains('lock')) { const l = document.createElement('i'); l.className = 'kLock'; l.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.2" fill="#2a2d36" stroke="#0b0d12" stroke-width="1.6"/><path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5" fill="none" stroke="#9aa0ad" stroke-width="2.2"/><circle cx="12" cy="15.2" r="1.6" fill="#9aa0ad"/></svg>'; box.append(l); }
+  }
+}
+/* the round level gauge of the karma road and season pass headers: a ring filled to frac with a number (or the icon) in the middle */
+function kRing(head, frac, txt) {
+  if (!head) return; let r = head.querySelector('.kRing');
+  if (!r) { r = document.createElement('div'); r.className = 'kRing'; r.innerHTML = '<b></b>'; const ic = head.querySelector('.kmI'); head.insertBefore(r, ic ? ic.nextSibling : head.firstChild); }
+  r.style.setProperty('--f', Math.max(0, Math.min(1, frac)).toFixed(3)); r.querySelector('b').textContent = txt || '';
 }
 /* the line that says what a reward turned out to be */
 function showGot(g, got) { g.hidden = true; if (got) rewardFx(got); }
@@ -235,7 +255,7 @@ function dqList(day) {
   const mid = [{ t: 'win', n: 2, txt: '2승' }, h1 && { t: 'kill', n: 5, hero: h1, txt: hn(h1) + ' 5킬' }, { t: 'dmg', n: 10000, txt: '피해 10,000' }].filter(Boolean);
   const hard = [{ t: 'kill', n: 20, txt: '20킬' }, h2 && { t: 'win', n: 2, hero: h2, txt: hn(h2) + ' 2승' }, m2 && { t: 'win', n: 2, mode: m2.id, txt: m2.name + ' 2승' }, solo && { t: 'top3', n: 2, mode: 'solo', txt: solo.name + ' 3등 안 2번' }].filter(Boolean);
   const a = pk(easy), b = pk(mid.filter(q => q.t !== a.t || q.hero)), c = pk(hard.filter(q => (q.t !== a.t && q.t !== b.t) || q.hero || q.mode));
-  a.rw = ['g', 150]; b.rw = ['k', 10]; c.rw = ['box'];
+  a.rw = ['g', 150]; b.rw = ['cx', 120]; c.rw = ['box'];
   return [a, b, c];
 }
 function dqState() { const d = dqDay(), q = COS.dq; if (!q || q.d !== d || !Array.isArray(q.p) || !Array.isArray(q.c)) COS.dq = { d, p: [0, 0, 0], c: [0, 0, 0] }; return COS.dq; }
@@ -248,7 +268,8 @@ function dqMatch(m) {
     st.p[i] = Math.min(q.n, (+st.p[i] || 0) + Math.max(0, add));
   });
   { const ws = wqState(); wqList(ws.d).forEach((q, i) => { ws.p[i] = Math.min(q.n, (+ws.p[i] || 0) + qAdd(q, m)); }); }
-  saveCos(); questUi();
+  { const ss = sqState(); sqList(ss.d).forEach((q, i) => { ss.p[i] = Math.min(q.n, (+ss.p[i] || 0) + qAdd(q, m)); }); }
+  passMatch(m); saveCos(); questUi();
 }
 function dqTake(i) {
   const st = dqState(), q = dqList(st.d)[i]; if (!q || st.c[i] || !(st.p[i] >= q.n)) return null;
@@ -270,7 +291,7 @@ function wqList(week) {
   const a = pk([{ t: 'play', n: 20, txt: '20판 하기' }, { t: 'kill', n: 60, txt: '60킬' }]);
   const b = pk([{ t: 'win', n: 10, txt: '10승' }, m && { t: 'play', n: 8, mode: m.id, txt: m.name + ' 8판' }, m && { t: 'win', n: 4, mode: m.id, txt: m.name + ' 4승' }].filter(Boolean));
   const c = pk([h && { t: 'win', n: 5, hero: h, txt: hn + ' 5승' }, h && { t: 'kill', n: 30, hero: h, txt: hn + ' 30킬' }, solo && { t: 'top3', n: 6, mode: 'solo', txt: solo.name + ' 3등 안 6번' }].filter(Boolean));
-  a.rw = ['g', 500]; b.rw = ['k', 30]; c.rw = ['ebox'];
+  a.rw = ['g', 500]; b.rw = ['box']; c.rw = ['ebox'];
   return [a, b, c];
 }
 function wqState() { const d = wqWeek(), q = COS.wq; if (!q || q.d !== d || !Array.isArray(q.p) || !Array.isArray(q.c)) COS.wq = { d, p: [0, 0, 0], c: [0, 0, 0] }; return COS.wq; }
@@ -280,7 +301,7 @@ function wqTake(i) {
 }
 const wqOpen = () => { const st = wqState(); return wqList(st.d).some((q, i) => st.p[i] >= q.n && !st.c[i]); };
 /* ---------- attendance: one reward a day, seven in a row then round again. A missed day loses nothing. COS.att = { d: the day last taken, n: how many taken } ---------- */
-const ATT = [['g', 100], ['k', 5], ['g', 150], ['rx', 150], ['g', 200], ['k', 10], ['box']];
+const ATT = [['g', 100], ['rx', 100], ['g', 150], ['rx', 150], ['g', 200], ['cx', 200], ['box']];
 const attSt = () => { if (!COS.att || typeof COS.att !== 'object') COS.att = { d: 0, n: 0 }; COS.att.n = Math.max(0, COS.att.n | 0); return COS.att; };
 const attOpen = () => attSt().d !== dqDay();
 function attTake() { const a = attSt(); if (!attOpen()) return null; const r = ATT[a.n % 7]; a.d = dqDay(); a.n++; const got = giveReward(r[0], r[1]); saveCos(); goldUi(); return got; }
@@ -289,7 +310,7 @@ const DEAL_OFF = .3;
 let dealMemo = null;
 function dealIds() {
   const d = dqDay(); if (dealMemo && dealMemo.d === d) return dealMemo.ids;
-  const rnd = dayRnd(d + 3), pool = COS_IDS('skin').filter(id => HEROES[COSMETICS[id].char] && skinPrice(id) > 0).sort(), ids = [];
+  const rnd = dayRnd(d + 3), pool = COS_IDS('skin').filter(id => HEROES[COSMETICS[id].char] && skinPrice(id) > 0 && !passLimited(id)).sort(), ids = [];
   while (ids.length < 3 && pool.length) ids.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]);
   dealMemo = { d, ids }; return ids;
 }
@@ -444,6 +465,125 @@ function cleanCos(c, hero) {       // what a fighter wears, checked (it also com
 }
 const myCos = hero => cleanCos({ skin: skinOwned(COS.skin[hero]) ? COS.skin[hero] : null, col: cosLocked(COS.col) ? null : COS.col, name: cosLocked(COS.name) ? null : COS.name, kfx: cosLocked(COS.kfx) ? null : COS.kfx, pose: COS.pose, emo: COS.emo }, hero);
 const COS_IDS = cat => Object.keys(COSMETICS).filter(id => COSMETICS[id].cat === cat);
+/* ---------- free season pass: a season is a game version (GAME_VER). Only change GAME_VER when the user says so; the pass, its season XP and its limited skins follow it.
+   SEASONS[ver]: { skins: [mid skin, last skin] } (limited: not sold, not in boxes or deals). A version not listed gets the next unused season skins.
+   Season XP from matches (passMatch) and quests; COS.sx[ver] = season XP, COS.sk = taken steps as 'ver:step' ---------- */
+const GAME_VER = '1.0';
+const SEASONS = { '1.0': { skins: ['skin_sword_s1', 'skin_pistol_zeus'], col: ['#e0a82e', '#ffe58a', '#3a2608', '#120a03'] } };
+/* each version's own pass colours are set in SEASONS[ver].col by the user: [main, light, background tint top, bottom] */
+const passCol = () => SEASONS[GAME_VER] && SEASONS[GAME_VER].col || ['#e0a82e', '#ffe58a', '#3a2608', '#120a03'];
+const PASS_STEP = 200, PASS_N = 30;
+const PASS_SKINS = (() => { const all = Object.values(SEASONS).flatMap(s => s.skins), spare = COS_IDS('skin').filter(id => COSMETICS[id].seasonOnly && HEROES[COSMETICS[id].char] && !all.includes(id)).sort(); if (!SEASONS[GAME_VER]) SEASONS[GAME_VER] = { skins: spare.slice(0, 2) }; return new Set(Object.values(SEASONS).flatMap(s => s.skins)); })();
+const passLimited = id => PASS_SKINS.has(id) && !skinOwned(id);
+const PASS = (() => { const sk = SEASONS[GAME_VER].skins, out = [];
+  for (let i = 1; i <= PASS_N; i++) {
+    if (i === 15 && sk[0]) out.push([i, 'ps', sk[0], 1]); else if (i === PASS_N && sk[1]) out.push([i, 'ps', sk[1], 1]);
+    else if (i % 10 === 0) out.push([i, 'ebox', 0, 1]);
+    else out.push([i, ...[['g', 100 + 20 * i], ['box'], ['px', 100 + 10 * i], ['g', 150 + 20 * i], ['cx', 150 + 10 * i]][i % 5]]);
+  }
+  return out; })();
+const passXp = () => Math.max(0, Math.floor(+((COS.sx || {})[GAME_VER]) || 0));
+const passAdd = n => { if (!COS.sx || typeof COS.sx !== 'object') COS.sx = {}; COS.sx[GAME_VER] = passXp() + Math.max(0, Math.round(n)); };
+const passTaken = i => (COS.sk || []).includes(GAME_VER + ':' + i);
+const passOpen = () => PASS.some(r => passXp() >= r[0] * PASS_STEP && !passTaken(r[0]));
+/* season XP comes only from wins and season quests (user 2026-11-14: about 3~4 season quests make one step) */
+const PASS_WIN = 20, PASS_SQ = 60;
+function passMatch(m) { if (m.win) passAdd(PASS_WIN); }
+/* season quests: four a day, each worth PASS_SQ season XP. COS.sq has the shape of COS.dq */
+function sqList(day) {
+  const rnd = dayRnd(day + 31), pk = a => a[Math.floor(rnd() * a.length)];
+  const modes = (typeof MODES !== 'undefined' ? MODES : []).filter(m => m.ready !== false), m = pk(modes), h = pk(ROSTER), solo = modes.find(x => x.id === 'solo'), hn = HEROES[h] ? HEROES[h].name : h;
+  const a = pk([{ t: 'play', n: 3, txt: '3판 하기' }, { t: 'kill', n: 10, txt: '10킬' }]);
+  const b = pk([{ t: 'win', n: 2, txt: '2승' }, { t: 'dmg', n: 8000, txt: '피해 8,000' }]);
+  const c = pk([m && { t: 'play', n: 2, mode: m.id, txt: m.name + ' 2판' }, solo && { t: 'top3', n: 1, mode: 'solo', txt: solo.name + ' 3등 안' }].filter(Boolean));
+  const d = pk([h && { t: 'kill', n: 6, hero: h, txt: hn + ' 6킬' }, h && { t: 'win', n: 1, hero: h, txt: hn + ' 1승' }].filter(Boolean));
+  return [a, b, c, d].filter(Boolean).map(q => Object.assign(q, { rw: ['sx', PASS_SQ] }));
+}
+function sqState() { const d = dqDay(), q = COS.sq; if (!q || q.d !== d || !Array.isArray(q.p) || !Array.isArray(q.c)) COS.sq = { d, p: [0, 0, 0, 0], c: [0, 0, 0, 0] }; return COS.sq; }
+const sqOpen = () => { const st = sqState(); return sqList(st.d).some((q, i) => st.p[i] >= q.n && !st.c[i]); };
+function sqTake(i) {
+  const st = sqState(), q = sqList(st.d)[i]; if (!q || st.c[i] || !(st.p[i] >= q.n)) return null;
+  st.c[i] = 1; passAdd(PASS_SQ);
+  try { sfx(880, .18, 'triangle', .06); } catch (e) {}
+  saveCos(); goldUi(); return null;
+}
+function passTake(r) {
+  if (passXp() < r[0] * PASS_STEP || passTaken(r[0])) return null;
+  if (!Array.isArray(COS.sk)) COS.sk = []; COS.sk.push(GAME_VER + ':' + r[0]);
+  let got; if (r[1] === 'ps') { if (!skinOwned(r[2]) && COSMETICS[r[2]]) { COS.own.push(r[2]); got = { kind: 'skin', skin: r[2], hero: COSMETICS[r[2]].char }; } else got = giveReward('g', 2000); } else got = giveReward(r[1], r[2]);
+  try { sfx(880, .18, 'triangle', .06); } catch (e) {}
+  saveCos(); goldUi(); return got;
+}
+function passUi() { try { { const b = document.getElementById('pass'), c = passCol(); if (b) { b.style.setProperty('--pc', c[0]); b.style.setProperty('--pl', c[1]); } } const n = document.getElementById('passN'), d = document.getElementById('passDot'); if (n) n.textContent = Math.min(PASS_N, Math.floor(passXp() / PASS_STEP)); if (d) d.hidden = !(passOpen() || sqOpen()); } catch (e) {} }
+/* the season quests live in the pass window: a 퀘스트 button opens a panel over the road */
+function renderPassQ() {
+  const box = document.getElementById('passQList'), dot = document.getElementById('passQDot'); if (!box) return;
+  const st = sqState(); box.textContent = '';
+  sqList(st.d).forEach((q, i) => {
+    const row = document.createElement('div'), t = document.createElement('span'), bar = document.createElement('div'), fill = document.createElement('i'), num = document.createElement('span'), rw = document.createElement('button');
+    const p = Math.min(q.n, +st.p[i] || 0), done = p >= q.n, took = !!st.c[i];
+    row.className = 'qRow' + (took ? ' took' : done ? ' done' : ''); t.className = 'qTxt'; t.textContent = q.txt; bar.className = 'qBar'; fill.style.width = Math.round(p / q.n * 100) + '%'; num.textContent = p.toLocaleString('en-US') + ' / ' + q.n.toLocaleString('en-US'); bar.append(fill, num);
+    rw.type = 'button'; rw.className = 'qRw'; rw.disabled = !done || took; rw.append(rewardIcon('sx'), String(PASS_SQ)); rw.setAttribute('aria-label', took ? '받음' : '보상 받기');
+    if (done && !took) rw.addEventListener('click', () => { sqTake(i); renderPass(); });
+    row.append(t, bar, rw); box.append(row);
+  });
+  if (dot) dot.hidden = !sqOpen();
+}
+function renderPass(got) {
+  const tr = document.getElementById('passTrack'); tr.textContent = '';
+  const fill = document.createElement('div'); fill.id = 'passFill'; tr.append(fill);
+  const xp = passXp(), LBL = { g: '골드', cx: '선택 캐릭터 XP', px: '플레이어 XP', box: '랜덤상자', ebox: '에픽상자', ps: '한정 스킨' };
+  let focus = null;
+  for (const r of PASS) {
+    const b = document.createElement('button'), box = document.createElement('span'), pin = document.createElement('span'), num = document.createElement('span');
+    const done = passTaken(r[0]), reach = !done && xp >= r[0] * PASS_STEP;
+    b.type = 'button'; b.className = 'kStep ' + (done ? 'done' : reach ? 'reach' : 'lock') + ' k-' + (r[1] === 'ps' ? 'skin' : r[1]) + (r[3] ? ' big' : ''); box.className = 'kBox'; pin.className = 'kPin'; num.className = 'kNum'; num.textContent = r[0];
+    if (r[1] === 'ps') { const cv = document.createElement('canvas'); cv.width = cv.height = 96; cv.className = 'psCv'; try { drawItemPreview(cv, r[2], performance.now()); } catch (e) {} box.append(cv); b.title = HEROES[COSMETICS[r[2]].char].name + ' · ' + COSMETICS[r[2]].name; }
+    else { box.append(rewardIcon(r[1]), r[2] ? r[2].toLocaleString('en-US') : LBL[r[1]]); b.title = LBL[r[1]]; }
+    b.setAttribute('aria-label', r[0] + '단계: ' + (r[1] === 'ps' ? b.title : LBL[r[1]] + (r[2] ? ' ' + r[2] : '')));
+    b.disabled = !reach; b.append(box, pin, num);
+    if (reach) b.addEventListener('click', () => renderPass(passTake(r) || null));
+    tr.append(b); if (!focus && !done) focus = b;
+  }
+  const st = [...tr.querySelectorAll('.kStep')]; let w = 0;
+  st.forEach((el, i) => { const cx = el.offsetLeft + el.offsetWidth / 2, need = (i + 1) * PASS_STEP; if (xp >= need) w = cx; else if (xp > need - PASS_STEP) { const px = i ? st[i - 1].offsetLeft + st[i - 1].offsetWidth / 2 : 0; w = px + (cx - px) * (xp - need + PASS_STEP) / PASS_STEP; } });
+  fill.style.width = Math.round(w) + 'px';
+  const lv = Math.min(PASS_N, Math.floor(xp / PASS_STEP)), hb = document.querySelector('#passHead .khBar i');
+  document.getElementById('passLv').textContent = lv; document.getElementById('passVer').textContent = '시즌 패스';
+  { const sc = document.getElementById('passScreen'), c = passCol(); ['--pc', '--pl', '--pb1', '--pb2'].forEach((k, i) => sc.style.setProperty(k, c[i])); kRing(document.getElementById('passHead'), lv >= PASS_N ? 1 : xp % PASS_STEP / PASS_STEP, String(lv)); }
+  if (hb) hb.style.width = (lv >= PASS_N ? 100 : Math.round(xp % PASS_STEP / PASS_STEP * 100)) + '%';
+  document.getElementById('passNextN').textContent = lv >= PASS_N ? '' : (xp % PASS_STEP) + ' / ' + PASS_STEP;
+  const road = document.getElementById('passRoad'); if (got === undefined && focus) road.scrollLeft = Math.max(0, focus.offsetLeft - road.clientWidth / 2 + 46);
+  { const hd = document.getElementById('passHead'); let sh = document.getElementById('passShow'); if (hd && !sh) { sh = document.createElement('div'); sh.id = 'passShow'; sh.innerHTML = '<canvas width="160" height="160"></canvas><span><small></small><b></b></span>'; hd.append(sh); }
+    const nx = PASS.find(r => r[1] === 'ps' && !passTaken(r[0])) || PASS.filter(r => r[1] === 'ps').pop();
+    if (sh) { sh.hidden = !nx; if (nx) { try { drawItemPreview(sh.querySelector('canvas'), nx[2], performance.now()); } catch (e) {} sh.querySelector('small').textContent = nx[0] + '단계 한정'; sh.querySelector('b').textContent = COSMETICS[nx[2]].name; } } }
+  kDress(tr); if (got) rewardFx(got); passUi();
+  renderPassQ();
+}
+/* the karma road and the pass can be dragged sideways with the mouse, and the mouse wheel scrolls them sideways too; a drag does not take a reward */
+for (const id of ['karmaRoad', 'passRoad']) { const rd = document.getElementById(id); if (!rd) continue; let d = null, moved = false;
+  rd.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse' || e.button !== 0) return; d = { x: e.clientX, s: rd.scrollLeft }; moved = false; });
+  addEventListener('pointermove', e => { if (!d) return; const dx = e.clientX - d.x; if (Math.abs(dx) > 5) { moved = true; rd.classList.add('drag'); } if (moved) rd.scrollLeft = d.s - dx; });
+  addEventListener('pointerup', () => { d = null; setTimeout(() => rd.classList.remove('drag'), 0); });
+  rd.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+  rd.addEventListener('dragstart', e => e.preventDefault());
+  rd.addEventListener('wheel', e => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { rd.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
+}
+/* the lobby title never sits under the top right buttons: when they overlap the title gets smaller, and if that is not enough it moves down under them */
+function fitBrand() {
+  const br = document.getElementById('brandDisplay'), h1 = br && br.querySelector('h1'), tr = document.getElementById('topRight'); if (!h1 || !tr) return;
+  h1.style.fontSize = ''; br.style.marginTop = '';
+  if (!br.classList.contains('show') || tr.hidden) return;
+  const hit = () => { const a = h1.getBoundingClientRect(), b = tr.getBoundingClientRect(); return a.right > b.left - 8 && a.left < b.right + 8 && a.bottom > b.top - 4 && a.top < b.bottom + 4; };
+  let fs = parseFloat(getComputedStyle(h1).fontSize); const min = Math.max(30, fs * .6);
+  while (hit() && fs > min) { fs -= 2; h1.style.fontSize = fs + 'px'; }
+  if (hit()) { const b = tr.getBoundingClientRect(), a = h1.getBoundingClientRect(); br.style.marginTop = Math.ceil(b.bottom + 8 - a.top) + 'px'; }
+}
+addEventListener('resize', () => requestAnimationFrame(fitBrand));
+try { new ResizeObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('topRight')); new MutationObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('brandDisplay'), { attributes: true, attributeFilter: ['class'] }); } catch (e) {}
+setTimeout(fitBrand, 300); setTimeout(fitBrand, 1500);
+{ const qb = document.getElementById('passQBtn'), qp = document.getElementById('passQ'); if (qb && qp) { const set = v => { qp.hidden = !v; qb.setAttribute('aria-expanded', v ? 'true' : 'false'); qb.classList.toggle('on', v); }; qb.addEventListener('click', () => set(qp.hidden)); qp.addEventListener('click', e => { if (e.target === qp) set(false); }); window.__passQSet = set; } }
+{ const b = document.getElementById('pass'); if (b) b.addEventListener('click', () => { showScreen('passScreen'); if (window.__passQSet) window.__passQSet(false); renderPass(); }); const k = document.getElementById('passBackBtn'); if (k) k.addEventListener('click', () => showScreen('menuScreen')); }
 function botCos(hero) {
   const skins = COS_IDS('skin').filter(id => COSMETICS[id].char === hero);
   return cleanCos({ skin: skins.length && Math.random() < .4 ? pick(skins) : null, kfx: Math.random() < .3 ? pick(COS_IDS('kfx')) : null, pose: pick(COS_IDS('pose')), name: Math.random() < .2 ? pick(COS_IDS('name')) : null }, hero);
@@ -485,14 +625,14 @@ function drawEmoteBubble(f) {
   ctx.beginPath(); ctx.arc(0, 0, 19, 0, 6.3); ctx.fill(); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(-6, 16); ctx.lineTo(0, 27); ctx.lineTo(6, 16); ctx.closePath(); ctx.fill();
   if (fx === 'meteor') { ctx.fillStyle = '#fff'; for (let i = 0; i < 7; i++) { const sx = ((i * 37) % 34) - 17, sy = ((i * 53) % 30) - 15; ctx.globalAlpha = .4 + .6 * (Math.sin(age * 3 + i * 1.9) + 1) / 2; ctx.fillRect(sx - 1, sy - .5, 2, 1); } ctx.globalAlpha = 1; }
-  ctx.font = '24px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000'; ctx.fillText(EMOTES[f.em] || '', 0, 1);
+  ctx.font = '24px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000'; ctx.__noEmo = 1; ctx.fillText(EMOTES[f.em] || '', 0, 1); ctx.__noEmo = 0;      // emotes stay the phone's own emoji (no logo)
   ctx.restore();
 }
 function emoteWheel(open) {
   const w = document.getElementById('emoteWheel');
   if (open === undefined) open = w.hidden;
   if (!open || state !== 'play') { w.hidden = true; return; }
-  w.textContent = '';
+  w.textContent = ''; w.setAttribute('data-noemo', '');
   const list = (COS.emo && COS.emo.length ? COS.emo : [0, 1, 2, 3, 4, 5, 6, 7]);
   list.forEach((ei, k) => {
     const a = -Math.PI / 2 + k * 2 * Math.PI / list.length, b = document.createElement('button');
@@ -542,7 +682,7 @@ function drawChatBubble(f) {
 let winRun = 0;
 function winScreen(won, draw) {
   const cvs = document.getElementById('winCanvas'), c = cvs.getContext('2d'), run = ++winRun, Wc = cvs.width, Hc = cvs.height;
-  const mine = fighters.filter(f => f && f.team === VIEW), rt = curMode === 'hot4' ? [0, 1, 2, 3].filter(t => t !== VIEW).sort((a, b) => (score[b] | 0) - (score[a] | 0))[0] : -1, theirs = fighters.filter(f => f && f.team !== VIEW && (rt < 0 || f.team === rt));      // 4팀 핫존: only the best other team stands opposite
+  const mine = fighters.filter(f => f && f.team === VIEW), rt = curMode === 'hot4' ? [0, 1, 2, 3].filter(t => t !== VIEW).sort((a, b) => (score[b] | 0) - (score[a] | 0))[0] : curMode === 'duo' ? (RD.win >= 0 && RD.win !== VIEW ? RD.win : RD.out.filter(t => t !== VIEW).pop() ?? -1) : -1, theirs = fighters.filter(f => f && f.team !== VIEW && (rt < 0 || f.team === rt));      // 4팀 핫존: only the best other team stands opposite (투 레프트: the winning pair, or the pair that lasted longest)
   const figs = [];
   const place = (list, x0, x1, win) => { const n = list.length, sc = n >= 3 ? 1.15 : n === 2 ? 1.5 : 1.9; list.forEach((f, i) => figs.push({ f, win, x: x0 + (x1 - x0) * (n === 1 ? .5 : (i + .5) / n), sc })); };
   place(mine, 10, Wc / 2 - 10, won || draw); place(theirs, Wc / 2 + 10, Wc - 10, !won || draw);
@@ -601,7 +741,7 @@ function renderCos() {
   let ids = COS_IDS(cosTab); const deal = cosTab === 'skin' ? dealIds().filter(id => !skinOwned(id)) : [];      // today's cheaper skins come first, under their own heading
   if (cosTab === 'skin') {      // every character's skins, the picked character first
     const order = [chosen, ...Object.keys(HEROES).filter(h => h !== chosen)];
-    ids = ids.filter(id => HEROES[COSMETICS[id].char]).sort((a, b) => deal.includes(b) - deal.includes(a) || order.indexOf(COSMETICS[a].char) - order.indexOf(COSMETICS[b].char) || skinPrice(a) - skinPrice(b));
+    ids = ids.filter(id => HEROES[COSMETICS[id].char] && !passLimited(id)).sort((a, b) => deal.includes(b) - deal.includes(a) || order.indexOf(COSMETICS[a].char) - order.indexOf(COSMETICS[b].char) || skinPrice(a) - skinPrice(b));
   }
   else if (cosTab === 'bcol' || cosTab === 'name' || cosTab === 'kfx') ids = ids.slice().sort((a, b) => skinPrice(a) - skinPrice(b));
   goldUi();
@@ -615,8 +755,8 @@ function renderCos() {
     if (it.cat === 'skin' && g !== grp) { grp = g; const hd = document.createElement('h3'); hd.className = 'cosGrp' + (g === '*' ? ' deal' : ''); hd.textContent = g === '*' ? '오늘의 할인' : HEROES[g].name; grid.append(hd); }
     b.type = 'button'; b.className = 'cosCard'; b.id = 'cos-' + id; b.setAttribute('aria-pressed', String(cosEquipped(id)));
     const pv = document.createElement('div'); pv.className = 'cosPv';
-    if (it.cat === 'emo') { pv.textContent = it.em; if (cosEquipped(id)) { const off = document.createElement('span'); off.className = 'cosOff'; off.textContent = '선택해제'; b.append(pv, off); } }
-    else if (it.cat === 'kfx' || it.cat === 'pose') pv.textContent = it.icon || '';
+    if (it.cat === 'emo') { pv.textContent = it.em; pv.setAttribute('data-noemo', ''); if (cosEquipped(id)) { const off = document.createElement('span'); off.className = 'cosOff'; off.textContent = '선택해제'; b.append(pv, off); } }
+    else if (it.cat === 'kfx' || it.cat === 'pose') { const cv2 = document.createElement('canvas'); try { cosLive(cv2, id); } catch (e) {} pv.append(cv2); }      // (the real effect / pose, moving)
     else if (it.cat === 'name') { pv.textContent = 'Aa'; pv.style.color = nameColorFor(id); pv.style.fontWeight = '700'; }
     else { const cv2 = document.createElement('canvas'); try { drawItemPreview(cv2, id, performance.now()); } catch (e) {} pv.append(cv2); }
     const nm = document.createElement('span'); nm.textContent = (deal.includes(id) ? HEROES[it.char].name + ' · ' : '') + it.name;

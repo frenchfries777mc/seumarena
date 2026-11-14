@@ -10,11 +10,10 @@ const NET_PREFIX = 'seumarena-v3-', NET_ROOMS = 8, WAIT_SEC = 15, MAX_PLAYERS = 
    On that server start the PeerServer with a short expire_timeout (e.g. { expire_timeout: 1500, cleanup_out_msgs: 300 }): that is the time an
    empty room needs to be recognised as free, so it is the length of the room search on an empty server. */
 const PEER_SERVER = null;
-/* Own TURN server (coturn) for players behind strict NATs: { urls: 'turn:turn.example.com:3478', username: '...', credential: '...' } entries, tried in addition to the public ones below */
-const ICE_EXTRA = [      // the Oracle server's coturn (shared with Stickseum)
-  { urls: 'turn:140.238.55.153:3478?transport=udp', username: 'ffturn', credential: 'a2daa08340367f7b1d03ff30' },
-  { urls: 'turn:140.238.55.153:3478?transport=tcp', username: 'ffturn', credential: 'a2daa08340367f7b1d03ff30' }
-];
+/* Own TURN server (coturn on the Oracle server): no password in this file. Short-lived TURN logins are fetched from TURN_CRED_URL (a Cloudflare
+   Worker that signs them with coturn's static-auth-secret) and added to the ICE list below; if that fails the game still runs on STUN + the public relays. */
+const TURN_CRED_URL = 'https://frenchfries777.com/seumarena/turn';
+const ICE_EXTRA = [];
 /* dedicated host (?dedicated=1): a headless page on the server holds one room and runs the match without playing in it (sa-host.js drives it through window.__sad) */
 const DED = /[?&]dedicated=1(&|$)/.test(location.search);
 const hostN = () => NET.members.length + (DED ? 0 : 1);      // people in the room, counting the host's own player
@@ -25,7 +24,18 @@ const PEERJS_ICE_CONFIG = { config: { iceServers: [
   { urls: 'turn:global.relay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
   { urls: 'turn:global.relay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
 ].concat(ICE_EXTRA) } };
-const NET_BUFFS = ['ally', 'block', 'reflect', 'sand', 'inv', 'counter', 'guard', 'stealth', 'stun', 'charm', 'root', 'mute', 'blind', 'slow', 'infect', 'reveal', 'fly'];
+(function turnCreds() {      // fills PEERJS_ICE_CONFIG in place (newPeer reads it on every call), refreshes before the login runs out
+  if (!TURN_CRED_URL || typeof fetch !== 'function') return;
+  const list = PEERJS_ICE_CONFIG.config.iceServers, base = list.length; let fails = 0;
+  const get = () => { const ac = typeof AbortController === 'function' ? new AbortController() : null; const to = setTimeout(() => ac && ac.abort(), 4000);
+    fetch(TURN_CRED_URL, { cache: 'no-store', signal: ac && ac.signal }).then(r => r.ok ? r.json() : null).then(j => {
+      clearTimeout(to); if (!j || !Array.isArray(j.urls) || !j.username || !j.credential) throw 0; fails = 0;
+      list.length = base; for (const u of j.urls) if (/^turns?:/.test(u)) list.push({ urls: u, username: String(j.username), credential: String(j.credential) });
+      setTimeout(get, Math.max(60, Math.min(+j.ttl || 3600, 86400) - 300) * 1000);
+    }).catch(() => { clearTimeout(to); if (++fails <= 3) setTimeout(get, 30000 * fails); }); };
+  get();
+})();
+const NET_BUFFS = ['ally', 'block', 'reflect', 'sand', 'inv', 'counter', 'guard', 'stealth', 'stun', 'charm', 'root', 'mute', 'blind', 'slow', 'infect', 'reveal', 'fly', 'taunt'];
 /* game modes: the registry (MODES, setMode / curMode, modeSnap / applyModeSnap) lives with the rules in engine.js; everything here is guarded so a build
    without it plays the plain team match. The mode id goes into the room id, so it must stay a short lowercase word (digits allowed, e.g. flag5). */
 function modeEntry(id) { try { if (typeof MODES === 'undefined' || !MODES) return null; return Array.isArray(MODES) ? MODES.find(m => m && m.id === id) || null : MODES[id] || null; } catch (e) { return null; } }
@@ -55,7 +65,7 @@ let netToken = 0, netClaimTries = 0, netBad = new Set(), netSq = 0, inHist = [],
 /* 원 레프트: a host who leaves while others are still fighting (lobby / again / closing the tab after being knocked out) ends the match for them
    with the standings at that moment, so they get their result and reward instead of a bare "the host left" */
 function hostLeaving() {
-  if (NET.role !== 'host' || NET.phase !== 'play' || state !== 'play' || !NET.members.length || NET.mode !== 'solo') return false;
+  if (NET.role !== 'host' || NET.phase !== 'play' || state !== 'play' || !NET.members.length || !(NET.mode === 'solo' || NET.mode === 'duo')) return false;
   let st; try { if (typeof matchStats === 'function') st = matchStats(); } catch (e) {}
   const msg = { t: 'over', sc: score, e: NET.evs, st, md: modeState(), left: 1 };
   for (const m of NET.members) try { m.conn.send(msg); } catch (e) {}
@@ -81,7 +91,37 @@ function roomUi(title, status, n, left) {
 }
 
 /* game start: look for a room, else make one */
+/* friends on one team: a signed-in player brings its account id and its accepted friends (public.friendships, RLS: only one's own rows)
+   to the room; the host puts friends who meet in a room on the same side. Guests (no account) and the claude.ai preview send nothing. */
+const FR_API = 'https://kebsbuvuutilitwlvxzv.supabase.co/rest/v1/friendships?select=requester_id,addressee_id&status=eq.accepted&limit=500';
+const isUid = v => typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v);
+const MYFR = { uid: '', fr: [] };
+async function netFriends() {
+  try {
+    const A = window.FFAuth, u = A && A.user && A.user(), sb = A && A.client && A.client(); if (!u || !isUid(u.id) || !sb || !sb.auth) { MYFR.uid = ''; MYFR.fr = []; return; }
+    const r = await sb.auth.getSession(), t = r && r.data && r.data.session && r.data.session.access_token; if (!t) return;
+    const res = await fetch(FR_API, { cache: 'no-store', headers: { apikey: typeof ACH_KEY === 'string' ? ACH_KEY : '', Authorization: 'Bearer ' + t } }); if (!res.ok) return;
+    const rows = await res.json(); MYFR.uid = u.id;
+    MYFR.fr = (Array.isArray(rows) ? rows : []).map(x => x && (x.requester_id === u.id ? x.addressee_id : x.requester_id)).filter(isUid);
+  } catch (e) {}
+}
+/* team per human (index -> team) or null: friend groups (either side listing the other is enough) go together, largest group first, to the
+   side with the most free seats; a group bigger than a side is split; everyone else then evens out the sides. Modes with one per side: null */
+function friendTeams(humans, nt, per) {
+  if (per < 2 || nt < 2) return null;
+  const n = humans.length, id = humans.map(h => isUid(h.uid) ? h.uid : ''), fr = humans.map(h => new Set(Array.isArray(h.fr) ? h.fr.filter(isUid) : []));
+  const par = [...Array(n).keys()], find = i => par[i] === i ? i : (par[i] = find(par[i]));
+  let any = false;
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) if (id[i] && id[j] && id[i] !== id[j] && (fr[i].has(id[j]) || fr[j].has(id[i]))) { par[find(i)] = find(j); any = true; }
+  if (!any) return null;
+  const groups = {}; for (let i = 0; i < n; i++) (groups[find(i)] = groups[find(i)] || []).push(i);
+  const list = Object.values(groups).sort((a, b) => b.length - a.length || a[0] - b[0]), cnt = new Array(nt).fill(0), tm = new Array(n).fill(-1);
+  const best = () => { let b = 0; for (let t = 1; t < nt; t++) if (cnt[t] < cnt[b]) b = t; return b; };
+  for (const g of list) { let t = best(); for (const i of g) { if (cnt[t] >= per) t = best(); tm[i] = t; cnt[t]++; } }
+  return tm;
+}
 function startOnline() {
+  netFriends();
   if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
   if (ac && ac.state === 'suspended') ac.resume();
   netReset(); netClaimTries = 0; netBad = new Set(); NET.searchUntil = 0;
@@ -119,7 +159,7 @@ function netProbeAll(tok) {
     let best = -1; R.forEach((r, k) => { if (r.s === 'avail' && (best < 0 || r.n > R[best].n)) best = k; });      // the fullest waiting room
     if (best < 0) return false;
     joining = best; const r = R[best];
-    try { r.c.send({ t: 'hello', lite: NET_LITE ? 1 : 0, mode: NET.mode, hero: chosen, lo: loadoutOf(chosen), name: PROF.name, cos: myCos(chosen), line: myDuelLine() }); } catch (e) { r.s = 'busy'; joining = -1; return false; }
+    try { r.c.send({ t: 'hello', lite: NET_LITE ? 1 : 0, mode: NET.mode, hero: chosen, lo: loadoutOf(chosen), name: PROF.name, cos: myCos(chosen), line: myDuelLine(), uid: MYFR.uid || undefined, fr: MYFR.uid ? MYFR.fr.slice(0, 500) : undefined }); } catch (e) { r.s = 'busy'; joining = -1; return false; }
     r.jt = setTimeout(() => { if (alive() && joining === best) { r.s = 'busy'; joining = -1; decide(); } }, 4500);
     return true;
   };
@@ -203,7 +243,8 @@ function hostAccept(c, tok) {
     } else if (m.t === 'hello') {
       if (NET.members.some(x => x.conn === c)) return;
       if (NET.phase !== 'wait' || hostN() >= NET.max || m.mode !== NET.mode || typeof m.hero !== 'string' || !Object.prototype.hasOwnProperty.call(HEROES, m.hero)) { try { c.send({ t: 'busy' }); } catch (e) {} setTimeout(() => { try { c.close(); } catch (e) {} }, 500); return; }
-      const mem = { conn: c, hero: m.hero, lo: Array.isArray(m.lo) ? m.lo : null, name: cleanName(m.name) || '게스트', cos: cleanCos(m.cos, m.hero), f: null, fi: -1, heard: performance.now(), inAt: 0, sq: 0, sqAt: 0, lite: !!m.lite, evq: [], mv: -1, line: Array.isArray(m.line) ? m.line.slice(0, DUEL_N).map(e => e && typeof e.hero === 'string' && Object.prototype.hasOwnProperty.call(HEROES, e.hero) ? { hero: e.hero, lo: Array.isArray(e.lo) ? e.lo.slice(0, 2) : null, cos: cleanCos(e.cos, e.hero) } : null).filter(Boolean) : null };
+      const mem = { conn: c, hero: m.hero, lo: Array.isArray(m.lo) ? m.lo : null, name: cleanName(m.name) || '게스트', cos: cleanCos(m.cos, m.hero), f: null, fi: -1, heard: performance.now(), inAt: 0, sq: 0, sqAt: 0, lite: !!m.lite, evq: [], mv: -1, line: Array.isArray(m.line) ? m.line.slice(0, DUEL_N).map(e => e && typeof e.hero === 'string' && Object.prototype.hasOwnProperty.call(HEROES, e.hero) ? { hero: e.hero, lo: Array.isArray(e.lo) ? e.lo.slice(0, 2) : null, cos: cleanCos(e.cos, e.hero) } : null).filter(Boolean) : null,
+        uid: isUid(m.uid) ? m.uid : '', fr: Array.isArray(m.fr) ? m.fr.slice(0, 500).filter(isUid) : [] };
       NET.members.push(mem); NET.conns.push(c);
       if (NET.waitEnd - performance.now() < 5000) NET.waitEnd = performance.now() + 5000;      // someone just arrived: leave time for the next one to find the room too
       mem.tok = Math.random().toString(36).slice(2, 12); c.send({ t: 'welcome', room: NET.room, tok: mem.tok });
@@ -255,7 +296,8 @@ function hostLobby() {
 function hostStart() {
   if (NET.phase !== 'wait') return;
   NET.phase = 'play';
-  const humans = (DED ? [] : [{ hero: chosen, lo: loadoutOf(chosen), local: true, cos: myCos(chosen), name: PROF.name, line: myDuelLine() }]).concat(NET.members.map(m => ({ hero: m.hero, lo: m.lo, remote: m, cos: m.cos, name: m.name, line: m.line })));
+  const humans = (DED ? [] : [{ hero: chosen, lo: loadoutOf(chosen), local: true, cos: myCos(chosen), name: PROF.name, line: myDuelLine(), uid: MYFR.uid, fr: MYFR.fr }]).concat(NET.members.map(m => ({ hero: m.hero, lo: m.lo, remote: m, cos: m.cos, name: m.name, line: m.line, uid: m.uid, fr: m.fr })));
+  try { const md = modeEntry(NET.mode), tm = md && friendTeams(humans, md.teams | 0, md.per | 0); if (tm) humans.forEach((h, i) => { h.tm = tm[i]; }); } catch (e) {}
   startMatchIn(NET.mode, humans);
   if (!NET.members.length) { const p = NET.peer; NET.peer = null; NET.role = null; NET.phase = 'idle'; try { p.destroy(); } catch (e) {} return; }      // nobody came: the room closes, the match is offline
   NET.rec = true; NET.evs = []; snapAcc = 0; mapSentVer = -1;
@@ -377,7 +419,7 @@ function rejoinTry() {
 function hostLost() {
   NET.rc = null; netBadge(false);
   const was = NET.phase; netReset();
-  if (was === 'play' && state === 'play' && NET.mode === 'solo') endGame();      // 원 레프트: the result as it stands (the host's tab went away without a word)
+  if (was === 'play' && state === 'play' && (NET.mode === 'solo' || NET.mode === 'duo')) endGame();      // 원 레프트: the result as it stands (the host's tab went away without a word)
   else if (was === 'play' && state === 'play') { state = 'over'; notice.hidden = false; notice.textContent = '서버와 연결이 끊겨 경기가 끝났어요'; setTimeout(() => { if (state === 'over' && !NET.role) toMenu(); }, 2200); }
   else if (was === 'joined') { netSearch(); }
 }
@@ -411,7 +453,7 @@ function applySnap(s) {
     if (me && !f.dead && d.hp < f.hp - .5 && !d.d) { shake = 7; sfx(120, .12, 'square', .06, .6); }
     if (me && d.lf < (f.lfPrev == null ? 9 : f.lfPrev) - .05 && d.lf < .2) sfx(f.h && f.h.type === 'melee' ? 300 : 560, .08, 'square', .045, .5);
     f.lfPrev = d.lf;
-    f.h = HEROES[d.h]; f.h0 = HEROES[d.h0]; f.team = d.tm; f.human = !!d.hu;
+    f.h = HEROES[d.h] || HEROES_OFF[d.h] || f.h; f.h0 = HEROES[d.h0] || HEROES_OFF[d.h0] || f.h0; f.team = d.tm; f.human = !!d.hu;
     if (f.dead && !d.d) { f.x = d.x; f.y = d.y; }
     f.nx = d.x; f.ny = d.y; f.na = d.a;
     if (!me && s.ts != null) { const h = f.ih || (f.ih = []); if (h.length && s.ts < h[h.length - 1].t) h.length = 0; h.push({ t: s.ts, x: d.x, y: d.y }); while (h.length > 2 && s.ts - h[0].t > 1) h.shift(); if (d.d || (f.dead && !d.d)) h.length = 0, h.push({ t: s.ts, x: d.x, y: d.y }); } if (!me) f.aim = f.aim == null ? d.a : f.aim;

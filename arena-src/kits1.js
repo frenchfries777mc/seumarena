@@ -123,12 +123,13 @@ hero('smg', { p: ['일제사격', '연발을 8발 이상 맞히면 주위 상대
 hero('gloves', { p: ['맷집', '피격마다 받는 피해가 1%씩 줄고, 10%가 되면 초기화되며 2.5초 동안 이동속도 1.5배와 공격 피해 1.25배'],
   onHurt(f, d, by, o) { if (B(f, 'guard')) { if (time - f.st.gt < .25 && !f.st.perf) { f.st.perf = 1; buff(f, 'haste', 2, 1.2); say(f, '완벽한 가드'); return 0; } d *= .5; }
     if (o.quiet) return d; f.st.tough = (f.st.tough || 0) + 1; const r = d * (1 - f.st.tough / 100); if (f.st.tough >= 10) { f.st.tough = 0; buff(f, 'haste', 2.5, 1.5); buff(f, 'dmg', 2.5, 1.25); } return r; },
-  ult: ['연타 러시', '3초간 공격 속도 2배 · 이동속도 1.4배', [0, 4 * T], f => { buff(f, 'rapid', 3, .5); buff(f, 'haste', 3, 1.4); }],
+  ult: ['연타 러시', '4초 동안 공격 속도 2배 · 이동속도 1.35배 · 받는 피해 25% 감소 · 끝나는 순간 앞의 상대에게 KO 펀치 (375 피해, 크게 밀치고 0.6초 기절)', [0, 4 * T], f => { fxPlay('trail', fighters.indexOf(f), 4, '#ff3d3d', 'haste'); buff(f, 'rapid', 4, .5); buff(f, 'haste', 4, 1.35); buff(f, 'dr', 4, .75); later(4, () => { if (f.dead) return; f.swing = .25; fxPlay('bxko', fighters.indexOf(f), +f.aim.toFixed(2)); arc(f, f.aim, 110, .9, 30, { kb: 900, stun: .6 }); }, f); }],
   skills: [
-    [1, '어퍼컷', 'hit', '가까운 적에게 170 피해를 주고 공중으로 띄움 (0.6초 기절)', [0, 90], (f, a) => { const e = nearest(f, 90, a, 1.2); if (!e) return false; f.swing = .22; damage(e, 17, f); buff(e, 'stun', .6); }],
+    [1, '어퍼컷', 'hit', '가까운 적에게 215 피해를 주고 공중으로 띄움 (0.6초 기절)', [0, 90], (f, a) => { const e = nearest(f, 90, a, 1.2); if (!e) return false; f.swing = .22; damage(e, 17, f); buff(e, 'stun', .6); }],
     [2, '가드', 'buff', '1초 동안 가드를 올려 받는 피해 50% 감소 · 올린 직후 0.25초 안에 맞으면 100% 막고 이동속도 20% 증가', [0, 5 * T], f => { buff(f, 'guard', 1); f.st.gt = time; f.st.perf = 0; }],
-    [3, '잽 연타', 'hit', '앞으로 살짝 파고들며 3연타 (각 60 피해)', [0, 130], (f, a) => { lunge(f, a, 50, .1, {}); seq(f, 3, .1, () => { f.swing = .12; arc(f, f.aim, 80, 1, 6); }); }],
-    [4, '클린치', 'hit', '가까운 적을 붙잡아 1초 동안 서로 고정 · 붙잡는 순간 80 피해, 1초 뒤 80 피해', [0, 90], (f, a) => { const e = nearest(f, 90, a, 1.4); if (!e) return false; buff(e, 'root', 1); buff(f, 'root', 1); damage(e, 8, f); later(1, () => { if (!e.dead) damage(e, 8, f); }, f); }]
+    [3, '잽 연타', 'hit', '앞으로 살짝 파고들며 3연타 (각 75 피해)', [0, 130], (f, a) => { lunge(f, a, 50, .1, {}); seq(f, 3, .1, () => { f.swing = .12; arc(f, f.aim, 80, 1, 6); }); }],
+    [4, '클린치', 'hit', '가까운 적을 붙잡아 1초 동안 서로 고정 · 붙잡는 순간 100 피해, 1초 뒤 100 피해', [0, 90], (f, a) => { const e = nearest(f, 90, a, 1.4); if (!e) return false; buff(e, 'root', 1); buff(f, 'root', 1); damage(e, 8, f); later(1, () => { if (!e.dead) damage(e, 8, f); }, f); }],
+    [5, '훅 돌진', 'move', '조준 방향으로 3칸 파고들며 훅 · 부딪힌 상대에게 190 피해 + 밀쳐냄', [0, 3 * T], (f, a) => lunge(f, a, 3 * T, .25, { dmg: 15, onHit: e => knock(e, f.x, f.y, 520) })]
   ] });
 
 hero('grenade', { p: ['폭발광', '폭발 점프로 피해를 주면 착지 때 근처 상대를 밀치고 0.4초 기절'],
@@ -173,13 +174,13 @@ hero('dracula', { p: ['흡혈귀', '공격이 적중할 때마다 체력 50 흡�
     [3, '신선한 피', 'buff', '1초 동안 일반 공격으로 회복하는 체력 +20', [0, 100], f => buff(f, 'fresh', 1)]
   ] });
 
-hero('wizard', { p: ['마법진의 파동', '마법진 안에서는 스킬 밀쳐내는 힘 2배 · 일반 공격은 상대를 관통'], pierce: 99,
+hero('wizard', { p: ['마법진의 파동', '마법진 안에서는 스킬 밀쳐내는 힘 2배 · 일반 공격과 스킬 탄은 상대와 벽을 관통'], pierce: 99, wallPass: 1,
   tick(f, dt) { const o = f.st.orb; if (o && o.n > 0) { o.t -= dt; if (o.t <= 0) { o.n = 0; return; } for (let i = 0; i < o.n; i++) { const a = time * 3 + i * 6.283 / 5, x = f.x + Math.cos(a) * 54, y = f.y + Math.sin(a) * 54; const e = foes(f).find(e => Math.hypot(e.x - x, e.y - y) < 30); if (e) { withSrc(o.src, () => damage(e, 14, f)); o.n--; break; } } } },
   ult: ['마법진', '자신의 위치에 거대한 마법진 소환(10초): 나와 아군은 공격력 30% 증가 + 초당 120 회복, 안에 들어온 적은 초당 130 피해', [0, 6 * T], f => (fx('magiccircle', f.x, f.y), zone)({ by: f, x: f.x, y: f.y, r: px(330), t: 10, col: '#b98cff', kind: 'circle', fn: (z, dt) => { z.acc += dt; const tk = z.acc >= .5; if (tk) z.acc -= .5; for (const a of allies(f)) if (inZone(z, a)) { buff(a, 'dmg', .2, 1.3); if (tk) heal(a, 6); } if (tk) circ(f, z.x, z.y, z.r, 4.5, { quiet: 1 }); } })],
   skills: [
     [1, '충격파', 'hit', '주변 상대를 아주 크게 밀쳐내는 충격파 (150 피해)', [0, 120], f => { const inC = zones.some(z => z.kind === 'circle' && z.by === f && inZone(z, f)); ring(f.x, f.y, 130, '#b98cff'); circ(f, f.x, f.y, 130, 10, { kb: inC ? 1800 : 900 }); }],
     [2, '마력 압축', 'hit', '기존 탄환보다 2배 큰 탄환을 발사 · 무한정 관통 · 관통과 상관없이 피해 300', [100, 8 * T], (f, a) => emit(f, a, { skill: 1, dmg: 20, r: 10, pierce: 99 })],
-    [3, '마력 연사', 'hit', '조준 방향으로 마법 탄환을 세 발 연속으로 쏨 (발당 일반 공격 피해)', [100, 8 * T], f => seq(f, 3, .15, () => emit(f, f.aim, { skill: 1, dmg: 14, pierce: 1 }))],
+    [3, '마력 연사', 'hit', '조준 방향으로 마법 탄환을 세 발 연속으로 쏨 (발당 일반 공격 피해)', [100, 8 * T], f => seq(f, 3, .15, () => emit(f, f.aim, { skill: 1, dmg: 14, pierce: 99 }))],
     [4, '파동 쏘기', 'hit', '마법 탄환 2개가 엇갈린 파동 궤적을 그리며 날아감 (각 일반 공격 피해) · 두 발 다 같은 상대에게 맞으면 추가 피해 +195', [100, 8 * T], (f, a) => { const got = new Set(); for (const s of [-1, 1]) emit(f, a, { skill: 1, dmg: 14, wave: s, onHit: e => { if (got.has(e)) damage(e, 15, f); got.add(e); } }); }],
     [5, '마력 보호', 'buff', '자기 주위에 마력 탄환 5개가 8초 동안 빙글빙글 돎 · 상대에 닿으면 사라지며 일반 공격 피해', [0, 5 * T], f => { f.st.orb = { n: 5, t: 8, src: SRC }; }]
   ] });
