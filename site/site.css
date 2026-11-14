@@ -164,3 +164,11 @@ footer.foot nav{display:flex;flex-wrap:wrap;gap:6px 18px}
 .guide dt.pick{color:var(--gold)}
 .guide dd{margin:0;color:#c9d0dc}
 @media (max-width:560px){.guide dl{grid-template-columns:1fr}.guide dd{margin-bottom:6px}}
+
+.codeBtn{background:none;border:1px solid var(--gold);color:var(--gold);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:14px;white-space:nowrap}
+.codeDlg{background:var(--panel);color:var(--text);border:1px solid var(--line2);border-radius:14px;padding:22px;width:min(340px,calc(100vw - 32px))}
+.codeDlg::backdrop{background:rgba(0,0,0,.6)}
+.codeDlg h3{margin:0 0 12px}
+.codeDlg input{width:100%;box-sizing:border-box;font:700 28px Oswald,monospace;letter-spacing:8px;text-align:center;padding:10px;border-radius:10px;border:1px solid var(--line2);background:var(--bg);color:var(--text)}
+.codeDlg p{min-height:22px;color:var(--soft);font-size:14px}
+.codeRow{display:flex;gap:10px;justify-content:flex-end;align-items:center}

@@ -860,7 +860,9 @@ function endGame(keepRunning) {
   buildOverStats(win, draw);
   { /* what the match pays (social.js matchPay): gold, karma, mastery points for the character played, player xp */
     const pay = player ? matchPay({ mode: curMode, win, draw, kills: player.kos || 0, place: oc.place }) : null, hid = player ? player.h0.id : null;
-    if (pay) { const sk = streakStep(win, draw, solo || (curMode === 'hot4' && oc.place <= 2) ? oc.place : 0); pay.karma += sk.karma; pay.gold = Math.round(pay.gold * sk.gm); }
+    const sk = pay ? streakStep(win, draw, oc.place >= 2 && oc.place <= (curMode === 'solo' ? 3 : curMode === 'duo' || curMode === 'hot4' ? 2 : 0)) : null;      // 원 레프트 2-3등, 투 레프트 / 4팀 핫존 2등 keep the win streak
+    if (sk) { pay.karma += sk.karma; pay.gold = Math.round(pay.gold * sk.gm); }
+    { const e = $('streakGain'); e.hidden = !(sk && sk.st); if (sk && sk.st) { e.className = sk.st; e.textContent = sk.st === 'up' ? '🔥 ' + sk.ws + '연승' : sk.st === 'keep' ? '🔥 ' + sk.ws + '연승 유지' : '연승 끊김'; } }
     $('goldGain').hidden = !pay;
     if (pay) {
       COS.gold += pay.gold; COS.karma += pay.karma; COS.xp += pay.xp; addMp(hid, pay.mp); dqMatch({ mode: curMode, win, kills: player.kos || 0, place: solo ? oc.place : 0, hero: hid, dealt: player.dealt || 0 }); achMatch({ mode: curMode, win, kills: player.kos || 0, deaths: player.deaths || 0, hero: hid, n: fighters.length }); saveCos(); goldUi();
