@@ -553,7 +553,7 @@ function drawItemPreview(cv,id,nowMs){
   } else if(it.cat==='pose'){
     c.save(); c.translate(40,74); c.lineWidth=4; drawWinPose(c, id, nowT/1000, null); c.restore();
   } else if(it.cat==='kfx'){
-    c.font='40px serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText(it.icon||'💥',40,42);
+    try{ kfxStill(cv,id); }catch(e){}      // (a still of the real effect)
   } else {
     c.font='700 18px Rajdhani'; c.textAlign='center'; c.textBaseline='middle';
     if(id==='name_rainbow'){ const g=c.createLinearGradient(6,0,74,0); ['#ff5f5f','#ffd34d','#5fff8a','#4dd9ff','#c17bff'].forEach((col,i)=>g.addColorStop(i/4,col)); c.fillStyle=g; }
@@ -845,3 +845,38 @@ function starSpriteW(){
   return _starSprite=cv;
 }
 let _starSprite=null;
+/* shop pictures that move (user 2026-11-14): a kill effect plays its real particles in the little card, a victory pose plays the real pose.
+   The fx engine's globals (ctx, particles, clock, camera test) are pointed at the card for one step and put back right after */
+const COS_LIVE=new Set(); let cosLiveRaf=0;
+function kfxStep(st,c,dt){
+  const sv=[ctx,particles,lastFxMs,FX_TS,fxInView,FX_GY];
+  ctx=c; particles=st.p; lastFxMs=performance.now()-dt*1000; FX_TS=1; fxInView=()=>true;
+  try{
+    const st0=window.setTimeout, now=performance.now(); st.tm=st.tm||[];
+    window.setTimeout=(fn,ms)=>{ st.tm.push([now+(ms||0),fn]); return 0; };      // (delayed parts of an effect play here too, not in the game)
+    try{
+      if(st.spawn){ st.spawn=0; st.tm=[]; FX_GY=120; spawnKillEffect({k:st.id,vc:'#cfd3dc'},0,0,addP,burstP,()=>{}); FX_GY=null; }
+      const due=st.tm.filter(t=>t[0]<=now); st.tm=st.tm.filter(t=>t[0]>now); for(const t of due){ FX_GY=120; try{ t[1](); }catch(e){} FX_GY=null; }
+    } finally { window.setTimeout=st0; }
+    c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,c.canvas.width,c.canvas.height);
+    c.save(); c.translate(c.canvas.width/2,c.canvas.height*.6); c.scale(.3,.3); drawParticles(); c.restore();
+  }catch(e){}
+  finally{ st.p=particles; ctx=sv[0]; particles=sv[1]; lastFxMs=sv[2]; FX_TS=sv[3]; fxInView=sv[4]; FX_GY=sv[5]; }
+}
+function kfxStill(cv,id){ cv.width=cv.height=80; const st={id,p:[],spawn:1}, c=cv.getContext('2d'); for(let i=0;i<4;i++) kfxStep(st,c,.04); }
+function cosLive(cv,id){
+  const it=COSMETICS[id]; if(!it) return; cv.width=cv.height=80;
+  COS_LIVE.add({cv,id,cat:it.cat,p:[],spawn:1,t0:performance.now(),last:performance.now()});
+  if(!cosLiveRaf) cosLiveRaf=requestAnimationFrame(cosLiveTick);
+}
+function cosLiveTick(now){
+  cosLiveRaf=0;
+  for(const st of COS_LIVE){
+    if(!st.cv.isConnected){ COS_LIVE.delete(st); continue; }
+    const dt=Math.min(.05,(now-st.last)/1000); st.last=now;
+    if(!st.cv.getClientRects().length) continue;
+    if(st.cat==='pose'){ try{ drawItemPreview(st.cv,st.id,now); }catch(e){} }
+    else { if(now-st.t0>2000){ st.t0=now; st.p=[]; st.spawn=1; } kfxStep(st,st.cv.getContext('2d'),dt||.016); }
+  }
+  if(COS_LIVE.size) cosLiveRaf=requestAnimationFrame(cosLiveTick);
+}

@@ -17,7 +17,7 @@ const CL_RULE = {
   gold: 'add', karma: 'add', xp: 'add', mp: 'add',
   'st.k': 'add', 'st.w': 'add', 'st.g': 'add', 'st.nd': 'add', 'st.sa': 'add', 'st.mw': 'add', 'st.mg': 'add', 'st.hg': 'add', 'st.hk': 'add', 'st.hn': 'add',
   'st.mk': 'max', 'st.hb': 'max', 'st.hw': 'max', ach: 'max', v: 'max',
-  own: 'union', kr: 'union', dq: 'day', wq: 'day', att: 'att'
+  own: 'union', kr: 'union', sk: 'union', sx: 'add', cd: 'union', dq: 'day', wq: 'day', sq: 'day', att: 'att'
 };
 const clObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
 const clNum = v => (typeof v === 'number' && isFinite(v) ? v : 0);
@@ -138,8 +138,28 @@ async function clSync(pull) {      // pull: ask the server even when nothing cha
     CL.fail = (CL.fail | 0) + 1; clearTimeout(CL.t); CL.t = setTimeout(clSync, Math.min(300000, 5000 * Math.pow(2, CL.fail - 1)));      // offline or blocked: try again later, quietly
   } finally {
     CL.busy = false;
+    if (CL.ok && CL.uid === uid && CL.live === uid) clCodes(uid);
     if (CL.again) { CL.again = false; clearTimeout(CL.t); CL.t = setTimeout(clSync, 1500); }
   }
+}
+/* reward codes typed on the site (public.seumarena_code_uses, own rows only): each code is given once, remembered in COS.cd (merged as a union,
+   so another device that already gave it does not give it again). Checked after a sync, at most once a minute. */
+async function clCodes(uid) {
+  if (CL.codeBusy || Date.now() - (CL.codeAt || 0) < 60000) return;
+  CL.codeBusy = true; CL.codeAt = Date.now();
+  try {
+    const r = await fetch(CL_API.replace('seumarena_saves', 'seumarena_code_uses') + '?select=code,rewards&user_id=eq.' + uid, { cache: 'no-store', headers: { apikey: ACH_KEY, Authorization: 'Bearer ' + CL.tok } });
+    if (!r.ok || CL.live !== uid || CL.uid !== uid) return;
+    const rows = await r.json(), gots = [];
+    for (const row of Array.isArray(rows) ? rows : []) {
+      if (!row || typeof row.code !== 'string' || COS.cd.includes(row.code) || !Array.isArray(row.rewards)) continue;
+      COS.cd.push(row.code);
+      for (const w of row.rewards) if (Array.isArray(w) && /^(g|px|box|ebox|rx|cx|skin)$/.test(w[0]) && w[1] > 0) { const box = /box$/.test(w[0]); for (let k = box ? Math.min(10, Math.floor(w[1])) : 1; k > 0; k--) gots.push(giveReward(w[0], box ? 1 : Math.floor(w[1]))); }
+    }
+    if (!gots.length) return;
+    saveCos(); try { goldUi(); accountUi(); } catch (e) {}
+    gots.forEach((g, i) => setTimeout(() => { try { rewardFx(g); } catch (e) {} }, i * 4600));
+  } catch (e) {} finally { CL.codeBusy = false; }
 }
 /* called by saveCos and savePrefs: keeps this browser's base next to the save just written, and sends the change a little later */
 function cloudMark() {

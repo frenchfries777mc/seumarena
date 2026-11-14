@@ -19,13 +19,13 @@ const PVS = {
   'shotgun:1': R('self', { r: 120 }), 'shotgun:2': R('line', { len: 384, w: 36 }), 'shotgun:3': R('fan', { len: 422, half: .14, n: 5 }), 'shotgun:u': R('fan', { len: 352, half: .25, n: 5 }),
   'rifle:u': R('ground', { max: 12 * T, r: 130 }), 'rifle:1': R('pts', { pts: [[44, 1.2], [44, -1.2]], r: 26 }), 'rifle:2': R('ground', { max: 448, r: 80 }), 'rifle:4': R('ground', { max: 576, r: 66 }), 'rifle:5': R('self', { r: 110 }),
   'smg:1': R('ground', { max: 448, r: 100 }), 'smg:2': R('ground', { max: 448, r: 120 }), 'smg:3': R('dash', { len: 141, w: 44 }), 'smg:5': R('ground', { max: 448, r: 90 }), 'smg:u': R('wall', { d: 102, w: 192, th: 64 }),
-  'gloves:1': R('arc', { len: 90, half: 1.2 }), 'gloves:3': R('arc', { len: 80, half: 1 }), 'gloves:4': R('arc', { len: 90, half: 1.4 }),
+  'gloves:1': R('arc', { len: 90, half: 1.2 }), 'gloves:3': R('arc', { len: 80, half: 1 }), 'gloves:4': R('arc', { len: 90, half: 1.4 }), 'gloves:5': R('dash', { len: 192, w: 44 }), 'gloves:u': R('self', { r: 110 }),
   'portalgun:1': R('ring'), 'portalgun:2': R('ground', { max: 320, r: 40 }), 'portalgun:3': R('bounce', { len: 1024, n: 6, w: 24 }), 'portalgun:4': R('ground', { max: 384, r: 95 }), 'portalgun:5': R('ring'), 'portalgun:u': R('ground', { max: 576, r: 34 }),
   'grenade:1': R('dashEnd', { len: 192, r: 90, over: 1 }), 'grenade:5': R('ground', { max: 448, r: 90 }), 'grenade:2': R('fan2', { len: 320, half: .175, n: 2, over: 1 }), 'grenade:3': R('line', { len: 384, w: 26 }), 'grenade:4': R('ground', { max: 448, r: 100 }), 'grenade:u': R('fan', { over: 1, len: 384, half: .5, n: 5 }),
   'bazooka:1': R('line', { len: 512, w: 28 }), 'bazooka:2': R('lob', { len: 512, r: 40 }), 'bazooka:3': R('lob', { len: 512, r: 80 }), 'bazooka:4': R('lob', { len: 512, r: 80 }), 'bazooka:u': R('line', { len: 640, w: 28 }),
   'dagger:1': R('self', { r: 384, faint: 1 }), 'dagger:2': R('dash', { len: 717, w: 60 }), 'dagger:4': R('dash', { len: 205, w: 44, back: 1 }),
   'dracula:2': R('dash', { len: 256, w: 60 }),
-  'wizard:1': R('self', { r: 130 }), 'wizard:2': R('line', { len: 512, w: 44 }), 'wizard:3': R('line', { len: 512, w: 26 }), 'wizard:4': R('line', { len: 512, w: 64 }), 'wizard:5': R('self', { r: 54 }), 'wizard:u': R('self', { r: 198 }),
+  'wizard:1': R('self', { r: 130 }), 'wizard:2': R('line', { len: 512, w: 44, over: 1 }), 'wizard:3': R('line', { len: 512, w: 26, over: 1 }), 'wizard:4': R('line', { len: 512, w: 64, over: 1 }), 'wizard:5': R('self', { r: 54 }), 'wizard:u': R('self', { r: 198 }),
   'magiccard:1': R('line', { len: 448, w: 26 }), 'magiccard:3': R('dash', { len: 352, w: 30 }), 'magiccard:5': R('fan', { len: 492, half: .15, n: 3 }), 'magiccard:u': R('self', { r: 512, faint: 1 }),
   'gambler:2': R('line', { len: 576, w: 30 }), 'gambler:3': R('pts', { pts: [[60, 0]], r: 22 }),
   'boomerang:1': R('self', { r: 160 }), 'boomerang:u': R('fan', { len: 416, half: .5, n: 5 }),
@@ -74,10 +74,10 @@ function basicSpec(f) {
   if (h.id === 'pel') return R('multi', { len: h.range, n: Math.max(1, f.st.dr || 1), w: 22 });
   if (w.bounces) return R('bounce', { len: h.range, n: w.bounces, w: 14 });      // 차원 여행자: the path with its wall bounces
   if (h.boom) return R('boom', { len: h.range, w: 26 });
-  if (h.splash) return R('lob', { len: h.range * (w.shape === 'bomb' ? bombFrac(f) : 1), r: h.splash, over: h.w && h.w.shape === 'bomb' ? 1 : 0 });      // over: thrown bombs fly over walls
+  if (h.splash) return R('lob', { len: h.range * (w.shape === 'bomb' || h.wallPass ? bombFrac(f) : 1), r: h.splash, over: h.w && (h.w.shape === 'bomb' || h.wallPass) ? 1 : 0 });      // over: thrown bombs fly over walls
   if (h.count > 1) return R('fan', { len: h.range, half: h.fan / 2, n: h.count });
   if (h.burst > 1) return R('line', { len: h.range, w: 26, dots: h.burst });
-  return R('line', { len: h.range, w: 26 });
+  return R('line', { len: h.range, w: 26, over: h.wallPass ? 1 : 0 });
 }
 
 function rayLen(x, y, a, max, blk) {      // how far a ray from (x, y) goes before a wall
@@ -106,7 +106,7 @@ function drawSpec(f, s, a, tx, ty, col, ready, move) {
     case 'ring': ctx.beginPath(); ctx.arc(f.x, f.y + 16, 46, 0, 6.3); ctx.fill(); ctx.stroke(); break;
     case 'self': if (s.faint) ctx.fillStyle = 'rgba(' + col + ',' + (.07 * al) + ')'; circle(f.x, f.y + 4, s.r); break;
     case 'line': case 'rect': {
-      const d = s.t === 'rect' ? s.len : rayLen(x, y, a, s.len);
+      const d = s.t === 'rect' || s.over ? s.len : rayLen(x, y, a, s.len);
       capsule(x, y, a, 20, d, s.w);
       if (s.dots) { ctx.fillStyle = ctx.strokeStyle; for (let i = 1; i <= s.dots; i++) { ctx.beginPath(); ctx.arc(x + Math.cos(a) * (20 + (d - 20) * i / (s.dots + 1)), y + Math.sin(a) * (20 + (d - 20) * i / (s.dots + 1)), 3, 0, 6.3); ctx.fill(); } }
       if (s.t === 'rect') arrowHead(x + Math.cos(a) * d, y + Math.sin(a) * d, a, 9);

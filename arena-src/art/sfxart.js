@@ -317,8 +317,8 @@ function spawnFx0(e){
       break;
     case 'magiccircle':
       addP({x:x,y:y,life:.6,color:'#c85aff',shape:'ring',r0:10,r1:WIZ_CIRCLE_R,lw:6});
-      addP({x:x,y:y,life:.3,color:'#ffd34d',shape:'flash',size:120});
-      burst(x,y,24,{a0:0,a1:6.28,s0:100,s1:380,l0:.5,l1:.9,z0:2,z1:4,colors:['#c85aff','#ffd34d','#ffffff'],drag:1.5});
+      addP({x:x,y:y,life:.25,color:'#ffd34d',shape:'flash',size:60});
+      burst(x,y,12,{a0:0,a1:6.28,s0:100,s1:380,l0:.5,l1:.9,z0:2,z1:4,colors:['#c85aff','#ffd34d','#ffffff'],drag:1.5});
       shakeFrom(x,y,6,600);
       break;
     case 'slow':
