@@ -58,6 +58,7 @@ function drawFighter0(f, alpha) {
   ctx.globalAlpha = alpha;
   if (f.form === 'sub') { ctx.fillStyle = '#12061f'; ctx.beginPath(); ctx.ellipse(0, 0, 26 + Math.sin(time * 8) * 3, 11, 0, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#9a4cff'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore(); return; }
   ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(0, 1, 18, 7, 0, 0, 6.3); ctx.fill();
+  if (curMode === 'solo' && f.inv > 0 && state === 'play' && timeLeft > modeNow().time - SOLO_GUARD - .2) { const k = Math.min(1, f.inv / .5), pu = 1 + Math.sin(time * 6) * .04; ctx.save(); ctx.globalAlpha = alpha * k; ctx.fillStyle = 'rgba(255,214,90,.16)'; ctx.strokeStyle = '#ffd65a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, -30, 42 * pu, 0, 6.3); ctx.fill(); ctx.stroke(); ctx.restore(); }      // 원 레프트 start guard bubble
   ctx.strokeStyle = f.isPlayer ? '#ffd34d' : col; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(0, 1, 22, 9, 0, 0, 6.3); ctx.stroke();
   if (f.spin > 0) { ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(0, -30, (f.h.range || 80) * (f.h.type === 'melee' ? 1 : .3), time * 30, time * 30 + 4.5); ctx.stroke(); }
   if (f.shield > 0) { ctx.strokeStyle = '#7ef0a8'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, -30, 40, 0, 6.3); ctx.stroke(); }
@@ -590,7 +591,7 @@ function openDetail(id) {
   $('weaponPortraitName').textContent = h.name;
   const d = $('weaponDetail'); d.textContent = '';
   const line = (label, text) => { const p = document.createElement('p'), s = document.createElement('strong'); s.textContent = label; p.append(s, text); return p; };
-  d.append(line('무기', h.wname + ' · ' + attackText(h)), line('패시브', h.p[0] + ' · ' + dmgDesc(h, h.p[1])), line('궁극기', h.ult.name + ' · ' + dmgDesc(h, h.ult.d) + (id === 'medium' ? '' : ' (쿨타임 ' + ULT_CD + '초)')), line('체력', h.hp + ' · 대쉬 쿨타임 ' + (h.dashCd ? h.dashCd({ st: {}, b: {} }) : 1.5) + '초'));
+  d.append(line('무기', h.wname + ' · ' + attackText(h)), line('패시브', h.p[0] + ' · ' + dmgDesc(h, h.p[1])), line('궁극기', h.ult.name + ' · ' + dmgDesc(h, h.ult.d) + (id === 'medium' ? '' : ' (쿨타임 ' + ULT_CD + '초)')), line('체력', Math.round(h.hp * HP_SCALE) + ' · 대쉬 쿨타임 ' + (h.dashCd ? h.dashCd({ st: {}, b: {} }) : 1.5) + '초'));
   { /* mastery of this character: rank, bar, points */
     const m = masteryOf(id), row = document.createElement('div'), nm = document.createElement('b'), bar = document.createElement('span'), fl = document.createElement('i'), num = document.createElement('small');
     row.className = 'mRow'; row.style.setProperty('--mc', m.col); nm.textContent = m.name; fl.style.width = Math.round(m.into / m.need * 100) + '%'; bar.className = 'mBar'; bar.append(fl); num.textContent = m.top ? m.mp.toLocaleString('en-US') : m.into + ' / ' + m.need;

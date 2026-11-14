@@ -223,7 +223,7 @@ function hatPops() {                       // the moment he steps out of the hat
 }
 function drawShot(b) {          // a projectile in the original art, turned along its flight
   if (b.shape === 'syringe') return drawSyringe(b);
-  const wid = b.wid || SHAPE_WID[b.shape];
+  const red = b.shape === 'redshot', wid = red ? 'pistol' : b.wid || SHAPE_WID[b.shape];      // 제임스 강한 탄: Stickseum's big red pistol bullet
   if (!wid) return false;
   let vx = b.vx != null ? b.vx : Math.cos(b.ang) * 100, vy = b.vy != null ? b.vy : Math.sin(b.ang) * 100, y = b.y;
   if (b.shape === 'bomb') {
@@ -233,7 +233,7 @@ function drawShot(b) {          // a projectile in the original art, turned alon
     y = b.y - A.h; vy -= A.dh * sp;                             // (the bomb turns along the arc: nose up, then down)
   }
   ctx.save();
-  try { drawProjectileBase({ x: b.x, y, vx: vx || Math.cos(b.ang), vy: vy || Math.sin(b.ang), wid, life: 1, life0: 1, color: TC(b.team), ult: b.r > 8, scale: b.r > 8 ? b.r / 6 : 1, owner: 'x' }); } catch (e) { ctx.restore(); return false; }
+  try { drawProjectileBase({ x: b.x, y, vx: vx || Math.cos(b.ang), vy: vy || Math.sin(b.ang), wid, life: 1, life0: 1, color: red ? '#e8222b' : TC(b.team), big: red, ult: b.r > 8, scale: b.r > 8 ? b.r / 6 : 1, owner: 'x' }); } catch (e) { ctx.restore(); return false; }
   ctx.restore();
   return true;
 }

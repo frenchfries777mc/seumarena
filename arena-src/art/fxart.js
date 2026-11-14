@@ -247,6 +247,11 @@ function drawProjectileBase(b){
       ctx.lineWidth=2; ctx.setLineDash([3,3.2]); ctx.beginPath(); ctx.arc(0,0,5,0,7); ctx.stroke(); ctx.setLineDash([]);
       break;
     }
+    case 'redshot': {      // 제임스 strong shot: Stickseum's big red bullet with a hot white core, sized by b.r
+      const r=Math.max(BULLET_R*2.1,(b.r||7)*0.9); ctx.fillStyle='#e8222b'; ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.shadowColor='#ff2d2d'; ctx.shadowBlur=22; ctx.fill(); ctx.shadowBlur=0;
+      ctx.fillStyle='#ffb3a8'; ctx.beginPath(); ctx.arc(0,0,r*0.55,0,7); ctx.fill(); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-r*0.1,0,r*0.25,0,7); ctx.fill();
+      ctx.strokeStyle='#fff'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(0,0,r+1,0,7); ctx.stroke(); break;
+    }
     case 'cannonball':
       ctx.fillStyle='#23232b'; ctx.strokeStyle='#8a8a98'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(0,0,8,0,7); ctx.fill(); ctx.stroke();
       ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.beginPath(); ctx.arc(-2.5,-2.5,2.4,0,7); ctx.fill();

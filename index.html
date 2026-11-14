@@ -43,6 +43,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent-2);outli
 #game.inLobby{filter:blur(1.5px) brightness(.5) saturate(1.1)}
 
 /* ---------- lobby ---------- */
+:root{--vh:100vh}@supports (height:100dvh){:root{--vh:100dvh}}
 #lobby{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;overflow-y:auto;
   padding-block:calc(env(safe-area-inset-top,0px) + 16px) calc(env(safe-area-inset-bottom,0px) + 16px);
   padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
@@ -101,7 +102,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent-2);outli
 /* character screen (Stickseum's weaponScreen) */
 #weaponScreen{width:min(880px,100%)}
 #weaponSearch{display:block;margin:4px auto 8px;width:min(260px,80%);padding:7px 12px;border-radius:10px;border:1px solid #3a4150;background:#171b24;color:#fff;font-size:14px;font-family:inherit;-webkit-user-select:text;user-select:text}
-#weaponGrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;max-height:min(540px,calc(100vh - 250px));overflow-y:auto;overflow-x:hidden;padding:2px}
+#weaponGrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;max-height:min(540px,calc(var(--vh) - 250px));overflow-y:auto;overflow-x:hidden;padding:2px}
 @media (max-width:760px){#weaponGrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}}
 .wpnCard{position:relative;background:var(--panel-2);border:2px solid var(--line);border-radius:10px;padding:5px 3px 7px;text-align:center;cursor:pointer;color:var(--text);
   transition:border-color .12s ease;min-width:0}
@@ -154,7 +155,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent-2);outli
 #acctBtn{border:0;border-radius:999px;padding:4px 12px;background:var(--accent-2);color:#062824;font:700 12px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
 #acctBtn:disabled{background:var(--panel-2);color:var(--text-dim);cursor:default}
 /* cosmetics */
-#cosScreen{width:min(760px,100%);max-height:calc(100vh - 32px);overflow-y:auto}
+#cosScreen{width:min(760px,100%);max-height:calc(var(--vh) - 32px);overflow-y:auto}
 #cosTabs{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 #cosTabs button{font:600 13px 'IBM Plex Sans KR',sans-serif;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel-2);color:var(--text-dim);cursor:pointer}
 #cosTabs button[aria-pressed="true"]{background:var(--accent-2);color:#062824;border-color:var(--accent-2)}
@@ -267,7 +268,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent-2);outli
 .skBtns button{font:600 12px 'IBM Plex Sans KR',sans-serif;padding:5px 9px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--text-dim);cursor:pointer}
 .skBtns button[aria-pressed="true"]{background:var(--accent-2);color:#062824;border-color:var(--accent-2)}
 .skBtns button:disabled{opacity:.3;cursor:not-allowed}
-#weaponScreen{max-height:calc(100vh - 32px);overflow-y:auto}
+#weaponScreen{max-height:calc(var(--vh) - 32px);overflow-y:auto}
 #soundBtn{position:fixed;z-index:6;right:max(16px, env(safe-area-inset-right, 0px));top:calc(env(safe-area-inset-top,0px) + 12px);
   background:rgba(20,22,28,.85);color:var(--text-dim);border:1px solid var(--line);border-radius:10px;padding:5px 9px;font:600 12px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
 
@@ -320,7 +321,7 @@ body.touchUi canvas{touch-action:none}
 #questScreen{width:min(520px,100%)}
 #questList,#achList{display:flex;flex-direction:column;gap:10px;margin-top:12px}
 #questList[hidden],#achList[hidden]{display:none}
-#achList{gap:7px;max-height:min(460px,calc(100vh - 190px));overflow-y:auto;padding-right:4px;scrollbar-width:thin}
+#achList{gap:7px;max-height:min(460px,calc(var(--vh) - 190px));overflow-y:auto;padding-right:4px;scrollbar-width:thin}
 .qTabs{display:flex;gap:6px;margin:0 90px 0 0}
 .qTabs button{position:relative;border:0;background:none;color:var(--text-dim);font:700 20px 'IBM Plex Sans KR',sans-serif;padding:4px 8px 6px;border-bottom:3px solid transparent;cursor:pointer}
 .qTabs button.on{color:var(--text);border-bottom-color:var(--sel)}
@@ -334,7 +335,7 @@ body.touchUi canvas{touch-action:none}
 .qRow.aRow .qRw{min-width:72px;height:42px}
 .a-0{--ac:#7fe0a0}.a-1{--ac:#6fb8ff}.a-2{--ac:#b07cff}.a-3{--ac:#ff4d6d}
 @media (max-width:520px){.qTabs{margin-right:0}.qTabs button{font-size:17px}}
-@media (max-height:420px){#achList{max-height:calc(100vh - 120px)}.qTabs button{font-size:16px;padding:0 8px 3px}}
+@media (max-height:420px){#achList{max-height:calc(var(--vh) - 120px)}.qTabs button{font-size:16px;padding:0 8px 3px}}
 .qRow{display:grid;grid-template-columns:1fr auto;grid-template-areas:"t r" "b r";gap:6px 12px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--panel-2);border:1px solid var(--line)}
 .qRow .qTxt{grid-area:t;font-weight:700;font-size:15px}
 .qRow .qBar{grid-area:b;position:relative;height:16px;border-radius:999px;background:#0d0f14;border:1px solid var(--line);overflow:hidden}
@@ -371,7 +372,7 @@ body.touchUi canvas{touch-action:none}
   #overScreen.active{padding:10px 22px}
   #overScreen #resultText{font-size:clamp(38px,7vw,54px);line-height:1.05}
   #overScreen .final{font-size:28px}
-  #overScreen{max-height:calc(100vh - 12px);overflow-y:auto}
+  #overScreen{max-height:calc(var(--vh) - 12px);overflow-y:auto}
   #overScreen #winCanvas{width:auto;max-width:100%;height:min(120px,30vh);justify-self:center;margin:0}
   #overScreen .osRow{min-height:24px;margin-bottom:2px;padding-top:1px;padding-bottom:1px}
   #overScreen #mine{display:none}      /* the table on the right already says it; the row goes to karma and gold */
@@ -742,8 +743,8 @@ body.touchUi canvas{touch-action:none}
   #weaponPortraitWrap{grid-template-columns:150px minmax(0,1fr);padding:10px;gap:6px 14px}
   #weaponPortraitName{font-size:19px}
   #weaponPortraitCanvas,#weaponActions{grid-column:1;grid-row:2 / span 2;align-self:start;position:sticky;top:0}
-  #weaponPortraitCanvas{width:auto;height:min(168px,calc(100vh - 222px));min-height:110px;max-width:100%}
-  #weaponActions{--ph:calc(min(168px,calc(100vh - 222px)) + 26px);z-index:1;margin:var(--ph) 0 0;padding:0;background:none;flex-direction:column;top:var(--ph)}
+  #weaponPortraitCanvas{width:auto;height:min(168px,calc(var(--vh) - 222px));min-height:110px;max-width:100%}
+  #weaponActions{--ph:calc(min(168px,calc(var(--vh) - 222px)) + 26px);z-index:1;margin:var(--ph) 0 0;padding:0;background:none;flex-direction:column;top:var(--ph)}
   #weaponActions .btn-full{flex:none;width:100%;padding:9px 8px;font-size:12.5px}
   #weaponDetail{grid-column:2;grid-row:2}
   #weaponLoadout{grid-column:2;grid-row:3}
@@ -2633,6 +2634,11 @@ function drawProjectileBase(b){
       ctx.fillStyle='#d62839'; ctx.strokeStyle='#fff'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(0,0,8,0,7); ctx.fill(); ctx.stroke();
       ctx.lineWidth=2; ctx.setLineDash([3,3.2]); ctx.beginPath(); ctx.arc(0,0,5,0,7); ctx.stroke(); ctx.setLineDash([]);
       break;
+    }
+    case 'redshot': {      // 제임스 strong shot: Stickseum's big red bullet with a hot white core, sized by b.r
+      const r=Math.max(BULLET_R*2.1,(b.r||7)*0.9); ctx.fillStyle='#e8222b'; ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.shadowColor='#ff2d2d'; ctx.shadowBlur=22; ctx.fill(); ctx.shadowBlur=0;
+      ctx.fillStyle='#ffb3a8'; ctx.beginPath(); ctx.arc(0,0,r*0.55,0,7); ctx.fill(); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-r*0.1,0,r*0.25,0,7); ctx.fill();
+      ctx.strokeStyle='#fff'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(0,0,r+1,0,7); ctx.stroke(); break;
     }
     case 'cannonball':
       ctx.fillStyle='#23232b'; ctx.strokeStyle='#8a8a98'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(0,0,8,0,7); ctx.fill(); ctx.stroke();
@@ -4624,17 +4630,17 @@ const MAPS = [
   /* big maps (37 x 25) for 원 레프트 only */
   { id:'big_island', name:'외딴 섬', desc:'바다로 둘러싸인 넓은 섬. 수풀이 많아 숨기 좋아요.', big:1,
     th:{ f1:'#d9c38a', f2:'#e0cb95', wt:'#8a6a44', ws:'#5f4529', b1:'#2f8f4a', b2:'#49b565', wa:'#2f8fc4', wa2:'#63b8e0' },
-    rows:['###########################','#wwwwwwww..................','#wwwww.......gg......##....','#www.........gg............','#ww....##..........gg......','#w.....#...........gg..w...','#..............#......www..','#.....gg.......#.......w...','#.....gg...ww..............','#..........ww.....##.......','#..gg..............#...gg..','#..gg......#............gg.','#..........#.....gg........','#w.....##........gg...#....','#ww........................','#w.....gg.....##.....w.....','#......gg......#....www....','#..........#........ww....h','#......gg......#....www....','#w.....gg.....##.....w.....','#ww........................','#w.....##........gg...#....','#..........#.....gg........','#..gg......#............gg.','#..gg..............#...gg..','#..........ww.....##.......','#.....gg...ww..............','#.....gg.......#.......w...','#..............#......www..','#w.....#...........gg..w...','#ww....##..........gg......','#www.........gg............','#wwwww.......gg......##....','#wwwwwwww..................','###########################'] },
+    rows:['###################################','#wwwwwwwwwww.......................','#wwwwwwwwwww.......................','#wwwwwww.........ggg........###....','#wwww............ggg...............','#wwww............ggg...............','#www.....###.............ggg.......','#ww......#...............ggg...w...','#...................#........wwww..','#...................#........wwww..','#.......ggg.........#..........w...','#.......ggg....ww..................','#..............ww.......###........','#..............ww........##........','#...ggg..................#.....gg..','#...ggg........#................gg.','#...ggg........#................gg.','#..............#.......gg..........','#ww......###...........gg....#.....','#www...............................','#www...............................','#ww......ggg.......##.......w......','#........ggg........#......wwww....','#..............#...........ww.....h','#........ggg........#......wwww....','#ww......ggg.......##.......w......','#www...............................','#www...............................','#ww......###...........gg....#.....','#..............#.......gg..........','#...ggg........#................gg.','#...ggg........#................gg.','#...ggg..................#.....gg..','#..............ww........##........','#..............ww.......###........','#.......ggg....ww..................','#.......ggg.........#..........w...','#...................#........wwww..','#...................#........wwww..','#ww......#...............ggg...w...','#www.....###.............ggg.......','#wwww............ggg...............','#wwww............ggg...............','#wwwwwww.........ggg........###....','#wwwwwwwwwww.......................','#wwwwwwwwwww.......................','###################################'] },
   { id:'big_temple', name:'고대 신전', desc:'벽과 기둥이 많은 신전. 한가운데 치유 패드가 있어요.', big:1,
     th:{ f1:'#5a5346', f2:'#625b4d', wt:'#c9b27a', ws:'#8f7a4a', b1:'#3f7a3a', b2:'#58a04f', wa:'#3a7fc4', wa2:'#63a4e0' },
-    rows:['###########################','#..........................','#.###..#######...###.......','#.#...........#....#.......','#.#...gg......#.........#..','#.....gg..#.......###...#..','#..#......#.......#........','#..#####..........#....gg..','#.............##.......gg..','#.gg.....#.....#...........','#.gg.....#.....#....###....','#........###.......p#......','#..#.............#.p.......','#..#...gg....#...#.p....##.','#......gg....#...........#.','#.###........###....gg.....','#............#......gg.....','#.....#...........p.......h','#............#......gg.....','#.###........###....gg.....','#......gg....#...........#.','#..#...gg....#...#.p....##.','#..#.............#.p.......','#........###.......p#......','#.gg.....#.....#....###....','#.gg.....#.....#...........','#.............##.......gg..','#..#####..........#....gg..','#..#......#.......#........','#.....gg..#.......###...#..','#.#...gg......#.........#..','#.#...........#....#.......','#.###..#######...###.......','#..........................','###########################'] },
+    rows:['###################################','#..................................','#..................................','#..####..##########....####........','#..#...............#.....#.........','#..#...............#.....#.........','#..#....ggg........#............#..','#.......ggg..#..........####....#..','#...#........#..........#..........','#...#........#..........#..........','#...#######.............#......gg..','#..................##..........gg..','#..gg.......#.......#..............','#..gg.......#.......#..............','#..gg.......#.......#......####....','#...........####.........pp#.......','#...........#............pp#.......','#...#..................#.pp........','#...#....ggg.....#.....#.pp.....##.','#........ggg.....#...............#.','#........ggg.....#...............#.','#..####..........####......gg......','#................#.........gg......','#.......#...............p.........h','#................#.........gg......','#..####..........####......gg......','#........ggg.....#...............#.','#........ggg.....#...............#.','#...#....ggg.....#.....#.pp.....##.','#...#..................#.pp........','#...........#............pp#.......','#...........####.........pp#.......','#..gg.......#.......#......####....','#..gg.......#.......#..............','#..gg.......#.......#..............','#..................##..........gg..','#...#######.............#......gg..','#...#........#..........#..........','#...#........#..........#..........','#.......ggg..#..........####....#..','#..#....ggg........#............#..','#..#...............#.....#.........','#..#...............#.....#.........','#..####..##########....####........','#..................................','#..................................','###################################'] },
   { id:'big_snow', name:'설원 기지', desc:'눈 덮인 넓은 기지. 속도 패드로 빠르게 움직일 수 있어요.', big:1,
     th:{ f1:'#dfe9f2', f2:'#e8f0f7', wt:'#5c6f86', ws:'#3c4c61', b1:'#2f6f5c', b2:'#46957d', wa:'#2f6fb3', wa2:'#5c9bd6' },
-    rows:['###########################','#..........iiiiii..........','#..###.....iiiiii....gg....','#..#.................gg....','#.......####...............','#.gg.......#.....#.....iii.','#.gg.............#.....iii.','#........p.....gg#.........','#..#.....p.....gg..........','#..#...iii............##...','#......iii....#........#...','#.............#....iii.....','#....##............iii.....','#..........gg......#.......','#.gg.......gg......#....gg.','#.gg..iii..........ppp..gg.','#.....iii....##............','#..........................','#.....iii....##............','#.gg..iii..........ppp..gg.','#.gg.......gg......#....gg.','#..........gg......#.......','#....##............iii.....','#.............#....iii.....','#......iii....#........#...','#..#...iii............##...','#..#.....p.....gg..........','#........p.....gg#.........','#.gg.............#.....iii.','#.gg.......#.....#.....iii.','#.......####...............','#..#.................gg....','#..###.....iiiiii....gg....','#..........iiiiii..........','###########################'] },
+    rows:['###################################','#..............iiiiiiii............','#..............iiiiiiii............','#...####.......iiiiiiii.....ggg....','#...#.......................ggg....','#...#.......................ggg....','#..........#####...................','#..gg..........#.......#.......iii.','#..gg..................#.......iii.','#..gg..................#.......iii.','#...........p.......ggg#...........','#...#.......p.......ggg............','#...#....iiii................###...','#...#....iiii..................#...','#........iiii......#...........#...','#..................#.....iiii......','#..................#.....iiii......','#......##................iiii......','#..............gg........#.........','#..gg..........gg........#......gg.','#..gg..........gg........#......gg.','#..gg...iiii.............pppp...gg.','#.......iiii.....###...............','#..................................','#.......iiii.....###...............','#..gg...iiii.............pppp...gg.','#..gg..........gg........#......gg.','#..gg..........gg........#......gg.','#..............gg........#.........','#......##................iiii......','#..................#.....iiii......','#..................#.....iiii......','#........iiii......#...........#...','#...#....iiii..................#...','#...#....iiii................###...','#...#.......p.......ggg............','#...........p.......ggg#...........','#..gg..................#.......iii.','#..gg..................#.......iii.','#..gg..........#.......#.......iii.','#..........#####...................','#...#.......................ggg....','#...#.......................ggg....','#...####.......iiiiiiii.....ggg....','#..............iiiiiiii............','#..............iiiiiiii............','###################################'] },
   { id:'big_crater', name:'화산 분화구', desc:'용암 웅덩이가 흩어진 분화구. 바닥 틈에서 용암이 분출해요.', big:1,
     env:{ vents:1 },
     th:{ f1:'#33292b', f2:'#3b2f31', wt:'#8a6f66', ws:'#57433d', b1:'#5a4a3a', b2:'#7a6450', wa:'#e2551a', wa2:'#ffb347' },
-    rows:['###########################','#..........................','#..www.....#.......v.......','#..www.....#...............','#.........v.......###......','#.##..............#....www.','#..#.....www...........www.','#........www...g...........','#....g.........g.....#.....','#....g...#...........#.....','#........##....v...........','#.ww...............##...gg.','#.ww.....g..........#...gg.','#.ww.....g....www..........','#.............www....v.....','#...##..v..............#...','#....#..........gg.....#...','#...............gg.....v..w','#....#..........gg.....#...','#...##..v..............#...','#.............www....v.....','#.ww.....g....www..........','#.ww.....g..........#...gg.','#.ww...............##...gg.','#........##....v...........','#....g...#...........#.....','#....g.........g.....#.....','#........www...g...........','#..#.....www...........www.','#.##..............#....www.','#.........v.......###......','#..www.....#...............','#..www.....#.......v.......','#..........................','###########################'] },
+    rows:['###################################','#..................................','#..................................','#...wwww.......#.........vv........','#...wwww.......#...................','#...wwww.......#...................','#............vv.........####.......','#..##...................#......www.','#...#.......wwww...............www.','#...#.......wwww...............www.','#...........wwww....g..............','#......g............g.......#......','#......g....#...............#......','#......g....#...............#......','#...........###.....v..............','#..ww....................###....gg.','#..ww......................#....gg.','#..ww.......g..............#....gg.','#..ww.......g......wwww............','#..................wwww.....v......','#..................wwww.....v......','#....###...v...................#...','#......#.............ggg.......#...','#....................ggg.......v..w','#......#.............ggg.......#...','#....###...v...................#...','#..................wwww.....v......','#..................wwww.....v......','#..ww.......g......wwww............','#..ww.......g..............#....gg.','#..ww......................#....gg.','#..ww....................###....gg.','#...........###.....v..............','#......g....#...............#......','#......g....#...............#......','#......g............g.......#......','#...........wwww....g..............','#...#.......wwww...............www.','#...#.......wwww...............www.','#..##...................#......www.','#............vv.........####.......','#...wwww.......#...................','#...wwww.......#...................','#...wwww.......#.........vv........','#..................................','#..................................','###################################'] },
   { id:'flag_desert', name:'사막 평원', desc:'넓은 사막 평원. 가운데 물웅덩이와 가속 발판이 있어요.', big:1, flag5:1,
     th:{'f1': '#cdbb8a', 'f2': '#d6c595', 'wt': '#8a6a44', 'ws': '#5f4529', 'b1': '#2f8f4a', 'b2': '#49b565', 'wa': '#2f8fc4', 'wa2': '#63b8e0'},
     rows:['############################', '#...........................', '#..gg....###.......gg.......', '#..gg....#.........gg...ww..', '#..............##.......ww..', '#.....##.......#............', '#.....#....gg..#.....###....', '#..........gg...............', '#..###............##........', '#....#....p.......#....gg...', '#.........................#.', '#......gg.....###.....gg..#.', '#......gg.......#.........#.', '#...........h.......ww......', '#..##...............ww..p...', '#..........gg.....gg........', '#..##...............ww..p...', '#...........h.......ww......', '#......gg.......#.........#.', '#......gg.....###.....gg..#.', '#.........................#.', '#....#....p.......#....gg...', '#..###............##........', '#..........gg...............', '#.....#....gg..#.....###....', '#.....##.......#............', '#..............##.......ww..', '#..gg....#.........gg...ww..', '#..gg....###.......gg.......', '#...........................', '############################'] },
@@ -4655,13 +4661,13 @@ const MAPS = [
     rows:['############################','#ggggggggg......gggggggggg..','#ggggggggg......gggggggggg..','#ggggggggg......gggggggggg..','#...............gggggggggg..','#...............gggggggggg..','#...............ggggg.......','#www...wwww.....ggggg.......','####...###w.....ggggg.......','#........#w.....ggggg....www','#........#w.....ggggg....www','#...............ggggg....www','#...............ggggg.......','#...............ggggg.......','#........#w.....ggggg....www','#........#w.....ggggg....www','#........#w.....ggggg....www','#...............ggggg.......','#...............ggggg.......','#...............ggggg....www','#........#w.....ggggg....www','#........#w.....ggggg....www','####...###w.....ggggg.......','#www...wwww.....ggggg.......','#...............ggggg.......','#...............gggggggggg..','#...............gggggggggg..','#ggggggggg......gggggggggg..','#ggggggggg......gggggggggg..','#ggggggggg......gggggggggg..','############################'] },
   { id:'big_swamp', name:'습지 난투', desc:'웅덩이가 곳곳에 흩어진 습지. 가운데 웅덩이 사이 좁은 길과 덤불에서 난전이 벌어져요.', big:1,
     th:{ f1:'#d9c38a', f2:'#e0cb95', wt:'#8a6a44', ws:'#5f4529', b1:'#2f8f4a', b2:'#49b565', wa:'#2f8fc4', wa2:'#63b8e0' },
-    rows:['###########################','#..........................','#.wwww........wwwww....ww..','#.wwww........wwwww....ww..','#.........#................','#.........#.....gggggg.....','#.........#.....gggggg.....','#.....#####.....gggggg.....','#..gg..............gg..www.','#..gg..............gg..www.','#.........www..........www.','#.ww......www....#.........','#.ww.............#.........','#......#.....#####....gggg.','#......#..............gggg.','#...####.....ww.......gg...','#............ww.......gg...','#.......ggg................','#............ww.......gg...','#...####.....ww.......gg...','#......#..............gggg.','#......#.....#####....gggg.','#.ww.............#.........','#.ww......www....#.........','#.........www..........www.','#..gg..............gg..www.','#..gg..............gg..www.','#.....#####.....gggggg.....','#.........#.....gggggg.....','#.........#.....gggggg.....','#.........#................','#.wwww........wwwww....ww..','#.wwww........wwwww....ww..','#..........................','###########################'] },
+    rows:['###################################','#..................................','#..................................','#..wwwww...........wwwwww......ww..','#..wwwww...........wwwwww......ww..','#..wwwww...........wwwwww......ww..','#............#.....................','#............#.......gggggggg......','#............#.......gggggggg......','#............#.......gggggggg......','#.......#######......gggggggg......','#...ggg..................ggg...www.','#...ggg..................ggg...www.','#...ggg..................ggg...www.','#............wwww..............www.','#..ww........wwww......#...........','#..ww........wwww......#...........','#..ww..................#...........','#........#.......#######.....ggggg.','#........#...................ggggg.','#........#...................ggggg.','#....######......www.........ggg...','#................www.........ggg...','#..........gggg....................','#................www.........ggg...','#....######......www.........ggg...','#........#...................ggggg.','#........#...................ggggg.','#........#.......#######.....ggggg.','#..ww..................#...........','#..ww........wwww......#...........','#..ww........wwww......#...........','#............wwww..............www.','#...ggg..................ggg...www.','#...ggg..................ggg...www.','#...ggg..................ggg...www.','#.......#######......gggggggg......','#............#.......gggggggg......','#............#.......gggggggg......','#............#.......gggggggg......','#............#.....................','#..wwwww...........wwwwww......ww..','#..wwwww...........wwwwww......ww..','#..wwwww...........wwwwww......ww..','#..................................','#..................................','###################################'] },
   { id:'field', name:'들판', desc:'가운데를 세로로 가르는 덤불 띠와 모서리 덤불숲. 연못과 낮은 벽 뒤에 숨으며 싸워요.',
     th:{ f1:'#2a2850', f2:'#2f2d5b', wt:'#f4b942', ws:'#c98a1b', b1:'#1f9d78', b2:'#2fc797', wa:'#3a7fc4', wa2:'#63a4e0' },
     rows:['#############','#ggg...ww#.gg','#ggg...ww#.gg','#ggg.......gg','####.......gg','#.....#ww..gg','#.....#ww..gg','#..........gg','#..........gg','#..........gg','#.....#ww..gg','#.....#ww..gg','####.......gg','#ggg.......gg','#ggg...ww#.gg','#ggg...ww#.gg','#############'] },
   { id:'cross_plaza', name:'십자 광장', desc:'큰 호수 네 개가 십자 모양 길을 만든 광장. 길이 모이는 한가운데 덤불에서 자주 마주쳐요.', big:1,
     th:{ f1:'#5a5346', f2:'#625b4d', wt:'#c9b27a', ws:'#8f7a4a', b1:'#3f7a3a', b2:'#58a04f', wa:'#3a7fc4', wa2:'#63a4e0' },
-    rows:['###########################','#gggg#.................ggg.','#gggg..................ggg.','#gggg#.................ggg.','##..#..................ggg.','#.......wwwwwwwwwwwwww.....','#.......wwwwwwwwwwwwww.....','#.......wwwwwwwwwwwwww..gg.','#.......wwwwwwwwwwwwww..gg.','#.......wwwwwwwwwwwww......','#.......wwwwwwwwwwww.......','#.......wwwwwwwwwww........','#..........................','#..........................','#ggggggggggggggg......gg...','#ggggggggggggggg......gg...','#..........................','#.................#.......g','#..........................','#ggggggggggggggg......gg...','#ggggggggggggggg......gg...','#..........................','#..........................','#.......wwwwwwwwwww........','#.......wwwwwwwwwwww.......','#.......wwwwwwwwwwwww......','#.......wwwwwwwwwwwwww..gg.','#.......wwwwwwwwwwwwww..gg.','#.......wwwwwwwwwwwwww.....','#.......wwwwwwwwwwwwww.....','##..#..................ggg.','#gggg#.................ggg.','#gggg..................ggg.','#gggg#.................ggg.','###########################'], duoSp:[[5,7],[6,8]] },
+    rows:['###################################','#gggggg#.......................ggg.','#gggggg#.......................ggg.','#gggggg........................ggg.','#gggggg#.......................ggg.','#gggggg........................ggg.','###..#.........................ggg.','#..........wwwwwwwwwwwwwwwwww......','#..........wwwwwwwwwwwwwwwwww......','#..........wwwwwwwwwwwwwwwwww......','#..........wwwwwwwwwwwwwwwwww...gg.','#..........wwwwwwwwwwwwwwwwww...gg.','#..........wwwwwwwwwwwwwwwww.......','#..........wwwwwwwwwwwwwwwww.......','#..........wwwwwwwwwwwwwwww........','#..........wwwwwwwwwwwwww..........','#..........wwwwwwwwwwwwww..........','#..................................','#..................................','#gggggggggggggggggggg........ggg...','#gggggggggggggggggggg........ggg...','#gggggggggggggggggggg........ggg...','#..................................','#.......................#.........g','#..................................','#gggggggggggggggggggg........ggg...','#gggggggggggggggggggg........ggg...','#gggggggggggggggggggg........ggg...','#..................................','#..................................','#..........wwwwwwwwwwwwww..........','#..........wwwwwwwwwwwwww..........','#..........wwwwwwwwwwwwwwww........','#..........wwwwwwwwwwwwwwwww.......','#..........wwwwwwwwwwwwwwwww.......','#..........wwwwwwwwwwwwwwwwww...gg.','#..........wwwwwwwwwwwwwwwwww...gg.','#..........wwwwwwwwwwwwwwwwww......','#..........wwwwwwwwwwwwwwwwww......','#..........wwwwwwwwwwwwwwwwww......','###..#.........................ggg.','#gggggg........................ggg.','#gggggg#.......................ggg.','#gggggg........................ggg.','#gggggg#.......................ggg.','#gggggg#.......................ggg.','###################################'], duoSp:[[7,10],[8,11]] },
   { id:'hot_twoside', name:'양면 전쟁', desc:'네 모서리 덤불 방에서 출발해 가운데 배틀 존으로 모여요. 배틀 존 한복판에 회복 발판이 있고, 가속 발판 길이 원으로 곧장 이어져요. 원 둘레의 꺾인 벽과 덤불 뒤에서 기회를 노려요.', big:1, hot:1,
     th:{ f1:'#3d4a5c', f2:'#435163', wt:'#d9b36c', ws:'#9a7640', b1:'#2f8a4a', b2:'#46b064', wa:'#2f8fc4', wa2:'#63b8e0' },
     rows:['###################','#ggggg#wwwwwwwwwwww','#g...g#w...........','#g...g#w...........','#g.................','#ggg...........#...','####...........#..p','#www........ggg#..p','#w..........ggg#..p','#w..........ggg#..p','#w........######...','#w........#ggg.....','#w.....ggg#ggg.....','#w.....ggg#ggg.....','#w.....ggg#........','#w...######........','#w.................','#w.................','#w....pppp........h','#w.................','#w.................','#w...######........','#w.....ggg#........','#w.....ggg#ggg.....','#w.....ggg#ggg.....','#w........#ggg.....','#w........######...','#w..........ggg#..p','#w..........ggg#..p','#www........ggg#..p','####...........#..p','#ggg...........#...','#g.................','#g...g#w...........','#g...g#w...........','#ggggg#wwwwwwwwwwww','###################'] },
@@ -4676,14 +4682,13 @@ const MAPS = [
     rows:['#############','#..ggggggggg#','#............','#............','#............','#..ggggggggg#','#..ggggggggg#','#..wwwwwwwwww','#..wwwwwwwwww','#..wwwwwwwwww','#..ggggggggg#','#..ggggggggg#','#............','#............','#............','#..ggggggggg#','#############'] },
   { id:'tournament', name:'토너먼트', desc:'방 여덟 개에서 여덟 명이 따로 출발해요. 방마다 좁은 문 하나로 가운데 긴 복도와 이어지고, 복도 한가운데 연못 둘레에서 마지막 승부가 나요.', big:1,
     th:{ f1:'#c9a46e', f2:'#d1ad78', wt:'#a85a3c', ws:'#6e3420', b1:'#3f7a3a', b2:'#58a04f', wa:'#2f8fc4', wa2:'#63b8e0' },
-    rows:['###########################','#ggg........#wwwwwwwww#....','#ggg........#.........#....','#ggg........#.........#....','#...........#.........#....','#...........###...#####....','#.....gg...................','#######gg.......gggg.......','#w.....#........gggg.......','#w.....#...................','#w.....#.........#####.....','#w.........................','#w.....#...................','#w.....#.....ww............','#wwwwww#.....ww....gggg....','########...........gggg....','#ggg.....................ww','#ggg..........#.........www','#ggg.....................ww','########...........gggg....','#wwwwww#.....ww....gggg....','#w.....#.....ww............','#w.....#...................','#w.........................','#w.....#.........#####.....','#w.....#...................','#w.....#........gggg.......','#######gg.......gggg.......','#.....gg...................','#...........###...#####....','#...........#.........#....','#ggg........#.........#....','#ggg........#.........#....','#ggg........#wwwwwwwww#....','###########################'] },
+    rows:['###################################','#gggg...........#wwwwwwwwwwww#.....','#gggg...........#wwwwwwwwwwww#.....','#gggg...........#............#.....','#gggg...........#............#.....','#gggg...........#............#.....','#...............#............#.....','#...............####....#######....','#.......ggg........................','#.......ggg........................','#########ggg.........gggggg........','#ww......#...........gggggg........','#ww......#.........................','#ww......#.........................','#ww......#.............######......','#ww................................','#ww................................','#ww......#.........................','#ww......#.......www...............','#wwwwwwww#.......www.....gggggg....','#wwwwwwww#.......www.....gggggg....','###########..............gggggg....','#gggg............................ww','#gggg..............#............www','#gggg............................ww','###########..............gggggg....','#wwwwwwww#.......www.....gggggg....','#wwwwwwww#.......www.....gggggg....','#ww......#.......www...............','#ww......#.........................','#ww................................','#ww................................','#ww......#.............######......','#ww......#.........................','#ww......#.........................','#ww......#...........gggggg........','#########ggg.........gggggg........','#.......ggg........................','#.......ggg........................','#...............####....#######....','#...............#............#.....','#gggg...........#............#.....','#gggg...........#............#.....','#gggg...........#............#.....','#gggg...........#wwwwwwwwwwww#.....','#gggg...........#wwwwwwwwwwww#.....','###################################'] },
   { id:'flag_canal', name:'대운하', desc:'맵 가운데를 큰 운하가 가로지르고, 한가운데 다리 하나와 양 끝 둑길로만 건널 수 있어요. 깃발은 운하 양 끝 둑에 있고, 위아래 길의 가속 발판을 타면 상대 진영까지 빠르게 돌아 들어가요.', big:1, flag5:1,
     th:{ f1:'#4b5563', f2:'#525c6b', wt:'#c9a46e', ws:'#8f7347', b1:'#2f7a3a', b2:'#45984f', wa:'#1f6fa8', wa2:'#4fa3d9' },
-    rows:['############################','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','#ggg#.................####..','#ggg#.......................','#ggg#..ppppppppppppp........','#####.......................','#...........................','#.....................####..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#.....................####..','#...........................','#####.......................','#ggg#..ppppppppppppp........','#ggg#.......................','#ggg#.................####..','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','############################'] }
-,
-  { id:'pitch', name:'초록 구장', desc:'양쪽 끝에 골대가 있는 축구장. 골대 앞 낮은 벽과 네 모서리 덤불을 끼고 공을 몰아요.', ball:1,
+    rows:['############################','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','#ggg#.................####..','#ggg#.......................','#ggg#..ppppppppppppp........','#####.......................','#...........................','#.....................####..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....wwwwwwwwwwwwwwwwwwwww..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#....gggggggggggggggggggg#..','#.....................####..','#...........................','#####.......................','#ggg#..ppppppppppppp........','#ggg#.......................','#ggg#.................####..','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','#gggggggggggggggggggggggg#..','############################'] },
+  { id:'pitch', name:'초록 구장', desc:'양쪽 골대 사이 넓은 축구장. 가운데 위아래 벽, 골대 옆 기둥, 덤불을 끼고 돌파해요. 골대 앞 길은 탁 트여 있어요.', ball:1,
     th:{ f1:'#3f8f3a', f2:'#46993f', wt:'#eef2f5', ws:'#9aa8b5', b1:'#2a6f2a', b2:'#3c8f39', wa:'#3a7fc4', wa2:'#63a4e0' },
-    rows:['##############','##..gg........','##..gg........','##............','##.......##...','##............','#.............','#.............','#.............','#.............','#.............','##............','##.......##...','##............','##..gg........','##..gg........','##############'] },
+    rows:['#################','##...gg..........','##...gg....##....','##.........##....','##...............','##.....#.....gg..','##.....#.....gg..','#................','#..........##....','#................','#................','#................','#..........##....','#................','##.....#.....gg..','##.....#.....gg..','##...............','##.........##....','##...gg....##....','##...gg..........','#################'] },
 ];
 for (const m of MAPS) m.grid = m.rows.map(r => r + [...r.slice(0, r.length - 1)].reverse().join(''));
 let COLS = 25, ROWS = 17, WW = COLS * T, WH = ROWS * T;      // set by loadMap(): the big 원 레프트 maps are larger
@@ -4749,20 +4754,20 @@ let modeChoice = 'team', curMode = 'team', RD = { n: 1, pause: 0, win: -1, out: 
 /* 캡쳐 플래그: one flag per team. by = index of the fighter carrying it (-1 = on the ground), home = standing on its base, back = seconds until a dropped flag goes home by itself */
 let FLAGS = [];
 const FLAG_BACK = 8, FLAG_R = 38;
-const SZ = { on: false, x: 0, y: 0, r: 0, r0: 0, gx: 0, gy: 0, acc: 0 }, SZ_WAIT = 12, SZ_MIN = 2.2 * T;
+const SZ = { on: false, x: 0, y: 0, r: 0, r0: 0, gx: 0, gy: 0, acc: 0 }, SZ_WAIT = 12, SZ_MIN = 2.2 * T; const SOLO_GUARD = 2.5;
 /* 4팀 핫존: one circle in the middle of the map. The team with the most fighters in it fills its bar (HZ.p, 0..100; score[t] = the whole percent); two or more teams in it = nobody fills.
    own: -1 empty, -2 contested, else the team filling. n: fighters of each team inside. SP: three spawn spots per corner (team 0 top left, 1 top right, 2 bottom left, 3 bottom right) */
 const HZ = { on: false, x: 0, y: 0, r: 0, own: -1, p: [0, 0, 0, 0], n: [0, 0, 0, 0], SP: [] }, HZ_RATE = 2;      // percent a second for the one team in the circle (alone the whole time: 50 s to win)
 const modeOf = id => MODES.find(m => m.id === id && m.ready) || MODES[0];
 const modeNow = () => modeOf(curMode);
 /* the small mode state that rides in every snapshot (net.js: `md`) so guests can draw it: round number, and later the flags / safe zone */
-function modeSnap() { const o = { rn: RD.n, rp: RD.pause > 0 ? 1 : 0 }; if (DUEL.line) { o.dl = DUEL.line; o.di = DUEL.li; } if (SZ.on) { o.z = [Math.round(SZ.x), Math.round(SZ.y), Math.round(SZ.r)]; o.w = RD.win; o.o = RD.out; } if (FLAGS.length) o.f = FLAGS.map(g => [Math.round(g.x), Math.round(g.y), g.by, g.home ? 1 : 0, Math.round(g.back * 10) / 10]); if (HZ.on) o.h = [HZ.own, Math.round(HZ.x), Math.round(HZ.y), Math.round(HZ.r)]; if (BALL.on) o.bl = [Math.round(BALL.x), Math.round(BALL.y), Math.round(BALL.vx), Math.round(BALL.vy), BALL.gt]; return o; }
+function modeSnap() { const o = { rn: RD.n, rp: RD.pause > 0 ? 1 : 0 }; if (DUEL.line) { o.dl = DUEL.line; o.di = DUEL.li; } if (SZ.on) { o.z = [Math.round(SZ.x), Math.round(SZ.y), Math.round(SZ.r)]; o.w = RD.win; o.o = RD.out; } if (FLAGS.length) o.f = FLAGS.map(g => [Math.round(g.x), Math.round(g.y), g.by, g.home ? 1 : 0, Math.round(g.back * 10) / 10]); if (HZ.on) o.h = [HZ.own, Math.round(HZ.x), Math.round(HZ.y), Math.round(HZ.r)]; if (BALL.on) o.bl = [Math.round(BALL.x), Math.round(BALL.y), Math.round(BALL.vx), Math.round(BALL.vy), BALL.gt, BALL.sci]; return o; }
 function applyModeSnap(o) {
   if (!o || typeof o !== 'object') return;
   if (o.rn > 0) RD.n = o.rn | 0; RD.pause = o.rp ? 1 : 0;
   if (Array.isArray(o.dl) && o.dl.length === 2 && Array.isArray(o.di)) { DUEL.line = o.dl.map(l => Array.isArray(l) ? l.slice(0, DUEL_N).map(id => HEROES[id] ? id : null) : []); DUEL.li = [o.di[0] | 0, o.di[1] | 0]; } else DUEL.line = null;
   SZ.on = Array.isArray(o.z) && o.z.length === 3;
-  if (Array.isArray(o.bl) && o.bl.length === 5) { if (!BALL.on) ballStart(); BALL.x = +o.bl[0] || 0; BALL.y = +o.bl[1] || 0; BALL.vx = +o.bl[2] || 0; BALL.vy = +o.bl[3] || 0; BALL.gt = o.bl[4] | 0; BALL.st = performance.now(); } else BALL.on = false;
+  if (Array.isArray(o.bl) && o.bl.length >= 5) { if (!BALL.on) ballStart(); BALL.x = +o.bl[0] || 0; BALL.y = +o.bl[1] || 0; BALL.vx = +o.bl[2] || 0; BALL.vy = +o.bl[3] || 0; BALL.gt = o.bl[4] | 0; BALL.sci = o.bl[5] == null ? -1 : o.bl[5] | 0; BALL.st = performance.now(); } else BALL.on = false;
   HZ.on = Array.isArray(o.h) && o.h.length === 4; if (HZ.on) { HZ.own = clamp(o.h[0] | 0, -2, 3); HZ.x = +o.h[1] || 0; HZ.y = +o.h[2] || 0; HZ.r = Math.max(0, +o.h[3] || 0); }
   if (Array.isArray(o.f) && o.f.length === 2) { if (FLAGS.length !== 2) flagsReset(); o.f.forEach((v, t) => { if (!Array.isArray(v)) return; const g = FLAGS[t]; g.x = +v[0] || 0; g.y = +v[1] || 0; g.by = v[2] | 0; g.home = !!v[3]; g.back = +v[4] || 0; }); } else FLAGS = [];
   if (SZ.on) { SZ.x = +o.z[0] || 0; SZ.y = +o.z[1] || 0; SZ.r = Math.max(0, +o.z[2] || 0); RD.win = o.w | 0; RD.out = Array.isArray(o.o) ? o.o.slice(0, 8).map(v => v | 0) : []; }
@@ -5048,7 +5053,7 @@ function arc(f, ang, range, half, dmg, o) {
   o = o || {}; const out = [];
   for (const e of foes(f)) {
     const dx = e.x - f.x, dy = e.y - f.y, d = Math.hypot(dx, dy);
-    if (d > range + 18) continue;
+    if (d > range + 10) continue;      // 2026-11-14: melee reach slack 18 -> 10
     let da = Math.atan2(dy, dx) - ang; da = Math.atan2(Math.sin(da), Math.cos(da));
     if (Math.abs(da) > half && d > 26) continue;
     if (!los(f.x, f.y, e.x, e.y)) continue;
@@ -5134,7 +5139,7 @@ function botLoadout(h) { const p = h.skills.slice().sort(() => Math.random() - .
 function loadMap(i) {
   curMap = i; MAP = MAPS[i].grid.map(r => r.split('')); ROWS = MAP.length; COLS = MAP[0].length; WW = COLS * T; WH = ROWS * T; TH = MAPS[i].th; tempWalls.clear(); NET.mapVer++; envReset();
   const d = bfs(1, ROWS >> 1); ROAM = [];
-  SOLO_SP = []; for (let k = 0; k < 8; k++) { const a = (k + .5) * Math.PI / 4; SOLO_SP.push(freeNear(WW / 2 + Math.cos(a) * (WW / 2 - 2 * T), WH / 2 + Math.sin(a) * (WH / 2 - 2 * T))); }      // 2026-11-14: 8 players on the 53 x 35 maps
+  SOLO_SP = []; for (let k = 0; k < 8; k++) { const a = (k + .5) * Math.PI / 4; SOLO_SP.push(freeNear(WW / 2 + Math.cos(a) * (WW / 2 - 2 * T), WH / 2 + Math.sin(a) * (WH / 2 - 2 * T))); }      // 2026-11-14: 8 players; maps 69 x 47 since the second enlargement
   DUO_SP = []; for (let k = 0; k < 4; k++) { const a = (k + .5) * Math.PI / 2, bx = WW / 2 + Math.cos(a) * (WW / 2 - 4 * T), by = WH / 2 + Math.sin(a) * (WH / 2 - 4 * T), px = -Math.sin(a) * .9 * T, py = Math.cos(a) * .9 * T, p0 = freeNear(bx + px, by + py); let p1 = freeNear(bx - px, by - py); if (p1.x === p0.x && p1.y === p0.y) p1 = freeNear(bx - px * 2.2, by - py * 2.2); DUO_SP.push([p0, p1]); }
   if (MAPS[i].duoSp) DUO_SP = DUO_SP.map((_, k) => { const a = (k + .5) * Math.PI / 2, fx = Math.cos(a) > 0, fy = Math.sin(a) > 0; return MAPS[i].duoSp.map(([c, r]) => ({ x: ((fx ? COLS - 1 - c : c) + .5) * T, y: ((fy ? ROWS - 1 - r : r) + .5) * T })); });      // a map can place the pairs itself (십자 광장: both partners on the same side of the lake)
   for (let r = 1; r < ROWS - 1; r += 2) for (let c = 4; c < COLS - 4; c += 2) if (!blocked(c, r) && d[c + r * COLS] > 0) ROAM.push([c, r]);
@@ -5286,7 +5291,7 @@ const AI_PERS = {
   saver: { want: .6, low: .3, sk: .6, st: [.6, 1.5], flip: .6, save: 1 }
 };
 const AI_PERS_IDS = Object.keys(AI_PERS), AI_PERS0 = { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6 };      // (the old single behaviour)
-const AI_LV = { aim: .21, lead: .42, coolR: [.34, 1.0], coolM: [.14, .46], sk: .032, ult: .04 };      // 2026-11-13 (developer): easier bots (was aim .13 lead .62 coolR .24-.78 coolM .07-.34 sk .045 ult .055)
+const AI_LV = { aim: .30, lead: .25, coolR: [.5, 1.35], coolM: [.25, .65], sk: .022, ult: .028 };      // 2026-11-14: easier bots (was aim .21 lead .42 coolR .34-1.0 coolM .14-.46 sk .032 ult .04)
 function kiteStep(f, reach) {
   const ts = foes(f).filter(e => !e.dead && !e.minion && !B(e, 'ally') && dist(f, e) < reach * 1.2 && visibleTo(e, teamOf(f)));
   if (!ts.length) return null;
@@ -5538,7 +5543,7 @@ function updateBullets(dt) {
       if (BALL.on && !dead && ballShot(b)) { dead = true; if (!b.splash) b.silent = 1; break; }
       for (const e of foes({ team: b.team, b: {} })) {
         if (e === b.owner || b.hit.has(e)) continue;
-        if (Math.hypot(e.x - b.x, e.y + BODY - b.y) >= 20 + b.r + (o.pad || 0)) continue;      // o.pad: a more forgiving hitbox (군인)
+        if (Math.hypot(e.x - b.x, e.y + BODY - b.y) >= 23 + b.r + (o.pad || 0)) continue;      // 2026-11-14: body 20 -> 23 (ranged hit more often)      // o.pad: a more forgiving hitbox (군인)
         if (!e.minion) {
           if (B(e, 'sand') || e.form === 'sub') continue;
           if (B(e, 'reflect')) { b.vx = -b.vx; b.vy = -b.vy; b.ang += Math.PI; b.team = teamOf(e); b.owner = e; b.hit.clear(); b.life = Math.max(b.life, 300); b.home = null; ring(e.x, e.y + BODY, 40, '#ffffff', .2); if (e.h.onReflect) e.h.onReflect(e); break; }
@@ -5632,6 +5637,7 @@ function modeStart() {
   if (curMode === 'hot4') Object.assign(HZ, { on: true, x: WW / 2, y: WH / 2, r: (MAPS[curMap].hz || 4) * T, own: -1, p: [0, 0, 0, 0], n: [0, 0, 0, 0] });
   if (!isLeft(curMode)) return;
   const g = freeNear(WW / 2, WH / 2);
+  if (curMode === 'solo') for (const f of fighters) f.inv = SOLO_GUARD;      // 원 레프트: nobody can be hurt for the first SOLO_GUARD s (gold bubble, tail.js)
   Object.assign(SZ, { on: true, x: WW / 2, y: WH / 2, r0: Math.hypot(WW, WH) / 2, r: Math.hypot(WW, WH) / 2, gx: g.x, gy: g.y, acc: 0 });
 }
 function soloStep(dt) {
@@ -5976,7 +5982,7 @@ function drawEnvOverlay() {       // screen space, called by tail.js render() af
    inside a goal mouth (the floor tiles in column 1 / COLS-2). After a goal everyone goes back to their side for a kickoff after BALL_PAUSE s.
    First to MODE.win goals, or the most when the clock runs out; level = the usual overtime (next goal wins, a draw after OT_MAX).
    The host runs the ball; it rides in the mode snapshot (`bl`) and guests slide it along its speed between snapshots. ===== */
-const BALL_R = 18, BALL_MAX = 1150, BALL_FRIC = 1.15, BALL_PAUSE = 3;
+const BALL_R = 18, BALL_MAX = 1150, BALL_FRIC = 1, BALL_PAUSE = 3;
 const BALL = { on: false, x: 0, y: 0, vx: 0, vy: 0, rot: 0, last: null, gt: -1, gy0: 0, gy1: 0, pp: new Map(), dx: 0, dy: 0, st: 0 };
 function ballStart() {
   BALL.on = true; let r0 = 1e9, r1 = -1;
@@ -5984,7 +5990,7 @@ function ballStart() {
   if (r1 < 0) { r0 = (ROWS >> 1) - 2; r1 = r0 + 4; }
   BALL.gy0 = r0 * T; BALL.gy1 = (r1 + 1) * T; ballReset();
 }
-function ballReset() { Object.assign(BALL, { scf: null, x: WW / 2, y: WH / 2, vx: 0, vy: 0, last: null, gt: -1, dx: WW / 2, dy: WH / 2 }); BALL.pp.clear(); }
+function ballReset() { Object.assign(BALL, { sci: -1, x: WW / 2, y: WH / 2, vx: 0, vy: 0, last: null, gt: -1, dx: WW / 2, dy: WH / 2 }); BALL.pp.clear(); }
 const ballSpawn = (team, slot) => freeNear((team === 0 ? 4.5 : COLS - 4.5) * T, (ROWS / 2 + ((slot | 0) - 1) * 2.6) * T);
 const ballGoalOf = t => ({ x: (t === 0 ? 1.2 : COLS - 1.2) * T, y: (BALL.gy0 + BALL.gy1) / 2 });      // the goal team t defends
 /* every kick: the ball's speed along (nx, ny) becomes at least p (kicks do not stack into a rocket); by = who touched it last */
@@ -6000,7 +6006,7 @@ function ballArc(f, ang, range, half, kb) {
   if (d > range + BALL_R + 6) return;
   let da = Math.atan2(dy, dx) - ang; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) > half + .25 && d > 30) return;
   if (!los(f.x, f.y, BALL.x, BALL.y)) return;
-  ballKick(f, Math.cos(ang), Math.sin(ang), clamp(520 + (kb || 0) * 1.2, 520, 1050));
+  ballKick(f, Math.cos(ang), Math.sin(ang), clamp(720 + (kb || 0) * 1.2, 720, 1100));
 }
 function ballCirc(by, x, y, r, dmg, o) {
   if (!(dmg > 0) && !o.kb) return;
@@ -6017,7 +6023,7 @@ function ballPath(f, x0, y0, x1, y1, w) {
 /* a shot touching the ball: true = the shot stops there */
 function ballShot(b) {
   if (b.hitBall || Math.hypot(BALL.x - b.x, BALL.y + BODY - b.y) >= BALL_R + (b.r || 5) + 6) return false;
-  b.hitBall = 1; ballKick(b.owner, b.vx, b.vy, clamp(300 + (b.dmg || 0) * 5, 320, 950));
+  b.hitBall = 1; ballKick(b.owner, b.vx, b.vy, clamp(480 + (b.dmg || 0) * 5, 520, 1000));
   if (fxInView(b.x, b.y)) burst(BALL.x, BALL.y + BODY, '#ffffff', 5, 160);
   return !b.boom && !(b.pierce > 0);
 }
@@ -6061,13 +6067,19 @@ function ballStep(dt) {
   ballBodies(dt);
   if (BALL.y > BALL.gy0 && BALL.y < BALL.gy1) {
     const t = BALL.x < 2 * T - BALL_R * .4 ? 1 : BALL.x > WW - 2 * T + BALL_R * .4 ? 0 : -1;      // into team 0's goal (left) = a goal for team 1
-    if (t >= 0) ballGoal(t);
+    if (t >= 0) {
+      if (BALL.last && BALL.last.team === t) ballGoal(t);
+      else {      // no own goals: the ball bounces back out of your own goal (2026-11-14, user)
+        BALL.x = t === 1 ? 2 * T + BALL_R * .2 : WW - 2 * T - BALL_R * .2; BALL.vx = (t === 1 ? 1 : -1) * Math.max(380, Math.abs(BALL.vx) * .7);
+        if (fxInView(BALL.x, BALL.y)) ring(BALL.x, BALL.y, 46, '#ffffff', .25);
+      }
+    }
   }
   return RD.pause > 0;
 }
 function ballGoal(t) {
   score[t]++; BALL.gt = t; RD.pause = BALL_PAUSE; BALL.vx *= .25; BALL.vy *= .25;
-  const sc = BALL.last && BALL.last.team === t ? BALL.last : null; BALL.scf = sc;
+  const sc = BALL.last && BALL.last.team === t ? BALL.last : null; BALL.sci = sc ? fighters.indexOf(sc) : -1;
   if (sc) { sc.goals = (sc.goals | 0) + 1; addText({ x: sc.x, y: sc.y - 110, txt: '골!', life: 1.6, color: '#ffd34d' }); }
   const g = ballGoalOf(1 - t);
   fx('respawn', g.x, g.y - 20, { color: TC(t) }); burst(BALL.x, BALL.y, '#ffd34d', 26, 380); burst(BALL.x, BALL.y, TC(t), 18, 300);
@@ -6088,12 +6100,12 @@ function ballBot(f) {
   const nearOwn = Math.hypot(BALL.x - OG.x, BALL.y - OG.y) < 7 * T;
   const last = role === mates.length - 1 && mates.length > 1;
   if (role === 0 || (last && nearOwn)) {
-    if (bd < 1.6 * T) return null;      // somebody is in my face: fight
+    if (bd < 1.0 * T) return null;      // somebody is in my face: fight
     const [dx, dy] = role === 0 && !(nearOwn && last) ? norm(EG.x - BALL.x, EG.y - BALL.y) : norm(BALL.x - OG.x, BALL.y - OG.y);
     const fx0 = BALL.x - f.x, fy0 = BALL.y - f.y, d = Math.hypot(fx0, fy0), along = fx0 * dx + fy0 * dy, side = fx0 * dy - fy0 * dx;
-    if (along > 0 && Math.abs(side) < 30) {      // lined up behind the ball: run through it, and hit it
+    if (along > 0 && Math.abs(side) < Math.max(34, along * .35)) {      // lined up behind the ball: run through it, and hit it
       const reach = f.h.type === 'melee' ? (f.h.range || 60) + BALL_R : Math.min(f.h.range || 400, 6 * T);
-      if (d < reach && Math.random() < .5) fire(f, Math.atan2(fy0, fx0));
+      if (d < reach) fire(f, Math.atan2(fy0, fx0));
       return pathTo(f, BALL.x + dx * 40, BALL.y + dy * 40);
     }
     const bx = BALL.x - dx * (BALL_R + 40), by = BALL.y - dy * (BALL_R + 40);
@@ -6163,7 +6175,7 @@ function drawBallOverlay() {       // screen space: an arrow to the ball when it
     ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(0, 0, 9, 0, 7); ctx.fill(); ctx.rotate(a); ctx.beginPath(); ctx.moveTo(26, 0); ctx.lineTo(16, -8); ctx.lineTo(16, 8); ctx.closePath(); ctx.fill(); ctx.restore();
   }
   if (RD.pause > 0 && BALL.gt >= 0) {      // GOAL!: a slanted ribbon in the scoring team's colour, with the scorer's name
-    const col = TC(BALL.gt), k = Math.min(W / 760, 1.25), sc = BALL.scf && BALL.scf.team === BALL.gt ? BALL.scf : null, nm = sc ? (sc.nick || sc.h0.name) : '';
+    const col = TC(BALL.gt), k = Math.min(W / 760, 1.25), sc = fighters[BALL.sci] && fighters[BALL.sci].team === BALL.gt ? fighters[BALL.sci] : null, nm = sc ? (sc.nick || sc.h0.name) : '';
     const txt = (s, x, y, size, fill, lw, font) => { ctx.font = (font || '800 ') + Math.round(size) + 'px Rajdhani, "Black Han Sans", "IBM Plex Sans KR", sans-serif'; ctx.lineWidth = lw; ctx.strokeStyle = '#0c0e13'; ctx.strokeText(s, x, y); ctx.fillStyle = fill; ctx.fillText(s, x, y); };
     ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
     ctx.translate(W / 2, H * .46); ctx.rotate(-.08);
@@ -6186,7 +6198,7 @@ function hero(id, k) {
   const h = { id, w, name: WEAPON_PERSONA_NAME[id] || w.name, wname: w.name, hp: MAX_HP, count: 1, burst: w.burst || 1, bdelay: w.burstDelay || 0, fan: 0, spread: w.spread || 0, dmg: w.dmg, cd: Math.max(.25, w.cd) };
   if (w.kind === 'melee') { h.type = 'melee'; h.range = w.range * .95 + 12; h.half = w.thrust ? .42 : .95; h.kb = 240 * (w.kbMult || 1); }
   else {
-    h.type = 'shot'; h.bspd = (w.bulletSpeed || 800) * .8; h.range = clamp((w.bulletSpeed || 800) * (w.life || 1.2) * .5, 4.5 * T, 11 * T);
+    h.type = 'shot'; h.bspd = (w.bulletSpeed || 800) * .9; h.range = clamp((w.bulletSpeed || 800) * (w.life || 1.2) * .5, 4.5 * T, 11 * T);      // 2026-11-14: bspd .8 -> .9 (faster shots)
     if (w.kind === 'shotgun') { h.count = 5; h.fan = .5; h.range = 5.5 * T; }
     if (w.kind === 'cards') { h.count = 3; h.fan = .3; }
     if (w.kind === 'explosive') h.splash = w.splash * U;
@@ -6218,9 +6230,9 @@ hero('sword', { p: ['기사도', '상대에게 피해를 줄 때마다 5% 확률
     }]
   ] });
 
-hero('pistol', { p: ['붉은 탄환', '6번째 발사마다 탄환이 붉게 변하고 피해와 크기가 1.25배'],
-  pre(f, o) { if (f.st.big) { f.st.big = 0; return Object.assign(o, { dmg: 66, r: 12, pierce: 99, wb: 1, spd: f.h.bspd * 1.5, range: 11 * T, shape: 'kdgun' }); }
-    f.st.n = (f.st.n || 0) + 1; if (f.st.n % 6 === 0) { o.dmg = f.h.dmg * 1.25; o.r = 7; o.shape = 'chip'; } if (B(f, 'auto')) { o.homing = true; o.turn = 2.5; } return o; },
+hero('pistol', { p: ['붉은 탄환', '5번째 발사마다 탄환이 붉게 변하고 피해와 크기가 1.25배'],
+  pre(f, o) { if (f.st.big) { f.st.big = 0; return Object.assign(o, { dmg: 66, r: 12, pierce: 99, wb: 1, spd: f.h.bspd * 1.5, range: 11 * T, shape: 'redshot' }); }
+    f.st.n = (f.st.n || 0) + 1; if (f.st.n % 5 === 0) { o.dmg = f.h.dmg * 1.25; o.r = 7; o.shape = 'redshot'; } if (B(f, 'auto')) { o.homing = true; o.turn = 2.5; } return o; },
   tick(f) { if (B(f, 'auto')) { const e = nearest(f, f.h.range, null, 0); if (e) f.aim = angTo(f, e); } },
   ult: ['강화탄', '다음 발사 때 데미지 924의 크고 빠른 탄환 1발 (플레이어와 벽을 뚫고 나아감)', [0, 9 * T], f => { f.st.big = 1; f.fireCd = 0; }],
   skills: [
@@ -6228,7 +6240,7 @@ hero('pistol', { p: ['붉은 탄환', '6번째 발사마다 탄환이 붉게 변
     [2, '정확한 발사', 'hit', '유도 총알 발사 · 0.75초 동안 상대를 따라가고 그 뒤로는 마지막 방향으로 일직선', [100, 9 * T], (f, a) => emit(f, a, { skill: 1, dmg: 17, homing: true, homeT: .75, turn: 7, range: 10 * T, r: 6 })],
     [3, '양손 권총', 'buff', '1초 동안 양손에 권총 · 기본공격 쿨타임 50% 감소', [0, 8 * T], f => buff(f, 'rapid', 1, .5)],
     [4, '자동 조준', 'buff', '1.5초 동안 권총이 가장 가까운 상대를 자동 조준(커서 무시) · 발사한 탄은 약간 유도됨', [0, 8 * T], f => buff(f, 'auto', 1.5)],
-    [5, '마지막 한 발', 'hit', '지난 3초 동안 자신이 받은 피해와 같은 피해의 대형 탄 1발 (받은 피해가 없으면 발동 안 됨)', [0, 9 * T], (f, a) => { const d = taken3(f); if (d < 1) return false; emit(f, a, { skill: 1, dmg: d, r: 13, range: 11 * T, shape: 'chip' }); }, { ok: f => taken3(f) > 30 }]
+    [5, '마지막 한 발', 'hit', '지난 3초 동안 자신이 받은 피해와 같은 피해의 대형 탄 1발 (받은 피해가 없으면 발동 안 됨)', [0, 9 * T], (f, a) => { const d = taken3(f); if (d < 1) return false; emit(f, a, { skill: 1, dmg: d, r: 13, range: 11 * T, shape: 'redshot' }); }, { ok: f => taken3(f) > 30 }]
   ] });
 
 hero('bow', { p: ['원거리 사격', '화살이 멀리 날아갈수록 피해가 커짐 (가까울수록 작고 멀수록 큼, 최소 125 ~ 최대 450)'],
@@ -6467,13 +6479,13 @@ hero('samurai', { p: ['명상', '가만히 2초만 서 있어도 치유가 시�
   ] });
 
 hero('harald', { p: ['강인한 맷집', '방패와 도끼로 앞에서 버티는 근접 전사 · 방어 스킬이 많음'], hp: 540,
-  ult: ['도끼 돌진', '도끼를 조준 방향으로 던져 박고, 방패를 들고 박힌 도끼 쪽으로 돌진 (돌진 중 받는 피해 59% 감소) · 돌진하다 부딪힌 상대는 아주 크게 밀려나고 1초 기절 + 333 피해', [60, 7 * T], (f, a) => { buff(f, 'dr', .8, .5); fxAt(f, 'dash', { dir: 1, rot: +a.toFixed(2), color: '#cfd8e3' }); lunge(f, a, 7 * T, .55, { dmg: 35, stun: 1, onHit: e => knock(e, f.x, f.y, 1100) }); }],
+  ult: ['도끼 돌진', '도끼를 조준 방향으로 던져 박고, 방패를 들고 박힌 도끼 쪽으로 돌진 (돌진 중 받는 피해 50% 감소) · 돌진하다 부딪힌 상대는 크게 밀려나고 0.6초 기절 + 266 피해', [60, 6 * T], (f, a) => { buff(f, 'dr', .8, .5); fxAt(f, 'dash', { dir: 1, rot: +a.toFixed(2), color: '#cfd8e3' }); lunge(f, a, 6 * T, .5, { dmg: 28, stun: .6, onHit: e => knock(e, f.x, f.y, 800) }); }],
   skills: [
     [1, '분노', 'buff', '2초 동안 받는 피해 12% 감소', [0, 5 * T], f => buff(f, 'dr', 2, .9)],
-    [2, '방패 강타', 'hit', '방패로 앞의 상대를 밀며 0.5초 기절 (95 피해) · 맞히면 대쉬 쿨타임이 바로 참', [0, 100], (f, a) => { f.swing = .22; if (arc(f, a, 100, .9, 10, { kb: 520, stun: .5 }).length) f.dcd = 0; }],
-    [3, '도끼 휘두르기', 'hit', '도끼를 크게 한 바퀴 휘둘러 주변 상대에게 247 피해 + 밀쳐냄', [0, 120], f => { f.spin = .4; circ(f, f.x, f.y, 120, 26, { kb: 360 }); }],
-    [4, '방패 올리기', 'buff', '2초 동안 정면에서 날아오는 투사체를 막음', [150, 9 * T], f => buff(f, 'block', 2)],
-    [5, '내려찍기', 'hit', '높이 뛰어올랐다가 내려찍어 주변 적에게 190 피해 + 0.5초 기절', [0, 3 * T], (f, a) => lunge(f, a, 2 * T, .35, { fly: 1, end: g => boom(g, g.x, g.y, 100, 20, { stun: .5, kb: 0, col: '#cfd3dc' }) })]
+    [2, '방패 강타', 'hit', '방패로 앞의 상대를 밀며 0.3초 기절 (95 피해) · 맞히면 대쉬 쿨타임이 절반으로 줄어듦', [0, 100], (f, a) => { f.swing = .22; if (arc(f, a, 100, .9, 10, { kb: 520, stun: .3 }).length) f.dcd *= .5; }],
+    [3, '도끼 휘두르기', 'hit', '도끼를 크게 한 바퀴 휘둘러 주변 상대에게 209 피해 + 밀쳐냄', [0, 105], f => { f.spin = .4; circ(f, f.x, f.y, 105, 22, { kb: 360 }); }],
+    [4, '방패 올리기', 'buff', '1.5초 동안 정면에서 날아오는 투사체를 막음', [150, 9 * T], f => buff(f, 'block', 1.5)],
+    [5, '내려찍기', 'hit', '높이 뛰어올랐다가 내려찍어 주변 적에게 162 피해 + 0.3초 기절', [0, 3 * T], (f, a) => lunge(f, a, 2 * T, .35, { fly: 1, end: g => boom(g, g.x, g.y, 100, 17, { stun: .3, kb: 0, col: '#cfd3dc' }) })]
   ] });
 
 hero('horemheb', { p: ['사막의 장군', '모래바람에 맞은 상대를 3초 안에 공격하면 피해 1.5배'],
@@ -6695,9 +6707,9 @@ function portalPair(f, ax, ay, bx, by, t) {
   const a = mk(ax, ay), b = mk(bx, by); a.other = b; b.other = a; return [a, b];
 }
 const landAt = (x, y) => blockedAt(x, y) ? freeNear(x, y) : { x, y };
-hero('portalgun', { p: ['차원 반사', '포탈건 탄환은 벽에 닿으면 최대 3번까지 튕기고, 튕길 때마다 피해가 30% 증가 (최대 495) · 튕긴 탄환이 상대에게 맞으면 대쉬 쿨타임 0.5초 감소'],
+hero('portalgun', { p: ['차원 반사', '포탈건 탄환은 벽에 닿으면 최대 3번까지 튕기고, 튕길 때마다 피해가 30% 증가 (최대 495) · 튕긴 탄환이 상대에게 맞으면 대쉬 쿨타임 0.7초 감소'],
   range: 9 * T,
-  pre(f, o) { o.bmul = 1.3; o.bcap = 30; o.onHit = (e, b) => { if (b.nb > 0) f.dcd = Math.max(0, f.dcd - .5); }; return o; },
+  pre(f, o) { o.bmul = 1.3; o.bcap = 30; o.onHit = (e, b) => { if (b.nb > 0) f.dcd = Math.max(0, f.dcd - .7); }; return o; },
   ult: ['포탈 연결', '내 자리와 조준한 곳에 보라색 포탈 한 쌍을 8초 동안 엶 · 한쪽에 닿으면 반대쪽으로 순간이동 (나만 사용 가능, 나올 때 근처 적에게 198 피해와 약한 넉백, 새로 열면 기존 포탈은 사라짐)', [0, 9 * T], f => {
     const p = aimPt(f, 9 * T), q = landAt(p.x, p.y); f.st.ptT = time + .9; portalPair(f, f.x, f.y, q.x, q.y, 8); }],
   skills: [
@@ -6727,7 +6739,7 @@ const HEROES_OFF = {};
 const DMG_MUL = { harald: .95, shade: .85, sword: 1.2, grenade: .6, shotgun: .8, magiccard: 1.2, kadas: 1.6, wizard: 1.5, rifle: .95, tionis: 2, bow: 1.25, pistol: 1.4, smg: 1.1, shuriken: 1.6, portalgun: 1.65, gloves: 1.25 };      // 2026-11-13 duel + team bot sim retune (gardener: gardener.js)
 for (const id in DMG_MUL) HEROES[id].xm = DMG_MUL[id];
 /* per-hero max hp in the original (small) units, ×STAT_X applied here. Tuned 2026-11-10 with bots that kite (14-hero sim: all win rates 46–55%). */
-const HP_TABLE = { sword: 580, shade: 490, harald: 540, grenade: 540, shotgun: 600, rifle: 600, magiccard: 610, kadas: 630, wizard: 640, bow: 690, pistol: 700, smg: 760, shuriken: 780, tionis: 830, portalgun: 700, gloves: 850 };
+const HP_TABLE = { sword: 580, shade: 490, harald: 500, grenade: 540, shotgun: 600, rifle: 600, magiccard: 610, kadas: 630, wizard: 640, bow: 690, pistol: 720, smg: 760, shuriken: 780, tionis: 830, portalgun: 770, gloves: 850 };
 for (const id in HP_TABLE) HEROES[id].hp = HP_TABLE[id] * STAT_X;
 for (const id of Object.keys(HEROES)) if (!ACTIVE_HEROES.includes(id)) { HEROES_OFF[id] = HEROES[id]; delete HEROES[id]; }
 ROSTER.splice(0, ROSTER.length, ...ACTIVE_HEROES.filter(id => HEROES[id]));
@@ -7786,7 +7798,7 @@ function hatPops() {                       // the moment he steps out of the hat
 }
 function drawShot(b) {          // a projectile in the original art, turned along its flight
   if (b.shape === 'syringe') return drawSyringe(b);
-  const wid = b.wid || SHAPE_WID[b.shape];
+  const red = b.shape === 'redshot', wid = red ? 'pistol' : b.wid || SHAPE_WID[b.shape];      // 제임스 강한 탄: Stickseum's big red pistol bullet
   if (!wid) return false;
   let vx = b.vx != null ? b.vx : Math.cos(b.ang) * 100, vy = b.vy != null ? b.vy : Math.sin(b.ang) * 100, y = b.y;
   if (b.shape === 'bomb') {
@@ -7796,7 +7808,7 @@ function drawShot(b) {          // a projectile in the original art, turned alon
     y = b.y - A.h; vy -= A.dh * sp;                             // (the bomb turns along the arc: nose up, then down)
   }
   ctx.save();
-  try { drawProjectileBase({ x: b.x, y, vx: vx || Math.cos(b.ang), vy: vy || Math.sin(b.ang), wid, life: 1, life0: 1, color: TC(b.team), ult: b.r > 8, scale: b.r > 8 ? b.r / 6 : 1, owner: 'x' }); } catch (e) { ctx.restore(); return false; }
+  try { drawProjectileBase({ x: b.x, y, vx: vx || Math.cos(b.ang), vy: vy || Math.sin(b.ang), wid, life: 1, life0: 1, color: red ? '#e8222b' : TC(b.team), big: red, ult: b.r > 8, scale: b.r > 8 ? b.r / 6 : 1, owner: 'x' }); } catch (e) { ctx.restore(); return false; }
   ctx.restore();
   return true;
 }
@@ -11185,6 +11197,7 @@ function drawFighter0(f, alpha) {
   ctx.globalAlpha = alpha;
   if (f.form === 'sub') { ctx.fillStyle = '#12061f'; ctx.beginPath(); ctx.ellipse(0, 0, 26 + Math.sin(time * 8) * 3, 11, 0, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#9a4cff'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore(); return; }
   ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(0, 1, 18, 7, 0, 0, 6.3); ctx.fill();
+  if (curMode === 'solo' && f.inv > 0 && state === 'play' && timeLeft > modeNow().time - SOLO_GUARD - .2) { const k = Math.min(1, f.inv / .5), pu = 1 + Math.sin(time * 6) * .04; ctx.save(); ctx.globalAlpha = alpha * k; ctx.fillStyle = 'rgba(255,214,90,.16)'; ctx.strokeStyle = '#ffd65a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, -30, 42 * pu, 0, 6.3); ctx.fill(); ctx.stroke(); ctx.restore(); }      // 원 레프트 start guard bubble
   ctx.strokeStyle = f.isPlayer ? '#ffd34d' : col; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(0, 1, 22, 9, 0, 0, 6.3); ctx.stroke();
   if (f.spin > 0) { ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(0, -30, (f.h.range || 80) * (f.h.type === 'melee' ? 1 : .3), time * 30, time * 30 + 4.5); ctx.stroke(); }
   if (f.shield > 0) { ctx.strokeStyle = '#7ef0a8'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, -30, 40, 0, 6.3); ctx.stroke(); }
@@ -11717,7 +11730,7 @@ function openDetail(id) {
   $('weaponPortraitName').textContent = h.name;
   const d = $('weaponDetail'); d.textContent = '';
   const line = (label, text) => { const p = document.createElement('p'), s = document.createElement('strong'); s.textContent = label; p.append(s, text); return p; };
-  d.append(line('무기', h.wname + ' · ' + attackText(h)), line('패시브', h.p[0] + ' · ' + dmgDesc(h, h.p[1])), line('궁극기', h.ult.name + ' · ' + dmgDesc(h, h.ult.d) + (id === 'medium' ? '' : ' (쿨타임 ' + ULT_CD + '초)')), line('체력', h.hp + ' · 대쉬 쿨타임 ' + (h.dashCd ? h.dashCd({ st: {}, b: {} }) : 1.5) + '초'));
+  d.append(line('무기', h.wname + ' · ' + attackText(h)), line('패시브', h.p[0] + ' · ' + dmgDesc(h, h.p[1])), line('궁극기', h.ult.name + ' · ' + dmgDesc(h, h.ult.d) + (id === 'medium' ? '' : ' (쿨타임 ' + ULT_CD + '초)')), line('체력', Math.round(h.hp * HP_SCALE) + ' · 대쉬 쿨타임 ' + (h.dashCd ? h.dashCd({ st: {}, b: {} }) : 1.5) + '초'));
   { /* mastery of this character: rank, bar, points */
     const m = masteryOf(id), row = document.createElement('div'), nm = document.createElement('b'), bar = document.createElement('span'), fl = document.createElement('i'), num = document.createElement('small');
     row.className = 'mRow'; row.style.setProperty('--mc', m.col); nm.textContent = m.name; fl.style.width = Math.round(m.into / m.need * 100) + '%'; bar.className = 'mBar'; bar.append(fl); num.textContent = m.top ? m.mp.toLocaleString('en-US') : m.into + ' / ' + m.need;
