@@ -581,7 +581,7 @@ function loadoutValid(h, a, b) {
   if (!ea || !eb || a === b || eb.only1) { const d = h.skills.filter(s => !s.only1); return [h.skills[0].n, (d.find(s => s.n !== h.skills[0].n) || h.skills[0]).n]; }
   return [a, b];
 }
-function loadoutOf(id) { const h = HEROES[id], l = loadouts[id]; return l ? loadoutValid(h, l[0], l[1]) : loadoutValid(h, h.skills[0].n, (h.skills[1] || h.skills[0]).n); }
+function loadoutOf(id) { const h = HEROES[id], l = loadouts[id], d = loadoutValid(h, h.skills[0].n, (h.skills[1] || h.skills[0]).n); if (!l) return d; const lo = loadoutValid(h, l[0], l[1]); return typeof skOpen !== 'function' || lo.every(n => skOpen(id, n)) ? lo : d; }      // a locked skill (social.js skOpen) falls back to the first two
 function botLoadout(h) { const p = h.skills.slice().sort(() => Math.random() - .5); let a = p[0], b = p.find(s => s !== a && !s.only1); if (!b) { b = a; a = p.find(s => s !== b) || a; } return loadoutValid(h, a.n, b.n); }
 function loadMap(i) {
   curMap = i; MAP = MAPS[i].grid.map(r => r.split('')); ROWS = MAP.length; COLS = MAP[0].length; WW = COLS * T; WH = ROWS * T; TH = MAPS[i].th; tempWalls.clear(); NET.mapVer++; envReset();
@@ -732,14 +732,15 @@ let AI_KITE = true;
    want: preferred distance (x reach) · low: hp share where it runs home · sk: skill eagerness · flank: approaches from the side
    ambush: waits in bushes when nobody is around · save: keeps skills for a weakened target */
 const AI_PERS = {
-  rush: { want: .45, low: .18, sk: 1.15, st: [.8, 1.8], flip: .4 },
-  careful: { want: .75, low: .36, sk: .9, st: [.5, 1.2], flip: .7 },
-  ambush: { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6, ambush: 1 },
-  flank: { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6, flank: 1 },
-  saver: { want: .6, low: .3, sk: .6, st: [.6, 1.5], flip: .6, save: 1 }
+  rush: { want: .55, low: .12, sk: 1.15, st: [.8, 1.8], flip: .4 },
+  careful: { want: .75, low: .24, sk: .9, st: [.5, 1.2], flip: .7 },
+  ambush: { want: .6, low: .2, sk: 1, st: [.6, 1.5], flip: .6, ambush: 1 },
+  flank: { want: .6, low: .2, sk: 1, st: [.6, 1.5], flip: .6, flank: 1 },
+  saver: { want: .6, low: .2, sk: .6, st: [.6, 1.5], flip: .6, save: 1 }
 };
-const AI_PERS_IDS = Object.keys(AI_PERS), AI_PERS0 = { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6 };      // (the old single behaviour)
-const AI_LV = { aim: .38, lead: .25, mem: 3, coolR: [.5, 1.35], coolM: [.25, .65], sk: .022, ult: .028 };      // 2026-11-14: easier bots (was aim .21 lead .42 coolR .34-1.0 coolM .14-.46 sk .032 ult .04)
+const AI_PERS_IDS = Object.keys(AI_PERS), AI_PERS0 = { want: .6, low: .2, sk: 1, st: [.6, 1.5], flip: .6 };      // (the old single behaviour)
+/* 2026-11-15 (user: bots rush and run away too well): aggro = tiles a bot notices a foe from (13 once in a fight or hit), flee = chance a hurt bot runs home this life, fdash = chance it dashes while running, kdash = per-second chance of a dodge-dash from melee */
+const AI_LV = { aim: .38, lead: .25, mem: 3, aggro: 9, flee: .5, fdash: .2, kdash: .6, coolR: [.5, 1.35], coolM: [.25, .65], sk: .022, ult: .028 };      // 2026-11-14: easier bots (was aim .21 lead .42 coolR .34-1.0 coolM .14-.46 sk .032 ult .04)
 function kiteStep(f, reach) {
   const ts = foes(f).filter(e => !e.dead && !e.minion && !B(e, 'ally') && dist(f, e) < reach * 1.2 && visibleTo(e, teamOf(f)));
   if (!ts.length) return null;
@@ -759,6 +760,13 @@ function kiteStep(f, reach) {
   if (best === null) return null;
   a.kdir = best; return [Math.cos(best), Math.sin(best)];
 }
+/* hurt enough to run home? decided once each time hp drops under the line (L.flee chance), so some hurt bots keep fighting */
+function aiLow(f, L, P) {
+  const a = f.ai;
+  if (f.hp >= f.mhp * P.low) { a.fl = undefined; return false; }
+  if (a.fl === undefined) { a.fl = Math.random() < (L.flee ?? 1); a.fd = Math.random() < (L.fdash ?? 1) ? 1 : 0; }
+  return a.fl;
+}
 function ai0(f, dt) {
   const a = f.ai, h = f.h, L = a.lv || AI_LV, P = AI_PERS[a.pers] || AI_PERS0;
   f.hold = false;
@@ -771,6 +779,8 @@ function ai0(f, dt) {
     if (d < bd) { bd = d; tgt = e; }
   }
   if (B(f, 'taunt')) { const s = f.b.taunt.v; if (s && !s.dead && dist(f, s) < 10 * T) { tgt = s; bd = dist(f, s); } }      // taunted bots go for the shield bearer
+  if (tgt && bd > (L.aggro || 13) * T && !(a.eng > time) && time - f.lastHit > 2) { tgt = null; bd = 1e9; }      // 2026-11-15: a bot that is not in a fight only notices foes within aggro tiles
+  if (tgt) a.eng = time + 3;
   a.bd = tgt ? bd : 1e9;
   if (tgt && !tgt.minion) a.mem = { e: tgt, x: tgt.x, y: tgt.y, vx: tgt.vx || 0, vy: tgt.vy || 0, t: 0 };      // 2026-11-15: remember the last place a foe was seen (bush hiding)
   else if (!tgt && a.mem) {
@@ -802,23 +812,24 @@ function ai0(f, dt) {
         f.hold = true; a.cool = close ? rnd(L.coolM[0], L.coolM[1]) : rnd(L.coolR[0], L.coolR[1]);
       }
     }
-    const low = f.hp < f.mhp * P.low && !B(f, 'charm') && modeNow().respawn && curMode !== 'star';      // (no running home in modes without respawn: nothing waits there)
+    const low = aiLow(f, L, P) && !B(f, 'charm') && modeNow().respawn && curMode !== 'star';      // (no running home in modes without respawn: nothing waits there)
     if (low) {
       const s = spawnPos(f.team, f.slot);
-      if (Math.hypot(s.x - f.x, s.y - f.y) > 1.5 * T) { const mv = pathTo(f, s.x, s.y); if (bd < 3 * T) tryDash(f, mv[0], mv[1]); return mv; }
+      if (Math.hypot(s.x - f.x, s.y - f.y) > 1.5 * T) { const mv = pathTo(f, s.x, s.y); if (bd < 3 * T && a.fd) { a.fd = 0; tryDash(f, mv[0], mv[1]); } return mv; }
     }
     if (AI_KITE && h.type === 'shot' && !tgt.minion) {
       const melee = tgt.h && tgt.h.type !== 'shot', danger = melee ? Math.max(5 * T, reach * .55) : reach * .42;
       if (bd < danger) {
         const k = kiteStep(f, Math.max(reach, 6 * T));
-        if (k) { if (melee && bd < 2.6 * T && f.dcd <= 0) tryDash(f, k[0], k[1]); return k; }
+        if (k) { if (melee && bd < 2.6 * T && f.dcd <= 0 && Math.random() < (L.kdash ?? 60) * dt) tryDash(f, k[0], k[1]); return k; }
       }
     }
     if (!see || bd > reach * .8) {
       let gx = tgt.x, gy = tgt.y;
       if (P.flank && bd > 3 * T) { const o = 2.2 * T * a.fside, px = gx - Math.sin(ang) * o, py = gy + Math.cos(ang) * o; if (!blockedAt(px, py)) { gx = px; gy = py; } }      // flankers come in from the side
-      const mv = pathTo(f, gx, gy);
-      if (close && see && bd > reach && bd < 5 * T && Math.random() < .05) tryDash(f, mv[0], mv[1]);
+      let mv = pathTo(f, gx, gy);
+      if (see && bd < 8 * T && (mv[0] || mv[1])) { const sp = ang + Math.PI / 2 * a.sdir; mv = norm(mv[0] + Math.cos(sp) * .55, mv[1] + Math.sin(sp) * .55); if (a.strafeT <= 0) { a.strafeT = rnd(P.st[0], P.st[1]); if (Math.random() < P.flip) a.sdir *= -1; } }      // 2026-11-15: close in on a zigzag, not in a straight line
+      if (close && see && bd > reach && bd < 5 * T && Math.random() < .015) tryDash(f, mv[0], mv[1]);
       return mv;
     }
     if (a.strafeT <= 0) { a.strafeT = rnd(P.st[0], P.st[1]); if (Math.random() < P.flip) a.sdir *= -1; }
@@ -888,6 +899,7 @@ function readLocal(f) {       // what this screen's controls say right now, for 
   pendingFire = null; wantUlt = false; wantDash = false; wantSk = [false, false];
   return inp;
 }
+const IN_BUF = .4;
 function applyInput(f, inp) {       // the same for this screen's player and for a player on another screen (host side)
   if (!inp) return [0, 0];
   f.aim = inp.aim; f.tx = inp.tx; f.ty = inp.ty;
@@ -897,9 +909,14 @@ function applyInput(f, inp) {       // the same for this screen's player and for
     if (f.h.fireHeld) f.tapT = f.h.tapHold || .5; else fire(f, a);
   }
   const own = !B(f, 'charm'), len = Math.hypot(inp.mx, inp.my);
-  if (inp.ult) { if (inp.touch && !inp.manual) f.aim = autoAim(f); if (own) useUlt(f); }
-  for (let i = 0; i < 2; i++) if (inp.sk && inp.sk[i]) { if (inp.touch && !inp.aiming && !inp.manual) f.aim = autoAim(f); f.netNp = inp.np; if (own) useSkill(f, i); f.netNp = undefined; }
-  if (inp.dash) { if (len > .15) tryDash(f, inp.mx / len, inp.my / len); else tryDash(f, Math.cos(f.aim), Math.sin(f.aim)); }
+  // 2026-11-15 (user: "궁극기가 눌렀다 떼도 안 나감"): a press that lands a moment too early (cooldown about to end, mid dash / short stun,
+  // no foe in reach for one frame) used to be thrown away. Now it is kept for IN_BUF s and tried again every tick until it goes out.
+  const bf = f.ibuf || (f.ibuf = { u: null, d: null, s: [null, null] }), keep = (k, i) => ({ t: time + IN_BUF, aim: inp.aim, tx: inp.tx, ty: inp.ty, man: !!inp.manual, np: inp.np });
+  if (inp.ult) bf.u = keep(); if (inp.dash) bf.d = keep(); for (let i = 0; i < 2; i++) if (inp.sk && inp.sk[i]) bf.s[i] = keep();
+  const live = b => b && time <= b.t, aimOf = (b, auto) => { if (b.man || !inp.touch) { f.aim = b.man ? b.aim : inp.aim; if (b.man) { f.tx = b.tx; f.ty = b.ty; } } else if (auto) f.aim = autoAim(f); };
+  if (live(bf.u)) { aimOf(bf.u, true); if (own && useUlt(f)) bf.u = null; } else bf.u = null;
+  for (let i = 0; i < 2; i++) { const b = bf.s[i]; if (live(b)) { aimOf(b, !inp.aiming); f.netNp = b.np; if (own && useSkill(f, i)) bf.s[i] = null; f.netNp = undefined; } else bf.s[i] = null; }
+  if (live(bf.d)) { const ok = len > .15 ? tryDash(f, inp.mx / len, inp.my / len) : tryDash(f, Math.cos(f.aim), Math.sin(f.aim)); if (ok) bf.d = null; } else bf.d = null;
   inp.pf = null; inp.ult = false; inp.dash = false; inp.sk = [false, false]; inp.manual = false;
   return [inp.mx, inp.my];
 }
@@ -1231,7 +1248,7 @@ function hotStep(dt) {
 function hotGoal(f, mv) {
   if (!HZ.on || curMode !== 'hot4' || f.dead || B(f, 'charm') || f.minion) return null;
   const a = f.ai, P = AI_PERS[a.pers] || AI_PERS0;
-  if (f.hp < f.mhp * P.low && (a.bd || 1e9) < 9 * T) return null;      // hurt with an enemy near: ai0 takes it home
+  if (aiLow(f, a.lv || AI_LV, P) && (a.bd || 1e9) < 9 * T) return null;      // hurt with an enemy near: ai0 takes it home
   if (!a.hzT || time > a.hzT) { const ang = Math.random() * Math.PI * 2, rr = Math.sqrt(Math.random()) * HZ.r * .6, x = HZ.x + Math.cos(ang) * rr, y = HZ.y + Math.sin(ang) * rr; if (!blockedAt(x, y)) { a.hx = x; a.hy = y; } else { a.hx = HZ.x; a.hy = HZ.y; } a.hzT = time + rnd(3, 6); }
   const d = Math.hypot(f.x - HZ.x, f.y - HZ.y), bd = a.bd || 1e9, reach = f.h.rangef ? f.h.rangef(f) : f.h.range;
   let others = 0, filling = -1; HZ.n.forEach((n, t) => { if (n && t !== f.team) { others++; filling = t; } });

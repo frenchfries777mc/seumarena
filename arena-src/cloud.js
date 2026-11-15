@@ -14,7 +14,7 @@ const CL_META = 'seumArenaCloud', CL_STASH = 'seumArenaCloudStash', CL_BAK = 'se
 const CL_API = 'https://kebsbuvuutilitwlvxzv.supabase.co/rest/v1/seumarena_saves';
 /* how each part of COS merges (by path; the nearest listed parent decides). Anything not listed is a choice. */
 const CL_RULE = {
-  gold: 'add', karma: 'add', xp: 'add', mp: 'add',
+  gold: 'add', karma: 'add', xp: 'add', mp: 'add', cr: 'add', su: 'union', suAll: 'max',
   'st.k': 'add', 'st.w': 'add', 'st.g': 'add', 'st.nd': 'add', 'st.sa': 'add', 'st.mw': 'add', 'st.mg': 'add', 'st.hg': 'add', 'st.hk': 'add', 'st.hn': 'add', 'st.d': 'add', 'st.dk': 'add', 'st.mv': 'add', kb: 'max',
   'st.mk': 'max', 'st.hb': 'max', 'st.hw': 'max', ach: 'max', v: 'max',
   own: 'union', kr: 'union', sk: 'union', sx: 'add', cd: 'union', dq: 'day', wq: 'day', sq: 'day', sd: 'day', sw: 'day', att: 'att'
