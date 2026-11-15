@@ -405,6 +405,14 @@ for(const [ch,a,b] of [['gardener',['서리꽃 밀짚모자','#9fe8ff','frost'],
   ['shade',['수정 네온','#7bf3ff','sparkle'],['오로라 네온','#5cffb8','sparkle']],
   ['kadas',['자수정 악마','#b47bff','void'],['오로라 악마','#5cf0ff','sparkle']]])
   [a,b].forEach((s,i)=>{ COSMETICS['skin_'+ch+'_t'+(i+1)]={cat:'skin', char:ch, name:s[0], price:0, tint:s[1], fx:s[2], tier:TIER_SKIN_TIERS[i], lux:(i===1?4:1)}; });
+/* 2026-11-15 (user): every playable character has 7 skins — one more for the ones that had 6 */
+for(const [ch,nm,price,tint,fx] of [
+  ['shuriken','먹구름 두건',900,'#3a4a6b','void'], ['shotgun','선인장 사막 스텟슨',900,'#4f9a5a'], ['rifle','해군 마린 위장모',900,'#2f5f9e'],
+  ['smg','루비 야시경 고글',900,'#e0304f','glow'], ['magiccard','에메랄드 카드 실크햇',900,'#1fa06a','sparkle'], ['samurai','은빛 쌍검 머리띠',900,'#e8edf5','glow'],
+  ['harald','룬 새김 투구',900,'#3c7fd0','frost'], ['shade','석양 네온',900,'#ff7a3d','glow'], ['tionis','레몬 광대 조끼',900,'#f5c94c'],
+  ['portalgun','황금 차원 고글',900,'#ffcf3a','sparkle'], ['gardener','단풍 밀짚모자',900,'#e0662a'], ['herbal','민트 허브 두건',900,'#5fd6b0','sparkle'],
+  ['shieldman','에메랄드 기사단',900,'#2e9e6a','glow']
+]) if(!COSMETICS['skin_'+ch+'_7']) COSMETICS['skin_'+ch+'_7']=Object.assign({cat:'skin', char:ch, name:nm, price, tint}, fx?{fx}:{});
 /* ===== the character's own color in a match: plain colors are free, the shiny ones are bought (cat 'bcol', equipped as saveData.equipped.bcol, sent as cos.col) ===== */
 [['red','빨강','#ff4d4d'],['mint','민트','#3fe0c5'],['yellow','노랑','#f5c94c'],['blue','파랑','#7c9eff'],['pink','분홍','#ff8fd9'],['lime','연두','#8dff7c'],
  ['orange','주황','#ff9d4d'],['purple','보라','#b98cff'],['sky','하늘','#4dd9ff'],['rose','장미','#ff6b9d'],['emerald','에메랄드','#6bffb3'],['white','하양','#eef1f6']]

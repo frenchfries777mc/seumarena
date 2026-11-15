@@ -86,23 +86,34 @@ const SHAPE_WID = {}; for (const id in WEAPONS) { const sh = WEAPONS[id].shape; 
 SHAPE_WID.bullet = 'pistol'; SHAPE_WID.fireball = 'wizard'; SHAPE_WID.bomb = 'grenade'; SHAPE_WID.rocket = 'bazooka'; SHAPE_WID.arrow = 'bow';
 /* ---------- 기사 강타: a real jump (up fast, hang, slam down), the sword high over the head, cracks where it lands ---------- */
 let leapCracks = [];
-FXF.leap = (fi, dur, h) => {
+FXF.leap = (fi, dur, h, fly) => {
   const f = fighters[fi]; if (!f) return;
-  f._leap = { at: performance.now(), dur: Math.max(.15, +dur || .3) * 1000, h: +h || 80 };
+  f._leap = { at: performance.now(), dur: Math.max(.15, +dur || .3) * 1000, h: +h || 80, fly: !!fly, tp: 0 };
+  if (fly) { addP({ x: f.x, y: f.y + 16, life: .4, r0: 12, r1: 110, lw: 6, color: '#ff9a3c', shape: 'ring' }); if (typeof shakeFrom === 'function') shakeFrom(f.x, f.y, 5, 300); }
   if (!lowFx()) for (let i = 0; i < 8; i++) { const a = Math.PI * (.1 + .8 * Math.random()); addP({ x: f.x + RND(-10, 10), y: f.y + 16, vx: Math.cos(a) * RND(-120, 120), vy: -Math.sin(a) * RND(20, 60), drag: 2.4, life: RND(.3, .5), size: RND(5, 9), color: '#b9b2a4', shape: 'smoke' }); }
 };
 function leapLift(f) {                 // tail.js calls this with the fighter's feet as the origin: draws the shadow and lifts the figure
   const L = f._leap; if (!L) return;
   const k = (performance.now() - L.at) / L.dur;
-  if (k >= 1 || f.dead) { f._leap = null; if (!f.dead) leapImpact(f); return; }
-  const up = .5, h = k < up ? L.h * Math.sin(k / up * Math.PI / 2) : L.h * (1 - Math.pow((k - up) / (1 - up), 2.2));   // (the way down speeds up: the slam)
+  if (k >= 1 || f.dead) { f._lpFly = L.fly ? 1 : 0; f._leap = null; if (!f.dead) leapImpact(f); return; }
+  const up = L.fly ? .42 : .5, h = k < up ? L.h * Math.sin(k / up * Math.PI / 2) : L.h * (1 - Math.pow((k - up) / (1 - up), 2.2));   // (the way down speeds up: the slam)
   const s = 1 - .45 * h / L.h;
   ctx.save(); ctx.globalAlpha *= .35 + .25 * s; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 0, 22 * s, 7 * s, 0, 0, 7); ctx.fill(); ctx.restore();
   if (f.h && f.h.id === 'sword') f.swing = .2195;           // the sword stays raised the whole jump, and chops down when he lands
   if (k > up && !lowFx() && Math.random() < .7) addP({ x: f.x + RND(-6, 6), y: f.y + 16 - h - 30, vx: 0, vy: 260, life: .14, size: 2.4, color: '#e8eef8', shape: 'streak' });
+  if (L.fly) {                                            // 폭발 점프: smoke and sparks stream behind, the figure grows near the top of the arc
+    const now = performance.now();
+    if (now - L.tp > (lowFx() ? 70 : 35)) { L.tp = now; addP({ x: f.x + RND(-5, 5), y: f.y - 6 - h, vx: RND(-20, 20), vy: RND(-10, 10), drag: 2, life: RND(.35, .55), size: RND(7, 12), color: Math.random() < .35 ? '#ff8a2a' : '#8d8478', shape: 'smoke' });
+      if (!lowFx() && k < up) addP({ x: f.x + RND(-6, 6), y: f.y + 4 - h, vx: RND(-60, 60), vy: RND(40, 140), drag: 2.5, life: .25, size: 2.6, color: '#ffd34d', shape: 'streak' }); }
+    ctx.translate(0, -h); const sc = 1 + .3 * h / L.h; ctx.scale(sc, sc); return;
+  }
   ctx.translate(0, -h);
 }
 function leapImpact(f) {
+  if (f._lpFly) { f._lpFly = 0; const x = f.x, y = f.y + 16;
+    addP({ x, y, life: .35, r0: 10, r1: 100, lw: 6, color: '#f3f6ff', shape: 'ring' });
+    if (!lowFx()) for (let i = 0; i < 8; i++) { const a = i / 8 * 6.283; addP({ x: x + Math.cos(a) * 16, y: y + Math.sin(a) * 7, vx: Math.cos(a) * RND(80, 170), vy: Math.sin(a) * RND(25, 60), drag: 2.4, life: RND(.35, .6), size: RND(6, 10), color: '#a9a294', shape: 'smoke' }); }
+    if (typeof shakeFrom === 'function') shakeFrom(x, y, 6, 380); return; }
   const x = f.x + Math.cos(f.aim) * 30, y = f.y + 16 + Math.sin(f.aim) * 14;
   addP({ x, y, life: .35, r0: 10, r1: 95, lw: 7, color: '#f3f6ff', shape: 'ring' });
   addP({ x, y, life: .5, r0: 20, r1: 130, lw: 3, color: '#ffd34d', shape: 'ring' });
@@ -271,7 +282,6 @@ const SKILL_FX = {
   'vacuum:2': f => fxAt(f, 'smokeland'),
   'vacuum:3': f => fxAt(f, 'skillring', { color: '#8fd3ff' }),
   'pirate:3': f => fxAt(f, 'skillring', { color: '#d98c2b' }),
-  'samurai:2': f => fxAt(f, 'skillring', { color: '#ffd34d' }),
   'samurai:4': f => fxAt(f, 'skillring', { color: '#dfe9ff' }),
   'harald:1': f => fxAt(f, 'skillring', { color: '#ff5a3a' }),
   'harald:4': f => fxAt(f, 'shieldup'),
@@ -303,6 +313,7 @@ const SKILL_FX = {
   'medium:2': f => fxAt(f, 'skillring', { color: '#8b5cf6' }),
   /* skills that used to show only the plain ring */
   'sword:2': f => fxPlay('leap', fighters.indexOf(f), .3, 90),
+  'grenade:1': f => fxPlay('leap', fighters.indexOf(f), .45, 150, 1),
   'sword:5': f => fx('spark', f.x + Math.cos(f.aim) * 46, f.y + BODY + Math.sin(f.aim) * 46, { ang: +f.aim.toFixed(2), color: '#ffffff' }),
   'pistol:2': f => fx('spark', f.x + Math.cos(f.aim) * 40, f.y + BODY + Math.sin(f.aim) * 40, { ang: +f.aim.toFixed(2), color: '#ffd34d' }),
   'edward:3': f => fx('spark', f.x + Math.cos(f.aim) * 40, f.y + BODY + Math.sin(f.aim) * 40, { ang: +f.aim.toFixed(2), color: '#ffd34d' }),

@@ -5,7 +5,8 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   const spec = !!(it && skinIsSpecial(sid)), lux = spec ? (it.lux || 0) : 0;
   if (cos && cos.col) col = bodyColor(cos, col);
   let a = ang, reach = 24;
-  if (swing > 0 && h && h.type === 'melee') { if (h.w.thrust) reach = 24 + Math.sin(swing * Math.PI) * 12; else a = ang + (swing - .5) * 2.2 * face; }
+  const samL = id === 'samurai' && swing > 0 && samHand === 0;      // 사무라이: odd hits swing the right hand, even hits the left (samHand 0), the 4th both (2)
+  if (swing > 0 && h && h.type === 'melee') { if (h.w.thrust) reach = 24 + Math.sin(swing * Math.PI) * 12; else a = samL ? ang - .45 * face : ang + (swing - .5) * 2.2 * face; }
   const ax = Math.cos(a), ay = Math.sin(a);
   PERSONA_FACE = face;
   c.save();
@@ -24,6 +25,9 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   const hx = ax * reach, hy = SH + 6 + ay * reach;
   if (id !== 'harald') { c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(hx, hy); c.stroke(); }      // (하랄드 draws both of his bent arms himself, in art/chars.js)
   if (id === 'kadas') { c.strokeStyle = '#c4182e'; c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(hx, hy); c.stroke(); }
+  if (id === 'samurai') { c.save(); try {      // 쌍검 사무라이 (2026-11-15): the off hand holds a second katana and sweeps the other way
+    const b = swing > 0 && samHand !== 1 ? ang - (swing - .5) * 2.2 * face : ang + .55 * face, bx = Math.cos(b) * (reach - 3), by = SH + 6 + Math.sin(b) * (reach - 3);
+    body(); c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(bx, by); c.stroke(); drawHeldWeapon(c, id, Math.cos(b), Math.sin(b), bx, by, swing, cp); } catch (e) {} c.restore(); }
   c.save(); try { if (id === 'herbal' && typeof drawHerbal === 'function') drawHerbal(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'shieldman' && typeof drawShieldman === 'function') drawShieldman(c, { face, ax, ay, hx, hy, swing, t: now / 1000, HEADCY, HEADR, SH, HIP, tint, raise: 0 }); else if (id === 'gardener' && typeof drawGardener === 'function') drawGardener(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) {} c.restore();      // (정원사's hat, slingshot and pouch: gardener.js)
   if (it && it.fx) { c.save(); try { drawSkinFx(c, lux >= 4 ? 'sparkle' : it.fx, lux >= 4 ? auroraHex(now / 1000 * .9, 1) : tint, 0, HEADCY, HEADR * 1.3, now); } catch (e) {} c.restore(); }
   if (cos && cos.col && COSMETICS[cos.col] && COSMETICS[cos.col].shine) { c.save(); try { drawShineGlints(c, now, 0); } catch (e) {} c.restore(); }
@@ -75,6 +79,7 @@ function drawFighter0(f, alpha) {
   }
   ctx.save(); ctx.scale(1.15, 1.15);
   if (typeof haraldCtx === 'function') haraldCtx(f);
+  samHand = f.h.id === 'samurai' && f.st ? (f.st.hand != null ? f.st.hand : 1) : 1;
   drawStick(ctx, f.h.id, col, f.aim, f.bob, f.swing > 0 ? 1 - f.swing / .22 : 0, time, f.cos);
   ctx.restore(); ctx.globalAlpha = alpha;
   if (f.h.id === 'pel') for (let i = 0; i < st.dr; i++) { const an = time * 2 + i * 6.283 / st.dr, x = Math.cos(an) * 34, y = Math.sin(an) * 22 - 56; ctx.fillStyle = '#2b3140'; ctx.strokeStyle = '#7df0ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, 9, 5, 0, 0, 6.3); ctx.fill(); ctx.stroke(); }
