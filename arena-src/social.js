@@ -3,8 +3,8 @@ const RND = (a, b) => a + Math.random() * (b - a);      // the Stickseum art use
 let fxQuality = 2;
 /* settings (kept in this browser): volume, aim sensitivity (touch), fewer effects */
 const SET = { vol: 100, aim: 100, fx: false, bat: false, bsz: 100, bpos: {} };
-try { const o = JSON.parse(localStorage.getItem('seumArenaSet') || '{}'); if (o.vol >= 0 && o.vol <= 100) SET.vol = o.vol | 0; if (o.aim >= 50 && o.aim <= 200) SET.aim = o.aim | 0; SET.fx = !!o.fx; SET.bat = !!o.bat; if (o.bsz >= 70 && o.bsz <= 150) SET.bsz = o.bsz | 0; if (o.bpos && typeof o.bpos === 'object') SET.bpos = o.bpos; } catch (e) {}
-function saveSet() { try { localStorage.setItem('seumArenaSet', JSON.stringify(SET)); } catch (e) {} }
+try { const o = JSON.parse(localStorage.getItem('seumArenaSet') || '{}'); if (o.vol >= 0 && o.vol <= 100) SET.vol = o.vol | 0; if (o.aim >= 50 && o.aim <= 200) SET.aim = o.aim | 0; SET.fx = !!o.fx; SET.bat = !!o.bat; if (o.bsz >= 70 && o.bsz <= 150) SET.bsz = o.bsz | 0; if (o.bpos && typeof o.bpos === 'object') SET.bpos = o.bpos; } catch (e) { quietErr(e); }
+function saveSet() { try { localStorage.setItem('seumArenaSet', JSON.stringify(SET)); } catch (e) { quietErr(e); } }
 function lowFx() { return reduceMotion || SET.fx || SET.bat; }
 /* the sound and particle functions are wrapped here so the settings work without touching engine.js or the art files */
 { const baseSfx = sfx; sfx = (f, d, t, v, sl) => { if (SET.vol <= 0) return; baseSfx(f, d, t, (v || .05) * SET.vol / 100, sl); }; }
@@ -29,8 +29,8 @@ function nameColorFor(id) {       // (from Stickseum) the colour of a name tag
 }
 const PROF = { name: '', guest: true, uid: null, online: false };
 function guestName() {
-  let n = null; try { n = localStorage.getItem('seumArenaGuest'); } catch (e) {}
-  if (!/^게스트\d{6}$/.test(n || '')) { n = '게스트' + String(Math.floor(Math.random() * 1e6)).padStart(6, '0'); try { localStorage.setItem('seumArenaGuest', n); } catch (e) {} }
+  let n = null; try { n = localStorage.getItem('seumArenaGuest'); } catch (e) { quietErr(e); }
+  if (!/^게스트\d{6}$/.test(n || '')) { n = '게스트' + String(Math.floor(Math.random() * 1e6)).padStart(6, '0'); try { localStorage.setItem('seumArenaGuest', n); } catch (e) { quietErr(e); } }
   return n;
 }
 PROF.name = guestName();
@@ -48,8 +48,8 @@ function loadAccount() {
   s.onload = () => {
     const A = window.FFAuth; if (!A) return;
     PROF.online = true;
-    try { A.ready.then(syncAccount, () => {}); } catch (e) {}
-    try { A.onChange(syncAccount); A.onNick(syncAccount); } catch (e) {}
+    try { A.ready.then(syncAccount, () => {}); } catch (e) { quietErr(e); }
+    try { A.onChange(syncAccount); A.onNick(syncAccount); } catch (e) { quietErr(e); }
     accountUi();
   };
   s.onerror = () => { PROF.online = false; accountUi(); };
@@ -68,7 +68,7 @@ function accountUi() {
 const COS_KEY = 'seumArenaCos';
 const cosDefault = () => ({ skin: {}, col: null, name: null, kfx: null, pose: 'pose_cheer', emo: [0, 1, 2, 3, 4, 5, 6, 7], gold: 500, own: null, v: 0, cr: 0, su: [] });
 function cosNorm(C) {      // the save-version fixes, run on this browser's save and on one that comes from the account (cloud.js)
-  if (!(C.v >= 5)) { if ((C.v | 0) >= 2) C.suAll = 1; }      // v5: skills past the first two are unlocked with crystals; a save from before that keeps every skill open (user 2026-11-15)
+  delete C.suAll;      // every account, old or new, has only the first two skills of a character open; the rest are unlocked with crystals or from a box (user 2026-11-15)
   if (!Array.isArray(C.own) || !(C.v >= 2)) { C.own = []; C.skin = {}; C.gold = Math.max(500, +C.gold || 0); C.v = 2; }      // skins worn before gold existed are not owned: they have to be bought (v2 also takes back the ones an earlier build handed out)
   C.gold = Math.max(0, Math.floor(+C.gold || 0)); C.karma = Math.max(0, Math.floor(+C.karma || 0)); if (!Array.isArray(C.kr) || C.v < 3) C.kr = []; if (!Array.isArray(C.cd)) C.cd = [];
   if (C.v < 4) for (const k of ['col', 'name', 'kfx']) if (C[k] && !C.own.includes(C[k])) C[k] = null;      // v4: character colours, name colours and kill effects are bought with gold too
@@ -78,9 +78,9 @@ function cosNorm(C) {      // the save-version fixes, run on this browser's save
   return C;
 }
 let COS = cosDefault();
-try { const s = JSON.parse(localStorage.getItem(COS_KEY) || 'null'); if (s && typeof s === 'object') COS = Object.assign(COS, s); } catch (e) {}
+try { const s = JSON.parse(localStorage.getItem(COS_KEY) || 'null'); if (s && typeof s === 'object') COS = Object.assign(COS, s); } catch (e) { quietErr(e); }
 cosNorm(COS);
-const saveCos = () => { try { localStorage.setItem(COS_KEY, JSON.stringify(COS)); } catch (e) {} if (typeof cloudMark === 'function') cloudMark(); };
+const saveCos = () => { try { localStorage.setItem(COS_KEY, JSON.stringify(COS)); } catch (e) { quietErr(e); } if (typeof cloudMark === 'function') cloudMark(); };
 /* gold: earned by playing, spent on skins. Prices only follow how cheap or dear the skin is in Stickseum (its gold price, rank reward, soul or season skin), on this game's own scale */
 function skinPrice(id) {
   const it = COSMETICS[id]; if (!it) return 0;
@@ -123,14 +123,64 @@ const KARMA_ROAD = (() => {      // paced like a trophy road (user 2026-11-12): 
   return out;
 })();
 /* what a box can hold: [chance weight, kind, least, most] */
-const BOX_LOOT = { box: [[50, 'g', 150, 400], [30, 'rx', 150, 300], [12, 'cx', 150, 250], [8, 'skin', 1000, 1000], [25, 'cr', 40, 80]], ebox: null };      // an epic box gives 3 prizes, one after another (user 2026-11-15); each prize is drawn exactly like a random box (user 2026-11-15)
+const BOX_LOOT = { box: [[50, 'g', 150, 400], [30, 'rx', 150, 300], [12, 'cx', 150, 250], [8, 'skin', 1000, 1000], [25, 'cr', 40, 80], [1.5, 'su', 0, 0]], ebox: null };      // 'su': one locked skill opens (about 1.2%, placeholder)
+      // an epic box gives 3 prizes, one after another (user 2026-11-15); each prize is drawn exactly like a random box (user 2026-11-15)
 BOX_LOOT.ebox = BOX_LOOT.box; const EBOX_N = 3;
 /* character mastery: every step is MP_STEP points (about 16 matches at ~50 a match) */
 const MP_STEP = 800, MASTERY = [];
-for (const [nm, n, col] of [['브론즈', 3, '#c8803a'], ['실버', 3, '#c0c8d4'], ['골드', 3, '#ffd34d'], ['플래티넘', 3, '#6fe0d0'], ['다이아', 3, '#6fb8ff'], ['아메시스트', 3, '#b07cff'], ['마스터', 5, '#ff8a4d'], ['그랜드마스터', 5, '#ff4d6d']]) for (let i = 0; i < n; i++) MASTERY.push({ name: nm + ' ' + ['I', 'II', 'III', 'IV', 'V'][i], col });
+for (const [nm, n, col] of [['브론즈', 3, '#c8803a'], ['실버', 3, '#c0c8d4'], ['골드', 3, '#ffd34d'], ['플래티넘', 3, '#6fe0d0'], ['다이아', 3, '#6fb8ff'], ['아메시스트', 3, '#b07cff'], ['마스터', 5, '#e8433a'], ['그랜드마스터', 5, '#c21a3a']]) for (let i = 0; i < n; i++) MASTERY.push({ name: nm + ' ' + ['I', 'II', 'III', 'IV', 'V'][i], col });
 MASTERY.push({ name: '챔피언', col: '#fff3b0' });
 const mpOf = h => Math.max(0, Math.floor(+(COS.mp || {})[h] || 0));
 function masteryOf(h) { const mp = mpOf(h), i = Math.min(MASTERY.length - 1, Math.floor(mp / MP_STEP)), top = i === MASTERY.length - 1; return { i, name: MASTERY[i].name, col: MASTERY[i].col, into: top ? MP_STEP : mp - i * MP_STEP, need: MP_STEP, top, mp }; }
+/* mastery logo (user-approved mockup 2026-11-15): one shield per tier, roman numeral ribbon */
+const MS_TIERS = [['브론즈',3,'#c8803a'],['실버',3,'#c0c8d4'],['골드',3,'#ffd34d'],['플래티넘',3,'#6fe0d0'],['다이아',3,'#6fb8ff'],['아메시스트',3,'#b07cff'],['마스터',5,'#e8433a'],['그랜드마스터',5,'#c21a3a'],['챔피언',1,'#fff3b0']];
+function MS_TS(ri) { for (let t = 0; t < MS_TIERS.length; t++) { if (ri < MS_TIERS[t][1]) return [t, ri]; ri -= MS_TIERS[t][1]; } return [MS_TIERS.length - 1, 0]; }
+function msShade(h,f){const n=parseInt(h.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;const m=f<0?0:255,a=Math.abs(f);r+= (m-r)*a;g+=(m-g)*a;b+=(m-b)*a;return `rgb(${r|0},${g|0},${b|0})`}
+function drawMasteryLogo(cv,ri){const [t,sub]=MS_TS(ri),n=MS_TIERS[t][1],col=MS_TIERS[t][2],ROM=['I','II','III','IV','V'],shade=msShade;cv.width=cv.height=128;const x=cv.getContext('2d');x.clearRect(0,0,128,128);
+ const L=shade(col,.45),D=shade(col,-.45),DD=shade(col,-.65),W='#fffaf0',G='#ffd34d',GD='#c8902a';
+ const rim=[shade(col,-.3),'#9aa3b5',GD,'#e8f6ff','#e8f6ff',G,G,G,G][t], rimD=shade(rim,-.35);
+ const P=(f,fn)=>{x.fillStyle=f;x.beginPath();fn();x.fill()};
+ const star=(cx,cy,R,r,k=5)=>{for(let i=0;i<k*2;i++){const a=-Math.PI/2+i*Math.PI/k,q=i%2?r:R;x.lineTo(cx+Math.cos(a)*q,cy+Math.sin(a)*q)}x.closePath()};
+ // silhouettes (all shields), scale k around (64,60)
+ const SIL=[
+  k=>{x.moveTo(64-38*k,60-38*k);x.lineTo(64+38*k,60-38*k);x.lineTo(64+38*k,60);x.quadraticCurveTo(64+38*k,60+40*k,64,60+46*k);x.quadraticCurveTo(64-38*k,60+40*k,64-38*k,60);x.closePath()},
+  k=>{x.moveTo(64-40*k,60-38*k);x.quadraticCurveTo(64,60-28*k,64+40*k,60-38*k);x.quadraticCurveTo(64+44*k,60+20*k,64,60+48*k);x.quadraticCurveTo(64-44*k,60+20*k,64-40*k,60-38*k)},
+  k=>{x.moveTo(64-40*k,60-34*k);x.quadraticCurveTo(64,60-54*k,64+40*k,60-34*k);x.quadraticCurveTo(64+42*k,60+20*k,64,60+48*k);x.quadraticCurveTo(64-42*k,60+20*k,64-40*k,60-34*k)},
+  k=>{x.moveTo(64,60-48*k);x.quadraticCurveTo(64+40*k,60-40*k,64+38*k,60-10*k);x.lineTo(64,60+50*k);x.lineTo(64-38*k,60-10*k);x.quadraticCurveTo(64-40*k,60-40*k,64,60-48*k)},
+  k=>{x.moveTo(64,60-48*k);x.lineTo(64+40*k,60-30*k);x.lineTo(64+40*k,60+14*k);x.lineTo(64,60+50*k);x.lineTo(64-40*k,60+14*k);x.lineTo(64-40*k,60-30*k);x.closePath()},
+  k=>{x.moveTo(64,60-50*k);x.lineTo(64+20*k,60-36*k);x.lineTo(64+44*k,60-42*k);x.lineTo(64+38*k,60+6*k);x.lineTo(64,60+50*k);x.lineTo(64-38*k,60+6*k);x.lineTo(64-44*k,60-42*k);x.lineTo(64-20*k,60-36*k);x.closePath()},
+  k=>{x.moveTo(64,60-36*k);x.quadraticCurveTo(64+20*k,60-56*k,64+44*k,60-40*k);x.quadraticCurveTo(64+34*k,60-30*k,64+40*k,60-6*k);x.quadraticCurveTo(64+38*k,60+30*k,64,60+50*k);x.quadraticCurveTo(64-38*k,60+30*k,64-40*k,60-6*k);x.quadraticCurveTo(64-34*k,60-30*k,64-44*k,60-40*k);x.quadraticCurveTo(64-20*k,60-56*k,64,60-36*k)},
+  k=>{x.moveTo(64,60-50*k);x.quadraticCurveTo(64+12*k,60-36*k,64+42*k,60-40*k);x.quadraticCurveTo(64+46*k,60+18*k,64,60+50*k);x.quadraticCurveTo(64-46*k,60+18*k,64-42*k,60-40*k);x.quadraticCurveTo(64-12*k,60-36*k,64,60-50*k)},
+  k=>{x.moveTo(64-42*k,60-40*k);x.quadraticCurveTo(64-20*k,60-30*k,64,60-48*k);x.quadraticCurveTo(64+20*k,60-30*k,64+42*k,60-40*k);x.quadraticCurveTo(64+48*k,60+16*k,64,60+50*k);x.quadraticCurveTo(64-48*k,60+16*k,64-42*k,60-40*k)}][t];
+ const wing=(d,c,m)=>{for(let i=0;i<m;i++)P(i%2?shade(c,.15):c,()=>{const y=34+i*11;x.moveTo(64+d*30,y+12);x.quadraticCurveTo(64+d*(50+i*4),y-10,64+d*(64-i*4),y-16+i*4);x.quadraticCurveTo(64+d*(58-i*5),y+6,64+d*30,y+22)})};
+ // back
+ if(t===7){wing(-1,'#7a1c2c',3);wing(1,'#7a1c2c',3)}
+ if(t===8){wing(-1,G,3);wing(1,G,3);x.globalAlpha=.25;P(G,()=>star(64,60,62,30,12));x.globalAlpha=1}
+ if(t===6)for(const d of[-1,1])P('#ffb03a',()=>{x.moveTo(64+d*20,30);x.quadraticCurveTo(64+d*50,26,64+d*58,0);x.quadraticCurveTo(64+d*44,38,64+d*40,52)});
+ if(t===4||t===5){x.globalAlpha=.3;P(L,()=>star(64,60,60,34,8));x.globalAlpha=1}
+ // shield
+ P(rimD,()=>SIL(1.02));P(rim,()=>SIL(.98));
+ const g=x.createLinearGradient(0,14,0,110);g.addColorStop(0,t===7?'#4a1c26':L);g.addColorStop(1,t===7?'#8a1430':col);
+ P(g,()=>SIL(.82));
+ x.save();x.beginPath();SIL(.82);x.clip();x.globalAlpha=.22;P('#000',()=>x.rect(64,0,64,128));x.globalAlpha=.25;P('#fff',()=>{x.moveTo(20,0);x.lineTo(50,0);x.lineTo(14,60);x.lineTo(0,60)});x.restore();
+ // studs
+ if(t>=3){for(const [sx,sy] of [[64-30,30],[64+30,30]])P(t>=6?G:W,()=>x.arc(sx,sy,3.5,0,7))}
+ // emblems
+ const E=t===7?G:t>=3?W:shade(col,-.5);
+ const sword=(r)=>{x.save();x.translate(64,62);x.rotate(r);P(E,()=>{x.moveTo(0,-30);x.lineTo(5,-22);x.lineTo(5,12);x.lineTo(-5,12);x.lineTo(-5,-22);x.closePath();x.rect(-13,12,26,5);x.rect(-3,17,6,10)});x.restore()};
+ if(t===0)sword(0);
+ if(t===1){sword(-.6);sword(.6)}
+ if(t===2)P(E,()=>{x.moveTo(42,74);x.lineTo(40,46);x.lineTo(52,58);x.lineTo(64,40);x.lineTo(76,58);x.lineTo(88,46);x.lineTo(86,74);x.closePath()});
+ if(t===3){P(E,()=>{x.moveTo(48,48);x.lineTo(80,48);x.lineTo(88,58);x.lineTo(64,86);x.lineTo(40,58);x.closePath()});P(L,()=>{x.moveTo(56,48);x.lineTo(64,58);x.lineTo(72,48)})}
+ if(t===4){P(E,()=>{x.moveTo(64,34);x.lineTo(84,60);x.lineTo(64,88);x.lineTo(44,60);x.closePath()});P(L,()=>{x.moveTo(64,34);x.lineTo(64,88);x.lineTo(44,60)});P(W,()=>star(88,40,8,2,4))}
+ if(t===5){P(E,()=>{x.moveTo(56,86);x.lineTo(56,50);x.lineTo(64,34);x.lineTo(72,50);x.lineTo(72,86);x.closePath()});P(L,()=>{x.moveTo(44,86);x.lineTo(42,58);x.lineTo(52,64);x.lineTo(54,86);x.moveTo(84,86);x.lineTo(86,58);x.lineTo(76,64);x.lineTo(74,86)})}
+ if(t===6){P(G,()=>{x.moveTo(64,30);x.quadraticCurveTo(88,56,80,76);x.quadraticCurveTo(72,90,64,90);x.quadraticCurveTo(48,90,46,74);x.quadraticCurveTo(44,60,56,50);x.quadraticCurveTo(56,62,62,64);x.quadraticCurveTo(58,46,64,30)});P(W,()=>{x.moveTo(64,58);x.quadraticCurveTo(74,70,70,80);x.quadraticCurveTo(64,88,58,80);x.quadraticCurveTo(56,70,64,58)})}
+ if(t===7){sword(-.6);sword(.6);P(G,()=>star(64,58,13,6))}
+ if(t===8){P(W,()=>{x.moveTo(44,38);x.lineTo(84,38);x.quadraticCurveTo(84,66,64,70);x.quadraticCurveTo(44,66,44,38)});P(W,()=>{x.rect(60,68,8,10);x.rect(48,78,32,7)});P(G,()=>star(64,52,9,4))}
+ if(t>=6)P(G,()=>{x.moveTo(46,22);x.lineTo(44,4);x.lineTo(55,13);x.lineTo(64,-2+6);x.lineTo(73,13);x.lineTo(84,4);x.lineTo(82,22);x.closePath()});
+ // ribbon with roman numeral
+ if(n>1){const rc=t===7?'#2a1418':DD;P(rc,()=>{x.moveTo(26,102);x.lineTo(102,102);x.lineTo(110,108);x.lineTo(102,124);x.lineTo(26,124);x.lineTo(18,108);x.closePath()});
+  x.fillStyle=t===7?G:W;x.font='900 17px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(ROM[sub],64,114)}}
 function addMp(h, n) { if (!HEROES[h]) return; COS.mp[h] = mpOf(h) + Math.max(0, Math.round(n)); }
 /* player level: level L needs 150 + 50 (L - 1) xp to pass */
 function levelOf() { let xp = Math.max(0, Math.floor(+COS.xp || 0)), lv = 1; while (xp >= 150 + 50 * (lv - 1) && lv < 999) { xp -= 150 + 50 * (lv - 1); lv++; } return { lv, into: xp, need: 150 + 50 * (lv - 1) }; }
@@ -156,7 +206,8 @@ function matchPay(o) {      // o: { mode, win, draw, kills, place }
   if (o.mode === 'flag5') o = Object.assign({}, o, { mode: 'flag' });      // capture the flag pays the same whatever the team size
   const pm = MODE_PAY[o.mode] || MODE_PAY.team, solo = o.mode === 'solo' || o.mode === 'star', k = Math.max(0, o.kills | 0), good = o.win ? 2 : o.draw || (solo && o.place <= 3) || (o.mode === 'hot4' && o.place === 2) || (o.mode === 'duo' && o.place === 2) ? 1 : 0;      // 4팀 핫존: 2nd of 4 pays like a draw
   return { gold: Math.round(([30, 40, 60][good] + 5 * Math.min(10, k)) * (o.mode === 'duel' ? .6 : 1)), karma: modeKarma(o),
-    mp: Math.round(([30, 42, 55][good] + 3 * Math.min(10, k)) * pm.mm), xp: [40, 55, 70][good] + 4 * Math.min(10, k) };
+    mp: Math.round(([30, 42, 55][good] + 3 * Math.min(10, k)) * pm.mm * 1.75),      // user 2026-11-15: mastery x1.75
+    xp: [40, 55, 70][good] + 4 * Math.min(10, k) };
 }
 /* streaks: every win in a row after the first adds 1 karma to the next win (up to +5); after three losses in a row the next match pays half as much gold again.
    A draw, or a kept place (원 레프트 2-3등, 투 레프트 / 4팀 핫존 2등), leaves the streaks as they are. COS.ws wins in a row, COS.ls losses in a row.
@@ -175,13 +226,14 @@ function giveReward(kind, n) {
   if (kind === 'ebox' && n !== -1) {      // three draws; at most one skin per box (a second skin roll draws again without skins)
     const list = []; for (let i = 0; i < EBOX_N; i++) { let g = giveReward('ebox', -1); if (g.skin && list.some(x => x.skin)) { const keep = BOX_LOOT.ebox; BOX_LOOT.ebox = keep.filter(l => l[1] !== 'skin'); try { g = giveReward('ebox', -1); } finally { BOX_LOOT.ebox = keep; } } list.push(g); }
     const got = list[0]; got.list = list; return got; }
-  if (kind === 'box' || kind === 'ebox') { const L = BOX_LOOT[kind]; let r = Math.random() * L.reduce((a, l) => a + l[0], 0), l = L[0]; for (const x of L) { if ((r -= x[0]) < 0) { l = x; break; } } const tr = Math.random(), tier = l[1] === 'skin' ? 2 : tr < .05 ? 2 : tr < .25 ? 1 : 0;      // a box opens as common, rare or legendary: rare doubles what is inside, legendary gives four times (a skin is always legendary)
-    const got = giveReward(l[1], l[1] === 'skin' ? l[2] : Math.round((l[2] + Math.random() * (l[3] - l[2])) * [1, 2, 4][tier] / 10) * 10); got.box = kind; got.tier = tier; return got; }
+  if (kind === 'box' || kind === 'ebox') { const L = BOX_LOOT[kind].filter(l => l[1] !== 'su' || skShut().length); let r = Math.random() * L.reduce((a, l) => a + l[0], 0), l = L[0]; for (const x of L) { if ((r -= x[0]) < 0) { l = x; break; } } const tr = Math.random(), tier = l[1] === 'skin' || l[1] === 'su' ? 2 : tr < .05 ? 2 : tr < .25 ? 1 : 0;      // a box opens as common, rare or legendary: rare doubles what is inside, legendary gives four times (a skin is always legendary)
+    const got = giveReward(l[1], l[1] === 'skin' || l[1] === 'su' ? l[2] : Math.round((l[2] + Math.random() * (l[3] - l[2])) * [1, 2, 4][tier] / 10) * 10); got.box = kind; got.tier = tier; return got; }
   if (kind === 'skin') {      // a skin not owned yet, from the dearest tier allowed; nothing left to give: its worth in gold
     const pool = COS_IDS('skin').filter(id => HEROES[COSMETICS[id].char] && !skinOwned(id) && !passLimited(id) && skinPrice(id) <= n), top = Math.max(0, ...pool.map(skinPrice)), best = pool.filter(id => skinPrice(id) === top);
     if (best.length) { const id = pick(best); COS.own.push(id); return { kind, skin: id, hero: COSMETICS[id].char }; }
     kind = 'g';
   }
+  if (kind === 'su') { const p = pick(skShut()); if (p) { COS.su.push(p[0] + ':' + p[1]); return { kind, hero: p[0], sk: p[1] }; } kind = 'cr'; n = SK_PRICE; }      // nothing locked left: its worth in crystals
   if (kind === 'g') { COS.gold += n; return { kind, n }; }
   if (kind === 'cr') { COS.cr = (COS.cr | 0) + n; return { kind, n }; }
   if (kind === 'px') { COS.xp += n; return { kind, n }; }
@@ -192,18 +244,19 @@ const karmaOpen = () => KARMA_ROAD.some(r => COS.karma >= r[0] && !COS.kr.includ
 function karmaTake(r) {
   if (COS.karma < r[0] || COS.kr.includes(r[0])) return null;
   COS.kr.push(r[0]); const got = crExtra(giveReward(r[1], r[2]), r[4]);
-  try { sfx(880, .18, 'triangle', .06); } catch (e) {}
+  try { sfx(880, .18, 'triangle', .06); } catch (e) { quietErr(e); }
   saveCos(); goldUi(); return got;
 }
-const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin', cr: 'ic-cr' };
+const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin', cr: 'ic-cr', su: 'ic-su' };
 /* crystals: a road or pass step can carry some on top of its own reward (r[4]); they show after it */
 function crExtra(got, n) { if (!got || !(n > 0)) return got; const c = giveReward('cr', n); got.list = (got.list || [got]).concat([c]); return got; }
 function crBadge(box, n) { if (!(n > 0)) return; const s = document.createElement('span'); s.className = 'kCr'; s.innerHTML = '<i class="ic-cr"></i>'; s.append('+' + n); box.append(s); }
-/* skills: the first two of a character are open; the rest are unlocked with crystals (a save from before keeps them all, COS.suAll) */
+/* skills: the first two of a character are open; the rest are unlocked with crystals or from a box */
 const SK_PRICE = 300;
-const skOpen = (id, n) => { const h = HEROES[id]; if (!h || COS.suAll) return true; const i = h.skills.findIndex(s => s.n === n); return i < 2 || COS.su.includes(id + ':' + n); };
-function skUnlock(id, n) { if (skOpen(id, n) || (COS.cr | 0) < SK_PRICE) return false; COS.cr -= SK_PRICE; COS.su.push(id + ':' + n); try { sfx(1320, .16, 'triangle', .07); } catch (e) {} saveCos(); goldUi(); return true; }
-function rewardIcon(kind) { const i = document.createElement('i'); if (kind === 'sx') { i.className = 'sxI'; i.innerHTML = '<svg aria-hidden="true"><use href="#mi-pass"/></svg>'; return i; } if (kind === 'k') { i.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>'; return i; } if (kind === 'skin') { const c = document.createElement('canvas'); c.width = c.height = 96; c.className = 'rwI'; try { const id = COS_IDS('skin').find(x => HEROES[COSMETICS[x].char] && skinPrice(x) > 0); drawItemPreview(c, id, 0); } catch (e) {} return c; }      // a skin reward shows a real worn skin, as in the shop
+const skOpen = (id, n) => { const h = HEROES[id]; if (!h) return true; const i = h.skills.findIndex(s => s.n === n); return i < 2 || COS.su.includes(id + ':' + n); };
+const skShut = () => { const o = []; for (const id of Object.keys(HEROES)) for (const s of HEROES[id].skills) if (!skOpen(id, s.n)) o.push([id, s.n]); return o; };
+function skUnlock(id, n) { if (skOpen(id, n) || (COS.cr | 0) < SK_PRICE) return false; COS.cr -= SK_PRICE; COS.su.push(id + ':' + n); try { sfx(1320, .16, 'triangle', .07); } catch (e) { quietErr(e); } saveCos(); goldUi(); return true; }
+function rewardIcon(kind) { const i = document.createElement('i'); if (kind === 'sx') { i.className = 'sxI'; i.innerHTML = '<svg aria-hidden="true"><use href="#mi-pass"/></svg>'; return i; } if (kind === 'k') { i.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>'; return i; } if (kind === 'skin') { const c = document.createElement('canvas'); c.width = c.height = 96; c.className = 'rwI'; try { const id = COS_IDS('skin').find(x => HEROES[COSMETICS[x].char] && skinPrice(x) > 0); drawItemPreview(c, id, 0); } catch (e) { quietErr(e); } return c; }      // a skin reward shows a real worn skin, as in the shop
   i.className = kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[kind]; return i; }
 function renderKarma(got) {
   const tr = document.getElementById('karmaTrack'); tr.textContent = '';
@@ -256,11 +309,12 @@ function rewardFx(got, step) {
   const L = got.list || [got], k = step | 0; if (k) got = L[k];
   const ic = fx.querySelector('.rwIc'), cvs = fx.querySelector('canvas'), txt = fx.querySelector('.rwTxt'), spk = fx.querySelector('.rwSpk');
   const setIcon = kind => { cvs.hidden = true; ic.hidden = false; ic.textContent = ''; ic.className = 'rwIc ' + (kind === 'k' ? '' : kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[kind]); if (kind === 'k') ic.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>'; };
-  const note = (f, at) => setTimeout(() => { try { sfx(f, .16, 'triangle', .07); } catch (e) {} }, at);
+  const note = (f, at) => setTimeout(() => { try { sfx(f, .16, 'triangle', .07); } catch (e) { quietErr(e); } }, at);
   const close = () => { clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.classList.add('out'); rwTimer = setTimeout(() => { fx.hidden = true; fx.classList.remove('out', 'open', 'shake'); if (k + 1 < L.length) rewardFx(L[0], k + 1); else if (rwQ.length) rewardFx(rwQ.shift()); }, 220); for (const el of document.querySelectorAll('.goldPill, #karma, #acctIcon')) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } };
   const open = () => {
     fx.classList.remove('shake'); void fx.offsetWidth; fx.classList.add('open');
-    if (got.skin) { ic.hidden = true; cvs.hidden = false; try { drawItemPreview(cvs, got.skin, performance.now()); } catch (e) {} txt.textContent = HEROES[got.hero].name + ' · ' + COSMETICS[got.skin].name; }
+    if (got.kind === 'su') { setIcon('su'); const s = HEROES[got.hero].skills.find(x => x.n === got.sk); txt.textContent = HEROES[got.hero].name + ' · ' + (s ? nameOf(s) : '') + ' 해금'; }
+    else if (got.skin) { ic.hidden = true; cvs.hidden = false; try { drawItemPreview(cvs, got.skin, performance.now()); } catch (e) { quietErr(e); } txt.textContent = HEROES[got.hero].name + ' · ' + COSMETICS[got.skin].name; }
     else {
       setIcon(got.kind); const pre = (got.hero ? HEROES[got.hero].name + ' ' : '') + '+', n = got.n | 0, t0 = performance.now();
       const tick = now => { const k = Math.min(1, (now - t0) / 650), e = 1 - Math.pow(1 - k, 3); txt.textContent = pre + Math.round(n * e).toLocaleString('en-US'); if (k < 1) rwRaf = requestAnimationFrame(tick); };
@@ -278,8 +332,8 @@ function rewardFx(got, step) {
   else open();
 }
 /* ---------- daily quests: three a day (one easy, one middling, one hard), picked by the date on this device. COS.dq = { d: day, p: progress x3, c: taken x3 } ---------- */
-const dqDay = () => { const d = new Date(); return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate(); };      // the GMT date: daily things change at 0:00 GMT together with 오늘의 모드 (user 2026-11-15)
-const dayModes = day => { const all = (typeof MODES !== 'undefined' ? MODES : []).filter(m => m.ready !== false); if (typeof modeOpen !== 'function') return all; const n = Math.floor(Date.UTC(Math.floor(day / 10000), Math.floor(day / 100) % 100 - 1, day % 100) / 86400000), o = all.filter(m => modeOpen(m.id, n)); return o.length ? o : all; };      // only the modes open that GMT day
+const dqDay = () => { const d = new Date(); return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate(); };      // the GMT date: daily things change at 0:00 GMT (user 2026-11-15)
+const dayModes = day => (typeof MODES !== 'undefined' ? MODES : []).filter(m => m.ready !== false);      // all modes: the open list changes every 3 hours (engine.js MODE_SLOT) and a closed mode is back within 3 hours, so a daily quest of any mode can be done that day
 function dqList(day) {
   let sd = (day * 2654435761) >>> 0; const rnd = () => { sd = (sd + 0x6D2B79F5) >>> 0; let t = Math.imul(sd ^ sd >>> 15, 1 | sd); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }, pk = a => a[Math.floor(rnd() * a.length)];
   const modes = dayModes(day), m1 = pk(modes), m2 = pk(modes), h1 = pk(ROSTER), h2 = pk(ROSTER), solo = modes.find(m => m.id === 'solo');
@@ -307,7 +361,7 @@ function dqMatch(m) {
 function dqTake(i) {
   const st = dqState(), q = dqList(st.d)[i]; if (!q || st.c[i] || !(st.p[i] >= q.n)) return null;
   st.c[i] = 1; const got = giveReward(q.rw[0], q.rw[1]);
-  try { sfx(880, .18, 'triangle', .06); } catch (e) {}
+  try { sfx(880, .18, 'triangle', .06); } catch (e) { quietErr(e); }
   saveCos(); goldUi(); return got;
 }
 /* what a finished match adds to a quest */
@@ -358,7 +412,7 @@ function favHero() { const st = achSt(); let best = null, bv = 0; for (const h o
 function renderProfile() {
   const $i = id => document.getElementById(id), st = achSt(), l = levelOf(), h = favHero(), ms = masteryOf(h), tier = ['#9aa3b5', '#7fb4ff', '#c17bff', '#ffd34d'];
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }, num = v => typeof v === 'number' ? v.toLocaleString('en-US') : v;
-  const stick = (cvs, id, sc, foot) => { const c = cvs.getContext('2d'), cos = myCos(id); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cvs.width, cvs.height); c.translate(cvs.width * .4, cvs.height - foot); c.scale(sc, sc); try { drawStick(c, id, bodyColor(cos, '#cfd3dc'), .3, 0, 0, 0, cos); } catch (e) {} };
+  const stick = (cvs, id, sc, foot) => { const c = cvs.getContext('2d'), cos = myCos(id); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cvs.width, cvs.height); c.translate(cvs.width * .4, cvs.height - foot); c.scale(sc, sc); try { drawStick(c, id, bodyColor(cos, '#cfd3dc'), .3, 0, 0, 0, cos); } catch (e) { quietErr(e); } };
   $i('profName').textContent = PROF.name; $i('profName').style.color = nameColorFor(COS.name) || '#ffb84d';
   { const t = $i('profTitle'), a = ACHS.find(x => x.id === COS.title); t.textContent = myTitle(); t.hidden = !myTitle(); if (a) t.style.setProperty('--tc', tier[a.t]); }
   $i('profLv').textContent = l.lv; $i('profRing').style.background = 'conic-gradient(#4aa6ff 0 ' + Math.round(l.into / l.need * 100) + '%,#2a3456 0)';
@@ -426,20 +480,20 @@ function achMatch(m) {
 function achTake(id) {
   const a = ACHS.find(x => x.id === id); if (!a || COS.ach[id] !== 1) return null;
   COS.ach[id] = 2; const got = giveReward(ACH_PAY[a.t][0], ACH_PAY[a.t][1]);
-  try { sfx(880, .18, 'triangle', .06); } catch (e) {}
+  try { sfx(880, .18, 'triangle', .06); } catch (e) { quietErr(e); }
   achScan(); saveCos(); goldUi(); return got;
 }
 /* how many players have each one: a random id made here (no account, no name) and the ids reached go to the server, the counts come back. Without the network the last counts seen are shown, or nothing */
 const ACH_API = 'https://kebsbuvuutilitwlvxzv.supabase.co/rest/v1/rpc/seumarena_ach_sync', ACH_KEY = 'sb_publishable_4Egu0zm3p6cxWGvP_-GlIw_mlCpO1Nf';
 let achRates = null, achSyncAt = 0;
-try { const r = JSON.parse(localStorage.getItem('seumArenaAchRates') || 'null'); if (r && r.players > 0 && r.ach) achRates = r; } catch (e) {}
+try { const r = JSON.parse(localStorage.getItem('seumArenaAchRates') || 'null'); if (r && r.players > 0 && r.ach) achRates = r; } catch (e) { quietErr(e); }
 function achPid() {
-  let p = null; try { p = localStorage.getItem('seumArenaPid'); } catch (e) {}
+  let p = null; try { p = localStorage.getItem('seumArenaPid'); } catch (e) { quietErr(e); }
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(p || '')) {
     const b = new Uint8Array(16); try { crypto.getRandomValues(b); } catch (e) { for (let i = 0; i < 16; i++) b[i] = Math.random() * 256; }
     b[6] = b[6] & 15 | 64; b[8] = b[8] & 63 | 128; const x = [...b].map(v => v.toString(16).padStart(2, '0')).join('');
     p = x.slice(0, 8) + '-' + x.slice(8, 12) + '-' + x.slice(12, 16) + '-' + x.slice(16, 20) + '-' + x.slice(20);
-    try { localStorage.setItem('seumArenaPid', p); } catch (e) {}
+    try { localStorage.setItem('seumArenaPid', p); } catch (e) { quietErr(e); }
   }
   return p;
 }
@@ -450,10 +504,10 @@ function achSync(force) {
     fetch(ACH_API, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: ACH_KEY }, body: JSON.stringify({ p_pid: achPid(), p_achs: ACHS.filter(a => COS.ach && COS.ach[a.id]).map(a => a.id) }) })
       .then(r => r.ok ? r.json() : null).then(r => {
         if (!r || !(r.players > 0) || !r.ach || typeof r.ach !== 'object') return;
-        achRates = { players: +r.players, ach: r.ach }; try { localStorage.setItem('seumArenaAchRates', JSON.stringify(achRates)); } catch (e) {}
+        achRates = { players: +r.players, ach: r.ach }; try { localStorage.setItem('seumArenaAchRates', JSON.stringify(achRates)); } catch (e) { quietErr(e); }
         const el = document.getElementById('achList'); if (el && !el.hidden) renderAch();
       }).catch(() => {});
-  } catch (e) {}
+  } catch (e) { quietErr(e); }
 }
 function achRate(id) { if (!achRates) return ''; const p = Math.min(100, Math.max(0, (+achRates.ach[id] || 0) / achRates.players * 100)); return (p > 0 && p < 1 ? p.toFixed(1) : Math.round(p)) + '%'; }
 function renderAch(got) {
@@ -511,8 +565,6 @@ function renderQuests(got) {
   showGot(document.getElementById('questGot'), got); questUi();
 }
 /* karma: 1 per kill, 3 per win; it only goes up */
-function addKarma(n) { COS.karma = Math.max(0, COS.karma + Math.round(n)); saveCos(); goldUi(); }
-function addGold(n) { COS.gold = Math.max(0, COS.gold + Math.round(n)); saveCos(); goldUi(); }
 const cosOk = (id, cat) => !!(id && COSMETICS[id] && COSMETICS[id].cat === cat);
 function cleanCos(c, hero) {       // what a fighter wears, checked (it also comes from other screens over the network)
   c = c || {};
@@ -577,17 +629,17 @@ const sqOpen = () => { const a = sqState(), b = swState(); return sqOpenOf(a, sq
 function sqTake(i, wk) {
   const st = wk ? swState() : sqState(), q = (wk ? swList : sqList)(st.d)[i]; if (!q || st.c[i] || !(st.p[i] >= q.n)) return null;
   st.c[i] = 1; passAdd(q.rw[1]);
-  try { sfx(880, .18, 'triangle', .06); } catch (e) {}
+  try { sfx(880, .18, 'triangle', .06); } catch (e) { quietErr(e); }
   saveCos(); goldUi(); return null;
 }
 function passTake(r) {
   if (passXp() < r[0] * PASS_STEP || passTaken(r[0])) return null;
   if (!Array.isArray(COS.sk)) COS.sk = []; COS.sk.push(GAME_VER + ':' + r[0]);
   let got; if (r[1] === 'ps') { if (!skinOwned(r[2]) && COSMETICS[r[2]]) { COS.own.push(r[2]); got = { kind: 'skin', skin: r[2], hero: COSMETICS[r[2]].char }; } else got = giveReward('g', 2000); } else got = crExtra(giveReward(r[1], r[2]), r[4]);
-  try { sfx(880, .18, 'triangle', .06); } catch (e) {}
+  try { sfx(880, .18, 'triangle', .06); } catch (e) { quietErr(e); }
   saveCos(); goldUi(); return got;
 }
-function passUi() { try { { const b = document.getElementById('pass'), c = passCol(); if (b) { b.style.setProperty('--pc', c[0]); b.style.setProperty('--pl', c[1]); } } const n = document.getElementById('passN'), d = document.getElementById('passDot'); if (n) n.textContent = Math.min(PASS_N, Math.floor(passXp() / PASS_STEP)); if (d) d.hidden = !(passOpen() || sqOpen()); } catch (e) {} }
+function passUi() { try { { const b = document.getElementById('pass'), c = passCol(); if (b) { b.style.setProperty('--pc', c[0]); b.style.setProperty('--pl', c[1]); } } const n = document.getElementById('passN'), d = document.getElementById('passDot'); if (n) n.textContent = Math.min(PASS_N, Math.floor(passXp() / PASS_STEP)); if (d) d.hidden = !(passOpen() || sqOpen()); } catch (e) { quietErr(e); } }
 /* season quests sit under the pass road: daily on the left, weekly on the right (stacked on a narrow screen) */
 const leftTxt = ms => { const m = Math.max(1, Math.ceil(ms / 60000)), h = Math.floor(m / 60), d = Math.floor(h / 24); return d >= 1 ? d + '일 ' + (h % 24) + '시간' : h >= 1 ? h + '시간 ' + (m % 60) + '분' : m + '분'; };
 function renderPassQ() {
@@ -614,7 +666,7 @@ function renderPass(got) {
     const b = document.createElement('button'), box = document.createElement('span'), pin = document.createElement('span'), num = document.createElement('span');
     const done = passTaken(r[0]), reach = !done && xp >= r[0] * PASS_STEP;
     b.type = 'button'; b.className = 'kStep ' + (done ? 'done' : reach ? 'reach' : 'lock') + ' k-' + (r[1] === 'ps' ? 'skin' : r[1]) + (r[3] ? ' big' : ''); box.className = 'kBox'; pin.className = 'kPin'; num.className = 'kNum'; num.textContent = r[0];
-    if (r[1] === 'ps') { const cv = document.createElement('canvas'); cv.width = cv.height = 96; cv.className = 'psCv'; try { drawItemPreview(cv, r[2], performance.now()); } catch (e) {} box.append(cv); b.title = HEROES[COSMETICS[r[2]].char].name + ' · ' + COSMETICS[r[2]].name; }
+    if (r[1] === 'ps') { const cv = document.createElement('canvas'); cv.width = cv.height = 96; cv.className = 'psCv'; try { drawItemPreview(cv, r[2], performance.now()); } catch (e) { quietErr(e); } box.append(cv); b.title = HEROES[COSMETICS[r[2]].char].name + ' · ' + COSMETICS[r[2]].name; }
     else { box.append(rewardIcon(r[1]), r[2] ? r[2].toLocaleString('en-US') : LBL[r[1]]); b.title = LBL[r[1]]; crBadge(box, r[4]); }
     b.setAttribute('aria-label', r[0] + '단계: ' + (r[1] === 'ps' ? b.title : LBL[r[1]] + (r[2] ? ' ' + r[2] : '')));
     b.disabled = !reach; b.append(box, pin, num);
@@ -632,7 +684,7 @@ function renderPass(got) {
   const road = document.getElementById('passRoad'); if (got === undefined && focus) road.scrollLeft = Math.max(0, focus.offsetLeft - road.clientWidth / 2 + 46);
   { const hd = document.getElementById('passHead'); let sh = document.getElementById('passShow'); if (hd && !sh) { sh = document.createElement('div'); sh.id = 'passShow'; sh.innerHTML = '<canvas width="160" height="160"></canvas><span><small></small><b></b></span>'; hd.append(sh); }
     const nx = PASS.find(r => r[1] === 'ps' && !passTaken(r[0])) || PASS.filter(r => r[1] === 'ps').pop();
-    if (sh) { sh.hidden = !nx; if (nx) { try { drawItemPreview(sh.querySelector('canvas'), nx[2], performance.now()); } catch (e) {} sh.querySelector('small').textContent = nx[0] + '단계 한정'; sh.querySelector('b').textContent = COSMETICS[nx[2]].name; } } }
+    if (sh) { sh.hidden = !nx; if (nx) { try { drawItemPreview(sh.querySelector('canvas'), nx[2], performance.now()); } catch (e) { quietErr(e); } sh.querySelector('small').textContent = nx[0] + '단계 한정'; sh.querySelector('b').textContent = COSMETICS[nx[2]].name; } } }
   kDress(tr); if (got) rewardFx(got); passUi();
   renderPassQ();
 }
@@ -656,7 +708,7 @@ function fitBrand() {
   if (hit()) { const b = tr.getBoundingClientRect(), a = h1.getBoundingClientRect(); br.style.marginTop = Math.ceil(b.bottom + 8 - a.top) + 'px'; }
 }
 addEventListener('resize', () => requestAnimationFrame(fitBrand));
-try { new ResizeObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('topRight')); new MutationObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('brandDisplay'), { attributes: true, attributeFilter: ['class'] }); } catch (e) {}
+try { new ResizeObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('topRight')); new MutationObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('brandDisplay'), { attributes: true, attributeFilter: ['class'] }); } catch (e) { quietErr(e); }
 setTimeout(fitBrand, 300); setTimeout(fitBrand, 1500);
 { const b = document.getElementById('pass'); if (b) b.addEventListener('click', () => { showScreen('passScreen'); renderPass(); }); const k = document.getElementById('passBackBtn'); if (k) k.addEventListener('click', () => showScreen('menuScreen')); }
 function botCos(hero) {
@@ -672,7 +724,7 @@ function bodyColor(cos, fallback) {
 
 /* named effects that every screen plays itself (the host sends only the name and where) */
 const FXF = {
-  kfx(k, x, y, gy, vc) { FX_GY = gy; try { spawnKillEffect({ k, vc }, x, y, addP, burstP, shakeFrom); } catch (e) {} FX_GY = null; }
+  kfx(k, x, y, gy, vc) { FX_GY = gy; try { spawnKillEffect({ k, vc }, x, y, addP, burstP, shakeFrom); } catch (e) { quietErr(e); } FX_GY = null; }
 };
 function fxPlay(name, ...a) { evt(['x', name].concat(a)); if (FXF[name]) FXF[name](...a); }
 
@@ -686,7 +738,7 @@ function doEmote(f, i) {
 }
 function wantEmote(i) {
   if (state !== 'play') return;
-  if (NET.role === 'guest') { if (NET.hostConn && NET.hostConn.open && performance.now() > emoteCd) { emoteCd = performance.now() + 1200; try { NET.hostConn.send({ t: 'emo', i }); } catch (e) {} } return; }
+  if (NET.role === 'guest') { if (NET.hostConn && NET.hostConn.open && performance.now() > emoteCd) { emoteCd = performance.now() + 1200; try { NET.hostConn.send({ t: 'emo', i }); } catch (e) { quietErr(e); } } return; }
   doEmote(player, i);
 }
 function drawEmoteBubble(f) {
@@ -734,7 +786,7 @@ function showChat(f, text) {
 function hostChat(f, text) { text = cleanChat(text); if (!text || !f) return; if (time < (f.chatCd || 0)) return; f.chatCd = time + .6; evt(['c', fighters.indexOf(f), text]); showChat(f, text); }
 function sendChat(text) {
   text = cleanChat(text); if (!text) return;
-  if (NET.role === 'guest') { try { NET.hostConn.send({ t: 'chat', x: text }); } catch (e) {} return; }
+  if (NET.role === 'guest') { try { NET.hostConn.send({ t: 'chat', x: text }); } catch (e) { quietErr(e); } return; }
   hostChat(player, text);
 }
 function chatOpen(open) {
@@ -773,7 +825,7 @@ function winScreen(won, draw) {
       const f = g.f, wid = f.h0.id, sk = skinOf(f.cos, wid), tint = sk ? COSMETICS[sk].tint : undefined, col = bodyColor(f.cos, TC(f.team));
       c.save(); c.translate(g.x, Hc - 34); c.scale(g.sc, g.sc);
       c.shadowColor = col; c.shadowBlur = 10; c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 5; c.lineCap = 'round'; c.lineJoin = 'round';
-      try { if (g.win) drawWinPose(c, (f.cos && f.cos.pose) || 'pose_cheer', t, wid, tint); else drawLosePose(c, t, wid, tint); } catch (e) {}
+      try { if (g.win) drawWinPose(c, (f.cos && f.cos.pose) || 'pose_cheer', t, wid, tint); else drawLosePose(c, t, wid, tint); } catch (e) { quietErr(e); }
       c.restore();
       c.save(); c.font = '700 13px "IBM Plex Sans KR", sans-serif'; c.textAlign = 'center'; c.fillStyle = f === player ? '#ffd34d' : (f.nick ? nameColorFor(f.cos && f.cos.name) : '#8890a4');
       c.fillText(f.nick || f.h0.name, g.x, Hc - 12); c.restore();
@@ -797,14 +849,14 @@ function cosToggle(id) {
   const it = COSMETICS[id];
   if (cosLocked(id)) {
     const p = cosPrice(id);
-    if (COS.gold < p) { cosBuy = null; try { sfx(150, .12, 'square', .04); } catch (e) {} const el = document.getElementById('cos-' + id); if (el) { el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); } return; }
+    if (COS.gold < p) { cosBuy = null; try { sfx(150, .12, 'square', .04); } catch (e) { quietErr(e); } const el = document.getElementById('cos-' + id); if (el) { el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); } return; }
     if (cosBuy !== id) { cosBuy = id; renderCos(); return; }
-    cosBuy = null; COS.own.push(id); COS.gold -= p; if (it.cat === 'skin') COS.skin[it.char] = id; else COS[COS_SLOT[it.cat]] = id; try { sfx(880, .18, 'triangle', .06); } catch (e) {}
+    cosBuy = null; COS.own.push(id); COS.gold -= p; if (it.cat === 'skin') COS.skin[it.char] = id; else COS[COS_SLOT[it.cat]] = id; try { sfx(880, .18, 'triangle', .06); } catch (e) { quietErr(e); }
     saveCos(); goldUi(); renderCos(); accountUi(); return;
   }
   cosBuy = null;
   if (it.cat === 'skin') { if (COS.skin[it.char] === id) delete COS.skin[it.char]; else COS.skin[it.char] = id; }
-  else if (it.cat === 'emo') { const i = COS.emo.indexOf(it.emIdx); if (i >= 0) { if (COS.emo.length > 1) COS.emo.splice(i, 1); } else if (COS.emo.length >= 8) { try { sfx(150, .12, 'square', .04); } catch (e) {} const el = document.getElementById('cos-' + id); if (el) { el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); } return; }      // the wheel is full: take one out first
+  else if (it.cat === 'emo') { const i = COS.emo.indexOf(it.emIdx); if (i >= 0) { if (COS.emo.length > 1) COS.emo.splice(i, 1); } else if (COS.emo.length >= 8) { try { sfx(150, .12, 'square', .04); } catch (e) { quietErr(e); } const el = document.getElementById('cos-' + id); if (el) { el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); } return; }      // the wheel is full: take one out first
     else COS.emo.push(it.emIdx); }
   else { const k = { bcol: 'col', name: 'name', kfx: 'kfx', pose: 'pose' }[it.cat]; COS[k] = COS[k] === id && it.cat !== 'pose' ? null : id; }
   saveCos(); renderCos(); accountUi();
@@ -831,9 +883,9 @@ function renderCos() {
     b.type = 'button'; b.className = 'cosCard'; b.id = 'cos-' + id; b.setAttribute('aria-pressed', String(cosEquipped(id)));
     const pv = document.createElement('div'); pv.className = 'cosPv';
     if (it.cat === 'emo') { pv.textContent = it.em; pv.setAttribute('data-noemo', ''); if (cosEquipped(id)) { const off = document.createElement('span'); off.className = 'cosOff'; off.textContent = '선택해제'; b.append(pv, off); } }
-    else if (it.cat === 'kfx' || it.cat === 'pose') { const cv2 = document.createElement('canvas'); try { cosLive(cv2, id); } catch (e) {} pv.append(cv2); }      // (the real effect / pose, moving)
+    else if (it.cat === 'kfx' || it.cat === 'pose') { const cv2 = document.createElement('canvas'); try { cosLive(cv2, id); } catch (e) { quietErr(e); } pv.append(cv2); }      // (the real effect / pose, moving)
     else if (it.cat === 'name') { pv.textContent = 'Aa'; pv.style.color = nameColorFor(id); pv.style.fontWeight = '700'; }
-    else { const cv2 = document.createElement('canvas'); try { drawItemPreview(cv2, id, performance.now()); } catch (e) {} pv.append(cv2); }
+    else { const cv2 = document.createElement('canvas'); try { drawItemPreview(cv2, id, performance.now()); } catch (e) { quietErr(e); } pv.append(cv2); }
     const nm = document.createElement('span'); nm.textContent = (deal.includes(id) ? HEROES[it.char].name + ' · ' : '') + it.name;
     b.append(pv, nm);
     if (cosLocked(id)) {

@@ -14,7 +14,7 @@ const NEWS_KIND = { '공지': '#4d9dff', '업데이트': '#3fe0c5', '이벤트':
 const NEWS_SEEN_KEY = 'seumArenaNewsSeen', NEWS_CACHE_KEY = 'seumArenaNewsCache';
 let newsData = null, newsAsked = false, newsPopped = false, newsT0 = Date.now();
 function newsLoad(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
-function newsSave(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function newsSave(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { quietErr(e); } }
 function newsOk(d) { return d && Array.isArray(d.news) ? d : null; }
 /* of the baked-in list and the last one read, the newer one (by its "updated" stamp) shows until the fresh one arrives */
 {
@@ -129,7 +129,7 @@ function newsFromRows(rows) {
 }
 function newsFetch() {
   if (newsAsked) return; newsAsked = true;
-  let ctl = null; try { ctl = new AbortController(); setTimeout(() => ctl.abort(), 8000); } catch (e) {}
+  let ctl = null; try { ctl = new AbortController(); setTimeout(() => ctl.abort(), 8000); } catch (e) { quietErr(e); }
   fetch(NEWS_URL, { cache: 'no-store', headers: { apikey: ACH_KEY }, signal: ctl ? ctl.signal : undefined })
     .then(r => r.ok ? r.json() : null).then(rows => { const d = newsFromRows(rows); if (!d) return; newsData = d; newsSave(NEWS_CACHE_KEY, d); newsPaint(); })
     .catch(() => {}).then(() => { newsAsked = 'done'; });
@@ -141,7 +141,7 @@ function newsOwnerCheck() {
   if (!u || !sb) { ed.hidden = true; return; }
   if (newsOwner && newsOwner.uid === u.id) { ed.hidden = !newsOwner.ok; return; }
   newsOwner = { uid: u.id, ok: false };
-  try { sb.from('ff_devs').select('role').eq('user_id', u.id).maybeSingle().then(r => { const ok = !!(r && r.data && r.data.role === 'owner'); if (newsOwner && newsOwner.uid === u.id) newsOwner.ok = ok; ed.hidden = !ok; }, () => {}); } catch (e) {}
+  try { sb.from('ff_devs').select('role').eq('user_id', u.id).maybeSingle().then(r => { const ok = !!(r && r.data && r.data.role === 'owner'); if (newsOwner && newsOwner.uid === u.id) newsOwner.ok = ok; ed.hidden = !ok; }, () => {}); } catch (e) { quietErr(e); }
 }
 /* polls: counts come from seumarena_poll_counts (public), a vote goes through seumarena_poll_vote (signed in, once).
    The options stay plain buttons until the player has voted or the poll is closed; then they turn into result bars. */

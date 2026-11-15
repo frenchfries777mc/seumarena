@@ -14,7 +14,7 @@ const CL_META = 'seumArenaCloud', CL_STASH = 'seumArenaCloudStash', CL_BAK = 'se
 const CL_API = 'https://kebsbuvuutilitwlvxzv.supabase.co/rest/v1/seumarena_saves';
 /* how each part of COS merges (by path; the nearest listed parent decides). Anything not listed is a choice. */
 const CL_RULE = {
-  gold: 'add', karma: 'add', xp: 'add', mp: 'add', cr: 'add', su: 'union', suAll: 'max',
+  gold: 'add', karma: 'add', xp: 'add', mp: 'add', cr: 'add', su: 'union',
   'st.k': 'add', 'st.w': 'add', 'st.g': 'add', 'st.nd': 'add', 'st.sa': 'add', 'st.mw': 'add', 'st.mg': 'add', 'st.hg': 'add', 'st.hk': 'add', 'st.hn': 'add', 'st.d': 'add', 'st.dk': 'add', 'st.mv': 'add', kb: 'max',
   'st.mk': 'max', 'st.hb': 'max', 'st.hw': 'max', ach: 'max', v: 'max',
   own: 'union', kr: 'union', sk: 'union', sx: 'add', cd: 'union', dq: 'day', wq: 'day', sq: 'day', sd: 'day', sw: 'day', att: 'att'
@@ -57,19 +57,19 @@ function clPrefs() { try { const p = JSON.parse(localStorage.getItem('seumArena'
 const clLocal = () => clNorm({ cos: COS, prefs: clPrefs() });
 const clMerge3 = (b, l, r) => clNorm({ cos: clMerge(b.cos, l.cos, r.cos, ''), prefs: clMerge(b.prefs, l.prefs, r.prefs, '') });
 function clLoad(k, d) { try { const v = JSON.parse(localStorage.getItem(k) || 'null'); return v == null ? d : v; } catch (e) { return d; } }
-function clStore(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function clStore(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) { quietErr(e); } }
 function clMetaSave() { if (CL && CL.uid) clStore(CL_META, { uid: CL.uid, rev: CL.rev, base: CL.base, pend: CL.pend }); }
 /* puts a save into the running game (in place, so everything holding COS keeps working) and into this browser's storage */
 function clApply(m) {
   for (const k of Object.keys(COS)) if (!(k in m.cos)) delete COS[k];
   Object.assign(COS, JSON.parse(JSON.stringify(m.cos)));
-  try { localStorage.setItem(COS_KEY, JSON.stringify(COS)); localStorage.setItem('seumArena', JSON.stringify(m.prefs)); } catch (e) {}
+  try { localStorage.setItem(COS_KEY, JSON.stringify(COS)); localStorage.setItem('seumArena', JSON.stringify(m.prefs)); } catch (e) { quietErr(e); }
   if (state !== 'play') {      // the lobby picks follow at once (outside a match); mode and map follow on the next start
     const P = m.prefs;
-    try { if (clObj(P.l)) loadouts = JSON.parse(JSON.stringify(P.l)); if (HEROES[P.c]) chosen = P.c; } catch (e) {}
+    try { if (clObj(P.l)) loadouts = JSON.parse(JSON.stringify(P.l)); if (HEROES[P.c]) chosen = P.c; } catch (e) { quietErr(e); }
   }
-  try { if (achScan()) localStorage.setItem(COS_KEY, JSON.stringify(COS)); } catch (e) {}      // merged stats may reach an achievement
-  for (const f of [goldUi, accountUi, updatePick, markSel]) try { f(); } catch (e) {}
+  try { if (achScan()) localStorage.setItem(COS_KEY, JSON.stringify(COS)); } catch (e) { quietErr(e); }      // merged stats may reach an achievement
+  for (const f of [goldUi, accountUi, updatePick, markSel]) try { f(); } catch (e) { quietErr(e); }
 }
 /* the server */
 async function clToken() {
@@ -78,7 +78,7 @@ async function clToken() {
   CL.tok = (s && s.access_token) || ''; return CL.tok;
 }
 function clFetch(method, q, body, keep) {
-  let ctl = null; try { ctl = new AbortController(); setTimeout(() => ctl.abort(), 12000); } catch (e) {}
+  let ctl = null; try { ctl = new AbortController(); setTimeout(() => ctl.abort(), 12000); } catch (e) { quietErr(e); }
   return fetch(CL_API + q, { method, keepalive: !!keep, cache: 'no-store', signal: ctl && !keep ? ctl.signal : undefined, body: body ? JSON.stringify(body) : undefined,
     headers: { apikey: ACH_KEY, Authorization: 'Bearer ' + CL.tok, 'Content-Type': 'application/json', Prefer: method === 'POST' ? 'return=minimal' : 'return=representation' } });
 }
@@ -98,7 +98,7 @@ async function clPut(uid, m, rev, keep) {
   if (!rev) return true;
   const a = await r.json(); return Array.isArray(a) && a.length === 1;
 }
-function clAgree(uid, rev, m) { CL.uid = uid; CL.rev = rev; CL.base = m; CL.pend = null; CL.ok = true; CL.fail = 0; try { localStorage.setItem(COS_KEY, JSON.stringify(COS)); } catch (e) {} clMetaSave(); }      // the save and its base are written together
+function clAgree(uid, rev, m) { CL.uid = uid; CL.rev = rev; CL.base = m; CL.pend = null; CL.ok = true; CL.fail = 0; try { localStorage.setItem(COS_KEY, JSON.stringify(COS)); } catch (e) { quietErr(e); } clMetaSave(); }      // the save and its base are written together
 /* another account (or a guest) owned what is in this browser: make it this account's starting point */
 function clAdopt(uid) {
   const stash = clLoad(CL_STASH, {}), loc = clLocal();
@@ -157,9 +157,9 @@ async function clCodes(uid) {
       for (const w of row.rewards) if (Array.isArray(w) && /^(g|px|box|ebox|rx|cx|skin)$/.test(w[0]) && w[1] > 0) { const box = /box$/.test(w[0]); for (let k = box ? Math.min(10, Math.floor(w[1])) : 1; k > 0; k--) gots.push(giveReward(w[0], box ? 1 : Math.floor(w[1]))); }
     }
     if (!gots.length) return;
-    saveCos(); try { goldUi(); accountUi(); } catch (e) {}
-    gots.forEach((g, i) => setTimeout(() => { try { rewardFx(g); } catch (e) {} }, i * 4600));
-  } catch (e) {} finally { CL.codeBusy = false; }
+    saveCos(); try { goldUi(); accountUi(); } catch (e) { quietErr(e); }
+    gots.forEach((g, i) => setTimeout(() => { try { rewardFx(g); } catch (e) { quietErr(e); } }, i * 4600));
+  } catch (e) { quietErr(e); } finally { CL.codeBusy = false; }
 }
 /* called by saveCos and savePrefs: keeps this browser's base next to the save just written, and sends the change a little later */
 function cloudMark() {

@@ -291,8 +291,9 @@ const HEROES_OFF = {};
    Balance table from the 14-hero bot sim, 2026-11-10; skill description numbers in kits1/kits2 already include these. */
 const DMG_MUL = { bazooka: .7, harald: .95, shade: .85, sword: 1.2, grenade: .6, shotgun: .8, magiccard: 1.2, kadas: 1.6, wizard: 1.5, rifle: .95, tionis: 2, bow: 1.25, pistol: 1.4, smg: 1.1, shuriken: 1.6, portalgun: 1.65, gloves: 1.25 };      // 2026-11-13 duel + team bot sim retune (gardener: gardener.js)
 for (const id in DMG_MUL) HEROES[id].xm = DMG_MUL[id];
+HEROES.grenade.dmg = 51;      // 2026-11-15 user: 폭발광 basic attack 56 -> 51 (placeholder)
 /* per-hero max hp in the original (small) units, ×STAT_X applied here. Tuned 2026-11-10 with bots that kite (14-hero sim: all win rates 46–55%). */
-const HP_TABLE = { bazooka: 700, sword: 580, shade: 490, harald: 500, grenade: 540, shotgun: 600, rifle: 600, magiccard: 610, kadas: 630, wizard: 640, bow: 690, pistol: 720, smg: 760, shuriken: 780, tionis: 830, portalgun: 770, gloves: 850, samurai: 720 };
+const HP_TABLE = { bazooka: 700, sword: 580, shade: 490, harald: 500, grenade: 540, shotgun: 600, rifle: 600, magiccard: 610, kadas: 630, wizard: 640, bow: 690, pistol: 720, smg: 760, shuriken: 780, tionis: 830, portalgun: 770, gloves: 950, samurai: 720 };
 for (const id in HP_TABLE) HEROES[id].hp = HP_TABLE[id] * STAT_X;
 for (const id of Object.keys(HEROES)) if (!ACTIVE_HEROES.includes(id)) { HEROES_OFF[id] = HEROES[id]; delete HEROES[id]; }
 ROSTER.splice(0, ROSTER.length, ...ACTIVE_HEROES.filter(id => HEROES[id]));

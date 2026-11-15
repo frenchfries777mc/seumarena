@@ -358,17 +358,6 @@ function drawMjolnir(c,s){      // Mjolnir pointing +x from the hand: a short ha
   c.strokeStyle='#ffe66b'; c.lineWidth=1.3; c.beginPath(); c.moveTo(31,-5); c.lineTo(27,0); c.lineTo(31,0); c.lineTo(27,5); c.stroke();
   c.restore();
 }
-function drawStunStars(ctx, HEADCY){   // three little stars circling over the head (drawn in the player's own coordinates)
-  const t=performance.now()/260;
-  ctx.save(); ctx.fillStyle='#ffe066'; ctx.strokeStyle='#8a6d00'; ctx.lineWidth=1;
-  for(let i=0;i<3;i++){
-    const a=t+i*Math.PI*2/3, sx=Math.cos(a)*16, sy=HEADCY-18+Math.sin(a)*5, r=4.5;
-    ctx.beginPath();
-    for(let k=0;k<10;k++){ const rr=(k%2===0)?r:r*0.45, ang=-Math.PI/2+k*Math.PI/5; const px=sx+Math.cos(ang)*rr, py=sy+Math.sin(ang)*rr; if(k===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); }
-    ctx.closePath(); ctx.fill(); ctx.stroke();
-  }
-  ctx.restore();
-}
 function hexA(col,a){
   let m=hexACache.get(col); if(m===undefined){ m=new Map(); hexACache.set(col,m); }
   const ka=(typeof a==='number') ? Math.round(a*100) : a, hit=m.get(ka); if(hit!==undefined) return hit;
@@ -380,7 +369,7 @@ function hexA(col,a){
   m.set(ka,out); return out;
 }
 const hexACache=new Map();       // hexA is called thousands of times a frame with a handful of different colours: the answers are kept, per colour, with the alpha in steps of 0.01 (nobody can see 1%)
-const BULLET_R = 5, BULLET_LIFE = 1.2, PORTAL_BOUNCE_DMG = 1.3, PORTAL_MAX_DMG = 30;
+const BULLET_R = 5;
 function drawPaperShape(c, len, now){      // a folded paper plane seen from the side, pointing right (+x), nose at (len/2,0)
   const h=len*0.2, n=len/2;
   c.fillStyle='#fbf8ee'; c.strokeStyle='#8e97b8'; c.lineWidth=Math.max(1,len*0.02); c.lineJoin='round';
@@ -388,4 +377,3 @@ function drawPaperShape(c, len, now){      // a folded paper plane seen from the
   c.fillStyle='#dfe4f4'; c.beginPath(); c.moveTo(n,0); c.lineTo(-n*0.55,0); c.lineTo(-n,h*0.7); c.closePath(); c.fill(); c.stroke();      // the lower wing in shade
   c.strokeStyle='#b9c0dc'; c.beginPath(); c.moveTo(n*0.7,-h*0.05); c.lineTo(-n*0.7,-h*0.45); c.stroke();      // a fold line
 }
-function conceptOfSkin(sid){ const c=sid&&COSMETICS[sid]; return (c&&c.concept)||''; }

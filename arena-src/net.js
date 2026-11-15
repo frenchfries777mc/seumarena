@@ -4,12 +4,15 @@
    (which the PeerServer only sends after its expire_timeout, ~5-6 s by default, and which names the id). The fullest open room is joined
    ('hello' -> 'welcome'); if there is none, the lowest free id is claimed and this screen becomes the host of a new room. The host waits WAIT_SEC seconds for others (or until the room is full),
    then starts; empty slots get bots. The host runs the whole match and sends snapshots; guests send only their controls. */
-const NET_PREFIX = 'seumarena-v3-', NET_ROOMS = 8, WAIT_SEC = 15, MAX_PLAYERS = 6, SNAP_DT = 1 / 20, IN_DT = 1 / 30;
+const NET_PREFIX = 'seumarena-v3-', NET_ROOMS = 8, WAIT_SEC = 15, WAIT_FEW = 3, MAX_PLAYERS = 6, SNAP_DT = 1 / 20, IN_DT = 1 / 30;
 /* Own PeerServer (e.g. on Oracle Cloud): fill this in and the game uses it instead of the free PeerJS cloud.
    { host: 'peer.example.com', port: 443, path: '/', secure: true, key: 'peerjs' }   (null = PeerJS cloud)
    On that server start the PeerServer with a short expire_timeout (e.g. { expire_timeout: 1500, cleanup_out_msgs: 300 }): that is the time an
    empty room needs to be recognised as free, so it is the length of the room search on an empty server. */
 const PEER_SERVER = null;
+/* waiting (user 2026-11-15 "로비에 아무도 없으면 3초"): a room waits WAIT_SEC s, or only WAIT_FEW s while nobody is waiting in any other room.
+   The server (sa-host.js) counts the people in its other waiting rooms and tells each waiting room through __sad.setWait(sec). A full room starts at once. */
+let waitSec = WAIT_SEC;
 /* Own TURN server (coturn on the Oracle server): no password in this file. Short-lived TURN logins are fetched from TURN_CRED_URL (a Cloudflare
    Worker that signs them with coturn's static-auth-secret) and added to the ICE list below; if that fails the game still runs on STUN + the public relays. */
 const TURN_CRED_URL = 'https://frenchfries777.com/seumarena/turn';
@@ -41,23 +44,23 @@ const NET_BUFFS = ['ally', 'block', 'reflect', 'sand', 'inv', 'counter', 'guard'
 function modeEntry(id) { try { if (typeof MODES === 'undefined' || !MODES) return null; return Array.isArray(MODES) ? MODES.find(m => m && m.id === id) || null : MODES[id] || null; } catch (e) { return null; } }
 function netModeOf(v) {      // the mode actually played: unknown or not-ready ids become the default, the same way the engine's modeOf() does
   if (typeof v !== 'string' || !/^[a-z][a-z0-9]{1,9}$/.test(v)) v = 'team';
-  try { if (typeof modeOf === 'function') return modeOf(v).id; } catch (e) {}
+  try { if (typeof modeOf === 'function') return modeOf(v).id; } catch (e) { quietErr(e); }
   const e = modeEntry(v); return e && e.ready !== false ? v : 'team';
 }
 const lobbyMode = () => netModeOf(typeof modeChoice === 'string' ? modeChoice : 'team');
 function modeMax(id) { const e = modeEntry(id), n = e ? (e.max | 0) || (e.teams | 0) * (e.per | 0) : 0;      // room size: the entry's max, else every seat of every team (5v5 = 10)
   return n >= 2 && n <= 12 ? n : id === 'duel' ? 2 : MAX_PLAYERS; }
-function useMode(id) { try { if (typeof setMode === 'function') setMode(id); else if (typeof curMode !== 'undefined') curMode = id; } catch (e) {} }
+function useMode(id) { try { if (typeof setMode === 'function') setMode(id); else if (typeof curMode !== 'undefined') curMode = id; } catch (e) { quietErr(e); } }
 function startMatchIn(id, humans) {      // setup() takes the lobby's modeChoice: make sure it is the room's mode while the match is made
-  let keep; try { if (typeof modeChoice !== 'undefined') { keep = modeChoice; modeChoice = id; } } catch (e) {}
-  try { startMatch(humans); } finally { try { if (keep !== undefined) modeChoice = keep; } catch (e) {} }
+  let keep; try { if (typeof modeChoice !== 'undefined') { keep = modeChoice; modeChoice = id; } } catch (e) { quietErr(e); }
+  try { startMatch(humans); } finally { try { if (keep !== undefined) modeChoice = keep; } catch (e) { quietErr(e); } }
   useMode(id);
 }
-function modeState() { try { if (typeof modeSnap === 'function') return modeSnap(); } catch (e) {} }
+function modeState() { try { if (typeof modeSnap === 'function') return modeSnap(); } catch (e) { quietErr(e); } }
 const roomId = k => NET_PREFIX + NET.mode + '-room-' + k;
 /* light network mode for phones / busy connections (the device setting 'seum_device' = 'mobile' | 'pc', set on first start and in the settings; before that: a touch screen counts as mobile).
    A light guest asks the host for 10 snapshots a second instead of 20, sends its controls 20 times a second instead of 30, and keeps a larger buffer against jitter */
-function netLite() { let v = null; try { v = localStorage.getItem('seum_device'); } catch (e) {} if (v === 'mobile') return true; if (v === 'pc') return false; try { return matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0; } catch (e) { return false; } }
+function netLite() { let v = null; try { v = localStorage.getItem('seum_device'); } catch (e) { quietErr(e); } if (v === 'mobile') return true; if (v === 'pc') return false; try { return matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0; } catch (e) { return false; } }
 let NET_LITE = netLite();
 window.netDeviceChanged = () => { NET_LITE = netLite(); };      // the device setting changed: used from the next room on
 let netToken = 0, netClaimTries = 0, netBad = new Set(), netSq = 0, inHist = [], snapAcc = 0, snapTick = 0, inAcc = 0, mapSentVer = -1, mapSentAt = 0, netOut = null;
@@ -66,23 +69,23 @@ let netToken = 0, netClaimTries = 0, netBad = new Set(), netSq = 0, inHist = [],
    with the standings at that moment, so they get their result and reward instead of a bare "the host left" */
 function hostLeaving() {
   if (NET.role !== 'host' || NET.phase !== 'play' || state !== 'play' || !NET.members.length || !(NET.mode === 'solo' || NET.mode === 'duo')) return false;
-  let st; try { if (typeof matchStats === 'function') st = matchStats(); } catch (e) {}
+  let st; try { if (typeof matchStats === 'function') st = matchStats(); } catch (e) { quietErr(e); }
   const msg = { t: 'over', sc: score, e: NET.evs, st, md: modeState(), left: 1 };
-  for (const m of NET.members) try { m.conn.send(msg); } catch (e) {}
+  for (const m of NET.members) try { m.conn.send(msg); } catch (e) { quietErr(e); }
   return true;
 }
 function netReset() {
   const linger = hostLeaving();
   netToken++;
   const cs = NET.members.map(m => m.conn), pr = NET.peer;
-  const shut = () => { for (const c of cs) try { c.close(); } catch (e) {} if (pr) try { pr.destroy(); } catch (e) {} };
+  const shut = () => { for (const c of cs) try { c.close(); } catch (e) { quietErr(e); } if (pr) try { pr.destroy(); } catch (e) { quietErr(e); } };
   if (linger) setTimeout(shut, 600); else shut();      // give the last message time to leave before the connections go
-  if (NET.hostConn) try { NET.hostConn.close(); } catch (e) {}
+  if (NET.hostConn) try { NET.hostConn.close(); } catch (e) { quietErr(e); }
   Object.assign(NET, { role: null, peer: null, conns: [], hostConn: null, members: [], phase: 'idle', rec: false, evs: [], room: -1, me: -1, waitEnd: 0, onRoomGone: null, heard: 0, ps: null, rtt: 0, tOff: null, jit: .02, delay: .1, tok: null, rc: null, gone: [] }); netBadge(false);
   netOut = null; netSq = 0; inHist = [];
 }
 const newPeer = id => new Peer(id, Object.assign({ debug: 0 }, PEER_SERVER, PEERJS_ICE_CONFIG));
-function keepAlive(p) { p.on('disconnected', () => { setTimeout(() => { if (!p.destroyed && p.disconnected) try { p.reconnect(); } catch (e) {} }, 400); }); }
+function keepAlive(p) { p.on('disconnected', () => { setTimeout(() => { if (!p.destroyed && p.disconnected) try { p.reconnect(); } catch (e) { quietErr(e); } }, 400); }); }
 function roomUi(title, status, n, left) {
   $('roomTitle').textContent = title; $('roomStatus').textContent = status;
   const slots = $('roomSlots'); slots.textContent = '';
@@ -103,7 +106,7 @@ async function netFriends() {
     const res = await fetch(FR_API, { cache: 'no-store', headers: { apikey: typeof ACH_KEY === 'string' ? ACH_KEY : '', Authorization: 'Bearer ' + t } }); if (!res.ok) return;
     const rows = await res.json(); MYFR.uid = u.id;
     MYFR.fr = (Array.isArray(rows) ? rows : []).map(x => x && (x.requester_id === u.id ? x.addressee_id : x.requester_id)).filter(isUid);
-  } catch (e) {}
+  } catch (e) { quietErr(e); }
 }
 /* team per human (index -> team) or null: friend groups (either side listing the other is enough) go together, largest group first, to the
    side with the most free seats; a group bigger than a side is split; everyone else then evens out the sides. Modes with one per side: null */
@@ -122,10 +125,10 @@ function friendTeams(humans, nt, per) {
 }
 function startOnline() {
   netFriends();
-  if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { quietErr(e); } }
   if (ac && ac.state === 'suspended') ac.resume();
   netReset(); netClaimTries = 0; netBad = new Set(); NET.searchUntil = 0;
-  try { if (typeof modeFixDay === 'function') modeFixDay(); } catch (e) {}      // only today's modes are searched (오늘의 모드, engine.js MODE_GROUPS)
+  try { if (typeof modeFixDay === 'function') modeFixDay(); } catch (e) { quietErr(e); }      // only today's modes are searched (오늘의 모드, engine.js MODE_GROUPS)
   NET.mode = lobbyMode(); NET.max = modeMax(NET.mode); useMode(NET.mode);      // also what a fallback bot match plays
   showScreen('roomScreen');
   netSearch();
@@ -153,7 +156,7 @@ function netProbeAll(tok) {
   let decided = false, joining = -1, soft = false, hard = false, grace = 0;
   for (let k = 0; k < NET_ROOMS; k++) R[k] = { s: 'pend', c: null, n: 0, jt: 0 };
   const alive = () => tok === netToken && !decided;
-  const closeAll = keep => R.forEach((r, k) => { if (k !== keep && r.c) try { r.c.close(); } catch (e) {} });
+  const closeAll = keep => R.forEach((r, k) => { if (k !== keep && r.c) try { r.c.close(); } catch (e) { quietErr(e); } });
   const finish = fn => { decided = true; NET.onRoomGone = null; clearTimeout(grace); clearTimeout(ts); clearTimeout(th); R.forEach(r => clearTimeout(r.jt)); fn(); };
   const status = () => roomUi('방 찾는 중', '방을 확인하고 있어요 (' + R.filter(r => r.s !== 'pend').length + ' / ' + NET_ROOMS + ')');
   const join = () => {
@@ -173,11 +176,11 @@ function netProbeAll(tok) {
     finish(() => { closeAll(-1); netRetry(); });      // players never host: every online match runs in a server room (sa-host); none free yet -> look again
   }
   const ts = setTimeout(() => { soft = true; decide(); }, SOFT), th = setTimeout(() => { hard = true; decide(); }, HARD);
-  NET.onRoomGone = k => { if (!alive() || k < 0 || k >= NET_ROOMS || R[k].s !== 'pend') return; R[k].s = 'free'; try { R[k].c.close(); } catch (e) {} status(); decide(); };
+  NET.onRoomGone = k => { if (!alive() || k < 0 || k >= NET_ROOMS || R[k].s !== 'pend') return; R[k].s = 'free'; try { R[k].c.close(); } catch (e) { quietErr(e); } status(); decide(); };
   status();
   R.forEach((r, k) => {
     let c; try { c = r.c = NET.peer.connect(roomId(k), { reliable: true }); } catch (e) { r.s = 'busy'; return; }
-    c.on('open', () => { if (r.s === 'pend' && alive()) try { c.send({ t: 'peek' }); } catch (e) {} });
+    c.on('open', () => { if (r.s === 'pend' && alive()) try { c.send({ t: 'peek' }); } catch (e) { quietErr(e); } });
     c.on('data', m => {
       if (tok !== netToken || !m) return;
       if (NET.hostConn === c) return guestMsg(m);
@@ -194,27 +197,11 @@ function netProbeAll(tok) {
   });
   if (!R.some(r => r.c)) finish(() => netFallback('온라인에 연결할 수 없어요.'));
 }
-function netClaim(k) {
-  const tok = netToken;
-  NET.phase = 'claim';
-  try { NET.peer.destroy(); } catch (e) {}
-  roomUi('방 만드는 중', (k + 1) + '번 방을 열고 있어요');
-  let p; try { p = newPeer(roomId(k)); } catch (e) { return netFallback('온라인에 연결할 수 없어요.'); }
-  NET.peer = p; keepAlive(p);
-  const to = setTimeout(() => { if (tok === netToken && NET.phase === 'claim') netFallback('방을 열지 못했어요.'); }, 7000);
-  p.on('open', () => { if (tok !== netToken) return; clearTimeout(to); becomeHost(k); });
-  p.on('error', e => {
-    if (tok !== netToken) return;
-    if (e.type === 'unavailable-id' && NET.phase === 'claim') { clearTimeout(to); netBad.add(k); try { p.destroy(); } catch (er) {} if (++netClaimTries > 3) return netFallback('방을 열지 못했어요.'); netToken++; return netSearch(); }      // someone opened it a moment ago: look again
-    if (NET.phase === 'claim') { clearTimeout(to); netFallback('온라인 연결에 실패했어요 (' + e.type + ').'); }
-  });
-  p.on('connection', c => hostAccept(c, tok));
-}
 /* no free server room right now: the server opens a new one within seconds after a room starts, so look again for up to 15 s */
 function netRetry() {
   const now = performance.now(); if (!NET.searchUntil) NET.searchUntil = now + 15000;
   if (now > NET.searchUntil) { NET.searchUntil = 0; return netFallback('서버 방이 모두 차 있어요.'); }
-  const tok = netToken; try { NET.peer && NET.peer.destroy(); } catch (e) {} NET.peer = null; NET.phase = 'search';
+  const tok = netToken; try { NET.peer && NET.peer.destroy(); } catch (e) { quietErr(e); } NET.peer = null; NET.phase = 'search';
   roomUi('방 찾는 중', '서버 방이 열리기를 기다리고 있어요');
   setTimeout(() => { if (tok === netToken && NET.phase === 'search') { netToken++; netSearch(); } }, 1500);
 }
@@ -226,7 +213,7 @@ function netFallback(why) {
 
 /* host */
 function becomeHost(k) {
-  Object.assign(NET, { role: 'host', phase: 'wait', room: k, waitEnd: performance.now() + WAIT_SEC * 1000, members: [], conns: [] });
+  Object.assign(NET, { role: 'host', phase: 'wait', room: k, waitEnd: performance.now() + waitSec * 1000, members: [], conns: [] });
 }
 /* what a guest says about its controls is never trusted as is: numbers are clamped, the move vector cannot be longer than 1 */
 const numIn = (v, lo, hi, d) => typeof v === 'number' && isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d;
@@ -240,14 +227,14 @@ function hostAccept(c, tok) {
   c.on('data', m => {
     if (tok !== netToken || !m || typeof m !== 'object') return;
     if (m.t === 'peek') {      // a searching screen asks whether this room has a free seat; it is not a member yet
-      try { c.send({ t: 'info', ok: NET.phase === 'wait' && hostN() < NET.max, n: hostN(), max: NET.max, mode: NET.mode }); } catch (e) {}
+      try { c.send({ t: 'info', ok: NET.phase === 'wait' && hostN() < NET.max, n: hostN(), max: NET.max, mode: NET.mode }); } catch (e) { quietErr(e); }
     } else if (m.t === 'hello') {
       if (NET.members.some(x => x.conn === c)) return;
-      if (NET.phase !== 'wait' || hostN() >= NET.max || m.mode !== NET.mode || typeof m.hero !== 'string' || !Object.prototype.hasOwnProperty.call(HEROES, m.hero)) { try { c.send({ t: 'busy' }); } catch (e) {} setTimeout(() => { try { c.close(); } catch (e) {} }, 500); return; }
+      if (NET.phase !== 'wait' || hostN() >= NET.max || m.mode !== NET.mode || typeof m.hero !== 'string' || !Object.prototype.hasOwnProperty.call(HEROES, m.hero)) { try { c.send({ t: 'busy' }); } catch (e) { quietErr(e); } setTimeout(() => { try { c.close(); } catch (e) { quietErr(e); } }, 500); return; }
       const mem = { conn: c, hero: m.hero, lo: Array.isArray(m.lo) ? m.lo : null, name: cleanName(m.name) || '게스트', cos: cleanCos(m.cos, m.hero), f: null, fi: -1, heard: performance.now(), inAt: 0, sq: 0, sqAt: 0, lite: !!m.lite, evq: [], mv: -1, line: Array.isArray(m.line) ? m.line.slice(0, DUEL_N).map(e => e && typeof e.hero === 'string' && Object.prototype.hasOwnProperty.call(HEROES, e.hero) ? { hero: e.hero, lo: Array.isArray(e.lo) ? e.lo.slice(0, 2) : null, cos: cleanCos(e.cos, e.hero) } : null).filter(Boolean) : null,
         uid: isUid(m.uid) ? m.uid : '', fr: Array.isArray(m.fr) ? m.fr.slice(0, 500).filter(isUid) : [] };
       NET.members.push(mem); NET.conns.push(c);
-      if (NET.waitEnd - performance.now() < 5000) NET.waitEnd = performance.now() + 5000;      // someone just arrived: leave time for the next one to find the room too
+      { const now = performance.now(), g = Math.min(5, waitSec) * 1000; if (NET.waitEnd - now < g) NET.waitEnd = now + g; }      // someone just arrived: leave time for the next one to find the room too
       mem.tok = Math.random().toString(36).slice(2, 12); c.send({ t: 'welcome', room: NET.room, tok: mem.tok });
       hostLobby();
       if (hostN() >= NET.max) hostStart();
@@ -256,17 +243,17 @@ function hostAccept(c, tok) {
       const old = typeof m.tok === 'string' && NET.members.find(x => x.tok === m.tok); if (old) hostDrop(old.conn, tok);      // the old link may still look open on this side
       NET.gone = (NET.gone || []).filter(g => now - g.at < 60000);
       const g = NET.phase === 'play' && state === 'play' && typeof m.tok === 'string' ? NET.gone.find(x => x.mem.tok === m.tok) : null;
-      if (!g || !g.mem.f || !fighters.includes(g.mem.f)) { try { c.send({ t: 'busy' }); } catch (e) {} setTimeout(() => { try { c.close(); } catch (e) {} }, 500); return; }
+      if (!g || !g.mem.f || !fighters.includes(g.mem.f)) { try { c.send({ t: 'busy' }); } catch (e) { quietErr(e); } setTimeout(() => { try { c.close(); } catch (e) { quietErr(e); } }, 500); return; }
       NET.gone = NET.gone.filter(x => x !== g);
       const mem = Object.assign(g.mem, { conn: c, heard: now, inAt: 0, sq: 0, sqAt: 0, evq: [], mv: -1, lite: !!m.lite });
       mem.f.remote = mem; mem.f.human = true; mem.f.netIn = null; mem.fi = fighters.indexOf(mem.f);
       NET.members.push(mem); NET.conns.push(c); NET.rec = true; NET.rejoins = (NET.rejoins || 0) + 1;
       const roster = fighters.map(f => ({ nm: f.nick, cos: f.cos, hu: f.human ? 1 : 0 }));
-      try { c.send({ t: 'start', re: 1, you: mem.fi, team: mem.f.team, map: curMap, mode: NET.mode, roster, tok: mem.tok }); } catch (e) {}
+      try { c.send({ t: 'start', re: 1, you: mem.fi, team: mem.f.team, map: curMap, mode: NET.mode, roster, tok: mem.tok }); } catch (e) { quietErr(e); }
     } else if (m.t === 'in' || m.t === 'ping') {
       const mem = NET.members.find(x => x.conn === c); if (!mem) return;
       const now = performance.now(); mem.heard = now;
-      if (m.t === 'ping') { try { c.send({ t: 'pong', ts: m.ts }); } catch (e) {} return; }
+      if (m.t === 'ping') { try { c.send({ t: 'pong', ts: m.ts }); } catch (e) { quietErr(e); } return; }
       if (!mem.f) return;
       const n = cleanIn(m), o = mem.f.netIn;
       if (o) { n.pf = n.pf || o.pf; n.ult = n.ult || o.ult; n.dash = n.dash || o.dash; n.sk = [n.sk[0] || o.sk[0], n.sk[1] || o.sk[1]]; n.manual = n.manual || o.manual; }
@@ -282,7 +269,7 @@ function hostAccept(c, tok) {
 function hostDrop(c, tok) {
     if (tok !== netToken) return;
     const i = NET.members.findIndex(x => x.conn === c); if (i < 0) return;
-    try { c.close(); } catch (e) {}
+    try { c.close(); } catch (e) { quietErr(e); }
     const mem = NET.members[i]; NET.members.splice(i, 1); NET.conns = NET.conns.filter(x => x !== c);
     if (mem.f) { mem.f.remote = null; mem.f.human = false; mem.f.netIn = null; }      // a player who left mid-match: a bot takes over the fighter
     if (mem.f && mem.tok && NET.phase === 'play') (NET.gone || (NET.gone = [])).push({ mem, at: performance.now() });      // ...until the same player comes back (rejoin) within a minute
@@ -292,18 +279,18 @@ function hostDrop(c, tok) {
 function hostLobby() {
   const left = Math.max(0, Math.ceil((NET.waitEnd - performance.now()) / 1000)), n = hostN();
   roomUi('방 대기 중', n + ' / ' + NET.max + '명 · ' + left + '초 뒤에 시작해요. 빈자리는 봇이 채워요.', n, left);
-  for (const m of NET.members) try { m.conn.send({ t: 'lobby', n, left, max: NET.max }); } catch (e) {}
+  for (const m of NET.members) try { m.conn.send({ t: 'lobby', n, left, max: NET.max }); } catch (e) { quietErr(e); }
 }
 function hostStart() {
   if (NET.phase !== 'wait') return;
   NET.phase = 'play';
   const humans = (DED ? [] : [{ hero: chosen, lo: loadoutOf(chosen), local: true, cos: myCos(chosen), name: PROF.name, line: myDuelLine(), uid: MYFR.uid, fr: MYFR.fr }]).concat(NET.members.map(m => ({ hero: m.hero, lo: m.lo, remote: m, cos: m.cos, name: m.name, line: m.line, uid: m.uid, fr: m.fr })));
-  try { const md = modeEntry(NET.mode), tm = md && friendTeams(humans, md.teams | 0, md.per | 0); if (tm) humans.forEach((h, i) => { h.tm = tm[i]; }); } catch (e) {}
+  try { const md = modeEntry(NET.mode), tm = md && friendTeams(humans, md.teams | 0, md.per | 0); if (tm) humans.forEach((h, i) => { h.tm = tm[i]; }); } catch (e) { quietErr(e); }
   startMatchIn(NET.mode, humans);
-  if (!NET.members.length) { const p = NET.peer; NET.peer = null; NET.role = null; NET.phase = 'idle'; try { p.destroy(); } catch (e) {} return; }      // nobody came: the room closes, the match is offline
+  if (!NET.members.length) { const p = NET.peer; NET.peer = null; NET.role = null; NET.phase = 'idle'; try { p.destroy(); } catch (e) { quietErr(e); } return; }      // nobody came: the room closes, the match is offline
   NET.rec = true; NET.evs = []; snapAcc = 0; mapSentVer = -1;
   const roster = fighters.map(f => ({ nm: f.nick, cos: f.cos, hu: f.human ? 1 : 0 }));
-  for (const m of NET.members) try { m.conn.send({ t: 'start', you: m.fi, team: m.f.team, map: curMap, mode: NET.mode, roster }); } catch (e) {}
+  for (const m of NET.members) try { m.conn.send({ t: 'start', you: m.fi, team: m.f.team, map: curMap, mode: NET.mode, roster }); } catch (e) { quietErr(e); }
 }
 const r1 = v => Math.round(v * 10) / 10, r2 = v => Math.round(v * 100) / 100, r3 = v => Math.round(v * 1000) / 1000;
 /* what a guest needs to predict its own walking: the highest input number the host has taken in, how long ago, and the speed (0 = do not predict) */
@@ -358,14 +345,14 @@ function hostSnap() {
     if (m.lite && snapTick % 2) { if (ev.length) m.evq.push(...ev); continue; }      // a light guest gets every other snapshot; its events wait for the next one it gets
     const o = Object.assign({}, s, { e: m.evq.length ? m.evq.concat(ev) : ev }); m.evq = [];
     if (m.mv !== NET.mapVer || mapAll) { o.mr = rows(); m.mv = NET.mapVer; }
-    try { if (m.conn.open) m.conn.send(o); } catch (e) {}
+    try { if (m.conn.open) m.conn.send(o); } catch (e) { quietErr(e); }
   }
 }
 function hostEnd() {
   if (NET.role !== 'host') return;
   /* end-of-match stats: the result screen's author defines matchStats() (a JSON-safe value, e.g. an array indexed like `fighters`); it rides along in 'over' and lands in NET.stats on guests */
-  let st; try { if (typeof matchStats === 'function') st = matchStats(); } catch (e) {}
-  for (const m of NET.members) try { m.conn.send({ t: 'over', sc: score, e: NET.evs, st }); } catch (e) {}
+  let st; try { if (typeof matchStats === 'function') st = matchStats(); } catch (e) { quietErr(e); }
+  for (const m of NET.members) try { m.conn.send({ t: 'over', sc: score, e: NET.evs, st }); } catch (e) { quietErr(e); }
   NET.rec = false; const tok = netToken;
   setTimeout(() => { if (tok === netToken) netReset(); }, 1500);
 }
@@ -381,7 +368,7 @@ function guestMsg(m) {
   else if (m.t === 'pong') { if (typeof m.ts === 'number') { const r = performance.now() - m.ts; NET.rtt = NET.rtt ? NET.rtt * .7 + r * .3 : r; } }
   else if (m.t === 'start') guestStart(m);
   else if (m.t === 's' && state === 'play' && NET.phase === 'play') applySnap(m);
-  else if (m.t === 'over' && NET.phase === 'play') { if (m.e) replayEvents(m.e); if (m.md !== undefined && typeof applyModeSnap === 'function') try { applyModeSnap(m.md); } catch (e) {} score = m.sc; NET.stats = m.st; NET.phase = 'over'; endGame(); const tok = netToken; setTimeout(() => { if (tok === netToken) netReset(); }, 300); }
+  else if (m.t === 'over' && NET.phase === 'play') { if (m.e) replayEvents(m.e); if (m.md !== undefined && typeof applyModeSnap === 'function') try { applyModeSnap(m.md); } catch (e) { quietErr(e); } score = m.sc; NET.stats = m.st; NET.phase = 'over'; endGame(); const tok = netToken; setTimeout(() => { if (tok === netToken) netReset(); }, 300); }
 }
 /* reconnect: when the link to the host breaks mid-match (wifi <-> LTE, a tunnel, a dropped packet storm), the host's bot keeps the fighter
    going and this screen keeps trying a new connection to the same room for 20 s, then takes the fighter back */
@@ -394,19 +381,19 @@ function guestLink() {
   if (NET.role !== 'guest' || NET.phase !== 'play' || state !== 'play' || !NET.tok) return hostLost();
   if (NET.rc) return;
   const now = performance.now(); NET.rc = { until: now + 20000, next: now + 300, n: 0, c: null };
-  try { NET.hostConn && NET.hostConn.close(); } catch (e) {} NET.hostConn = null; netOut = null;
+  try { NET.hostConn && NET.hostConn.close(); } catch (e) { quietErr(e); } NET.hostConn = null; netOut = null;
   netBadge(true);
 }
 function rejoinTry() {
   const rc = NET.rc, tok = netToken; rc.next = performance.now() + 2500; rc.n++;
-  if (rc.c) try { rc.c.close(); } catch (e) {}
+  if (rc.c) try { rc.c.close(); } catch (e) { quietErr(e); }
   let p = NET.peer;
   if (!p || p.destroyed) { try { p = NET.peer = newPeer(undefined); keepAlive(p); } catch (e) { return; } }
-  else if (p.disconnected) { try { p.reconnect(); } catch (e) {} if (rc.n % 3) return; try { p.destroy(); } catch (e) {} try { p = NET.peer = newPeer(undefined); keepAlive(p); } catch (e) { return; } }      // a new network: the old signalling link is dead, a fresh peer is quicker
+  else if (p.disconnected) { try { p.reconnect(); } catch (e) { quietErr(e); } if (rc.n % 3) return; try { p.destroy(); } catch (e) { quietErr(e); } try { p = NET.peer = newPeer(undefined); keepAlive(p); } catch (e) { return; } }      // a new network: the old signalling link is dead, a fresh peer is quicker
   const go = () => {
     if (tok !== netToken || NET.rc !== rc) return;
     let c; try { c = rc.c = p.connect(roomId(NET.room), { reliable: true }); } catch (e) { return; }
-    c.on('open', () => { try { c.send({ t: 'rejoin', tok: NET.tok, lite: NET_LITE ? 1 : 0 }); } catch (e) {} });
+    c.on('open', () => { try { c.send({ t: 'rejoin', tok: NET.tok, lite: NET_LITE ? 1 : 0 }); } catch (e) { quietErr(e); } });
     c.on('data', m => {
       if (tok !== netToken || !m) return;
       if (NET.hostConn === c) return guestMsg(m);
@@ -422,7 +409,7 @@ function hostLost() {
   NET.rc = null; netBadge(false);
   const was = NET.phase; netReset();
   if (was === 'play' && state === 'play' && (NET.mode === 'solo' || NET.mode === 'duo')) endGame();      // 원 레프트: the result as it stands (the host's tab went away without a word)
-  else if (was === 'play' && state === 'play') { state = 'over'; notice.hidden = false; notice.textContent = '서버와 연결이 끊겨 경기가 끝났어요'; setTimeout(() => { if (state === 'over' && !NET.role) toMenu(); }, 2200); }
+  else if (was === 'play' && state === 'play') { if (typeof leaveMark === 'function') leaveMark(false); state = 'over'; notice.hidden = false; notice.textContent = '서버와 연결이 끊겨 경기가 끝났어요'; setTimeout(() => { if (state === 'over' && !NET.role) toMenu(); }, 2200); }
   else if (was === 'joined') { netSearch(); }
 }
 function guestStart(m) {
@@ -479,7 +466,7 @@ function applySnap(s) {
       if (o) n.t0 = o.t0; return n; }); }
   minions = s.m.map(m => ({ minion: true, kind: m[0], x: m[1], y: m[2], team: m[3], hp: m[4], max: m[5], hit: !!m[6], aim: m[7], a: m[7], sw: time - m[8], side: m[9], b: {}, dead: false, bob: time * 8 }));
   strikes = s.k.map(k => ({ x: k[0], y: k[1], r: k[2], t: k[3], max: k[4], col: k[5] }));
-  if (s.md !== undefined && typeof applyModeSnap === 'function') try { applyModeSnap(s.md); } catch (e) {}
+  if (s.md !== undefined && typeof applyModeSnap === 'function') try { applyModeSnap(s.md); } catch (e) { quietErr(e); }
   replayEvents(s.e);
 }
 function replayEvents(es) {
@@ -532,7 +519,7 @@ function interpAt(h, t) {
 }
 function guestStep(dt) {
   netRT = NET.tOff != null ? performance.now() / 1000 + NET.tOff - NET.delay : null;      // the host time being shown now
-  time += dt; timeLeft = Math.max(0, timeLeft - dt);
+  time += dt; timeLeft = modeNow().fog ? timeLeft + dt : Math.max(0, timeLeft - dt);
   const k = Math.min(1, dt * 14);
   for (const f of fighters) {
     if (!f || f.dead) continue;
@@ -558,7 +545,7 @@ function guestStep(dt) {
     inAcc = 0;
     const o = netOut; netOut = null;
     const sq = ++netSq; inHist.push({ sq, t: time, mx: r2(o.mx), my: r2(o.my) }); while (inHist.length && time - inHist[0].t > 1.5) inHist.shift();
-    try { NET.hostConn.send({ t: 'in', sq, mx: r2(o.mx), my: r2(o.my), aim: r2(o.aim), tx: Math.round(o.tx), ty: Math.round(o.ty), hold: o.hold, touch: o.touch, aiming: o.aiming, pf: o.pf, ult: o.ult, dash: o.dash, sk: o.sk, np: o.np, manual: o.manual }); } catch (e) {}
+    try { NET.hostConn.send({ t: 'in', sq, mx: r2(o.mx), my: r2(o.my), aim: r2(o.aim), tx: Math.round(o.tx), ty: Math.round(o.ty), hold: o.hold, touch: o.touch, aiming: o.aiming, pf: o.pf, ult: o.ult, dash: o.dash, sk: o.sk, np: o.np, manual: o.manual }); } catch (e) { quietErr(e); }
   }
 }
 
@@ -572,12 +559,12 @@ function netTick(dt) {
   }
   if (NET.role === 'guest' && NET.rc) { if (now > NET.rc.until) hostLost(); else if (now > NET.rc.next) rejoinTry(); }      // reconnecting: no way back for 20 s means the host is gone
   if (NET.role === 'guest' && NET.hostConn) {
-    if ((pingAcc += dt) > 1) { pingAcc = 0; try { NET.hostConn.send({ t: 'ping', ts: now }); } catch (e) {} }
+    if ((pingAcc += dt) > 1) { pingAcc = 0; try { NET.hostConn.send({ t: 'ping', ts: now }); } catch (e) { quietErr(e); } }
     if (NET.phase === 'play' && NET.heard && now - NET.heard > 4000 && !NET.rc) guestLink();       // no snapshot for 4 s: the link is probably broken, try a fresh one
     if (NET.phase === 'joined') { if (!NET.heard) NET.heard = now; if (now - NET.heard > 8000) hostLost(); }
   }
   if (NET.role === 'host' && NET.phase === 'wait') {
-    if (DED && !NET.members.length) NET.waitEnd = performance.now() + WAIT_SEC * 1000;      // an empty server room waits as long as it takes
+    if (DED && !NET.members.length) NET.waitEnd = performance.now() + waitSec * 1000;      // an empty server room waits as long as it takes
     const left = (NET.waitEnd - performance.now()) / 1000;
     if (Math.ceil(left) !== netTick.last) { netTick.last = Math.ceil(left); hostLobby(); }
     if (left <= 0) hostStart();
@@ -601,6 +588,10 @@ if (DED) {
       p.on('open', () => { if (tok === netToken) becomeHost(k | 0); });
       p.on('error', e => { if (tok !== netToken) return; if (e.type === 'peer-unavailable') return; if (NET.phase === 'claim' || e.type === 'unavailable-id') ded.err = e.type === 'unavailable-id' ? 'taken' : String(e.type); });
       p.on('connection', c => hostAccept(c, tok));
+    },
+    setWait(sec) {      // sa-host: few people online -> WAIT_FEW, else WAIT_SEC; a room already counting down moves to the new length
+      const n = sec === WAIT_FEW ? WAIT_FEW : WAIT_SEC; if (n === waitSec) return; const d = (n - waitSec) * 1000; waitSec = n;
+      if (NET.role === 'host' && NET.phase === 'wait' && NET.members.length) NET.waitEnd += d;
     },
     status() {
       if (NET.phase === 'play' && state === 'play') ded.started = true;
