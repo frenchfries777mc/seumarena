@@ -381,7 +381,7 @@ const achTopRank = () => Math.max(0, ...Object.keys(HEROES).map(h => masteryOf(h
 const ACH_PAY = [['g', 100], ['g', 300], ['box'], ['ebox']];
 const ACHS = [
   ['k10', 0, '킬 10번', 10, s => s.k], ['g5', 0, '5판 하기', 5, s => s.g], ['w1', 0, '1승', 1, s => s.w], ['mk4', 0, '한 게임에서 4킬', 4, s => s.mk], ['modes', 0, '모든 모드 1판씩', 4, s => ['team', 'solo', 'flag', 'duel'].filter(m => s.mg[m]).length],
-  ['k100', 1, '킬 100번', 100, s => s.k], ['w10', 1, '10승', 10, s => s.w], ['mk7', 1, '한 게임에서 7킬', 7, s => s.mk], ['nd1', 1, '팀 아웃에서 죽지 않고 승리', 1, s => s.nd], ['solo1', 1, '원 레프트 1등', 1, s => s.mw.solo | 0], ['duel5', 1, '듀얼 배틀 5승', 5, s => s.mw.duel | 0], ['flag5', 1, '캡쳐 플래그 5승', 5, s => s.mw.flag | 0],
+  ['k100', 1, '킬 100번', 100, s => s.k], ['w10', 1, '10승', 10, s => s.w], ['mk7', 1, '한 게임에서 7킬', 7, s => s.mk], ['nd1', 1, '팀 아웃에서 죽지 않고 승리', 1, s => s.nd], ['solo1', 1, '원 레프트 1등', 1, s => s.s1 | 0], ['duel5', 1, '듀얼 배틀 5승', 5, s => s.mw.duel | 0], ['flag5', 1, '캡쳐 플래그 5승', 5, s => s.mw.flag | 0],
   ['silver', 1, '한 캐릭터 실버 I', 3, () => achTopRank()], ['lv10', 1, '레벨 10', 10, () => levelOf().lv],
   ['k1000', 2, '킬 1,000번', 1000, s => s.k], ['w100', 2, '100승', 100, s => s.w], ['mk10', 2, '한 게임에서 10킬', 10, s => s.mk], ['solo10', 2, '원 레프트 1등 10번', 10, s => s.mw.solo | 0], ['allhero', 2, '모든 캐릭터로 1승', 0, s => Object.keys(HEROES).filter(h => s.hw[h]).length],
   ['dia', 2, '한 캐릭터 다이아 I', 12, () => achTopRank()], ['karma1k', 2, '카르마 1,000', 1000, () => COS.karma],
@@ -399,7 +399,8 @@ function achMatch(m) {
   s.g++; s.k += k; s.mk = Math.max(s.mk, k); s.mg[m.mode] = (s.mg[m.mode] | 0) + 1;
   s.dk += k; s.d += Math.max(0, m.deaths | 0); if (m.mvp) s.mv++; COS.kb = Math.max(COS.kb | 0, COS.karma | 0);      // kills/deaths (counted together from 2026-11-14 for the profile K/D), MVPs, best karma
   if (HEROES[m.hero]) { const h = m.hero; s.hg[h] = (s.hg[h] | 0) + 1; s.hk[h] = (s.hk[h] | 0) + k; s.hb[h] = Math.max(s.hb[h] | 0, k); if (m.win) s.hn[h] = (s.hn[h] | 0) + 1; }      // per character: games, kills, best kills, wins (the character screen and the profile card show them)
-  if (m.win) { s.w++; s.mw[m.mode] = (s.mw[m.mode] | 0) + 1; if (HEROES[m.hero]) s.hw[m.hero] = 1; if (m.mode === 'team' && !m.deaths) s.nd++; if (m.mode === 'solo' && m.n > 1 && k >= m.n - 1) s.sa++; }
+  if (m.win) { s.w++; s.mw[m.mode] = (s.mw[m.mode] | 0) + 1; if (HEROES[m.hero]) s.hw[m.hero] = 1; if (m.mode === 'team' && !m.deaths) s.nd++; if (m.mode === 'solo' && m.first && m.n > 1 && k >= m.n - 1) s.sa++; }
+  if (m.mode === 'solo' && m.first) s.s1 = (s.s1 | 0) + 1;      // 원 레프트 1등 itself (2-3등 count as wins too since 2026-11-15)
   if (achScan()) achSync(true);
   saveCos(); questUi();
 }

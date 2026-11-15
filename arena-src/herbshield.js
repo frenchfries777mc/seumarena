@@ -69,14 +69,20 @@ hero('shieldman', { p: ['든든한 방패', '이동속도 5% 느림 · 정면에
   spd: () => .95,
   onHurt(e, dmg, by, o) {
     if (B(e, 'hbdig') && Math.hypot(e.vx, e.vy) < 30) dmg *= .6;
+    if (B(e, 'hbiron')) { e.st.hbStore = (e.st.hbStore || 0) + dmg * .5; dmg *= .5; }
     if (by && !by.minion && by.h && by.h.type === 'melee') { let da = Math.atan2(by.y - e.y, by.x - e.x) - e.aim; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) < 1.2) dmg *= .85; }
     return dmg;
   },
-  ult: ['강철 벽', '조준 방향 앞에 5칸 너비 강철 벽을 4초 동안 세움 · 사람과 탄환을 모두 막음', [0, 7 * T], (f, a) => {
-    const p = fwd(f, 1.6 * T, a), cells = [];
-    for (let i = -2; i <= 2; i++) { const c = Math.floor((p.x - Math.sin(a) * i * T) / T), r = Math.floor((p.y + Math.cos(a) * i * T) / T); if (c < 1 || r < 1 || c >= COLS - 1 || r >= ROWS - 1 || blocked(c, r)) continue; if (fighters.some(e => !e.dead && Math.floor(e.x / T) === c && Math.floor(e.y / T) === r)) continue; tempWalls.set(c + r * COLS, time + 4); cells.push(c, r); }
-    fxPlay('hbwall', cells.join(','));
-  }],
+  ult: ['철벽 반격', '4초 동안 방패를 굳게 들어 받는 피해 50% 감소 · 막아 낸 피해를 모아 두었다가 끝나는 순간 주변 3칸 상대에게 모은 만큼(최소 300, 최대 1200) 충격파 피해 + 강하게 밀침', [0, 4 * T], f => {
+    buff(f, 'hbiron', 4); f.st.hbStore = 0;
+    fxPlay('hbiron', fighters.indexOf(f));
+    later(4, () => {
+      if (f.dead) return;
+      const dmg = Math.max(300, Math.min(1200, f.st.hbStore || 0)); f.st.hbStore = 0;
+      circ(f, f.x, f.y, 3 * T, dmg, { px: 1, kb: 650 });
+      fxPlay('hbironboom', fighters.indexOf(f), Math.round(dmg));
+    }, f);
+  }, (f, t, d) => d < 3.5 * T || f.hp < f.mhp * .6],
   skills: [
     [1, '방패 세우기', 'buff', '2초 동안 방패를 들어 바라보는 쪽에서 날아오는 탄환을 모두 막음', [0, 7 * T], f => { buff(f, 'block', 2); fxPlay('hbraise', fighters.indexOf(f)); }],
     [2, '방패 돌진', 'move', '방패를 앞세워 3칸 돌진 · 부딪힌 상대에게 420 피해 + 밀치고 0.5초 기절', [0, 3.5 * T], (f, a) => {
@@ -107,7 +113,7 @@ Object.assign(PVS, {
   'herbal:1': R('ground', { max: 5 * T, r: 2 * T }), 'herbal:2': R('ground', { max: 5 * T, r: 2 * T }), 'herbal:3': R('line', { len: 6 * T, w: 40 }),
   'herbal:4': R('ground', { max: 6 * T, r: 1.6 * T }), 'herbal:5': R('self', { r: 50 }), 'herbal:u': R('self', { r: 4 * T }),
   'shieldman:1': R('self', { r: 70 }), 'shieldman:2': R('dash', { len: 3 * T, w: 44 }), 'shieldman:3': R('self', { r: 3 * T }),
-  'shieldman:4': R('self', { r: 60 }), 'shieldman:5': R('self', { r: 5 * T }), 'shieldman:u': R('line', { len: 2 * T, w: 5 * T })
+  'shieldman:4': R('self', { r: 60 }), 'shieldman:5': R('self', { r: 5 * T }), 'shieldman:u': R('self', { r: 3 * T })
 });
 /* skins: six each (cosmetics: the tint colours the hood / plume / shield face) */
 for (const [id, ch, nm, price, tint, fx, x] of [
@@ -301,6 +307,20 @@ FXF.hbwall = cells => {      // steel wall: each plate slams down with sparks
     for (let k = 0; k < (fxLow() ? 3 : 7); k++) { const a = RND(0, 6.28), s = RND(160, 320); addP({ x, y: y + 20, vx: Math.cos(a) * s, vy: Math.sin(a) * s * .5 - 80, grav: 600, gy: y + 30, life: .4, size: 2.4, color: '#ffd27a', shape: 'square' }); } }); }
   hbSnd({ n: .12, nt: 'lowpass', nf: 1200, nd: .3, b: .15, bf: 120, be: 60, bd: .35, bt: 'square' });
   if (typeof shakeFrom === 'function' && v.length) shakeFrom((v[0] + .5) * T, (v[1] + .5) * T, 6, 400);
+};
+FXF.hbiron = fi => {      // iron guard: a gold shield dome pulses round him for 4 s
+  const f = fighters[fi]; if (!f) return;
+  for (let i = 0; i < 8; i++) later2(i * .5, () => { const g = fighters[fi]; if (!g || g.dead || !fxInView(g.x, g.y)) return; addP({ x: g.x, y: g.y - 10, life: .5, color: '#ffd34d', shape: 'ring', r0: 30, r1: 48, lw: 4 }); addP({ x: g.x, y: g.y - 10, life: .5, color: HB.s, shape: 'ring', r0: 44, r1: 36, lw: 2 }); });
+  hbSnd({ b: .12, bf: 300, be: 520, bd: .3, bt: 'triangle', n: .05, nt: 'highpass', nf: 2000, nd: .2 });
+};
+FXF.hbironboom = (fi, v) => {      // release: a gold shock ring 3 tiles wide with flying sparks
+  const f = fighters[fi]; if (!f || !fxInView(f.x, f.y)) return;
+  addP({ x: f.x, y: f.y, life: .3, color: '#ffffff', shape: 'flash', size: 120 });
+  addP({ x: f.x, y: f.y + 10, life: .45, color: '#ffd34d', shape: 'ring', r0: 20, r1: 3 * T, lw: 8 });
+  addP({ x: f.x, y: f.y + 10, life: .6, color: HB.s, shape: 'ring', r0: 10, r1: 3 * T * .8, lw: 4 });
+  for (let k = 0; k < (fxLow() ? 6 : 16); k++) { const a = k / 16 * 6.28, s = RND(260, 420); addP({ x: f.x, y: f.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * .6, life: .45, size: 3, color: '#ffd27a', shape: 'square' }); }
+  hbSnd({ n: .14, nt: 'lowpass', nf: 900, nd: .35, b: .18, bf: 110, be: 50, bd: .4, bt: 'square' });
+  if (typeof shakeFrom === 'function') shakeFrom(f.x, f.y, 8, 450);
 };
 Object.assign(SKILL_FX, {
   'herbal:1': () => {}, 'herbal:2': () => {}, 'herbal:3': () => {}, 'herbal:4': () => {}, 'herbal:5': () => {},

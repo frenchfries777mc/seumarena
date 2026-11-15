@@ -3,7 +3,7 @@
    inside a goal mouth (the floor tiles in column 1 / COLS-2). After a goal everyone goes back to their side for a kickoff after BALL_PAUSE s.
    First to MODE.win goals, or the most when the clock runs out; level = the usual overtime (next goal wins, a draw after OT_MAX).
    The host runs the ball; it rides in the mode snapshot (`bl`) and guests slide it along its speed between snapshots. ===== */
-const BALL_R = 18, BALL_MAX = 1150, BALL_FRIC = 1, BALL_PAUSE = 3;
+const BALL_R = 18, BALL_MAX = 1150, BALL_FRIC = 1.3, BALL_PAUSE = 3;
 const BALL = { on: false, x: 0, y: 0, vx: 0, vy: 0, rot: 0, last: null, gt: -1, gy0: 0, gy1: 0, pp: new Map(), dx: 0, dy: 0, st: 0 };
 function ballStart() {
   BALL.on = true; let r0 = 1e9, r1 = -1;
@@ -22,29 +22,30 @@ function ballKick(by, nx, ny, p) {
   const s = Math.hypot(BALL.vx, BALL.vy); if (s > BALL_MAX) { BALL.vx *= BALL_MAX / s; BALL.vy *= BALL_MAX / s; }
   const ow = by && (by.minion ? by.by : by); if (ow && ow.h) BALL.last = ow;
 }
-function ballArc(f, ang, range, half, kb) {
+function ballArc(f, ang, range, half, kb, hits) {
   const dx = BALL.x - f.x, dy = BALL.y - f.y, d = Math.hypot(dx, dy);
   if (d > range + BALL_R + 6) return;
   let da = Math.atan2(dy, dx) - ang; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) > half + .25 && d > 30) return;
   if (!los(f.x, f.y, BALL.x, BALL.y)) return;
-  ballKick(f, Math.cos(ang), Math.sin(ang), clamp(720 + (kb || 0) * 1.2, 720, 1100));
+  // 2026-11-15 (user: too many goals nobody meant): a swing that only met the ball is a real kick; one that was hitting a fighter just nudges it
+  ballKick(f, Math.cos(ang), Math.sin(ang), hits ? 360 : clamp(820 + (kb || 0) * .4, 820, 950));
 }
 function ballCirc(by, x, y, r, dmg, o) {
   if (!(dmg > 0) && !o.kb) return;
   const dx = BALL.x - x, dy = BALL.y - y, d = Math.hypot(dx, dy);
   if (d > r + BALL_R) return;
   const a = d > 8 ? null : (by && by.aim) || 0;
-  ballKick(by, a === null ? dx : Math.cos(a), a === null ? dy : Math.sin(a), clamp((dmg > 12 || o.kb ? 380 : 240) + (o.kb || 0) * 1.6 + (dmg || 0) * 1.5, 240, 1050));
+  ballKick(by, a === null ? dx : Math.cos(a), a === null ? dy : Math.sin(a), clamp((dmg > 12 || o.kb ? 300 : 160) + (o.kb || 0) * .8 + (dmg || 0), 160, 620));
 }
 function ballPath(f, x0, y0, x1, y1, w) {
   const dx = x1 - x0, dy = y1 - y0, l2 = dx * dx + dy * dy || 1, t = clamp(((BALL.x - x0) * dx + (BALL.y - y0) * dy) / l2, 0, 1);
   if (Math.hypot(BALL.x - (x0 + dx * t), BALL.y - (y0 + dy * t)) > w + BALL_R) return;
-  ballKick(f, dx, dy, 650);
+  ballKick(f, dx, dy, 520);
 }
 /* a shot touching the ball: true = the shot stops there */
 function ballShot(b) {
   if (b.hitBall || Math.hypot(BALL.x - b.x, BALL.y + BODY - b.y) >= BALL_R + (b.r || 5) + 6) return false;
-  b.hitBall = 1; ballKick(b.owner, b.vx, b.vy, clamp(480 + (b.dmg || 0) * 5, 520, 1000));
+  b.hitBall = 1; ballKick(b.owner, b.vx, b.vy, clamp(420 + (b.dmg || 0) * 3, 420, 720));
   if (fxInView(b.x, b.y)) burst(BALL.x, BALL.y + BODY, '#ffffff', 5, 160);
   return !b.boom && !(b.pierce > 0);
 }

@@ -95,8 +95,8 @@ const WEAPONS = {
   none: {id:'none', name:'맨손', emoji:'', kind:'none', dmg:0, cd:999999, shape:'none', desc:'무기 없음'}
 };
 const WEAPON_PERSONA_NAME = {
-  plague:'역병 의사', edward:'에드워드', medium:'영매사', cleon:'크레온 1세', pel:'펠', tionis:'티오니스', harald:'하랄드', tell:'빌헬름 텔',
-  dragonslayer:'용살자', puppeteer:'인형술사', pizarro:'피사로', kan:'칸', horemheb:'호렘헵', lightsaber:'자다이', pistol:'제임스', smg:'특수요원', bow:'로빈 후드', sword:'기사', bat:'야구선수', boomerang:'사냥꾼',
+  plague:'역병 의사', edward:'에드워드', medium:'영매사', cleon:'크레온 1세', pel:'펠', tionis:'티오니스', harald:'바이킹', tell:'빌헬름 텔',
+  dragonslayer:'용살자', puppeteer:'인형술사', pizarro:'피사로', kan:'칸', horemheb:'호렘헵', lightsaber:'자다이', pistol:'제임스', smg:'특수요원', bow:'궁수', sword:'기사', bat:'야구선수', boomerang:'사냥꾼',
   shuriken:'닌자', shotgun:'보안관', rifle:'군인', gloves:'복서', grenade:'폭발광',
   bazooka:'중화기병', dagger:'암살자', magiccard:'마술사', dracula:'드라큘라', gambler:'도박사', wizard:'마법사', flamethrower:'학살자', portalgun:'차원여행자', vacuum:'청소부', pirate:'해적', shade:'네온', kadas:'카다스', samurai:'사무라이', kurus:'쿠루스'
 };

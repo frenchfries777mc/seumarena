@@ -458,7 +458,7 @@ function arc(f, ang, range, half, dmg, o) {
     o.by = f; status(e, o);
     damage(e, dmg, f, o); if (o.fn) o.fn(e); out.push(e);
   }
-  if (BALL.on) ballArc(f, ang, range, half, o.kb);
+  if (BALL.on) ballArc(f, ang, range, half, o.kb, out.length);
   return out;
 }
 function circ(by, x, y, r, dmg, o) {
@@ -688,7 +688,7 @@ const AI_PERS = {
   saver: { want: .6, low: .3, sk: .6, st: [.6, 1.5], flip: .6, save: 1 }
 };
 const AI_PERS_IDS = Object.keys(AI_PERS), AI_PERS0 = { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6 };      // (the old single behaviour)
-const AI_LV = { aim: .30, lead: .25, coolR: [.5, 1.35], coolM: [.25, .65], sk: .022, ult: .028 };      // 2026-11-14: easier bots (was aim .21 lead .42 coolR .34-1.0 coolM .14-.46 sk .032 ult .04)
+const AI_LV = { aim: .38, lead: .25, mem: 3, coolR: [.5, 1.35], coolM: [.25, .65], sk: .022, ult: .028 };      // 2026-11-14: easier bots (was aim .21 lead .42 coolR .34-1.0 coolM .14-.46 sk .032 ult .04)
 function kiteStep(f, reach) {
   const ts = foes(f).filter(e => !e.dead && !e.minion && !B(e, 'ally') && dist(f, e) < reach * 1.2 && visibleTo(e, teamOf(f)));
   if (!ts.length) return null;
@@ -721,6 +721,20 @@ function ai0(f, dt) {
   }
   if (B(f, 'taunt')) { const s = f.b.taunt.v; if (s && !s.dead && dist(f, s) < 10 * T) { tgt = s; bd = dist(f, s); } }      // taunted bots go for the shield bearer
   a.bd = tgt ? bd : 1e9;
+  if (tgt && !tgt.minion) a.mem = { e: tgt, x: tgt.x, y: tgt.y, vx: tgt.vx || 0, vy: tgt.vy || 0, t: 0 };      // 2026-11-15: remember the last place a foe was seen (bush hiding)
+  else if (!tgt && a.mem) {
+    const m = a.mem; m.t += dt;
+    if (m.t > (L.mem || 0) || m.e.dead || B(f, 'blind')) a.mem = null;
+    else {
+      const k = Math.min(m.t, .8), gx = m.x + m.vx * k, gy = m.y + m.vy * k, d = Math.hypot(gx - f.x, gy - f.y), reach = h.rangef ? h.rangef(f) : h.range;
+      if (d < T * .6) a.mem = null;
+      else {
+        f.aim = Math.atan2(gy - f.y, gx - f.x); f.tx = gx; f.ty = gy;
+        if (!h.fireHeld && a.cool <= 0 && f.fireCd <= 0 && d < reach * .9 && los(f.x, f.y, gx, gy) && Math.random() < .5) { f.aim += rnd(-L.aim, L.aim) * 1.5; f.hold = true; a.cool = rnd(L.coolR[0], L.coolR[1]) * 1.4; }
+        return pathTo(f, gx, gy);
+      }
+    }
+  }
   if (tgt && bd < 13 * T) {
     const see = los(f.x, f.y, tgt.x, tgt.y), ang = angTo(f, tgt), close = h.type !== 'shot';
     f.aim = ang; f.tx = tgt.x; f.ty = tgt.y;
@@ -1099,65 +1113,42 @@ function flagGoal(f) {
   if (theirs.by < 0) return pathTo(f, theirs.x, theirs.y);
   const c = fighters[theirs.by]; return c && Math.hypot(c.x - f.x, c.y - f.y) > 3 * T ? pathTo(f, c.x, c.y) : null;      // a teammate has their flag: escort them
 }
-function drawFlags() {       // screen space
+function drawFlags() {       // screen space. 2026-11-15 (user picked design 3): flat, no outlines, like the map art; a team ring on the floor (like the ring under a player) and a white stick pole
   if (!FLAGS.length || state !== 'play') return;
   const sx = x => (x - cam.x) * cam.s + W / 2, sy = y => (y - cam.y) * cam.s + H / 2, k = cam.s;
-  const shade = (hex, m) => { const n = parseInt(hex.slice(1), 16), f = v => clamp(Math.round(v * m), 0, 255); return 'rgb(' + f(n >> 16) + ',' + f((n >> 8) & 255) + ',' + f(n & 255) + ')'; };
+  const lt = (hex, t) => { const n = parseInt(hex.slice(1), 16), f = v => Math.round(v + (255 - v) * t); return 'rgb(' + f(n >> 16) + ',' + f((n >> 8) & 255) + ',' + f(n & 255) + ')'; };
   ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  /* the bases: a stone plate with a glowing team ring, brighter while its flag is home */
+  /* the bases: a team ring on the floor, pulsing while its flag is home */
   for (const g of FLAGS) {
     const col = TC(g.team), x = sx(g.hx), y = sy(g.hy), R = FLAG_R * k, p = .5 + Math.sin(time * 3 + g.team) * .5;
-    ctx.globalAlpha = 1; ctx.fillStyle = 'rgba(10,12,18,.35)'; ctx.beginPath(); ctx.ellipse(x, y + 6 * k, R * 1.08, R * .62, 0, 0, 7); ctx.fill();
-    const pl = ctx.createLinearGradient(0, y - R * .55, 0, y + R * .55); pl.addColorStop(0, '#9aa0ad'); pl.addColorStop(1, '#4a4f5c');
-    ctx.fillStyle = pl; ctx.beginPath(); ctx.ellipse(x, y, R, R * .55, 0, 0, 7); ctx.fill();
-    ctx.fillStyle = '#c3c8d2'; ctx.beginPath(); ctx.ellipse(x, y - 3 * k, R * .86, R * .44, 0, 0, 7); ctx.fill();
-    ctx.globalAlpha = g.home ? .55 + p * .35 : .3; ctx.strokeStyle = col; ctx.lineWidth = 4 * k; ctx.beginPath(); ctx.ellipse(x, y - 3 * k, R * .72, R * .36, 0, 0, 7); ctx.stroke();
-    if (g.home) { ctx.globalAlpha = .25 * p; ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(x, y - 3 * k, R * 1.25, R * .7, 0, 0, 7); ctx.fill(); }
-    else { ctx.globalAlpha = .7; ctx.setLineDash([6 * k, 6 * k]); ctx.lineDashOffset = -time * 20 * k; ctx.strokeStyle = col; ctx.lineWidth = 2.5 * k; ctx.beginPath(); ctx.ellipse(x, y - 3 * k, R * 1.15, R * .64, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
+    ctx.strokeStyle = col; ctx.globalAlpha = g.home ? .85 : .35; ctx.lineWidth = 5 * k; ctx.beginPath(); ctx.ellipse(x, y, R * .95, R * .5, 0, 0, 7); ctx.stroke();
+    if (g.home) { ctx.globalAlpha = .5; ctx.lineWidth = 2.5 * k; ctx.beginPath(); ctx.ellipse(x, y, R * .95 + p * 8 * k, R * .5 + p * 4 * k, 0, 0, 7); ctx.stroke(); }
   }
+  ctx.globalAlpha = 1;
   /* the flags */
   for (const g of FLAGS) {
-    const col = TC(g.team), c = g.by >= 0 ? fighters[g.by] : null, dropped = !g.home && !c;
-    let bx = sx(g.x), by = sy(g.y) - 4 * k, tilt = 0;
-    if (c) { bx += 30 * k; by -= 30 * k; tilt = -.18 + Math.sin(time * 9) * .05; }
-    else if (dropped) tilt = .55;
-    const H = (c ? 84 : 100) * k, fw = 58 * k, fh = 38 * k, sp = c ? 11 : 6;
-    ctx.save(); ctx.translate(bx, by); ctx.rotate(tilt); ctx.globalAlpha = 1;
-    if (!c) { ctx.fillStyle = 'rgba(10,12,18,.35)'; ctx.beginPath(); ctx.ellipse(0, 0, 9 * k, 4 * k, 0, 0, 7); ctx.fill(); }
-    if (c) { const gl = ctx.createRadialGradient(fw * .5, -H + fh * .5, 2, fw * .5, -H + fh * .5, fw); gl.addColorStop(0, shade(col, 1.3)); gl.addColorStop(1, 'rgba(0,0,0,0)'); ctx.globalAlpha = .35 + Math.sin(time * 8) * .1; ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(fw * .5, -H + fh * .5, fw, 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
-    /* pole */
-    ctx.strokeStyle = '#2a2420'; ctx.lineWidth = 8 * k; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -H); ctx.stroke();
-    const pg = ctx.createLinearGradient(-3 * k, 0, 3 * k, 0); pg.addColorStop(0, '#8a5a32'); pg.addColorStop(.5, '#d39a5c'); pg.addColorStop(1, '#6e4426');
-    ctx.strokeStyle = pg; ctx.lineWidth = 4.6 * k; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -H); ctx.stroke();
-    /* waving cloth: top and bottom edges follow a travelling wave that grows toward the free end */
-    const N = 10, top = [], bot = [];
-    for (let i = 0; i <= N; i++) { const u = i / N, w = Math.sin(time * sp - u * 5.5 + g.team * 2) * u * 7 * k, dr = (dropped ? u * u * 7 : 0) * k; top.push([u * fw, -H + w + dr]); bot.push([u * fw * .96, -H + fh + w * 1.1 + dr - u * 3 * k]); }
-    const cg = ctx.createLinearGradient(0, -H, fw, -H + fh); cg.addColorStop(0, shade(col, .7)); cg.addColorStop(.45, col); cg.addColorStop(1, shade(col, 1.25));
-    ctx.beginPath(); ctx.moveTo(top[0][0], top[0][1]); for (const p of top) ctx.lineTo(p[0], p[1]);
-    const nt = Math.round(N / 2); ctx.lineTo(fw * .78, (top[N][1] + bot[N][1]) / 2);     // swallow-tail notch
-    for (let i = N; i >= 0; i--) ctx.lineTo(bot[i][0], bot[i][1]); ctx.closePath();
-    ctx.fillStyle = cg; ctx.fill(); ctx.strokeStyle = '#14141c'; ctx.lineWidth = 2.2 * k; ctx.stroke();
-    /* folds: light and dark stripes that move with the wave */
-    ctx.save(); ctx.clip();
-    for (let i = 1; i < N; i += 2) { const a = top[i], b = bot[i], s = Math.sin(time * sp - i / N * 5.5 + g.team * 2); ctx.globalAlpha = .18; ctx.strokeStyle = s > 0 ? '#ffffff' : '#000000'; ctx.lineWidth = 4 * k; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
-    ctx.restore();
-    /* emblem: a white star riding the cloth */
-    const e = top[nt - 1], eb = bot[nt - 1], ex = e[0], ey = (e[1] + eb[1]) / 2, r = 9.5 * k;
-    ctx.globalAlpha = 1; ctx.fillStyle = '#fff7e0'; ctx.strokeStyle = '#14141c'; ctx.lineWidth = 1.4 * k; ctx.beginPath();
-    for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * .45 : r; ctx.lineTo(ex + Math.cos(a) * rr, ey + Math.sin(a) * rr); }
-    ctx.closePath(); ctx.fill(); ctx.stroke();
-    /* gold finial */
-    const fg = ctx.createRadialGradient(-1.5 * k, -H - 6 * k, 1, 0, -H - 4 * k, 6 * k); fg.addColorStop(0, '#fff3b0'); fg.addColorStop(1, '#c98a1b');
-    ctx.fillStyle = fg; ctx.strokeStyle = '#2a2420'; ctx.lineWidth = 1.8 * k; ctx.beginPath(); ctx.arc(0, -H - 5 * k, 6.5 * k, 0, 7); ctx.fill(); ctx.stroke();
+    const col = TC(g.team), c = g.by >= 0 ? fighters[g.by] : null, dropped = !g.home && !c, m = c ? .85 : 1;
+    let bx = sx(g.x), by = sy(g.y), tilt = 0;
+    if (c) { bx += 24 * k; by -= 22 * k; tilt = -.15 + Math.sin(time * 9) * .04; } else if (dropped) tilt = 1.25;
+    const Hh = 92 * k * m, fw = 50 * k * m, fh = 34 * k * m, sp = c ? 11 : 5, N = 8, top = [], bot = [];
+    for (let i = 0; i <= N; i++) { const u = i / N, w = Math.sin(time * sp - u * 4.5 + g.team * 2) * u * 5 * k; top.push([u * fw, -Hh + w]); bot.push([u * fw, -Hh + fh + w]); }
+    const cloth = () => { ctx.beginPath(); for (const q of top) ctx.lineTo(q[0], q[1]); for (let i = N; i >= 0; i--) ctx.lineTo(bot[i][0], bot[i][1]); ctx.closePath(); };
+    /* soft shadow thrown to the lower right, like the walls */
+    if (!dropped && !lowFx()) { ctx.save(); ctx.translate(bx, by); ctx.transform(1, 0, -.9, .35, 0, 0); ctx.filter = 'blur(' + Math.max(1, 4 * k) + 'px)'; ctx.globalAlpha = .22; ctx.fillStyle = '#1a1208'; ctx.beginPath(); ctx.rect(-2 * k, -Hh, 4 * k, Hh); ctx.rect(0, -Hh, fw, fh); ctx.fill(); ctx.restore(); }
+    ctx.save(); ctx.translate(bx, by); ctx.rotate(tilt);
+    ctx.strokeStyle = '#f4f4f4'; ctx.lineWidth = 5 * k; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -Hh - 4 * k); ctx.stroke();
+    cloth(); ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 5 * k; ctx.stroke();
+    ctx.strokeStyle = lt(col, .45); ctx.lineWidth = 3 * k; ctx.beginPath(); ctx.moveTo(fw * .2, -Hh + fh * .3); ctx.lineTo(fw * .55, -Hh + fh * .3 + 2 * k); ctx.stroke();
+    ctx.fillStyle = '#f4f4f4'; ctx.beginPath(); ctx.arc(0, -Hh - 6 * k, 5.5 * k, 0, 7); ctx.fill();
     ctx.restore();
     /* a dropped flag shows how long until it flies home */
     if (dropped) {
       const x = sx(g.x), y = sy(g.y) + 18 * k, f = clamp(g.back / FLAG_BACK, 0, 1);
-      ctx.globalAlpha = .85; ctx.fillStyle = 'rgba(12,14,19,.7)'; ctx.beginPath(); ctx.arc(x, y, 13 * k, 0, 7); ctx.fill();
-      ctx.strokeStyle = col; ctx.lineWidth = 3.5 * k; ctx.beginPath(); ctx.arc(x, y, 10 * k, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * f); ctx.stroke();
+      ctx.globalAlpha = .85; ctx.fillStyle = 'rgba(12,14,19,.55)'; ctx.beginPath(); ctx.arc(x, y, 12 * k, 0, 7); ctx.fill();
+      ctx.strokeStyle = col; ctx.lineWidth = 3.5 * k; ctx.beginPath(); ctx.arc(x, y, 9 * k, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * f); ctx.stroke(); ctx.globalAlpha = 1;
     }
     /* sparkles trailing a carried flag */
-    if (c && !lowFx() && Math.random() < .5) parts.push({ x: g.x + rnd(0, 40), y: g.y - rnd(60, 95), vx: rnd(-20, 20), vy: rnd(-40, -10), life: .45, max: .45, color: shade(col, 1.3), r: rnd(1.5, 3) });
+    if (c && !lowFx() && Math.random() < .5) parts.push({ x: g.x + rnd(0, 40), y: g.y - rnd(60, 95), vx: rnd(-20, 20), vy: rnd(-40, -10), life: .45, max: .45, color: lt(col, .3), r: rnd(1.5, 3) });
   }
   ctx.restore();
 }

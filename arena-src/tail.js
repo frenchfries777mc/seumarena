@@ -869,7 +869,7 @@ function endGame(keepRunning) {
   if (isLeft(curMode) && player && player.dead && (curMode === 'solo' || RD.out.includes(player.team))) soloOutShown = true;
   showPlayUi(false);
   const oc = modeOutcome(), solo = isLeft(curMode), mine = oc.a, theirs = oc.b;
-  const win = oc.win, draw = oc.draw, rt = $('resultText');
+  const draw = oc.draw, first = oc.win, win = first || (curMode === 'solo' && !draw && oc.place >= 2 && oc.place <= 3), rt = $('resultText');      // 원 레프트: 1-3등 are wins (user 2026-11-15); first = really the last one standing
   rt.textContent = draw ? '무승부' : win ? '승리' : '패배';
   document.querySelector('#overScreen .final').classList.toggle('solo', solo);
   rt.className = draw ? 'draw' : win ? 'win' : 'lose';
@@ -877,15 +877,15 @@ function endGame(keepRunning) {
   { const q4 = curMode === 'hot4', fq = $('fq'); document.querySelector('#overScreen .final').classList.toggle('q4', q4); fq.textContent = '';
     if (q4) [0, 1, 2, 3].sort((a, b) => (score[b] | 0) - (score[a] | 0)).forEach(t => { const b = document.createElement('b'); b.textContent = (score[t] | 0) + '%'; b.style.color = TC(t); if (t === VIEW) b.className = 'me'; fq.append(b); }); }
   $('mine').textContent = modeNow().name + ' · ' + (player ? MAPS[curMap].name + ' · ' + player.h0.name + ' · ' + player.kos + '킬 ' + player.deaths + '데스' : MAPS[curMap].name);
-  buildOverStats(win, draw);
+  buildOverStats(first, draw);
   { /* what the match pays (social.js matchPay): gold, karma, mastery points for the character played, player xp */
-    const pay = player ? matchPay({ mode: curMode, win, draw, kills: player.kos || 0, place: oc.place }) : null, hid = player ? player.h0.id : null;
-    const sk = pay ? streakStep(win, draw, oc.place >= 2 && oc.place <= (curMode === 'solo' ? 3 : curMode === 'duo' || curMode === 'hot4' ? 2 : 0)) : null;      // 원 레프트 2-3등, 투 레프트 / 4팀 핫존 2등 keep the win streak
+    const pay = player ? matchPay({ mode: curMode, win: first, draw, kills: player.kos || 0, place: oc.place }) : null, hid = player ? player.h0.id : null;
+    const sk = pay ? streakStep(first, draw, oc.place >= 2 && oc.place <= (curMode === 'solo' ? 3 : curMode === 'duo' || curMode === 'hot4' ? 2 : 0)) : null;      // 원 레프트 2-3등, 투 레프트 / 4팀 핫존 2등 keep the win streak
     if (sk) { pay.karma += sk.karma; pay.gold = Math.round(pay.gold * sk.gm); }
     { const e = $('streakGain'); e.hidden = !(sk && sk.st); if (sk && sk.st) { e.className = sk.st; e.textContent = sk.st === 'up' ? '🔥 ' + sk.ws + '연승' : sk.st === 'keep' ? '🔥 ' + sk.ws + '연승 유지' : '연승 끊김'; } }
     $('goldGain').hidden = !pay;
     if (pay) {
-      COS.gold += pay.gold; COS.karma += pay.karma; COS.xp += pay.xp; addMp(hid, pay.mp); dqMatch({ mode: curMode, win, kills: player.kos || 0, place: solo ? oc.place : 0, hero: hid, dealt: player.dealt || 0 }); achMatch({ mode: curMode, win, kills: player.kos || 0, deaths: player.deaths || 0, hero: hid, n: fighters.length, mvp: matchMvp(win, draw) === player }); saveCos(); goldUi();
+      COS.gold += pay.gold; COS.karma += pay.karma; COS.xp += pay.xp; addMp(hid, pay.mp); dqMatch({ mode: curMode, win, kills: player.kos || 0, place: solo ? oc.place : 0, hero: hid, dealt: player.dealt || 0 }); achMatch({ mode: curMode, win, first, kills: player.kos || 0, deaths: player.deaths || 0, hero: hid, n: fighters.length, mvp: matchMvp(first, draw) === player }); saveCos(); goldUi();
       $('goldGainN').textContent = '+' + pay.gold; $('karmaGain').hidden = !pay.karma; $('karmaGainN').textContent = '+' + pay.karma; $('mpGainN').textContent = '+' + pay.mp; $('xpGainN').textContent = '+' + pay.xp;
       $('mpGain').style.color = masteryOf(hid).col;
     }
@@ -893,7 +893,7 @@ function endGame(keepRunning) {
   $('specBtn').hidden = !(soloOutShown && state === 'play'); $('specBack').hidden = true;
   lobby.hidden = false; cv.classList.add('inLobby'); showScreen('overScreen');
   emoteWheel(false); chatOpen(false);
-  winScreen(win, draw); mvpFx(win, draw);
+  winScreen(win, draw); mvpFx(first, draw);
 }
 function toMenu() { mvpRun++; $('mvpFx').hidden = true; netReset(); VIEW = 0; state = 'menu'; setup(false); showPlayUi(false); lobby.hidden = false; cv.classList.add('inLobby'); showScreen('menuScreen'); }
 $('startBtn').addEventListener('click', startOnline);
@@ -1022,10 +1022,12 @@ function frame(now) {
 let bgLast = performance.now(), lastFrameAt = performance.now();
 setInterval(() => {
   const now = performance.now(), el = Math.min(1, (now - bgLast) / 1000); bgLast = now;
-  if (NET.role !== 'host' || now - lastFrameAt < 250) return;      // the page stopped drawing (hidden tab, minimised window): keep the match going
+  if ((NET.role !== 'host' && NET.role !== 'guest') || now - lastFrameAt < 250) return;      // the page stopped drawing (hidden tab, minimised window): keep the match going
+  if (NET.role === 'guest') { for (let t = el; t > 0; t -= .033) { if (state === 'play') guestStep(Math.min(.033, t)); netTick(Math.min(.033, t)); } return; }      // a guest in a background tab keeps sending input and playing the match's sounds
   for (let t = el; t > 0; t -= .033) { if (state === 'play') step(Math.min(.033, t)); netTick(Math.min(.033, t)); }
 }, 50);
 addEventListener('beforeunload', () => netReset());
+document.addEventListener('visibilitychange', () => { try { if (ac && ac.state !== 'running' && ac.state !== 'closed') ac.resume().catch(() => {}); } catch (e) {} });      // sound effects: start again if the browser paused them while the tab was hidden
 buildChars(); updatePick(); setup(false); loadAccount(); if (achScan()) saveCos(); setTimeout(() => achSync(true), 2500);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => lobbyCharPlace());
 setTimeout(lobbyCharPlace, 60);
