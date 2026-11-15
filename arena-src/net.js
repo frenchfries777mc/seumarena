@@ -125,6 +125,7 @@ function startOnline() {
   if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
   if (ac && ac.state === 'suspended') ac.resume();
   netReset(); netClaimTries = 0; netBad = new Set(); NET.searchUntil = 0;
+  try { if (typeof modeFixDay === 'function') modeFixDay(); } catch (e) {}      // only today's modes are searched (오늘의 모드, engine.js MODE_GROUPS)
   NET.mode = lobbyMode(); NET.max = modeMax(NET.mode); useMode(NET.mode);      // also what a fallback bot match plays
   showScreen('roomScreen');
   netSearch();
