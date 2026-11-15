@@ -411,7 +411,7 @@ for(const [ch,nm,price,tint,fx] of [
   ['smg','루비 야시경 고글',900,'#e0304f','glow'], ['magiccard','에메랄드 카드 실크햇',900,'#1fa06a','sparkle'], ['samurai','은빛 쌍검 머리띠',900,'#e8edf5','glow'],
   ['harald','룬 새김 투구',900,'#3c7fd0','frost'], ['shade','석양 네온',900,'#ff7a3d','glow'], ['tionis','레몬 광대 조끼',900,'#f5c94c'],
   ['portalgun','황금 차원 고글',900,'#ffcf3a','sparkle'], ['gardener','단풍 밀짚모자',900,'#e0662a'], ['herbal','민트 허브 두건',900,'#5fd6b0','sparkle'],
-  ['shieldman','에메랄드 기사단',900,'#2e9e6a','glow']
+  ['shieldman','에메랄드 기사단',900,'#2e9e6a','glow'], ['bazooka','사막 모래 방독면',900,'#c9a463']
 ]) if(!COSMETICS['skin_'+ch+'_7']) COSMETICS['skin_'+ch+'_7']=Object.assign({cat:'skin', char:ch, name:nm, price, tint}, fx?{fx}:{});
 /* ===== the character's own color in a match: plain colors are free, the shiny ones are bought (cat 'bcol', equipped as saveData.equipped.bcol, sent as cos.col) ===== */
 [['red','빨강','#ff4d4d'],['mint','민트','#3fe0c5'],['yellow','노랑','#f5c94c'],['blue','파랑','#7c9eff'],['pink','분홍','#ff8fd9'],['lime','연두','#8dff7c'],

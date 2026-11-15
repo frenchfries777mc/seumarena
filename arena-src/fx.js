@@ -472,6 +472,7 @@ function drawZoneArt(z, menu) {       // tail.js asks this for every zone first;
   if (z.col === '#9a4cff' && !z.kind) { drawDarkLump(z); return true; }
   if (z.kind === 'circle') { drawWizCircle(z); return true; }
   if (z.col === '#ff7a2a' && !z.kind) { drawFirePuddle(z); return true; }      // (폭발광 화염병)
+  if (z.kind === 'fire') { drawFirePuddle(z); return true; }      // fire3 fields (중화기병 화염 등): same flames, not a flat circle
   return false;
 }
 function drawMuzzles() {               // the flash at the mouth of whatever fired (the original's drawMuzzle): bright for a few frames
