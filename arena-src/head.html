@@ -235,6 +235,19 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent-2);outli
 .skBtns button{font:600 12px 'IBM Plex Sans KR',sans-serif;padding:5px 9px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--text-dim);cursor:pointer}
 .skBtns button[aria-pressed="true"]{background:var(--accent-2);color:#062824;border-color:var(--accent-2)}
 .skBtns button:disabled{opacity:.3;cursor:not-allowed}
+.ic-cr{background:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHBhdGggZD0iTTI0IDMgMzYgMTUgMzEgNDJIMTdMMTIgMTV6IiBmaWxsPSIjM2ZlMGM4Ii8+PHBhdGggZD0iTTI0IDMgMjQgNDIgMTcgNDIgMTIgMTV6IiBmaWxsPSIjMWZhODk4Ii8+PHBhdGggZD0iTTEyIDE1aDI0IiBzdHJva2U9IiMxZmE4OTgiIHN0cm9rZS13aWR0aD0iMS41Ii8+PHBhdGggZD0iTTI0IDcgMzAgMTUgMjQgMTV6IiBmaWxsPSIjZmZmIiBvcGFjaXR5PSIuNTUiLz48L3N2Zz4=) center/contain no-repeat}
+i.ic-cr{display:inline-block;width:1em;height:1em;vertical-align:-.15em;flex:none}
+.crPill{display:inline-flex;align-items:center;gap:5px;font:700 14px 'IBM Plex Sans KR',sans-serif;color:#7ff0dd;font-variant-numeric:tabular-nums;white-space:nowrap}
+.loHead .crPill{font-size:13px;margin-left:4px;vertical-align:-1px}
+.skRow.skLock{background:#12141a;border-style:dashed}
+.skRow.skLock .skText>*{opacity:.45}
+.skRow.skLock .skText b::before{content:'';display:inline-block;width:.9em;height:.9em;margin-right:6px;vertical-align:-.1em;background:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHJlY3QgeD0iNCIgeT0iMTAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxMiIgcng9IjIiIGZpbGw9IiNjOWNjZDYiLz48cGF0aCBkPSJNOCAxMFY3YTQgNCAwIDAgMSA4IDB2MyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYzljY2Q2IiBzdHJva2Utd2lkdGg9IjIuNiIvPjwvc3ZnPg==) center/contain no-repeat}
+.skBtns button.skBuy{display:flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 10px;font:800 13px 'IBM Plex Sans KR',sans-serif;background:#15302c;color:#7ff0dd;border:0;box-shadow:inset 0 0 0 1.5px #3fe0c8;white-space:nowrap}
+.skBtns button.skBuy.ask{background:#3a3212;color:#ffd34d;box-shadow:inset 0 0 0 1.5px #ffd34d}
+.skBtns button.skBuy.poor{background:var(--panel-2);color:var(--text-dim);box-shadow:inset 0 0 0 1px var(--line)}
+.skBtns button.skBuy.nope{animation:skNope .3s}
+@keyframes skNope{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.kCr{position:absolute;right:4px;top:4px;z-index:3;display:inline-flex;align-items:center;gap:2px;padding:1px 5px;border-radius:999px;background:#0d1f1c;color:#7ff0dd;font:800 11px 'IBM Plex Sans KR',sans-serif;box-shadow:inset 0 0 0 1px #3fe0c8}
 #weaponScreen{max-height:calc(var(--vh) - 32px);overflow-y:auto}
 #soundBtn{position:fixed;z-index:6;right:max(16px, env(safe-area-inset-right, 0px));top:calc(env(safe-area-inset-top,0px) + 12px);
   background:rgba(20,22,28,.85);color:var(--text-dim);border:1px solid var(--line);border-radius:10px;padding:5px 9px;font:600 12px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
@@ -1238,7 +1251,7 @@ canvas.rwI{background:none}
 <div id="mvpFx" hidden><div class="rwRays"></div><canvas width="280" height="300"></canvas><b class="mvTag">MVP</b><b class="mvName"></b><span class="mvStat"></span></div>
 <button id="specBack" type="button" aria-label="결과 화면" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
 <div id="lobby">
-  <div id="acct"><span id="acctIcon" aria-hidden="true">●</span><span id="acctId" role="button" tabindex="0" aria-label="프로필"><span id="acctName"></span><small id="acctTitle" hidden></small></span><button id="acctBtn" type="button" hidden>로그인</button><span class="goldPill" aria-label="골드"><i class="coin"></i><b class="goldN">0</b></span><button id="setLobbyBtn" type="button" aria-label="설정">⚙</button></div>
+  <div id="acct"><span id="acctIcon" aria-hidden="true">●</span><span id="acctId" role="button" tabindex="0" aria-label="프로필"><span id="acctName"></span><small id="acctTitle" hidden></small></span><button id="acctBtn" type="button" hidden>로그인</button><span class="goldPill" aria-label="골드"><i class="coin"></i><b class="goldN">0</b></span><span class="crPill" aria-label="크리스탈"><i class="ic-cr"></i><b class="crN">0</b></span><button id="setLobbyBtn" type="button" aria-label="설정">⚙</button></div>
   <div id="topRight">
   <button id="karma" type="button" aria-label="카르마"><svg aria-hidden="true"><use href="#mi-karma"/></svg><span class="kCol"><b class="karmaN">0</b><span id="karmaBar"><i></i></span></span><i id="karmaDot" hidden></i></button>
   <button id="quest" type="button" aria-label="일일 과제"><svg aria-hidden="true"><use href="#mi-quest"/></svg><b id="questN">0/3</b><i id="questDot" hidden></i></button>

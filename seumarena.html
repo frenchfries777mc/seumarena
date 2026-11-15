@@ -254,6 +254,19 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent-2);outli
 .skBtns button{font:600 12px 'IBM Plex Sans KR',sans-serif;padding:5px 9px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--text-dim);cursor:pointer}
 .skBtns button[aria-pressed="true"]{background:var(--accent-2);color:#062824;border-color:var(--accent-2)}
 .skBtns button:disabled{opacity:.3;cursor:not-allowed}
+.ic-cr{background:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHBhdGggZD0iTTI0IDMgMzYgMTUgMzEgNDJIMTdMMTIgMTV6IiBmaWxsPSIjM2ZlMGM4Ii8+PHBhdGggZD0iTTI0IDMgMjQgNDIgMTcgNDIgMTIgMTV6IiBmaWxsPSIjMWZhODk4Ii8+PHBhdGggZD0iTTEyIDE1aDI0IiBzdHJva2U9IiMxZmE4OTgiIHN0cm9rZS13aWR0aD0iMS41Ii8+PHBhdGggZD0iTTI0IDcgMzAgMTUgMjQgMTV6IiBmaWxsPSIjZmZmIiBvcGFjaXR5PSIuNTUiLz48L3N2Zz4=) center/contain no-repeat}
+i.ic-cr{display:inline-block;width:1em;height:1em;vertical-align:-.15em;flex:none}
+.crPill{display:inline-flex;align-items:center;gap:5px;font:700 14px 'IBM Plex Sans KR',sans-serif;color:#7ff0dd;font-variant-numeric:tabular-nums;white-space:nowrap}
+.loHead .crPill{font-size:13px;margin-left:4px;vertical-align:-1px}
+.skRow.skLock{background:#12141a;border-style:dashed}
+.skRow.skLock .skText>*{opacity:.45}
+.skRow.skLock .skText b::before{content:'';display:inline-block;width:.9em;height:.9em;margin-right:6px;vertical-align:-.1em;background:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHJlY3QgeD0iNCIgeT0iMTAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxMiIgcng9IjIiIGZpbGw9IiNjOWNjZDYiLz48cGF0aCBkPSJNOCAxMFY3YTQgNCAwIDAgMSA4IDB2MyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYzljY2Q2IiBzdHJva2Utd2lkdGg9IjIuNiIvPjwvc3ZnPg==) center/contain no-repeat}
+.skBtns button.skBuy{display:flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 10px;font:800 13px 'IBM Plex Sans KR',sans-serif;background:#15302c;color:#7ff0dd;border:0;box-shadow:inset 0 0 0 1.5px #3fe0c8;white-space:nowrap}
+.skBtns button.skBuy.ask{background:#3a3212;color:#ffd34d;box-shadow:inset 0 0 0 1.5px #ffd34d}
+.skBtns button.skBuy.poor{background:var(--panel-2);color:var(--text-dim);box-shadow:inset 0 0 0 1px var(--line)}
+.skBtns button.skBuy.nope{animation:skNope .3s}
+@keyframes skNope{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.kCr{position:absolute;right:4px;top:4px;z-index:3;display:inline-flex;align-items:center;gap:2px;padding:1px 5px;border-radius:999px;background:#0d1f1c;color:#7ff0dd;font:800 11px 'IBM Plex Sans KR',sans-serif;box-shadow:inset 0 0 0 1px #3fe0c8}
 #weaponScreen{max-height:calc(var(--vh) - 32px);overflow-y:auto}
 #soundBtn{position:fixed;z-index:6;right:max(16px, env(safe-area-inset-right, 0px));top:calc(env(safe-area-inset-top,0px) + 12px);
   background:rgba(20,22,28,.85);color:var(--text-dim);border:1px solid var(--line);border-radius:10px;padding:5px 9px;font:600 12px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
@@ -1257,7 +1270,7 @@ canvas.rwI{background:none}
 <div id="mvpFx" hidden><div class="rwRays"></div><canvas width="280" height="300"></canvas><b class="mvTag">MVP</b><b class="mvName"></b><span class="mvStat"></span></div>
 <button id="specBack" type="button" aria-label="결과 화면" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
 <div id="lobby">
-  <div id="acct"><span id="acctIcon" aria-hidden="true">●</span><span id="acctId" role="button" tabindex="0" aria-label="프로필"><span id="acctName"></span><small id="acctTitle" hidden></small></span><button id="acctBtn" type="button" hidden>로그인</button><span class="goldPill" aria-label="골드"><i class="coin"></i><b class="goldN">0</b></span><button id="setLobbyBtn" type="button" aria-label="설정">⚙</button></div>
+  <div id="acct"><span id="acctIcon" aria-hidden="true">●</span><span id="acctId" role="button" tabindex="0" aria-label="프로필"><span id="acctName"></span><small id="acctTitle" hidden></small></span><button id="acctBtn" type="button" hidden>로그인</button><span class="goldPill" aria-label="골드"><i class="coin"></i><b class="goldN">0</b></span><span class="crPill" aria-label="크리스탈"><i class="ic-cr"></i><b class="crN">0</b></span><button id="setLobbyBtn" type="button" aria-label="설정">⚙</button></div>
   <div id="topRight">
   <button id="karma" type="button" aria-label="카르마"><svg aria-hidden="true"><use href="#mi-karma"/></svg><span class="kCol"><b class="karmaN">0</b><span id="karmaBar"><i></i></span></span><i id="karmaDot" hidden></i></button>
   <button id="quest" type="button" aria-label="일일 과제"><svg aria-hidden="true"><use href="#mi-quest"/></svg><b id="questN">0/3</b><i id="questDot" hidden></i></button>
@@ -5184,7 +5197,7 @@ function loadoutValid(h, a, b) {
   if (!ea || !eb || a === b || eb.only1) { const d = h.skills.filter(s => !s.only1); return [h.skills[0].n, (d.find(s => s.n !== h.skills[0].n) || h.skills[0]).n]; }
   return [a, b];
 }
-function loadoutOf(id) { const h = HEROES[id], l = loadouts[id]; return l ? loadoutValid(h, l[0], l[1]) : loadoutValid(h, h.skills[0].n, (h.skills[1] || h.skills[0]).n); }
+function loadoutOf(id) { const h = HEROES[id], l = loadouts[id], d = loadoutValid(h, h.skills[0].n, (h.skills[1] || h.skills[0]).n); if (!l) return d; const lo = loadoutValid(h, l[0], l[1]); return typeof skOpen !== 'function' || lo.every(n => skOpen(id, n)) ? lo : d; }      // a locked skill (social.js skOpen) falls back to the first two
 function botLoadout(h) { const p = h.skills.slice().sort(() => Math.random() - .5); let a = p[0], b = p.find(s => s !== a && !s.only1); if (!b) { b = a; a = p.find(s => s !== b) || a; } return loadoutValid(h, a.n, b.n); }
 function loadMap(i) {
   curMap = i; MAP = MAPS[i].grid.map(r => r.split('')); ROWS = MAP.length; COLS = MAP[0].length; WW = COLS * T; WH = ROWS * T; TH = MAPS[i].th; tempWalls.clear(); NET.mapVer++; envReset();
@@ -5335,14 +5348,15 @@ let AI_KITE = true;
    want: preferred distance (x reach) · low: hp share where it runs home · sk: skill eagerness · flank: approaches from the side
    ambush: waits in bushes when nobody is around · save: keeps skills for a weakened target */
 const AI_PERS = {
-  rush: { want: .45, low: .18, sk: 1.15, st: [.8, 1.8], flip: .4 },
-  careful: { want: .75, low: .36, sk: .9, st: [.5, 1.2], flip: .7 },
-  ambush: { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6, ambush: 1 },
-  flank: { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6, flank: 1 },
-  saver: { want: .6, low: .3, sk: .6, st: [.6, 1.5], flip: .6, save: 1 }
+  rush: { want: .55, low: .12, sk: 1.15, st: [.8, 1.8], flip: .4 },
+  careful: { want: .75, low: .24, sk: .9, st: [.5, 1.2], flip: .7 },
+  ambush: { want: .6, low: .2, sk: 1, st: [.6, 1.5], flip: .6, ambush: 1 },
+  flank: { want: .6, low: .2, sk: 1, st: [.6, 1.5], flip: .6, flank: 1 },
+  saver: { want: .6, low: .2, sk: .6, st: [.6, 1.5], flip: .6, save: 1 }
 };
-const AI_PERS_IDS = Object.keys(AI_PERS), AI_PERS0 = { want: .6, low: .3, sk: 1, st: [.6, 1.5], flip: .6 };      // (the old single behaviour)
-const AI_LV = { aim: .38, lead: .25, mem: 3, coolR: [.5, 1.35], coolM: [.25, .65], sk: .022, ult: .028 };      // 2026-11-14: easier bots (was aim .21 lead .42 coolR .34-1.0 coolM .14-.46 sk .032 ult .04)
+const AI_PERS_IDS = Object.keys(AI_PERS), AI_PERS0 = { want: .6, low: .2, sk: 1, st: [.6, 1.5], flip: .6 };      // (the old single behaviour)
+/* 2026-11-15 (user: bots rush and run away too well): aggro = tiles a bot notices a foe from (13 once in a fight or hit), flee = chance a hurt bot runs home this life, fdash = chance it dashes while running, kdash = per-second chance of a dodge-dash from melee */
+const AI_LV = { aim: .38, lead: .25, mem: 3, aggro: 9, flee: .5, fdash: .2, kdash: .6, coolR: [.5, 1.35], coolM: [.25, .65], sk: .022, ult: .028 };      // 2026-11-14: easier bots (was aim .21 lead .42 coolR .34-1.0 coolM .14-.46 sk .032 ult .04)
 function kiteStep(f, reach) {
   const ts = foes(f).filter(e => !e.dead && !e.minion && !B(e, 'ally') && dist(f, e) < reach * 1.2 && visibleTo(e, teamOf(f)));
   if (!ts.length) return null;
@@ -5362,6 +5376,13 @@ function kiteStep(f, reach) {
   if (best === null) return null;
   a.kdir = best; return [Math.cos(best), Math.sin(best)];
 }
+/* hurt enough to run home? decided once each time hp drops under the line (L.flee chance), so some hurt bots keep fighting */
+function aiLow(f, L, P) {
+  const a = f.ai;
+  if (f.hp >= f.mhp * P.low) { a.fl = undefined; return false; }
+  if (a.fl === undefined) { a.fl = Math.random() < (L.flee ?? 1); a.fd = Math.random() < (L.fdash ?? 1) ? 1 : 0; }
+  return a.fl;
+}
 function ai0(f, dt) {
   const a = f.ai, h = f.h, L = a.lv || AI_LV, P = AI_PERS[a.pers] || AI_PERS0;
   f.hold = false;
@@ -5374,6 +5395,8 @@ function ai0(f, dt) {
     if (d < bd) { bd = d; tgt = e; }
   }
   if (B(f, 'taunt')) { const s = f.b.taunt.v; if (s && !s.dead && dist(f, s) < 10 * T) { tgt = s; bd = dist(f, s); } }      // taunted bots go for the shield bearer
+  if (tgt && bd > (L.aggro || 13) * T && !(a.eng > time) && time - f.lastHit > 2) { tgt = null; bd = 1e9; }      // 2026-11-15: a bot that is not in a fight only notices foes within aggro tiles
+  if (tgt) a.eng = time + 3;
   a.bd = tgt ? bd : 1e9;
   if (tgt && !tgt.minion) a.mem = { e: tgt, x: tgt.x, y: tgt.y, vx: tgt.vx || 0, vy: tgt.vy || 0, t: 0 };      // 2026-11-15: remember the last place a foe was seen (bush hiding)
   else if (!tgt && a.mem) {
@@ -5405,23 +5428,24 @@ function ai0(f, dt) {
         f.hold = true; a.cool = close ? rnd(L.coolM[0], L.coolM[1]) : rnd(L.coolR[0], L.coolR[1]);
       }
     }
-    const low = f.hp < f.mhp * P.low && !B(f, 'charm') && modeNow().respawn && curMode !== 'star';      // (no running home in modes without respawn: nothing waits there)
+    const low = aiLow(f, L, P) && !B(f, 'charm') && modeNow().respawn && curMode !== 'star';      // (no running home in modes without respawn: nothing waits there)
     if (low) {
       const s = spawnPos(f.team, f.slot);
-      if (Math.hypot(s.x - f.x, s.y - f.y) > 1.5 * T) { const mv = pathTo(f, s.x, s.y); if (bd < 3 * T) tryDash(f, mv[0], mv[1]); return mv; }
+      if (Math.hypot(s.x - f.x, s.y - f.y) > 1.5 * T) { const mv = pathTo(f, s.x, s.y); if (bd < 3 * T && a.fd) { a.fd = 0; tryDash(f, mv[0], mv[1]); } return mv; }
     }
     if (AI_KITE && h.type === 'shot' && !tgt.minion) {
       const melee = tgt.h && tgt.h.type !== 'shot', danger = melee ? Math.max(5 * T, reach * .55) : reach * .42;
       if (bd < danger) {
         const k = kiteStep(f, Math.max(reach, 6 * T));
-        if (k) { if (melee && bd < 2.6 * T && f.dcd <= 0) tryDash(f, k[0], k[1]); return k; }
+        if (k) { if (melee && bd < 2.6 * T && f.dcd <= 0 && Math.random() < (L.kdash ?? 60) * dt) tryDash(f, k[0], k[1]); return k; }
       }
     }
     if (!see || bd > reach * .8) {
       let gx = tgt.x, gy = tgt.y;
       if (P.flank && bd > 3 * T) { const o = 2.2 * T * a.fside, px = gx - Math.sin(ang) * o, py = gy + Math.cos(ang) * o; if (!blockedAt(px, py)) { gx = px; gy = py; } }      // flankers come in from the side
-      const mv = pathTo(f, gx, gy);
-      if (close && see && bd > reach && bd < 5 * T && Math.random() < .05) tryDash(f, mv[0], mv[1]);
+      let mv = pathTo(f, gx, gy);
+      if (see && bd < 8 * T && (mv[0] || mv[1])) { const sp = ang + Math.PI / 2 * a.sdir; mv = norm(mv[0] + Math.cos(sp) * .55, mv[1] + Math.sin(sp) * .55); if (a.strafeT <= 0) { a.strafeT = rnd(P.st[0], P.st[1]); if (Math.random() < P.flip) a.sdir *= -1; } }      // 2026-11-15: close in on a zigzag, not in a straight line
+      if (close && see && bd > reach && bd < 5 * T && Math.random() < .015) tryDash(f, mv[0], mv[1]);
       return mv;
     }
     if (a.strafeT <= 0) { a.strafeT = rnd(P.st[0], P.st[1]); if (Math.random() < P.flip) a.sdir *= -1; }
@@ -5491,6 +5515,7 @@ function readLocal(f) {       // what this screen's controls say right now, for 
   pendingFire = null; wantUlt = false; wantDash = false; wantSk = [false, false];
   return inp;
 }
+const IN_BUF = .4;
 function applyInput(f, inp) {       // the same for this screen's player and for a player on another screen (host side)
   if (!inp) return [0, 0];
   f.aim = inp.aim; f.tx = inp.tx; f.ty = inp.ty;
@@ -5500,9 +5525,14 @@ function applyInput(f, inp) {       // the same for this screen's player and for
     if (f.h.fireHeld) f.tapT = f.h.tapHold || .5; else fire(f, a);
   }
   const own = !B(f, 'charm'), len = Math.hypot(inp.mx, inp.my);
-  if (inp.ult) { if (inp.touch && !inp.manual) f.aim = autoAim(f); if (own) useUlt(f); }
-  for (let i = 0; i < 2; i++) if (inp.sk && inp.sk[i]) { if (inp.touch && !inp.aiming && !inp.manual) f.aim = autoAim(f); f.netNp = inp.np; if (own) useSkill(f, i); f.netNp = undefined; }
-  if (inp.dash) { if (len > .15) tryDash(f, inp.mx / len, inp.my / len); else tryDash(f, Math.cos(f.aim), Math.sin(f.aim)); }
+  // 2026-11-15 (user: "궁극기가 눌렀다 떼도 안 나감"): a press that lands a moment too early (cooldown about to end, mid dash / short stun,
+  // no foe in reach for one frame) used to be thrown away. Now it is kept for IN_BUF s and tried again every tick until it goes out.
+  const bf = f.ibuf || (f.ibuf = { u: null, d: null, s: [null, null] }), keep = (k, i) => ({ t: time + IN_BUF, aim: inp.aim, tx: inp.tx, ty: inp.ty, man: !!inp.manual, np: inp.np });
+  if (inp.ult) bf.u = keep(); if (inp.dash) bf.d = keep(); for (let i = 0; i < 2; i++) if (inp.sk && inp.sk[i]) bf.s[i] = keep();
+  const live = b => b && time <= b.t, aimOf = (b, auto) => { if (b.man || !inp.touch) { f.aim = b.man ? b.aim : inp.aim; if (b.man) { f.tx = b.tx; f.ty = b.ty; } } else if (auto) f.aim = autoAim(f); };
+  if (live(bf.u)) { aimOf(bf.u, true); if (own && useUlt(f)) bf.u = null; } else bf.u = null;
+  for (let i = 0; i < 2; i++) { const b = bf.s[i]; if (live(b)) { aimOf(b, !inp.aiming); f.netNp = b.np; if (own && useSkill(f, i)) bf.s[i] = null; f.netNp = undefined; } else bf.s[i] = null; }
+  if (live(bf.d)) { const ok = len > .15 ? tryDash(f, inp.mx / len, inp.my / len) : tryDash(f, Math.cos(f.aim), Math.sin(f.aim)); if (ok) bf.d = null; } else bf.d = null;
   inp.pf = null; inp.ult = false; inp.dash = false; inp.sk = [false, false]; inp.manual = false;
   return [inp.mx, inp.my];
 }
@@ -5834,7 +5864,7 @@ function hotStep(dt) {
 function hotGoal(f, mv) {
   if (!HZ.on || curMode !== 'hot4' || f.dead || B(f, 'charm') || f.minion) return null;
   const a = f.ai, P = AI_PERS[a.pers] || AI_PERS0;
-  if (f.hp < f.mhp * P.low && (a.bd || 1e9) < 9 * T) return null;      // hurt with an enemy near: ai0 takes it home
+  if (aiLow(f, a.lv || AI_LV, P) && (a.bd || 1e9) < 9 * T) return null;      // hurt with an enemy near: ai0 takes it home
   if (!a.hzT || time > a.hzT) { const ang = Math.random() * Math.PI * 2, rr = Math.sqrt(Math.random()) * HZ.r * .6, x = HZ.x + Math.cos(ang) * rr, y = HZ.y + Math.sin(ang) * rr; if (!blockedAt(x, y)) { a.hx = x; a.hy = y; } else { a.hx = HZ.x; a.hy = HZ.y; } a.hzT = time + rnd(3, 6); }
   const d = Math.hypot(f.x - HZ.x, f.y - HZ.y), bd = a.bd || 1e9, reach = f.h.rangef ? f.h.rangef(f) : f.h.range;
   let others = 0, filling = -1; HZ.n.forEach((n, t) => { if (n && t !== f.team) { others++; filling = t; } });
@@ -6517,7 +6547,8 @@ hero('samurai', { p: ['검무', '두 손의 검으로 번갈아 4연타(220 ×3 
   cdf(f) { return (samIdx(f) === 3 ? .53 : .18) / ATK_CD_MUL; },
   dmgf(f) { return (samIdx(f) === 3 ? 50 : 22) * (1 + .03 * Math.min(5, samStreak(f))); },
   mo(f) { return samIdx(f) === 3 ? { kb: 140 } : null; },
-  onSwing(f, hits, ang) { const i = samIdx(f); f.st.hand = i === 3 ? 2 : i % 2 ? 0 : 1; f.st.cb = i + 1; f.st.la = time; if (f.st.cb % 4 === 0) fxAt(f, 'skillring', { color: '#dfe9ff' }); },
+  onSwing(f, hits, ang) { const i = samIdx(f); f.st.lh = f.st.lh === 1 ? 0 : 1; f.st.hand = i === 3 ? 2 : f.st.lh;      // hands always alternate swing to swing (also when the combo dropped and starts over)
+    f.st.cb = i + 1; f.st.la = time; if (f.st.cb % 4 === 0) fxAt(f, 'skillring', { color: '#dfe9ff' }); },
   onDeal(f, e, d, o) { if (e.minion) return; if (f.st.tg === e && time - (f.st.lt || -9) < 1) f.st.sk = (f.st.sk || 0) + 1; else f.st.sk = 0; f.st.tg = e; f.st.lt = time; },
   onHurt(f, d, by) { if (!B(f, 'parry') && time - (f.st.la || -9) < 1) return d * .85; if (B(f, 'parry') && by && by !== f && !by.dead && dist(f, by) < 2.4 * T) { unbuff(f, 'parry'); say(f, '흘려 베기', '#dfe9ff'); f.aim = angTo(f, by); seq(f, 4, .08, i => { f.swing = .14; f.st.hand = i === 3 ? 2 : i % 2 ? 0 : 1; arc(f, angTo(f, by), f.h.range * 1.15, .9, i === 3 ? 50 : 22, i === 3 ? { kb: 200 } : {}); }); return 0; } },
   ult: ['쌍검 난무', '가장 가까운 적(4칸 안)에게 붙어 1.5초 동안 12번 베기 (11번 32 + 마지막 X자 300, 합 652, 마지막에 밀쳐냄) · 그동안 상대는 30% 느려지고, 멀어지면 순간이동으로 따라붙음 · 무적 아님, 기절하면 끊김', [0, 4 * T], f => {
@@ -6527,8 +6558,8 @@ hero('samurai', { p: ['검무', '두 손의 검으로 번갈아 4연타(220 ×3 
     seq(f, 12, .125, i => { if (e.dead || f.dead || B(f, 'stun')) return; if (dist(f, e) > 70 && dist(f, e) < 6 * T) { const g = angTo(e, f); blinkTo(f, e.x + Math.cos(g) * 46, e.y + Math.sin(g) * 46); } const a = angTo(f, e); f.aim = a; f.swing = .12; f.st.hand = i === 11 ? 2 : i % 2 ? 0 : 1; addSwing(f, a); arc(f, a, f.h.range * 1.2, 1, i === 11 ? 30 : 3.2, i === 11 ? { kb: 420 } : {}); if (i === 11) fx('samcut', e.x, e.y + BODY, { ang: 0, gy: e.y + 16 }); });
   }],
   skills: [
-    [1, '십자 베기', 'move', '앞으로 2칸 파고들며 두 검으로 X자 베기 · 540 피해 + 1초 동안 30% 둔화', [60, 2 * T], (f, a) => { lunge(f, a, 2 * T, .15, { end: g => { g.swing = .2; addSwing(g, g.aim); arc(g, g.aim, g.h.range * 1.25, 1.1, 54, { slow: [.7, 1] }); fx('samcut', g.x + Math.cos(g.aim) * 50, g.y + BODY + Math.sin(g.aim) * 50, { ang: 0, gy: g.y + 16 }); } }); }],
-    [2, '거합', 'move', '조준 방향으로 순식간에 베고 지나가며 경로 위의 적에게 300 피해 · 2명 이상 베면 쿨타임 절반', [60, px(430)], (f, a, i) => { const r = blink(f, a, px(430)); f.swing = .22; fxLine('iai', r.x0, r.y0 + BODY, f.x, f.y + BODY, { wid: 'samurai', cos: f.cos, gy: f.y + 16 }); const n = pathHit(f, r.x0, r.y0, f.x, f.y, 34, 30).length; if (n >= 2) later(0, () => { f.scd[i] *= .5; }); }],
+    [1, '십자 베기', 'move', '앞으로 2칸 파고들며 두 검으로 X자 베기 · 540 피해 + 1초 동안 30% 둔화', [60, 2 * T], (f, a) => { f.st.hand = 2; lunge(f, a, 2 * T, .15, { end: g => { g.swing = .2; addSwing(g, g.aim); arc(g, g.aim, g.h.range * 1.25, 1.1, 54, { slow: [.7, 1] }); fx('samcut', g.x + Math.cos(g.aim) * 50, g.y + BODY + Math.sin(g.aim) * 50, { ang: 0, gy: g.y + 16 }); } }); }],
+    [2, '거합', 'move', '조준 방향으로 순식간에 베고 지나가며 경로 위의 적에게 300 피해 · 2명 이상 베면 쿨타임 절반', [60, px(430)], (f, a, i) => { const r = blink(f, a, px(430)); f.st.lh = f.st.lh === 1 ? 0 : 1; f.st.hand = f.st.lh; f.swing = .22; fxLine('iai', r.x0, r.y0 + BODY, f.x, f.y + BODY, { wid: 'samurai', cos: f.cos, gy: f.y + 16 }); const n = pathHit(f, r.x0, r.y0, f.x, f.y, 34, 30).length; if (n >= 2) later(0, () => { f.scd[i] *= .5; }); }],
     [3, '검 던지기', 'hit', '한 자루를 던져(적을 뚫고 감) 맞은 적마다 400 피해 · 0.35초 뒤 검이 날아간 곳으로 순간이동해 다시 쥠', [0, 5 * T], (f, a) => { emit(f, a, { skill: 1, dmg: 40, range: 5 * T, r: 10, spd: 1400, pierce: 99, shape: 'katana' }); later(.35, () => { if (!f.dead) blink(f, a, 5 * T); }, f); }],
     [4, '흘려 베기', 'buff', '0.4초 동안 자세 · 그 사이 가까이(2.4칸)에서 오는 공격 한 번을 흘리고 곧바로 4연타 반격 (220 ×3 + 500) · 멀리서 쏜 공격은 그냥 맞음', [0, 110], f => { buff(f, 'parry', .4); }]
   ] });
@@ -6870,13 +6901,15 @@ function accountUi() {
 
 /* cosmetics: everything the original game sells or gives is free to wear here */
 const COS_KEY = 'seumArenaCos';
-const cosDefault = () => ({ skin: {}, col: null, name: null, kfx: null, pose: 'pose_cheer', emo: [0, 1, 2, 3, 4, 5, 6, 7], gold: 500, own: null, v: 0 });
+const cosDefault = () => ({ skin: {}, col: null, name: null, kfx: null, pose: 'pose_cheer', emo: [0, 1, 2, 3, 4, 5, 6, 7], gold: 500, own: null, v: 0, cr: 0, su: [] });
 function cosNorm(C) {      // the save-version fixes, run on this browser's save and on one that comes from the account (cloud.js)
+  if (!(C.v >= 5)) { if ((C.v | 0) >= 2) C.suAll = 1; }      // v5: skills past the first two are unlocked with crystals; a save from before that keeps every skill open (user 2026-11-15)
   if (!Array.isArray(C.own) || !(C.v >= 2)) { C.own = []; C.skin = {}; C.gold = Math.max(500, +C.gold || 0); C.v = 2; }      // skins worn before gold existed are not owned: they have to be bought (v2 also takes back the ones an earlier build handed out)
   C.gold = Math.max(0, Math.floor(+C.gold || 0)); C.karma = Math.max(0, Math.floor(+C.karma || 0)); if (!Array.isArray(C.kr) || C.v < 3) C.kr = []; if (!Array.isArray(C.cd)) C.cd = [];
   if (C.v < 4) for (const k of ['col', 'name', 'kfx']) if (C[k] && !C.own.includes(C[k])) C[k] = null;      // v4: character colours, name colours and kill effects are bought with gold too
-  C.v = 4;      // v3: the road got new steps, nothing on it is taken yet
+  C.v = 5;      // v3: the road got new steps, nothing on it is taken yet
   C.xp = Math.max(0, Math.floor(+C.xp || 0)); if (!C.mp || typeof C.mp !== 'object') C.mp = {};
+  C.cr = Math.max(0, Math.floor(+C.cr || 0)); if (!Array.isArray(C.su)) C.su = [];
   return C;
 }
 let COS = cosDefault();
@@ -6905,7 +6938,7 @@ const skinOwned = id => COS.own.includes(id);
 const cosLocked = id => skinPrice(id) > 0 && !skinOwned(id);      // has a price and is not bought yet
 if (COS.pose && cosLocked(COS.pose)) COS.pose = null;      // (victory poses used to be free: one worn but not bought goes back to 만세)
 const COS_SLOT = { bcol: 'col', name: 'name', kfx: 'kfx', pose: 'pose' };
-function goldUi() { for (const el of document.querySelectorAll('.goldN')) el.textContent = COS.gold.toLocaleString('en-US'); for (const el of document.querySelectorAll('.karmaN')) el.textContent = COS.karma.toLocaleString('en-US'); const sk = document.getElementById('streak'); if (sk) { sk.hidden = !((COS.ws | 0) >= 2); sk.querySelector('b').textContent = COS.ws | 0; }
+function goldUi() { for (const el of document.querySelectorAll('.goldN')) el.textContent = COS.gold.toLocaleString('en-US'); for (const el of document.querySelectorAll('.crN')) el.textContent = (COS.cr | 0).toLocaleString('en-US'); for (const el of document.querySelectorAll('.karmaN')) el.textContent = COS.karma.toLocaleString('en-US'); const sk = document.getElementById('streak'); if (sk) { sk.hidden = !((COS.ws | 0) >= 2); sk.querySelector('b').textContent = COS.ws | 0; }
   { const kb = document.querySelector('#karmaBar i'); { let lo = 0, hi = 0; for (const r of KARMA_ROAD) { if (COS.karma >= r[0]) lo = r[0]; else { hi = r[0]; break; } } const w = (hi ? Math.round((COS.karma - lo) / (hi - lo) * 100) : 100) + '%'; if (kb) kb.style.width = w; const hb = document.querySelector('.khBar i'), hn = document.getElementById('karmaNextN'); if (hb) hb.style.width = w; if (hn) hn.textContent = hi ? COS.karma.toLocaleString('en-US') + ' / ' + hi.toLocaleString('en-US') : ''; } }      // the banner's bar: the way to the next step of the road
   const kd = document.getElementById('karmaDot'); if (kd) kd.hidden = !karmaOpen(); questUi(); passUi();
   const ai = document.getElementById('acctIcon'); if (ai) { const l = levelOf(); ai.textContent = l.lv; ai.style.setProperty('--p', Math.round(l.into / l.need * 100)); ai.title = '레벨 ' + l.lv + ' · ' + l.into + ' / ' + l.need; } }
@@ -6920,12 +6953,13 @@ const KARMA_ROAD = (() => {      // paced like a trophy road (user 2026-11-12): 
     const gap = n - prev, kind = ['g', 'rx', 'g', 'box', 'cx'][i % 5]; prev = n;
     if (big[n]) { out.push([n, big[n][0], big[n][1], 1]); continue; }      // a big step does not use up a turn of the cycle
     i++;
-    out.push(kind === 'box' ? [n, gap >= 500 ? 'ebox' : 'box'] : [n, kind, kind === 'g' ? amt(gap, [50, 150, 300, 500, 800, 1200]) : amt(gap, [100, 200, 300, 500, 700, 1000])]);
+    out.push(kind === 'box' ? [n, gap >= 500 ? 'ebox' : 'box', 0, 0, gap <= 20 ? 20 : gap <= 50 ? 30 : gap <= 100 ? 40 : 50] : [n, kind, kind === 'g' ? amt(gap, [50, 150, 300, 500, 800, 1200]) : amt(gap, [100, 200, 300, 500, 700, 1000])]);
   }
   return out;
 })();
 /* what a box can hold: [chance weight, kind, least, most] */
-const BOX_LOOT = { box: [[50, 'g', 150, 400], [30, 'rx', 150, 300], [12, 'cx', 150, 250], [8, 'skin', 1000, 1000]], ebox: [[35, 'g', 600, 1200], [20, 'rx', 500, 800], [20, 'cx', 400, 600], [25, 'skin', 2500, 2500]] };
+const BOX_LOOT = { box: [[50, 'g', 150, 400], [30, 'rx', 150, 300], [12, 'cx', 150, 250], [8, 'skin', 1000, 1000], [25, 'cr', 40, 80]], ebox: null };      // an epic box gives 3 prizes, one after another (user 2026-11-15); each prize is drawn exactly like a random box (user 2026-11-15)
+BOX_LOOT.ebox = BOX_LOOT.box; const EBOX_N = 3;
 /* character mastery: every step is MP_STEP points (about 16 matches at ~50 a match) */
 const MP_STEP = 800, MASTERY = [];
 for (const [nm, n, col] of [['브론즈', 3, '#c8803a'], ['실버', 3, '#c0c8d4'], ['골드', 3, '#ffd34d'], ['플래티넘', 3, '#6fe0d0'], ['다이아', 3, '#6fb8ff'], ['아메시스트', 3, '#b07cff'], ['마스터', 5, '#ff8a4d'], ['그랜드마스터', 5, '#ff4d6d']]) for (let i = 0; i < n; i++) MASTERY.push({ name: nm + ' ' + ['I', 'II', 'III', 'IV', 'V'][i], col });
@@ -6973,14 +7007,18 @@ function streakStep(win, draw, keep) {
 }
 /* gives one reward and says what it was: { kind, n, hero, skin } */
 function giveReward(kind, n) {
-  if (kind === 'box' || kind === 'ebox') { const L = BOX_LOOT[kind]; let r = Math.random() * L.reduce((a, l) => a + l[0], 0), l = L[0]; for (const x of L) { if ((r -= x[0]) < 0) { l = x; break; } } const tr = Math.random(), tier = l[1] === 'skin' ? 2 : kind === 'ebox' ? (tr < .25 ? 2 : 1) : tr < .05 ? 2 : tr < .25 ? 1 : 0;      // a box opens as common, rare or legendary: rare doubles what is inside, legendary gives four times (a skin is always legendary)
-    const got = giveReward(l[1], l[1] === 'skin' ? l[2] : Math.round((l[2] + Math.random() * (l[3] - l[2])) * (kind === 'ebox' ? [1, 1, 2] : [1, 2, 4])[tier] / 10) * 10); got.box = kind; got.tier = tier; return got; }
+  if (kind === 'ebox' && n !== -1) {      // three draws; at most one skin per box (a second skin roll draws again without skins)
+    const list = []; for (let i = 0; i < EBOX_N; i++) { let g = giveReward('ebox', -1); if (g.skin && list.some(x => x.skin)) { const keep = BOX_LOOT.ebox; BOX_LOOT.ebox = keep.filter(l => l[1] !== 'skin'); try { g = giveReward('ebox', -1); } finally { BOX_LOOT.ebox = keep; } } list.push(g); }
+    const got = list[0]; got.list = list; return got; }
+  if (kind === 'box' || kind === 'ebox') { const L = BOX_LOOT[kind]; let r = Math.random() * L.reduce((a, l) => a + l[0], 0), l = L[0]; for (const x of L) { if ((r -= x[0]) < 0) { l = x; break; } } const tr = Math.random(), tier = l[1] === 'skin' ? 2 : tr < .05 ? 2 : tr < .25 ? 1 : 0;      // a box opens as common, rare or legendary: rare doubles what is inside, legendary gives four times (a skin is always legendary)
+    const got = giveReward(l[1], l[1] === 'skin' ? l[2] : Math.round((l[2] + Math.random() * (l[3] - l[2])) * [1, 2, 4][tier] / 10) * 10); got.box = kind; got.tier = tier; return got; }
   if (kind === 'skin') {      // a skin not owned yet, from the dearest tier allowed; nothing left to give: its worth in gold
     const pool = COS_IDS('skin').filter(id => HEROES[COSMETICS[id].char] && !skinOwned(id) && !passLimited(id) && skinPrice(id) <= n), top = Math.max(0, ...pool.map(skinPrice)), best = pool.filter(id => skinPrice(id) === top);
     if (best.length) { const id = pick(best); COS.own.push(id); return { kind, skin: id, hero: COSMETICS[id].char }; }
     kind = 'g';
   }
   if (kind === 'g') { COS.gold += n; return { kind, n }; }
+  if (kind === 'cr') { COS.cr = (COS.cr | 0) + n; return { kind, n }; }
   if (kind === 'px') { COS.xp += n; return { kind, n }; }
   if (kind === 'k') { COS.karma += n; return { kind, n }; }
   const hero = kind === 'cx' && HEROES[chosen] ? chosen : pick(Object.keys(HEROES)); addMp(hero, n); return { kind, n, hero };
@@ -6988,11 +7026,18 @@ function giveReward(kind, n) {
 const karmaOpen = () => KARMA_ROAD.some(r => COS.karma >= r[0] && !COS.kr.includes(r[0]));
 function karmaTake(r) {
   if (COS.karma < r[0] || COS.kr.includes(r[0])) return null;
-  COS.kr.push(r[0]); const got = giveReward(r[1], r[2]);
+  COS.kr.push(r[0]); const got = crExtra(giveReward(r[1], r[2]), r[4]);
   try { sfx(880, .18, 'triangle', .06); } catch (e) {}
   saveCos(); goldUi(); return got;
 }
-const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin' };
+const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin', cr: 'ic-cr' };
+/* crystals: a road or pass step can carry some on top of its own reward (r[4]); they show after it */
+function crExtra(got, n) { if (!got || !(n > 0)) return got; const c = giveReward('cr', n); got.list = (got.list || [got]).concat([c]); return got; }
+function crBadge(box, n) { if (!(n > 0)) return; const s = document.createElement('span'); s.className = 'kCr'; s.innerHTML = '<i class="ic-cr"></i>'; s.append('+' + n); box.append(s); }
+/* skills: the first two of a character are open; the rest are unlocked with crystals (a save from before keeps them all, COS.suAll) */
+const SK_PRICE = 300;
+const skOpen = (id, n) => { const h = HEROES[id]; if (!h || COS.suAll) return true; const i = h.skills.findIndex(s => s.n === n); return i < 2 || COS.su.includes(id + ':' + n); };
+function skUnlock(id, n) { if (skOpen(id, n) || (COS.cr | 0) < SK_PRICE) return false; COS.cr -= SK_PRICE; COS.su.push(id + ':' + n); try { sfx(1320, .16, 'triangle', .07); } catch (e) {} saveCos(); goldUi(); return true; }
 function rewardIcon(kind) { const i = document.createElement('i'); if (kind === 'sx') { i.className = 'sxI'; i.innerHTML = '<svg aria-hidden="true"><use href="#mi-pass"/></svg>'; return i; } if (kind === 'k') { i.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>'; return i; } if (kind === 'skin') { const c = document.createElement('canvas'); c.width = c.height = 96; c.className = 'rwI'; try { const id = COS_IDS('skin').find(x => HEROES[COSMETICS[x].char] && skinPrice(x) > 0); drawItemPreview(c, id, 0); } catch (e) {} return c; }      // a skin reward shows a real worn skin, as in the shop
   i.className = kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[kind]; return i; }
 function renderKarma(got) {
@@ -7004,7 +7049,7 @@ function renderKarma(got) {
     const b = document.createElement('button'), box = document.createElement('span'), pin = document.createElement('span'), num = document.createElement('span');
     const done = COS.kr.includes(r[0]), reach = !done && COS.karma >= r[0];
     b.type = 'button'; b.className = 'kStep ' + (done ? 'done' : reach ? 'reach' : 'lock') + ' k-' + r[1] + (r[3] ? ' big' : ''); b.dataset.k = r[0]; box.className = 'kBox'; pin.className = 'kPin'; num.className = 'kNum'; num.textContent = r[0].toLocaleString('en-US');
-    box.append(rewardIcon(r[1]), r[1] === 'g' || r[1] === 'rx' || r[1] === 'cx' ? r[2].toLocaleString('en-US') : LBL[r[1]]);
+    box.append(rewardIcon(r[1]), r[1] === 'g' || r[1] === 'rx' || r[1] === 'cx' ? r[2].toLocaleString('en-US') : LBL[r[1]]); crBadge(box, r[4]);
     b.setAttribute('aria-label', r[0] + ' 카르마: ' + LBL[r[1]] + (r[2] && r[1] !== 'skin' ? ' ' + r[2] : '')); b.title = LBL[r[1]];
     b.disabled = !reach; b.append(box, pin, num);
     if (reach) b.addEventListener('click', () => renderKarma(karmaTake(r) || null));
@@ -7039,13 +7084,15 @@ function kRing(head, frac, txt) {
 /* the line that says what a reward turned out to be */
 function showGot(g, got) { g.hidden = true; if (got) rewardFx(got); }
 /* the burst over the whole screen when a reward is taken (head.html #rwFx): a box shakes and opens first, then the prize pops in with rays, sparks, a little tune and its number counting up. A tap puts it away */
-let rwTimer = 0, rwRaf = 0;
-function rewardFx(got) {
+let rwTimer = 0, rwRaf = 0; const rwQ = [];
+function rewardFx(got, step) {
   const fx = document.getElementById('rwFx'); if (!fx) return;
+  if (step == null && !fx.hidden && !fx.classList.contains('out')) { rwQ.push(got); return; }      // one at a time: a reward that comes while another shows waits its turn
+  const L = got.list || [got], k = step | 0; if (k) got = L[k];
   const ic = fx.querySelector('.rwIc'), cvs = fx.querySelector('canvas'), txt = fx.querySelector('.rwTxt'), spk = fx.querySelector('.rwSpk');
   const setIcon = kind => { cvs.hidden = true; ic.hidden = false; ic.textContent = ''; ic.className = 'rwIc ' + (kind === 'k' ? '' : kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[kind]); if (kind === 'k') ic.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>'; };
   const note = (f, at) => setTimeout(() => { try { sfx(f, .16, 'triangle', .07); } catch (e) {} }, at);
-  const close = () => { clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.classList.add('out'); rwTimer = setTimeout(() => { fx.hidden = true; fx.classList.remove('out', 'open', 'shake'); }, 220); for (const el of document.querySelectorAll('.goldPill, #karma, #acctIcon')) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } };
+  const close = () => { clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.classList.add('out'); rwTimer = setTimeout(() => { fx.hidden = true; fx.classList.remove('out', 'open', 'shake'); if (k + 1 < L.length) rewardFx(L[0], k + 1); else if (rwQ.length) rewardFx(rwQ.shift()); }, 220); for (const el of document.querySelectorAll('.goldPill, #karma, #acctIcon')) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } };
   const open = () => {
     fx.classList.remove('shake'); void fx.offsetWidth; fx.classList.add('open');
     if (got.skin) { ic.hidden = true; cvs.hidden = false; try { drawItemPreview(cvs, got.skin, performance.now()); } catch (e) {} txt.textContent = HEROES[got.hero].name + ' · ' + COSMETICS[got.skin].name; }
@@ -7057,12 +7104,12 @@ function rewardFx(got) {
     spk.textContent = ''; const cols = tier === 2 ? ['#ffe07a', '#fff', '#ffb020', '#ff7ad9', '#7fe0ff'] : tier === 1 ? ['#d9a8ff', '#a45cff', '#fff', '#7fb4ff'] : got.kind === 'k' ? ['#e3c4ff', '#a45cff', '#fff'] : ['#ffe07a', '#fff3b0', '#ff9a3d', '#7fe0a0'], np = [22, 34, 56][tier];
     for (let i = 0; i < np; i++) { const p = document.createElement('i'), a = Math.PI * 2 * i / np + Math.random() * .3, r = (110 + Math.random() * 120) * (1 + tier * .25); p.style.setProperty('--x', Math.round(Math.cos(a) * r) + 'px'); p.style.setProperty('--y', Math.round(Math.sin(a) * r) + 'px'); p.style.setProperty('--c', cols[i % cols.length]); p.style.setProperty('--d', (Math.random() * .12).toFixed(2) + 's'); spk.append(p); }
     note(660, 0); note(880, 90); note(1320, 180); if (got.skin || got.box === 'ebox' || tier) note(1760, 300); if (tier === 2) { note(2090, 420); note(2640, 560); }
-    rwTimer = setTimeout(close, got.skin || tier === 2 ? 2800 : 1900);
+    rwTimer = setTimeout(close, got.skin || tier === 2 ? 2800 : L.length > 1 ? 1500 : 1900);
   };
   clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.hidden = false; fx.classList.remove('out', 'open', 'shake', 't1', 't2'); txt.textContent = ''; spk.textContent = '';
-  const tier = got.box ? got.tier | 0 : 0, tg = fx.querySelector('.rwTier'); if (tier) fx.classList.add('t' + tier); if (tg) tg.textContent = got.box ? ['', '희귀', '전설'][tier] : '';
+  const tier = got.box ? got.tier | 0 : 0, tg = fx.querySelector('.rwTier'); if (tier) fx.classList.add('t' + tier); if (tg) tg.textContent = (got.box ? ['', '희귀', '전설'][tier] : '') + (L.length > 1 ? (tier ? ' · ' : '') + (k + 1) + '/' + L.length : '');
   fx.onclick = () => { if (fx.classList.contains('shake')) { clearTimeout(rwTimer); open(); } else close(); };
-  if (got.box) { setIcon(got.box); void fx.offsetWidth; fx.classList.add('shake'); const sh = [720, 1000, 1500][tier]; fx.style.setProperty('--sh', sh + 'ms'); for (let i = 0; i < sh / 130 - 1; i++) note(300 + i * (40 + tier * 15), 150 + i * 120); rwTimer = setTimeout(open, sh); }
+  if (got.box) { setIcon(got.box); void fx.offsetWidth; fx.classList.add('shake'); const sh = k ? [480, 700, 1100][tier] : [720, 1000, 1500][tier]; fx.style.setProperty('--sh', sh + 'ms'); for (let i = 0; i < sh / 130 - 1; i++) note(300 + i * (40 + tier * 15), 150 + i * 120); rwTimer = setTimeout(open, sh); }
   else open();
 }
 /* ---------- daily quests: three a day (one easy, one middling, one hard), picked by the date on this device. COS.dq = { d: day, p: progress x3, c: taken x3 } ---------- */
@@ -7324,7 +7371,7 @@ const PASS = (() => { const sk = SEASONS[GAME_VER].skins, out = [];
   for (let i = 1; i <= PASS_N; i++) {
     if (i === 15 && sk[0]) out.push([i, 'ps', sk[0], 1]); else if (i === PASS_N && sk[1]) out.push([i, 'ps', sk[1], 1]);
     else if (i % 10 === 0) out.push([i, 'ebox', 0, 1]);
-    else out.push([i, ...[['g', 100 + 20 * i], ['box'], ['px', 100 + 10 * i], ['g', 150 + 20 * i], ['cx', 150 + 10 * i]][i % 5]]);
+    else out.push([i, ...[['g', 100 + 20 * i], ['box', 0, 0, 20 + Math.round(i * 6 / 26) * 5], ['px', 100 + 10 * i], ['g', 150 + 20 * i], ['cx', 150 + 10 * i]][i % 5]]);
   }
   return out; })();
 const passXp = () => Math.max(0, Math.floor(+((COS.sx || {})[GAME_VER]) || 0));
@@ -7371,7 +7418,7 @@ function sqTake(i, wk) {
 function passTake(r) {
   if (passXp() < r[0] * PASS_STEP || passTaken(r[0])) return null;
   if (!Array.isArray(COS.sk)) COS.sk = []; COS.sk.push(GAME_VER + ':' + r[0]);
-  let got; if (r[1] === 'ps') { if (!skinOwned(r[2]) && COSMETICS[r[2]]) { COS.own.push(r[2]); got = { kind: 'skin', skin: r[2], hero: COSMETICS[r[2]].char }; } else got = giveReward('g', 2000); } else got = giveReward(r[1], r[2]);
+  let got; if (r[1] === 'ps') { if (!skinOwned(r[2]) && COSMETICS[r[2]]) { COS.own.push(r[2]); got = { kind: 'skin', skin: r[2], hero: COSMETICS[r[2]].char }; } else got = giveReward('g', 2000); } else got = crExtra(giveReward(r[1], r[2]), r[4]);
   try { sfx(880, .18, 'triangle', .06); } catch (e) {}
   saveCos(); goldUi(); return got;
 }
@@ -7403,7 +7450,7 @@ function renderPass(got) {
     const done = passTaken(r[0]), reach = !done && xp >= r[0] * PASS_STEP;
     b.type = 'button'; b.className = 'kStep ' + (done ? 'done' : reach ? 'reach' : 'lock') + ' k-' + (r[1] === 'ps' ? 'skin' : r[1]) + (r[3] ? ' big' : ''); box.className = 'kBox'; pin.className = 'kPin'; num.className = 'kNum'; num.textContent = r[0];
     if (r[1] === 'ps') { const cv = document.createElement('canvas'); cv.width = cv.height = 96; cv.className = 'psCv'; try { drawItemPreview(cv, r[2], performance.now()); } catch (e) {} box.append(cv); b.title = HEROES[COSMETICS[r[2]].char].name + ' · ' + COSMETICS[r[2]].name; }
-    else { box.append(rewardIcon(r[1]), r[2] ? r[2].toLocaleString('en-US') : LBL[r[1]]); b.title = LBL[r[1]]; }
+    else { box.append(rewardIcon(r[1]), r[2] ? r[2].toLocaleString('en-US') : LBL[r[1]]); b.title = LBL[r[1]]; crBadge(box, r[4]); }
     b.setAttribute('aria-label', r[0] + '단계: ' + (r[1] === 'ps' ? b.title : LBL[r[1]] + (r[2] ? ' ' + r[2] : '')));
     b.disabled = !reach; b.append(box, pin, num);
     if (reach) b.addEventListener('click', () => renderPass(passTake(r) || null));
@@ -10108,6 +10155,7 @@ function snapFighter(f) {
   if (s0.neck) st.nk = r2(time - s0.neck);
   for (const k of ['g', 'chip', 'stack', 'pz', 'over', 'heat', 'pn']) if (s0[k]) st[k] = r2(s0[k]);
   if (s0.morph) st.morph = 1;
+  if (s0.hand != null) st.hd = s0.hand;      // 사무라이: which hand swings (guests draw it too)
   const s = { h: f.h.id, h0: f.h0.id, tm: f.team, x: Math.round(f.x), y: Math.round(f.y), a: r2(f.aim), hp: Math.ceil(f.hp), mh: f.mhp, d: f.dead ? 1 : 0, rt: r1(f.respawnT),
     fm: f.form || 0, sw: r2(f.swing), sp: r2(f.spin), sh: Math.round(f.shield), iv: f.inv > 0 ? 1 : 0, bb, st, k: f.kos, de: f.deaths, lf: r1(Math.min(9, time - f.lastFire)), lh: r1(Math.min(9, time - f.lastHit)), hu: f.human ? 1 : 0 };
   if (f.remote) s.cd = cdInfo(f);
@@ -10235,7 +10283,7 @@ function applySnap(s) {
     f.swing = d.sw; f.spin = d.sp; f.shield = d.sh; f.inv = d.iv ? .1 : 0; f.kos = d.k; f.deaths = d.de;
     f.lastFire = time - d.lf; f.lastHit = time - d.lh;
     f.b = {}; NET_BUFFS.forEach((k, j) => { if (d.bb & (1 << j)) f.b[k] = { t: 1, v: k === 'charm' ? { team: 1 - d.tm } : 1 }; });
-    const st = d.st; f.st = { hat: st.hat ? { x: st.hat[0], y: st.hat[1] } : null, orb: st.orb ? { n: st.orb, t: 1 } : null, dr: st.dr, fsh: st.fsh ? { hp: 1 } : null, neck: st.nk != null ? time - st.nk : 0, morph: st.morph ? 1 : null, th: st.th, mk: st.mk };
+    const st = d.st; f.st = { hat: st.hat ? { x: st.hat[0], y: st.hat[1] } : null, orb: st.orb ? { n: st.orb, t: 1 } : null, dr: st.dr, fsh: st.fsh ? { hp: 1 } : null, neck: st.nk != null ? time - st.nk : 0, morph: st.morph ? 1 : null, th: st.th, mk: st.mk, hand: st.hd };
     for (const k of ['g', 'chip', 'stack', 'pz', 'over', 'heat', 'pn']) f.st[k] = st[k] || 0;
     f.net = d.cd || null;
     if (me) NET.ps = d.cd && d.cd.pm && !d.d ? { x: d.x, y: d.y, ak: d.cd.ak | 0, ao: d.cd.ao || 0, sp: d.cd.pm } : null;
@@ -10704,7 +10752,7 @@ const CL_META = 'seumArenaCloud', CL_STASH = 'seumArenaCloudStash', CL_BAK = 'se
 const CL_API = 'https://kebsbuvuutilitwlvxzv.supabase.co/rest/v1/seumarena_saves';
 /* how each part of COS merges (by path; the nearest listed parent decides). Anything not listed is a choice. */
 const CL_RULE = {
-  gold: 'add', karma: 'add', xp: 'add', mp: 'add',
+  gold: 'add', karma: 'add', xp: 'add', mp: 'add', cr: 'add', su: 'union', suAll: 'max',
   'st.k': 'add', 'st.w': 'add', 'st.g': 'add', 'st.nd': 'add', 'st.sa': 'add', 'st.mw': 'add', 'st.mg': 'add', 'st.hg': 'add', 'st.hk': 'add', 'st.hn': 'add', 'st.d': 'add', 'st.dk': 'add', 'st.mv': 'add', kb: 'max',
   'st.mk': 'max', 'st.hb': 'max', 'st.hw': 'max', ach: 'max', v: 'max',
   own: 'union', kr: 'union', sk: 'union', sx: 'add', cd: 'union', dq: 'day', wq: 'day', sq: 'day', sd: 'day', sw: 'day', att: 'att'
@@ -11242,7 +11290,7 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   if (cos && cos.col) col = bodyColor(cos, col);
   let a = ang, reach = 24;
   const samL = id === 'samurai' && swing > 0 && samHand === 0;      // 사무라이: odd hits swing the right hand, even hits the left (samHand 0), the 4th both (2)
-  if (swing > 0 && h && h.type === 'melee') { if (h.w.thrust) reach = 24 + Math.sin(swing * Math.PI) * 12; else a = samL ? ang - .45 * face : ang + (swing - .5) * 2.2 * face; }
+  if (swing > 0 && h && h.type === 'melee') { if (h.w.thrust) reach = 24 + Math.sin(swing * Math.PI) * 12; else a = samL ? ang - .15 * face : ang + (swing - .5) * 2.2 * face; }
   const ax = Math.cos(a), ay = Math.sin(a);
   PERSONA_FACE = face;
   c.save();
@@ -11262,8 +11310,8 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   if (id !== 'harald') { c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(hx, hy); c.stroke(); }      // (하랄드 draws both of his bent arms himself, in art/chars.js)
   if (id === 'kadas') { c.strokeStyle = '#c4182e'; c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(hx, hy); c.stroke(); }
   if (id === 'samurai') { c.save(); try {      // 쌍검 사무라이 (2026-11-15): the off hand holds a second katana and sweeps the other way
-    const b = swing > 0 && samHand !== 1 ? ang - (swing - .5) * 2.2 * face : ang + .55 * face, bx = Math.cos(b) * (reach - 3), by = SH + 6 + Math.sin(b) * (reach - 3);
-    body(); c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(bx, by); c.stroke(); drawHeldWeapon(c, id, Math.cos(b), Math.sin(b), bx, by, swing, cp); } catch (e) {} c.restore(); }
+    const b = swing > 0 && samHand !== 1 ? ang - (swing - .5) * 2.4 * face : ang + 1.05 * face, ox = -face * 3, bx = ox + Math.cos(b) * (reach - 3), by = SH + 7 + Math.sin(b) * (reach - 3);
+    body(); c.globalAlpha *= .82; c.beginPath(); c.moveTo(ox, SH + 7); c.lineTo(bx, by); c.stroke(); c.globalAlpha /= .82;      /* left arm a little behind the body (darker, shoulder offset) so the two hands read apart */ drawHeldWeapon(c, id, Math.cos(b), Math.sin(b), bx, by, swing, cp); } catch (e) {} c.restore(); }
   c.save(); try { if (id === 'herbal' && typeof drawHerbal === 'function') drawHerbal(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'shieldman' && typeof drawShieldman === 'function') drawShieldman(c, { face, ax, ay, hx, hy, swing, t: now / 1000, HEADCY, HEADR, SH, HIP, tint, raise: 0 }); else if (id === 'gardener' && typeof drawGardener === 'function') drawGardener(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) {} c.restore();      // (정원사's hat, slingshot and pouch: gardener.js)
   if (it && it.fx) { c.save(); try { drawSkinFx(c, lux >= 4 ? 'sparkle' : it.fx, lux >= 4 ? auroraHex(now / 1000 * .9, 1) : tint, 0, HEADCY, HEADR * 1.3, now); } catch (e) {} c.restore(); }
   if (cos && cos.col && COSMETICS[cos.col] && COSMETICS[cos.col].shine) { c.save(); try { drawShineGlints(c, now, 0); } catch (e) {} c.restore(); }
@@ -11809,9 +11857,18 @@ function markSel() { for (const el of $('weaponGrid').children) el.classList.tog
 function renderLoadout(id) {
   const h = HEROES[id], box = $('weaponLoadout'), lo = loadoutOf(id); box.textContent = '';
   const head = document.createElement('div'); head.className = 'loHead'; head.textContent = h.skills.length > 2 ? '스킬 ' + h.skills.length + '개 중 2개를 골라 칸에 넣으세요 · 1스킬 칸은 쿨타임 ' + CD1 + '초, 2스킬 칸은 ' + CD2 + '초' : '스킬이 2개뿐이라 어느 칸에 넣을지만 고릅니다 · 1스킬 칸은 쿨타임 ' + CD1 + '초, 2스킬 칸은 ' + CD2 + '초';
+  const shut = h.skills.filter(s => !skOpen(id, s.n)).length;
+  if (shut) { head.textContent = '스킬 ' + h.skills.length + '개 중 ' + (h.skills.length - shut) + '개 열림 · 열린 스킬 중 2개를 칸에 넣으세요 '; const p = document.createElement('span'); p.className = 'crPill'; p.innerHTML = '<i class="ic-cr"></i><b class="crN"></b>'; p.querySelector('b').textContent = (COS.cr | 0).toLocaleString('en-US'); head.append(p); }
   box.append(head);
   for (const s of h.skills) {
     const row = document.createElement('div'); row.className = 'skRow' + (lo.includes(s.n) ? ' on' : '');
+    if (!skOpen(id, s.n)) {      // locked: dimmed, a padlock, and one button that unlocks it for crystals (tap twice: the first tap asks)
+      row.classList.add('skLock'); const t = document.createElement('div'); t.className = 'skText'; const nm = document.createElement('b'), tag = document.createElement('i'), d = document.createElement('p'); nm.textContent = nameOf(s); tag.textContent = SK_LABEL[s.k]; d.textContent = dmgDesc(h, s.d); t.append(nm, tag, d);
+      const bt = document.createElement('div'); bt.className = 'skBtns'; const u = document.createElement('button'); u.type = 'button'; u.className = 'skBuy'; u.id = 'buy-' + id + '-' + s.n; const poor = (COS.cr | 0) < SK_PRICE;
+      u.innerHTML = '<span>해금</span><i class="ic-cr"></i><b></b>'; u.querySelector('b').textContent = SK_PRICE; if (poor) { u.classList.add('poor'); u.title = '크리스탈이 부족해요'; }
+      u.addEventListener('click', () => { if (poor) { u.classList.remove('nope'); void u.offsetWidth; u.classList.add('nope'); return; } if (!u.classList.contains('ask')) { u.classList.add('ask'); u.firstChild.textContent = '해금할까요?'; return; } if (skUnlock(id, s.n)) renderLoadout(id); });
+      bt.append(u); row.append(t, bt); box.append(row); continue;
+    }
     const t = document.createElement('div'); t.className = 'skText';
     const nm = document.createElement('b'); nm.textContent = nameOf(s);
     const tag = document.createElement('i'); tag.textContent = SK_LABEL[s.k];

@@ -6,7 +6,7 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   if (cos && cos.col) col = bodyColor(cos, col);
   let a = ang, reach = 24;
   const samL = id === 'samurai' && swing > 0 && samHand === 0;      // 사무라이: odd hits swing the right hand, even hits the left (samHand 0), the 4th both (2)
-  if (swing > 0 && h && h.type === 'melee') { if (h.w.thrust) reach = 24 + Math.sin(swing * Math.PI) * 12; else a = samL ? ang - .45 * face : ang + (swing - .5) * 2.2 * face; }
+  if (swing > 0 && h && h.type === 'melee') { if (h.w.thrust) reach = 24 + Math.sin(swing * Math.PI) * 12; else a = samL ? ang - .15 * face : ang + (swing - .5) * 2.2 * face; }
   const ax = Math.cos(a), ay = Math.sin(a);
   PERSONA_FACE = face;
   c.save();
@@ -26,8 +26,8 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   if (id !== 'harald') { c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(hx, hy); c.stroke(); }      // (하랄드 draws both of his bent arms himself, in art/chars.js)
   if (id === 'kadas') { c.strokeStyle = '#c4182e'; c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(hx, hy); c.stroke(); }
   if (id === 'samurai') { c.save(); try {      // 쌍검 사무라이 (2026-11-15): the off hand holds a second katana and sweeps the other way
-    const b = swing > 0 && samHand !== 1 ? ang - (swing - .5) * 2.2 * face : ang + .55 * face, bx = Math.cos(b) * (reach - 3), by = SH + 6 + Math.sin(b) * (reach - 3);
-    body(); c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(bx, by); c.stroke(); drawHeldWeapon(c, id, Math.cos(b), Math.sin(b), bx, by, swing, cp); } catch (e) {} c.restore(); }
+    const b = swing > 0 && samHand !== 1 ? ang - (swing - .5) * 2.4 * face : ang + 1.05 * face, ox = -face * 3, bx = ox + Math.cos(b) * (reach - 3), by = SH + 7 + Math.sin(b) * (reach - 3);
+    body(); c.globalAlpha *= .82; c.beginPath(); c.moveTo(ox, SH + 7); c.lineTo(bx, by); c.stroke(); c.globalAlpha /= .82;      /* left arm a little behind the body (darker, shoulder offset) so the two hands read apart */ drawHeldWeapon(c, id, Math.cos(b), Math.sin(b), bx, by, swing, cp); } catch (e) {} c.restore(); }
   c.save(); try { if (id === 'herbal' && typeof drawHerbal === 'function') drawHerbal(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'shieldman' && typeof drawShieldman === 'function') drawShieldman(c, { face, ax, ay, hx, hy, swing, t: now / 1000, HEADCY, HEADR, SH, HIP, tint, raise: 0 }); else if (id === 'gardener' && typeof drawGardener === 'function') drawGardener(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) {} c.restore();      // (정원사's hat, slingshot and pouch: gardener.js)
   if (it && it.fx) { c.save(); try { drawSkinFx(c, lux >= 4 ? 'sparkle' : it.fx, lux >= 4 ? auroraHex(now / 1000 * .9, 1) : tint, 0, HEADCY, HEADR * 1.3, now); } catch (e) {} c.restore(); }
   if (cos && cos.col && COSMETICS[cos.col] && COSMETICS[cos.col].shine) { c.save(); try { drawShineGlints(c, now, 0); } catch (e) {} c.restore(); }
@@ -573,9 +573,18 @@ function markSel() { for (const el of $('weaponGrid').children) el.classList.tog
 function renderLoadout(id) {
   const h = HEROES[id], box = $('weaponLoadout'), lo = loadoutOf(id); box.textContent = '';
   const head = document.createElement('div'); head.className = 'loHead'; head.textContent = h.skills.length > 2 ? '스킬 ' + h.skills.length + '개 중 2개를 골라 칸에 넣으세요 · 1스킬 칸은 쿨타임 ' + CD1 + '초, 2스킬 칸은 ' + CD2 + '초' : '스킬이 2개뿐이라 어느 칸에 넣을지만 고릅니다 · 1스킬 칸은 쿨타임 ' + CD1 + '초, 2스킬 칸은 ' + CD2 + '초';
+  const shut = h.skills.filter(s => !skOpen(id, s.n)).length;
+  if (shut) { head.textContent = '스킬 ' + h.skills.length + '개 중 ' + (h.skills.length - shut) + '개 열림 · 열린 스킬 중 2개를 칸에 넣으세요 '; const p = document.createElement('span'); p.className = 'crPill'; p.innerHTML = '<i class="ic-cr"></i><b class="crN"></b>'; p.querySelector('b').textContent = (COS.cr | 0).toLocaleString('en-US'); head.append(p); }
   box.append(head);
   for (const s of h.skills) {
     const row = document.createElement('div'); row.className = 'skRow' + (lo.includes(s.n) ? ' on' : '');
+    if (!skOpen(id, s.n)) {      // locked: dimmed, a padlock, and one button that unlocks it for crystals (tap twice: the first tap asks)
+      row.classList.add('skLock'); const t = document.createElement('div'); t.className = 'skText'; const nm = document.createElement('b'), tag = document.createElement('i'), d = document.createElement('p'); nm.textContent = nameOf(s); tag.textContent = SK_LABEL[s.k]; d.textContent = dmgDesc(h, s.d); t.append(nm, tag, d);
+      const bt = document.createElement('div'); bt.className = 'skBtns'; const u = document.createElement('button'); u.type = 'button'; u.className = 'skBuy'; u.id = 'buy-' + id + '-' + s.n; const poor = (COS.cr | 0) < SK_PRICE;
+      u.innerHTML = '<span>해금</span><i class="ic-cr"></i><b></b>'; u.querySelector('b').textContent = SK_PRICE; if (poor) { u.classList.add('poor'); u.title = '크리스탈이 부족해요'; }
+      u.addEventListener('click', () => { if (poor) { u.classList.remove('nope'); void u.offsetWidth; u.classList.add('nope'); return; } if (!u.classList.contains('ask')) { u.classList.add('ask'); u.firstChild.textContent = '해금할까요?'; return; } if (skUnlock(id, s.n)) renderLoadout(id); });
+      bt.append(u); row.append(t, bt); box.append(row); continue;
+    }
     const t = document.createElement('div'); t.className = 'skText';
     const nm = document.createElement('b'); nm.textContent = nameOf(s);
     const tag = document.createElement('i'); tag.textContent = SK_LABEL[s.k];
