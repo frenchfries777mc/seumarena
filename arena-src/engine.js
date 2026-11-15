@@ -102,7 +102,7 @@ const TEAM = ['#4d9dff', '#ff5d5d', '#3fcf5a', '#ffd23f', '#c77dff'];      // bl
 /* online state (net.js): the host runs the match, guests draw what it sends */
 const NET = { role: null, peer: null, conns: [], hostConn: null, members: [], phase: 'idle', rec: false, evs: [], room: -1, me: -1, mapVer: 0 };
 let VIEW = 0;      // the team this screen plays for: drawn blue, its score on the left
-const TC = t => TEAM[t === VIEW ? 0 : (curMode === 'hot4' || curMode === 'duo') && t >= 0 && t < TEAM.length ? (t < VIEW ? t + 1 : t) : 1];      // 4팀 핫존: me blue, the other three teams red, green, yellow in team order
+const TC = t => TEAM[t === VIEW ? 0 : (curMode === 'hot4' || curMode === 'duo' || curMode === 'ko3') && t >= 0 && t < TEAM.length ? (t < VIEW ? t + 1 : t) : 1];      // 4팀 핫존: me blue, the other three teams red, green, yellow in team order
 const evt = a => { if (NET.rec) NET.evs.push(a); };
 function addText(o) { texts.push(o); evt(['t', Math.round(o.x), Math.round(o.y), o.txt, o.color, o.small ? 1 : 0, o.life]); }
 function addPart(p) { parts.push(p); evt(['p', Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy), +p.life.toFixed(2), p.color, +(p.r || 3).toFixed(1)]); }
@@ -140,9 +140,38 @@ const MODES = [
   { id: 'flag', name: '캡쳐 플래그', size: '5v5', teams: 2, per: 5, respawn: true, win: 3, time: 240, rounds: 0, maps: [11, 12, 13, 14, 15, 16, 25], ready: true },      // 2026-11-12: the 3v3 version was dropped, 캡쳐 플래그 is 5v5 on the 5 big flag maps
   { id: 'duel', name: '듀얼 배틀', size: '1v1', teams: 2, per: 1, respawn: false, win: DUEL_N, time: 60, rounds: DUEL_N, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true },      // 듀얼 배틀 and 팀 아웃 share one map list (user 2026-11-13): keep the two lists the same
   { id: 'ball', name: '볼 배틀', size: '3v3', teams: 2, per: 3, respawn: true, win: 3, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.ball ? i : -1).filter(i => i >= 0), ready: true },      // 2026-11-14 (user): 축구, ball.js
+  { id: 'star', name: '리워드 헌터', size: '8명', teams: 8, per: 1, respawn: true, win: 0, time: 150, rounds: 0, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },      // 2026-11-15 (user): bounty, 8 players each alone. A kill takes the victim's stars (2..7)
+  { id: 'ko3', name: '라스트 팀', size: '3팀', teams: 3, per: 4, respawn: false, win: 2, time: 90, rounds: 3, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },      // 2026-11-15 (user): knockout 4v4v4, no respawn inside a round, the last team standing takes it, first to 2 rounds
   { id: 'hot4', name: '배틀 존', size: '4팀', teams: 4, per: 3, respawn: true, win: 100, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.hot ? i : -1).filter(i => i >= 0), ready: true }
 ];
 for (const m of MODES) m.max = m.teams * m.per;
+/* 오늘의 모드 (user 2026-11-15, the same way Stickseum does it): similar modes are put in one group, `n` of each group are drawn every day and only those can be
+   played. The draw comes from the GMT date, so everyone gets the same list with no server, and it changes at 0:00 GMT. A group with n >= its size is always open.
+   Change the groups and numbers here. Ids not (yet) in MODES are skipped. */
+const MODE_GROUPS = [
+  { name: '생존', ids: ['solo', 'duo', 'ko3'], n: 2 },      // last one / last pair / last team standing
+  { name: '킬 대결', ids: ['team', 'duel', 'star'], n: 2 },      // the score is knockouts
+  { name: '목표', ids: ['flag', 'ball', 'hot4'], n: 2 }      // the score is an objective (flag, goal, zone)
+];
+const MODE_EPOCH = 20403;      // 2025-11-11 (a day number, days since 1970-01-01 GMT): the no-repeat chain starts here
+const modeDay = (t = Date.now()) => Math.floor(t / 86400000);
+const modeDayLeft = (t = Date.now()) => 86400000 - t % 86400000;      // ms until the list changes
+const MODE_DAYS = {};
+function modeLineup(d = modeDay()) {      // { id: true } for the modes open on GMT day d; where a group can, it avoids yesterday's picks
+  if (MODE_DAYS[d]) return MODE_DAYS[d];
+  const prev = d > MODE_EPOCH ? (MODE_DAYS[d - 1] || (() => { let k = d - 1; while (k > MODE_EPOCH && !MODE_DAYS[k - 1]) k--; for (; k < d; k++) modeLineup(k); return MODE_DAYS[d - 1]; })()) : {};
+  let h = (d * 2654435761) >>> 0; const rnd = () => { h = (h + 0x6D2B79F5) >>> 0; let z = h; z = Math.imul(z ^ (z >>> 15), z | 1); z ^= z + Math.imul(z ^ (z >>> 7), z | 61); return ((z ^ (z >>> 14)) >>> 0) / 4294967296; };
+  const out = {};
+  for (const g of MODE_GROUPS) {
+    const pool = g.ids.filter(id => MODES.some(m => m.id === id && m.ready)); for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    const n = Math.max(0, g.n | 0), fresh = pool.filter(id => !prev[id]), old = pool.filter(id => prev[id]);
+    for (const id of fresh.concat(old).slice(0, n)) out[id] = true;      // modes that were off yesterday come first, so nothing stays off two days running when the group allows it
+  }
+  for (const m of MODES) if (m.ready && !MODE_GROUPS.some(g => g.ids.includes(m.id))) out[m.id] = true;      // a mode in no group is always open
+  for (const k in MODE_DAYS) if (k < d - 3) delete MODE_DAYS[k];
+  return MODE_DAYS[d] = out;
+}
+const modeOpen = (id, d) => !!modeLineup(d)[id];
 const isLeft = id => id === 'solo' || id === 'duo', DUO_BACK = 10;      // 원 레프트 / 투 레프트: shrinking safe zone, last side standing
 const isFlagMode = id => id === 'flag' || id === 'flag5';      // ('flag5' kept only as an alias: 캡쳐 플래그 itself is now 5v5)      // room size, for matchmaking
 /* modeChoice: picked in the lobby (UI) · curMode: the mode of the match being played (setup() copies modeChoice; a guest gets it from the host's start message) */
@@ -155,12 +184,16 @@ const SZ = { on: false, x: 0, y: 0, r: 0, r0: 0, gx: 0, gy: 0, acc: 0 }, SZ_WAIT
 /* 4팀 핫존: one circle in the middle of the map. The team with the most fighters in it fills its bar (HZ.p, 0..100; score[t] = the whole percent); two or more teams in it = nobody fills.
    own: -1 empty, -2 contested, else the team filling. n: fighters of each team inside. SP: three spawn spots per corner (team 0 top left, 1 top right, 2 bottom left, 3 bottom right) */
 const HZ = { on: false, x: 0, y: 0, r: 0, own: -1, p: [0, 0, 0, 0], n: [0, 0, 0, 0], SP: [] }, HZ_RATE = 2;      // percent a second for the one team in the circle (alone the whole time: 50 s to win)
+/* 리워드 헌터: everyone starts with STAR0 stars; each kill adds one (up to STAR_MAX); the killer's score gets all the stars the victim carried, the victim drops back to STAR0 */
+const STAR0 = 2, STAR_MAX = 7;
+function starStep(dt) { timeLeft = Math.max(0, timeLeft - dt); if (timeLeft <= 0) endGame(); }
 const modeOf = id => MODES.find(m => m.id === id && m.ready) || MODES[0];
 const modeNow = () => modeOf(curMode);
 /* the small mode state that rides in every snapshot (net.js: `md`) so guests can draw it: round number, and later the flags / safe zone */
-function modeSnap() { const o = { rn: RD.n, rp: RD.pause > 0 ? 1 : 0 }; if (DUEL.line) { o.dl = DUEL.line; o.di = DUEL.li; } if (SZ.on) { o.z = [Math.round(SZ.x), Math.round(SZ.y), Math.round(SZ.r)]; o.w = RD.win; o.o = RD.out; } if (FLAGS.length) o.f = FLAGS.map(g => [Math.round(g.x), Math.round(g.y), g.by, g.home ? 1 : 0, Math.round(g.back * 10) / 10]); if (HZ.on) o.h = [HZ.own, Math.round(HZ.x), Math.round(HZ.y), Math.round(HZ.r)]; if (BALL.on) o.bl = [Math.round(BALL.x), Math.round(BALL.y), Math.round(BALL.vx), Math.round(BALL.vy), BALL.gt, BALL.sci]; return o; }
+function modeSnap() { const o = { rn: RD.n, rp: RD.pause > 0 ? 1 : 0 }; if (curMode === 'star') o.st = fighters.map(f => f.star | 0); if (DUEL.line) { o.dl = DUEL.line; o.di = DUEL.li; } if (SZ.on) { o.z = [Math.round(SZ.x), Math.round(SZ.y), Math.round(SZ.r)]; o.w = RD.win; o.o = RD.out; } if (FLAGS.length) o.f = FLAGS.map(g => [Math.round(g.x), Math.round(g.y), g.by, g.home ? 1 : 0, Math.round(g.back * 10) / 10]); if (HZ.on) o.h = [HZ.own, Math.round(HZ.x), Math.round(HZ.y), Math.round(HZ.r)]; if (BALL.on) o.bl = [Math.round(BALL.x), Math.round(BALL.y), Math.round(BALL.vx), Math.round(BALL.vy), BALL.gt, BALL.sci]; return o; }
 function applyModeSnap(o) {
   if (!o || typeof o !== 'object') return;
+  if (Array.isArray(o.st)) o.st.forEach((v, i) => { if (fighters[i]) fighters[i].star = clamp(v | 0, 0, STAR_MAX); });
   if (o.rn > 0) RD.n = o.rn | 0; RD.pause = o.rp ? 1 : 0;
   if (Array.isArray(o.dl) && o.dl.length === 2 && Array.isArray(o.di)) { DUEL.line = o.dl.map(l => Array.isArray(l) ? l.slice(0, DUEL_N).map(id => HEROES[id] ? id : null) : []); DUEL.li = [o.di[0] | 0, o.di[1] | 0]; } else DUEL.line = null;
   SZ.on = Array.isArray(o.z) && o.z.length === 3;
@@ -174,6 +207,14 @@ function modeOutcome() {
   if (isLeft(curMode)) {      // 투 레프트: a / b / place count pairs, not fighters
     const left = new Set(fighters.filter(f => !f.dead && !f.minion).map(f => f.team)).size, oi = RD.out.indexOf(VIEW), nt = modeNow().teams;
     return { a: score[VIEW] | 0, b: left, win: RD.win === VIEW, draw: RD.win < 0 && oi < 0, place: RD.win === VIEW ? 1 : oi < 0 ? Math.max(1, left) : nt - oi };
+  }
+  if (curMode === 'ko3') {      // a = my round wins, b = the best other team's, place = 1 + teams ahead
+    const a = score[VIEW] | 0, o = score.filter((v, t) => t !== VIEW).map(v => v | 0), b = o.length ? Math.max(...o) : 0;
+    return { a, b, win: a > b, draw: a === b, place: 1 + o.filter(v => v > a).length };
+  }
+  if (curMode === 'star') {      // a = my stars, b = the best other score, place = 1 + players ahead of me (1-3 count as wins, like 원 레프트)
+    const a = score[VIEW] | 0, o = score.filter((v, t) => t !== VIEW).map(v => v | 0), b = o.length ? Math.max(...o) : 0, place = 1 + o.filter(v => v > a).length;
+    return { a, b, win: a > b, draw: false, place };
   }
   if (curMode === 'hot4') {      // b = the best other team; place = 1 + teams ahead of mine; a tie at the top is a draw for the tied teams
     const a = score[VIEW] | 0, o = score.filter((v, t) => t !== VIEW).map(v => v | 0), b = o.length ? Math.max(...o) : 0, place = 1 + o.filter(v => v > a).length;
@@ -278,7 +319,16 @@ function later(t, fn, f) { timers.push({ t, fn, f, src: SRC }); }
 function seq(f, n, gap, fn) { for (let i = 0; i < n; i++) later(i * gap, () => fn(i), f); }
 
 /* ---------- world helpers ---------- */
-const spawnPos = (team, slot) => curMode === 'ball' ? ballSpawn(team, slot) : curMode === 'solo' && SOLO_SP[team] ? SOLO_SP[team] : curMode === 'duo' && DUO_SP[team] ? DUO_SP[team][slot % 2] : curMode === 'hot4' && HZ.SP[team] ? HZ.SP[team][slot % 3] : ({ x: (team === 0 ? 1.5 : COLS - 1.5) * T, y: (ROWS / 2 - 2 + slot * 2) * T });
+function starSpawn(team) {      // 스타 헌트: the start spots first, later a free open spot far from everyone alive
+  if (state !== 'play' || !ROAM.length || !fighters.some(f => f.star != null && f.team !== team && !f.dead)) return SOLO_SP[team] || { x: WW / 2, y: WH / 2 };
+  let best = null, bd = -1; for (let n = 0; n < 14; n++) { const [c, r] = pick(ROAM), x = (c + .5) * T, y = (r + .5) * T; let m = 1e9; for (const f of fighters) if (f.team !== team && !f.dead && !f.minion) m = Math.min(m, Math.hypot(f.x - x, f.y - y)); if (m > bd) { bd = m; best = { x, y }; } }
+  return best;
+}
+function koSpawn(team, slot) {      // 라스트 팀: three corners of a triangle around the middle, four spots each
+  const a = -Math.PI / 2 + team * Math.PI * 2 / 3, bx = WW / 2 + Math.cos(a) * (WW / 2 - 5 * T), by = WH / 2 + Math.sin(a) * (WH / 2 - 4 * T);
+  return freeNear(bx + ((slot % 2) - .5) * 1.8 * T, by + ((slot >> 1) - .5) * 1.8 * T);
+}
+const spawnPos = (team, slot) => curMode === 'ball' ? ballSpawn(team, slot) : curMode === 'ko3' ? koSpawn(team, slot) : curMode === 'star' ? starSpawn(team) : curMode === 'solo' && SOLO_SP[team] ? SOLO_SP[team] : curMode === 'duo' && DUO_SP[team] ? DUO_SP[team][slot % 2] : curMode === 'hot4' && HZ.SP[team] ? HZ.SP[team][slot % 3] : ({ x: (team === 0 ? 1.5 : COLS - 1.5) * T, y: (ROWS / 2 - 2 + slot * 2) * T });
 function los(ax, ay, bx, by, walk) {
   const d = Math.hypot(bx - ax, by - ay), n = Math.ceil(d / 14), test = walk ? blockedAt : solidAt;
   for (let i = 1; i < n; i++) { const t = i / n; if (test(ax + (bx - ax) * t, ay + (by - ay) * t)) return false; }
@@ -653,6 +703,7 @@ function kill(e, by) {
   }
   if (state === 'play') {
     if (curMode === 'team') score[1 - e.team]++;
+    else if (curMode === 'star') { const k = by && by !== e ? (by.minion ? by.by : by) : null; if (k && k.team !== e.team && score[k.team] != null) { score[k.team] += e.star || STAR0; k.star = Math.min(STAR_MAX, (k.star || STAR0) + 1); } e.star = STAR0; }
     else if (curMode === 'duo') {      // 투 레프트: back in DUO_BACK s next to a living partner; nobody left standing = the pair is out
       const k = by && by !== e ? (by.minion ? by.by : by) : null; if (k && k.team !== e.team && score[k.team] != null) score[k.team]++;
       if (fighters.some(o => o !== e && o.team === e.team && !o.dead && !o.minion)) e.respawnT = DUO_BACK;
@@ -751,7 +802,7 @@ function ai0(f, dt) {
         f.hold = true; a.cool = close ? rnd(L.coolM[0], L.coolM[1]) : rnd(L.coolR[0], L.coolR[1]);
       }
     }
-    const low = f.hp < f.mhp * P.low && !B(f, 'charm') && modeNow().respawn;      // (no running home in modes without respawn: nothing waits there)
+    const low = f.hp < f.mhp * P.low && !B(f, 'charm') && modeNow().respawn && curMode !== 'star';      // (no running home in modes without respawn: nothing waits there)
     if (low) {
       const s = spawnPos(f.team, f.slot);
       if (Math.hypot(s.x - f.x, s.y - f.y) > 1.5 * T) { const mv = pathTo(f, s.x, s.y); if (bd < 3 * T) tryDash(f, mv[0], mv[1]); return mv; }
@@ -1007,6 +1058,7 @@ function step(dt) {
     if (MODE.rounds) { roundStep(dt); return; }
     if (isLeft(MODE.id)) { soloStep(dt); return; }
     if (MODE.id === 'hot4') { hotStep(dt); return; }
+    if (MODE.id === 'star') { starStep(dt); return; }
     if (MODE.id === 'ball' && ballStep(dt)) return;
     if (isFlagMode(MODE.id)) flagStep(dt);
     if (overtime) otT += dt; else timeLeft = Math.max(0, timeLeft - dt);
@@ -1020,17 +1072,17 @@ function step(dt) {
    score[] counts round wins and the first to MODE.win takes the match. A double knockout or an exact health tie replays the round. ===== */
 function roundStep(dt) {
   const MODE = modeNow();
-  if (RD.pause > 0) { RD.pause -= dt; for (const f of fighters) if (f.dead) f.respawnT = Math.max(0, RD.pause); if (RD.pause <= 0) { if (score[0] >= MODE.win || score[1] >= MODE.win) endGame(); else newRound(); } return; }
+  if (RD.pause > 0) { RD.pause -= dt; for (const f of fighters) if (f.dead) f.respawnT = Math.max(0, RD.pause); if (RD.pause <= 0) { if (score.some(v => v >= MODE.win)) endGame(); else newRound(); } return; }
   timeLeft = Math.max(0, timeLeft - dt);
-  const hpOf = t => fighters.filter(f => f.team === t && !f.dead).reduce((s, f) => s + f.hp / f.mhp, 0), a = hpOf(0), b = hpOf(1);
+  const hpOf = t => fighters.filter(f => f.team === t && !f.dead && !f.minion).reduce((s, f) => s + f.hp / f.mhp, 0), hp = score.map((_, t) => hpOf(t)), up = hp.map((v, t) => t).filter(t => hp[t] > 0);
   let w = -2;
-  if (a <= 0 && b <= 0) w = -1; else if (a <= 0) w = 1; else if (b <= 0) w = 0;
-  else if (timeLeft <= 0) w = Math.abs(a - b) < 1e-6 ? -1 : a > b ? 0 : 1;
+  if (!up.length) w = -1; else if (up.length === 1) w = up[0];
+  else if (timeLeft <= 0) { const mx = Math.max(...hp), top = up.filter(t => Math.abs(hp[t] - mx) < 1e-6); w = top.length === 1 ? top[0] : -1; }      // on time: the most health left (a tie replays the round)
   if (w === -2) return;
   if (w >= 0) score[w]++;
-  RD.lost = w >= 0 ? 1 - w : -1;
+  RD.lost = w >= 0 && score.length === 2 ? 1 - w : -1;
   RD.pause = 2.5; timeLeft = MODE.time;
-  const done = score[0] >= MODE.win || score[1] >= MODE.win;
+  const done = score.some(v => v >= MODE.win);
   for (const f of fighters) if (!f.dead) say(f, w < 0 ? '무승부 · 다시' : f.team === w ? (done ? '승리!' : '라운드 승리') : '라운드 패배', w >= 0 && f.team === w ? '#ffd34d' : '#cfd3dc');
   sfx(520, .3, 'triangle', .07, 1.5);
 }
@@ -1044,6 +1096,7 @@ function newRound() {
    RD.win = the winner (the last one standing; if the last two fall together, the one who fell last). ===== */
 function modeStart() {
   if (isFlagMode(curMode)) flagsReset();
+  for (const f of fighters) f.star = curMode === 'star' ? STAR0 : 0;
   BALL.on = false; if (curMode === 'ball') ballStart();
   if (curMode === 'hot4') Object.assign(HZ, { on: true, x: WW / 2, y: WH / 2, r: (MAPS[curMap].hz || 4) * T, own: -1, p: [0, 0, 0, 0], n: [0, 0, 0, 0] });
   if (!isLeft(curMode)) return;

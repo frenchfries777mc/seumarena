@@ -111,6 +111,7 @@ function drawBars(f) {
   let label = f.nick || f.h0.name;
   if (f.isPlayer) { const h = f.h.id; if (h === 'gambler') label += ' · 칩 ' + (st.chip || 0); if (h === 'vacuum') label += ' · 스택 ' + (st.stack || 0); if (h === 'pizarro') label += ' · ' + ((st.pz || 0) + 1) + '단계'; if (h === 'pel') label += ' · 드론 ' + st.dr; if (h === 'flamethrower') label += st.over > 0 ? ' · 과열' : ' · 열 ' + Math.round((st.heat || 0) / 9 * 100) + '%'; }
   if (!stampText(ctx, label, ctx.font, ctx.fillStyle, '#0c0e13', 4, f.x, y - 6)) { ctx.strokeText(label, f.x, y - 6); ctx.fillText(label, f.x, y - 6); }
+  if (curMode === 'star' && f.star) { const sy = y - 30, tx = String(f.star); starIcon(ctx, f.x - 9, sy, 9); ctx.font = '800 15px Rajdhani, sans-serif'; ctx.textAlign = 'left'; ctx.lineWidth = 4; ctx.strokeStyle = '#0c0e13'; ctx.fillStyle = '#ffd34d'; ctx.strokeText(tx, f.x + 2, sy + 5); ctx.fillText(tx, f.x + 2, sy + 5); ctx.textAlign = 'center'; }      // 리워드 헌터: what this fighter is worth
   ctx.fillStyle = '#0c0e13'; ctx.beginPath(); ctx.roundRect(x - 2, y - 2, w + 4, 11, 4); ctx.fill();
   hpGhost(f, x, y, w);      // (fx.js: white trail of the hp just lost)
   ctx.fillStyle = st.morph ? '#7ef0a8' : (B(f, 'infect') || st.pn) ? '#8dff7c' : col; ctx.beginPath(); ctx.roundRect(x, y, Math.max(0, w * f.hp / f.mhp), 7, 3); ctx.fill();
@@ -327,7 +328,7 @@ function updateHud() {
   duelHud();
   $('hud').classList.toggle('q4', !!hq); $('sg').parentNode.hidden = $('sy').parentNode.hidden = !hq;
   if (hq) ['sb', 'sr', 'sg', 'sy'].forEach((id, i) => { const t = hq.ord[i], b = $(id).parentNode; $(id).textContent = hq.v[i] + '%'; b.style.setProperty('--p', hq.v[i] + '%'); b.style.setProperty('--c', TC(t)); b.classList.toggle('on', hq.own === t); });      // 4팀 핫존: four bars, mine first
-  else { $('sb').textContent = mine; $('sr').textContent = theirs; $('sbL').textContent = solo ? '킬' : '블루'; $('srL').textContent = solo ? '생존' : '레드'; }
+  else { $('sb').textContent = mine; $('sr').textContent = theirs; $('sbL').textContent = curMode === 'ko3' ? '우리' : curMode === 'star' ? '내 별' : solo ? '킬' : '블루'; $('srL').textContent = curMode === 'ko3' ? '상대' : curMode === 'star' ? '1위' : solo ? '생존' : '레드'; }
   $('timer').textContent = ot ? '연장전' : Math.floor(tl / 60) + ':' + String(tl % 60).padStart(2, '0');
   $('timer').classList.toggle('hot', ot || tl <= 15);
   ultBtn.style.setProperty('--p', up); ultBtn.classList.toggle('ready', up >= 100);
@@ -424,15 +425,15 @@ if (!DEVICE && $('devPick')) {
 /* game modes: the engine's MODES registry ({id,name,size,maps,ready}) when it exists; until then the same four, with only the current rules playable */
 const MODE_FALLBACK = [{ id: 'team', name: '팀 아웃', size: '3v3' }, { id: 'solo', name: '원 레프트', size: '8명', ready: false }, { id: 'flag', name: '캡쳐 플래그', size: '3v3', ready: false }, { id: 'duel', name: '듀얼 배틀', size: '1v1', ready: false }];
 const MODE_LIST = typeof MODES !== 'undefined' && Array.isArray(MODES) && MODES.length ? MODES : MODE_FALLBACK;
-const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'], hot4: ['mi-m-hot', '#ff8a3d'], ball: ['mi-m-ball', '#5fd36a'], duo: ['mi-m-last', '#c77dff'] };
+const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'], hot4: ['mi-m-hot', '#ff8a3d'], ball: ['mi-m-ball', '#5fd36a'], duo: ['mi-m-last', '#c77dff'], star: ['mi-star', '#ffd34d'], ko3: ['mi-m-team', '#ff6b8a'] };
 let modeSel = typeof modeChoice === 'string' ? modeChoice : MODE_LIST[0].id, modeView = modeSel;
-const modeOk = m => !!m && m.ready !== false;
+const modeOk = m => !!m && m.ready !== false && (typeof modeOpen !== 'function' || modeOpen(m.id));      // ready, and drawn for today (engine.js MODE_GROUPS)
 const modeCur = () => MODE_LIST.find(m => m.id === modeSel && modeOk(m)) || MODE_LIST.find(modeOk) || MODE_LIST[0];
 const modeMapsOf = m => { const a = (m.maps || []).filter(i => Number.isInteger(i) && MAPS[i]); return a.length ? a : MAPS.map((x, i) => i); };
 const modeMaps = () => modeMapsOf(modeCur());
 let mapByMode = {};      // each mode remembers its own map choice (-1 = random); the current mode's is mapChoice
 /* modes that play on the same maps (듀얼 배틀 and 팀 아웃, user 2026-11-13) are one group: one list in the map picker, one remembered choice. The key is the id of the group's first mode */
-const mapGroup = m => MODE_LIST.filter(x => modeOk(x) && String(modeMapsOf(x)) === String(modeMapsOf(m)));
+const mapGroup = m => MODE_LIST.filter(x => x.ready !== false && String(modeMapsOf(x)) === String(modeMapsOf(m)));
 const mapKey = m => (mapGroup(m)[0] || m).id;
 const modeMapOf = m => { if (mapKey(m) === mapKey(modeCur())) return mapChoice; const i = mapByMode[mapKey(m)]; return Number.isInteger(i) && modeMapsOf(m).includes(i) ? i : -1; };
 function modeIcon(el, m) {
@@ -638,8 +639,8 @@ $('mapPickBtn').addEventListener('click', () => { mapChoice = mapList[mapIdx]; s
 
 /* mode picker. PC: a row of event cards, tap one to look at it, the button below (or a double click) confirms.
    touch or small screens: big posters, a tap picks the mode right away. Each card: mode art, headcount, two rules, the mode's current map */
-const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a', hot4: '#7a3510', ball: '#1f5a26', duo: '#55207a' };
-const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1, hot4: MAPS.findIndex(m => m.hot), ball: MAPS.findIndex(m => m.ball), duo: 8 };      // map drawn behind the figures while the mode's map is random
+const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a', hot4: '#7a3510', ball: '#1f5a26', duo: '#55207a', star: '#6a5208', ko3: '#6e1c33' };
+const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1, hot4: MAPS.findIndex(m => m.hot), ball: MAPS.findIndex(m => m.ball), duo: 8, star: 9, ko3: 11 };      // map drawn behind the figures while the mode's map is random
 const MODE_FFA = ['#4d9dff', '#ff5d5d', '#ffd34d', '#3ddbb4', '#b48cff', '#ff9a3d'];
 const RULE_ICO = {
   kill: '<circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>',
@@ -656,7 +657,8 @@ function modeRules(m) {
   if (solo) r.push(['crown', '최후 1인']);
   else if (m.id === 'duo') r.push(['crown', '최후 1팀']);
   else if (isFlagMode(m.id) && m.win) r.push(['flag', '깃발 ' + m.win + '점']);
-  else if (m.id === 'duel' && m.win) r.push(['rounds', m.win + '선승']);
+  else if ((m.id === 'duel' || m.id === 'ko3') && m.win) r.push(['rounds', m.win + '선승']);
+  else if (m.id === 'star') r.push(['crown', '별 1위']);
   else if (m.id === 'hot4') r.push(['zone', (m.win || 100) + '%']);
   else if (m.id === 'ball') r.push(['ball', m.win + '골']);
   else if (m.win) r.push(['kill', m.win + '킬']);
@@ -716,6 +718,10 @@ function modeScene(cv, m, mi, cx) {
     g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(bx + 2 * s, by + br, br, br * .4, 0, 0, 7); g.fill();
     g.fillStyle = '#fff'; g.strokeStyle = '#1b1d24'; g.lineWidth = 2.5 * s; g.beginPath(); g.arc(bx, by, br, 0, 7); g.fill(); g.stroke();
     g.fillStyle = '#1b1d24'; g.beginPath(); for (let i = 0; i < 5; i++) { const a = i * 1.2566 - 1.5708; g.lineTo(bx + Math.cos(a) * 5 * s, by + Math.sin(a) * 5 * s); } g.closePath(); g.fill();
+  } else if (m.id === 'star') {      // eight fighters in their own colours, a star above each, the leader's bigger
+    ['sword', 'pistol', 'magiccard', 'bow', 'rifle', 'shade'].forEach((id, n) => { const x = x0 + (n - 2.5) * 46 * s, y = base - (n % 2) * 22 * s, sz = n === 2 ? 1.6 : 1; fig(id, MODE_FFA[n], x, y, s * .92, x < x0 ? 1 : -1, .3); starIcon(g, x, y - 68 * s, 9 * s * sz); });
+  } else if (m.id === 'ko3') {      // three teams of four
+    [['sword', 'bow', 'wizard', 'harald'], ['shotgun', 'shuriken', 'magiccard', 'pistol'], ['rifle', 'shade', 'bow', 'sword']].forEach((ids, t) => ids.forEach((id, j) => { const x = x0 + (t - 1) * 120 * s + ((j % 2) - .5) * 30 * s, y = base - (j >> 1) * 22 * s; fig(id, TEAM[t], x, y, s * .72, t === 2 ? -1 : t === 0 ? 1 : (j % 2 ? -1 : 1), .4); }));
   } else if (m.id === 'duel') {
     fig('sword', B, x0 - 62 * s, base, s * 1.25, 1, .6); fig('magiccard', R, x0 + 62 * s, base, s * 1.25, -1, .6);
     g.save(); g.translate(x0, base - 44 * s); g.globalCompositeOperation = 'lighter';
@@ -727,6 +733,7 @@ function modeScene(cv, m, mi, cx) {
     [['shotgun', 1.55, -18], ['shuriken', .5, -26], ['harald', 1, 0]].forEach(([id, dx, dy]) => fig(id, R, x0 + dx * 60 * s, base + dy * s, s, -1, .4));
   }
 }
+function starIcon(g, x, y, r) { g.save(); g.fillStyle = '#ffd34d'; g.strokeStyle = '#7a5a10'; g.lineWidth = Math.max(1, r * .18); g.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? r * .45 : r; g.lineTo(x + Math.cos(a) * q, y + Math.sin(a) * q); } g.closePath(); g.fill(); g.stroke(); g.restore(); }
 const modeTouchLayout = () => touchUi() || innerWidth < 900 || innerHeight < 560;
 function modeMark() {      // which card is being looked at, which mode is picked, and the confirm button
   for (const b of $('modeGrid').children) {
@@ -745,11 +752,11 @@ function modePick() {
 }
 function showModes() {
   const scr = $('modeScreen'), g = $('modeGrid'), ph = modeTouchLayout(), NS = 'http://www.w3.org/2000/svg';
-  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = ''; g.classList.toggle('n5', MODE_LIST.length === 5);
+  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = ''; const shown = MODE_LIST.filter(modeOk); g.classList.toggle('n5', shown.length === 5);      // modes not drawn today are not shown at all (user 2026-11-15)
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   const icon = (d, cls) => { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); if (cls) s.setAttribute('class', cls); s.innerHTML = d; return s; };
   const arts = [];
-  for (const m of MODE_LIST) {
+  for (const m of shown) {
     const ok = modeOk(m), mi = modeMapOf(m), lk = MODE_LOOK[m.id] || ['mi-m-team', '#fff'];
     const b = el('button', 'modeCard'), inn = el('span', 'mIn'), art = el('canvas', 'mArt'), top = el('span', 'mTop'), ic = el('span', 'mIco solid'), sz = el('span', 'mSz'), rl = el('span', 'mRules'), mp = el('span', 'mMap');
     b.type = 'button'; b.dataset.mode = m.id; b.style.setProperty('--c', lk[1]); b.style.setProperty('--d', MODE_DARK[m.id] || '#2a2f3c');
@@ -767,7 +774,7 @@ function showModes() {
     const mark = icon('<use href="#' + lk[0] + '"/>', 'mMark'), tick = el('span', 'mTick'); tick.append(icon('<path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>'));
     inn.append(art, el('span', 'mTint'), mark, top, sz, rl, mp); b.append(inn, tick);
     b.setAttribute('aria-label', [m.name, m.size, ...modeRules(m).map(r => r[1]), mi < 0 ? '무작위 맵' : MAPS[mi].name].filter(Boolean).join(', '));
-    if (!ok) { b.disabled = true; b.setAttribute('aria-label', m.name + ' (잠김)'); const l = icon('<use href="#mi-m-lock"/>', 'mLock'); b.append(l); }
+    if (!ok) { b.disabled = true; b.setAttribute('aria-label', m.name + ' (오늘은 쉬어요)'); const l = icon('<use href="#mi-m-lock"/>', 'mLock'); b.append(l, el('span', 'mOff', '오늘은 쉬어요')); }
     b.addEventListener('click', () => { if (!modeOk(m)) return; modeView = m.id; if ($('modeScreen').classList.contains('ph')) modePick(); else modeMark(); });
     b.addEventListener('dblclick', () => { if (modeOk(m) && !$('modeScreen').classList.contains('ph')) { modeView = m.id; modePick(); } });
     g.append(b); arts.push([art, m, mi]);
@@ -777,7 +784,19 @@ function showModes() {
 }
 let modeResizeT = 0;
 addEventListener('resize', () => { if (!$('modeScreen').classList.contains('active')) return; clearTimeout(modeResizeT); modeResizeT = setTimeout(showModes, 150); });
-$('modeChip').addEventListener('click', () => { modeView = modeSel; showScreen('modeScreen'); showModes(); });
+/* 오늘의 모드: the time left until 0:00 GMT on the mode screen; past midnight a mode that is now closed is swapped for an open one (a match being played goes on) */
+function modeFixDay() { if (modeOk(MODE_LIST.find(x => x.id === modeSel))) return false; mapByMode = {}; mapChoice = -1; modeApply(); savePrefs(); if (state !== 'play') setup(false); return true; }      // the picked mode closed (a new GMT day): an open one instead
+let modeDayNow = typeof modeDay === 'function' ? modeDay() : 0;
+function modeDayTick() {
+  if (typeof modeDay !== 'function') return;
+  const sc = $('modeScreen'), on = sc.classList.contains('active'), ms = modeDayLeft(), m = Math.max(1, Math.ceil(ms / 60000)), h = Math.floor(m / 60), t = '⏳ ' + (h ? h + '시간 ' : '') + m % 60 + '분 뒤에 모드가 바뀌어요';
+  if (on && $('modeReset').textContent !== t) $('modeReset').textContent = t;
+  if (modeDay() === modeDayNow) return; modeDayNow = modeDay();
+  if (state !== 'play' && !(typeof NET === 'object' && NET.role)) modeFixDay();
+  if (on) { if (!modeOk(MODE_LIST.find(x => x.id === modeView))) modeView = modeSel; showModes(); }
+}
+setInterval(modeDayTick, 15000);
+$('modeChip').addEventListener('click', () => { modeView = modeSel; showScreen('modeScreen'); showModes(); modeDayTick(); });
 $('modePickBtn').addEventListener('click', modePick);
 $('modeBackBtn').addEventListener('click', () => showScreen('menuScreen'));
 $('karma').addEventListener('click', () => { showScreen('karmaScreen'); renderKarma(); });
@@ -804,7 +823,8 @@ function matchMvp(win, draw) {
   const fs = fighters.filter(f => !f.minion && f.h0); if (fs.length < 2) return null;
   if (curMode === 'solo') return state === 'play' ? null : fs.find(f => f.team === RD.win) || null;
   if (curMode === 'duo') { if (state === 'play') return null; const p = fs.filter(f => f.team === RD.win); return p.length ? p.reduce((a, b) => mvpVal(b) > mvpVal(a) ? b : a) : null; }
-  const wt = curMode === 'hot4' ? hotTop() : win ? VIEW : 1 - VIEW, pool = draw ? fs : fs.filter(f => f.team === wt), m = pool.length ? pool.reduce((a, b) => mvpVal(b) > mvpVal(a) ? b : a) : null;
+  if (curMode === 'star') { if (state === 'play') return null; const t = fs.reduce((a, b) => (score[b.team] | 0) > (score[a.team] | 0) ? b : a); return t; }
+  const wt = curMode === 'hot4' ? hotTop() : curMode === 'ko3' ? score.indexOf(Math.max(...score)) : win ? VIEW : 1 - VIEW, pool = draw ? fs : fs.filter(f => f.team === wt), m = pool.length ? pool.reduce((a, b) => mvpVal(b) > mvpVal(a) ? b : a) : null;
   return m && mvpVal(m) > 0 ? m : null;
 }
 let mvpRun = 0, mvpTimer = 0;
@@ -829,19 +849,20 @@ function buildOverStats(win, draw) {
   const box = $('overStats'); box.textContent = ''; box.classList.remove('noDmg');
   const fs = fighters.filter(f => !f.minion && f.h0); if (fs.length < 2) return;
   const val = f => (f.kos || 0) * 100 + (f.dealt || 0) / (10 * SX) - (f.deaths || 0) * 30;
-  const wt = curMode === 'hot4' ? hotTop() : win ? VIEW : 1 - VIEW, pool = draw ? fs : fs.filter(f => f.team === wt), mvp = pool.length ? pool.reduce((a, b) => val(b) > val(a) ? b : a) : null;
+  const wt = curMode === 'hot4' ? hotTop() : curMode === 'ko3' ? score.indexOf(Math.max(...score)) : win ? VIEW : 1 - VIEW, pool = draw ? fs : fs.filter(f => f.team === wt), mvp = pool.length ? pool.reduce((a, b) => val(b) > val(a) ? b : a) : null;
   const top = Math.max(1, ...fs.map(f => f.dealt || 0)), topK = Math.max(1, ...fs.map(f => f.kos || 0)), topH = Math.max(1, ...fs.map(f => f.healed || 0));
   box.classList.toggle('noDmg', !fs.some(f => f.dealt > 0));
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   const head = el('div', 'osHead'); head.append(el('span', '', '이름'), el('span', '', '처치'), el('span', '', '피해'), el('span', '', '회복')); box.append(head);
-  const solo = isLeft(curMode), rank = f => f.team === RD.win ? 0 : RD.out.includes(f.team) ? fs.length - RD.out.indexOf(f.team) : 1, duo = curMode === 'duo';      // 투 레프트: pairs share a place
+  const star = curMode === 'star', solo = isLeft(curMode) || star, rank = f => star ? -(score[f.team] | 0) : f.team === RD.win ? 0 : RD.out.includes(f.team) ? fs.length - RD.out.indexOf(f.team) : 1, duo = curMode === 'duo';      // 투 레프트: pairs share a place
   const ordered = fs.slice().sort((a, b) => rank(a) - rank(b) || a.team - b.team), tOrd = [...new Set(ordered.map(f => f.team))];      // solo: one list in finishing order
-  const q4 = curMode === 'hot4', teams = q4 ? [VIEW].concat([0, 1, 2, 3].filter(t => t !== VIEW).sort((a, b) => (score[b] | 0) - (score[a] | 0))) : [VIEW, 1 - VIEW];
+  const q4 = curMode === 'hot4' || curMode === 'ko3', teams = q4 ? [VIEW].concat(score.map((v, t) => t).filter(t => t !== VIEW).sort((a, b) => (score[b] | 0) - (score[a] | 0))) : [VIEW, 1 - VIEW];
   for (const team of solo ? [-1] : teams) {
     if (!solo && team !== VIEW) box.append(el('div', 'osGap'));
-    for (const f of solo ? ordered.filter(f => state !== 'play' || RD.out.includes(f.team)) : fs.filter(f => f.team === team).sort((a, b) => val(b) - val(a))) {
+    for (const f of solo ? ordered.filter(f => star || state !== 'play' || RD.out.includes(f.team)) : fs.filter(f => f.team === team).sort((a, b) => val(b) - val(a))) {
       const r = el('div', 'osRow ' + (f.team === VIEW ? 'b' : 'r') + (f === player ? ' me' : '')), nm = el('span', 'on'); if ((q4 || duo) && f.team !== VIEW) r.style.borderLeftColor = TC(f.team);
-      if (solo) nm.append(el('span', 'rk', String(duo ? tOrd.indexOf(f.team) + 1 : ordered.indexOf(f) + 1)));
+      if (solo) nm.append(el('span', 'rk', String(duo ? tOrd.indexOf(f.team) + 1 : star ? 1 + fs.filter(o => (score[o.team] | 0) > (score[f.team] | 0)).length : ordered.indexOf(f) + 1)));
+      if (star) nm.append(el('small', 'stars', '★' + (score[f.team] | 0)));
       else if (f === mvp && val(f) > 0) nm.append(el('span', 'mvp', 'MVP'));
       nm.append(f.nick || f.h0.name); if (f.nick) nm.append(el('small', '', f.h0.name));
       const barC = (cls, v, mx, txt) => { const d = el('span', 'od ' + cls), b = el('i'); b.style.width = Math.round(v / mx * 100) + '%'; d.append(b, el('em', '', txt)); return d; };
@@ -868,8 +889,8 @@ function endGame(keepRunning) {
   }
   if (isLeft(curMode) && player && player.dead && (curMode === 'solo' || RD.out.includes(player.team))) soloOutShown = true;
   showPlayUi(false);
-  const oc = modeOutcome(), solo = isLeft(curMode), mine = oc.a, theirs = oc.b;
-  const draw = oc.draw, first = oc.win, win = first || (curMode === 'solo' && !draw && oc.place >= 2 && oc.place <= 3), rt = $('resultText');      // 원 레프트: 1-3등 are wins (user 2026-11-15); first = really the last one standing
+  const oc = modeOutcome(), solo = isLeft(curMode) || curMode === 'star', mine = oc.a, theirs = oc.b;
+  const draw = oc.draw, first = oc.win, win = first || ((curMode === 'solo' || curMode === 'star') && !draw && oc.place >= 2 && oc.place <= 3), rt = $('resultText');      // 원 레프트: 1-3등 are wins (user 2026-11-15); first = really the last one standing
   rt.textContent = draw ? '무승부' : win ? '승리' : '패배';
   document.querySelector('#overScreen .final').classList.toggle('solo', solo);
   rt.className = draw ? 'draw' : win ? 'win' : 'lose';
@@ -880,7 +901,7 @@ function endGame(keepRunning) {
   buildOverStats(first, draw);
   { /* what the match pays (social.js matchPay): gold, karma, mastery points for the character played, player xp */
     const pay = player ? matchPay({ mode: curMode, win: first, draw, kills: player.kos || 0, place: oc.place }) : null, hid = player ? player.h0.id : null;
-    const sk = pay ? streakStep(first, draw, oc.place >= 2 && oc.place <= (curMode === 'solo' ? 3 : curMode === 'duo' || curMode === 'hot4' ? 2 : 0)) : null;      // 원 레프트 2-3등, 투 레프트 / 4팀 핫존 2등 keep the win streak
+    const sk = pay ? streakStep(first, draw, oc.place >= 2 && oc.place <= (curMode === 'solo' || curMode === 'star' ? 3 : curMode === 'duo' || curMode === 'hot4' ? 2 : 0)) : null;      // 원 레프트 2-3등, 투 레프트 / 4팀 핫존 2등 keep the win streak
     if (sk) { pay.karma += sk.karma; pay.gold = Math.round(pay.gold * sk.gm); }
     { const e = $('streakGain'); e.hidden = !(sk && sk.st); if (sk && sk.st) { e.className = sk.st; e.textContent = sk.st === 'up' ? '🔥 ' + sk.ws + '연승' : sk.st === 'keep' ? '🔥 ' + sk.ws + '연승 유지' : '연승 끊김'; } }
     $('goldGain').hidden = !pay;
@@ -1045,7 +1066,7 @@ function duelHud() {
     });
   });
 }
-window.__arena = { sqList, sqState, sqTake, sqOpen, swList, swState, PASS, GAME_VER, passXp, passAdd, passTake, renderPass, passLimited, modes: MODE_LIST, ACHS, achMatch, achScan, achSt, renderAch, questTab, setAchRates(r) { achRates = r; }, dqList, dqMatch, dqState, renderQuests, wqList, wqState, attSt, attTake, dealIds, cosPrice, TITLES, renderProfile, renderCos, rewardFx, matchMvp, endGame, goldUi, matchPay, masteryOf, levelOf, KARMA_ROAD, MASTERY, giveReward, COSMETICS, skinPrice, get COS() { return COS; }, get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
+window.__arena = { modeLineup, modeDay, modeOpen, modeDayTick, get modeChoice() { return modeChoice; }, sqList, sqState, sqTake, sqOpen, swList, swState, PASS, GAME_VER, passXp, passAdd, passTake, renderPass, passLimited, modes: MODE_LIST, ACHS, achMatch, achScan, achSt, renderAch, questTab, setAchRates(r) { achRates = r; }, dqList, dqMatch, dqState, renderQuests, wqList, wqState, attSt, attTake, dealIds, cosPrice, TITLES, renderProfile, renderCos, rewardFx, matchMvp, endGame, goldUi, matchPay, masteryOf, levelOf, KARMA_ROAD, MASTERY, giveReward, COSMETICS, skinPrice, get COS() { return COS; }, get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
   setChar(id) { chosen = id; }, setMap(i) { mapChoice = i; }, tileAt: (x, y) => tile(Math.floor(x / T), Math.floor(y / T)), auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get PV() { return { sk: PV.sk, ult: PV.ult, dash: PV.dash }; }, get bullets() { return bullets; }, BALL, offline() { netReset(); startMatch(null); } };
 })();
 </script>

@@ -634,6 +634,8 @@ body.touchUi canvas{touch-action:none}
 .modeCard[aria-pressed="true"]{background:var(--sel);filter:drop-shadow(0 0 16px rgba(255,211,77,.5))}
 .modeCard:focus-visible{background:#fff;outline:none}
 .modeCard:disabled{cursor:not-allowed}
+#modeReset{margin-left:auto;padding:0 8px;font:600 14px 'IBM Plex Sans KR',sans-serif;color:var(--muted,#aab);white-space:nowrap}
+.modeCard .mOff{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);padding:6px 14px;border-radius:8px;background:rgba(0,0,0,.72);color:#fff;font:700 15px 'IBM Plex Sans KR',sans-serif;white-space:nowrap;pointer-events:none}
 .modeCard:disabled .mIn{opacity:.4;filter:grayscale(.7)}
 /* PC: the cards stand in one row, the one being looked at steps up */
 #modeScreen.pc #modeGrid{display:flex;justify-content:center;align-items:center;gap:clamp(12px,1.6vw,22px);padding:22px 0 24px}
@@ -665,6 +667,7 @@ body.touchUi canvas{touch-action:none}
 #modeScreen.ph .mTop,#modeScreen.ph .mSz,#modeScreen.ph .mRules{position:relative;z-index:1}
 #modeScreen.ph .mTop{gap:9px;max-width:100%}
 #modeScreen.ph .mN{font-size:26px;text-shadow:0 3px 0 rgba(0,0,0,.45)}
+#modeScreen.pc .mN{font-size:clamp(15px,1.45vw,22px);letter-spacing:0}
 #modeScreen.ph .mTop .mIco{width:34px;height:34px}
 #modeScreen.ph .mSz{gap:12px}
 #modeScreen.ph .mSize{font-size:24px}
@@ -1309,7 +1312,7 @@ canvas.rwI{background:none}
   </div>
 
   <div class="card" id="modeScreen">
-    <div class="msHead"><button class="msBack" id="modeBackBtn" type="button" aria-label="뒤로가기"><span aria-hidden="true">&lsaquo;</span></button><h2>모드 선택</h2></div>
+    <div class="msHead"><button class="msBack" id="modeBackBtn" type="button" aria-label="뒤로가기"><span aria-hidden="true">&lsaquo;</span></button><h2>모드 선택</h2><span id="modeReset"></span></div>
     <div id="modeGrid"></div>
     <div class="msFoot"><button class="btn-primary" id="modePickBtn" type="button">이 모드로 하기</button></div>
   </div>

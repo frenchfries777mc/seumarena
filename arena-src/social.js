@@ -132,7 +132,7 @@ function addMp(h, n) { if (!HEROES[h]) return; COS.mp[h] = mpOf(h) + Math.max(0,
 /* player level: level L needs 150 + 50 (L - 1) xp to pass */
 function levelOf() { let xp = Math.max(0, Math.floor(+COS.xp || 0)), lv = 1; while (xp >= 150 + 50 * (lv - 1) && lv < 999) { xp -= 150 + 50 * (lv - 1); lv++; } return { lv, into: xp, need: 150 + 50 * (lv - 1) }; }
 /* what a match pays, by mode: kk karma per kill, kw karma for the win, mm mastery multiplier */
-const MODE_PAY = { team: { kk: 1, kw: 3, mm: 1 }, flag: { kk: 1, kw: 4, mm: 1.2 }, duel: { kk: 1, kw: 2, mm: .7 }, solo: { kk: 2, kw: 6, mm: 1 }, hot4: { kk: 1, kw: 4, mm: 1.1 }, ball: { kk: 1, kw: 3, mm: 1 }, duo: { kk: 1, kw: 5, mm: 1.1 } };
+const MODE_PAY = { team: { kk: 1, kw: 3, mm: 1 }, flag: { kk: 1, kw: 4, mm: 1.2 }, duel: { kk: 1, kw: 2, mm: .7 }, solo: { kk: 2, kw: 6, mm: 1 }, hot4: { kk: 1, kw: 4, mm: 1.1 }, ball: { kk: 1, kw: 3, mm: 1 }, duo: { kk: 1, kw: 5, mm: 1.1 }, star: { kk: 1, kw: 5, mm: 1 }, ko3: { kk: 1, kw: 4, mm: 1.1 } };
 /* karma by mode (user 2026-11-14: "모드마다 얻는 카르마 다르게"). Edit numbers here only.
    team modes: [win, draw, loss]; place modes: [1st, 2nd, 3rd, ...]; plus kill karma per kill up to killMax */
 const KARMA_TABLE = {
@@ -142,14 +142,16 @@ const KARMA_TABLE = {
   ball: { res: [5, 2, 1], kill: 1, killMax: 3 },             // 볼 배틀 3v3, 2:30
   hot4: { place: [7, 4, 2, 1], kill: 1, killMax: 3 },        // 배틀 존, 4 teams
   duo:  { place: [8, 5, 2, 1], kill: 1, killMax: 3 },        // 투 레프트, 4 pairs
-  solo: { place: [9, 7, 5, 3, 2, 1, 0, 0], kill: 1, killMax: 3 }   // 원 레프트, 8 players
+  solo: { place: [9, 7, 5, 3, 2, 1, 0, 0], kill: 1, killMax: 3 },  // 원 레프트, 8 players
+  star: { place: [9, 7, 5, 3, 2, 1, 0, 0], kill: 1, killMax: 3 },  // 리워드 헌터, 8 players
+  ko3:  { res: [6, 2, 1], kill: 1, killMax: 3 }               // 라스트 팀 4v4v4
 };
 function modeKarma(o) { const t = KARMA_TABLE[o.mode] || KARMA_TABLE.team, k = Math.min(t.killMax, Math.max(0, o.kills | 0)) * t.kill;
   if (t.place) return k + (t.place[(o.place | 0) - 1] || 0);
   return k + t.res[o.win ? 0 : o.draw ? 1 : 2]; }
 function matchPay(o) {      // o: { mode, win, draw, kills, place }
   if (o.mode === 'flag5') o = Object.assign({}, o, { mode: 'flag' });      // capture the flag pays the same whatever the team size
-  const pm = MODE_PAY[o.mode] || MODE_PAY.team, solo = o.mode === 'solo', k = Math.max(0, o.kills | 0), good = o.win ? 2 : o.draw || (solo && o.place <= 3) || (o.mode === 'hot4' && o.place === 2) || (o.mode === 'duo' && o.place === 2) ? 1 : 0;      // 4팀 핫존: 2nd of 4 pays like a draw
+  const pm = MODE_PAY[o.mode] || MODE_PAY.team, solo = o.mode === 'solo' || o.mode === 'star', k = Math.max(0, o.kills | 0), good = o.win ? 2 : o.draw || (solo && o.place <= 3) || (o.mode === 'hot4' && o.place === 2) || (o.mode === 'duo' && o.place === 2) ? 1 : 0;      // 4팀 핫존: 2nd of 4 pays like a draw
   return { gold: Math.round(([30, 40, 60][good] + 5 * Math.min(10, k)) * (o.mode === 'duel' ? .6 : 1)), karma: modeKarma(o),
     mp: Math.round(([30, 42, 55][good] + 3 * Math.min(10, k)) * pm.mm), xp: [40, 55, 70][good] + 4 * Math.min(10, k) };
 }
@@ -260,10 +262,11 @@ function rewardFx(got) {
   else open();
 }
 /* ---------- daily quests: three a day (one easy, one middling, one hard), picked by the date on this device. COS.dq = { d: day, p: progress x3, c: taken x3 } ---------- */
-const dqDay = () => { const d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
+const dqDay = () => { const d = new Date(); return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate(); };      // the GMT date: daily things change at 0:00 GMT together with 오늘의 모드 (user 2026-11-15)
+const dayModes = day => { const all = (typeof MODES !== 'undefined' ? MODES : []).filter(m => m.ready !== false); if (typeof modeOpen !== 'function') return all; const n = Math.floor(Date.UTC(Math.floor(day / 10000), Math.floor(day / 100) % 100 - 1, day % 100) / 86400000), o = all.filter(m => modeOpen(m.id, n)); return o.length ? o : all; };      // only the modes open that GMT day
 function dqList(day) {
   let sd = (day * 2654435761) >>> 0; const rnd = () => { sd = (sd + 0x6D2B79F5) >>> 0; let t = Math.imul(sd ^ sd >>> 15, 1 | sd); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }, pk = a => a[Math.floor(rnd() * a.length)];
-  const modes = (typeof MODES !== 'undefined' ? MODES : []).filter(m => m.ready !== false), m1 = pk(modes), m2 = pk(modes), h1 = pk(ROSTER), h2 = pk(ROSTER), solo = modes.find(m => m.id === 'solo');
+  const modes = dayModes(day), m1 = pk(modes), m2 = pk(modes), h1 = pk(ROSTER), h2 = pk(ROSTER), solo = modes.find(m => m.id === 'solo');
   const hn = h => HEROES[h] ? HEROES[h].name : h;
   const easy = [{ t: 'play', n: 3, txt: '3판 하기' }, { t: 'kill', n: 8, txt: '8킬' }, m1 && { t: 'play', n: 2, mode: m1.id, txt: m1.name + ' 2판' }].filter(Boolean);
   const mid = [{ t: 'win', n: 2, txt: '2승' }, h1 && { t: 'kill', n: 5, hero: h1, txt: hn(h1) + ' 5킬' }, { t: 'dmg', n: 10000, txt: '피해 10,000' }].filter(Boolean);
@@ -368,7 +371,7 @@ function renderProfile() {
     b.addEventListener('click', () => { COS.title = COS.title === a.id ? null : a.id; saveCos(); renderProfile(); accountUi(); }); tb.append(b); }
   goldUi();
 }
-const PF_MODE_COL = { team: '#4aa6ff', solo: '#ff5d6c', flag: '#5dffb0', duel: '#ffb84d', hot4: '#c17bff', duo: '#6fe0d0' };
+const PF_MODE_COL = { team: '#4aa6ff', solo: '#ff5d6c', flag: '#5dffb0', duel: '#ffb84d', hot4: '#c17bff', duo: '#6fe0d0', star: '#ffd34d', ko3: '#ff6b8a' };
 const PF_PC = { y: '#c98a12', Y: '#ffd34d', w: '#eef2ff', b: '#8a5a2b', r: '#c0303f', R: '#ff5d6c' };
 const PF_PX = { cross: ['w......w', '.w....w.', '..w..w..', '...ww...', '...ww...', '..b..b..', '.bb..bb.', 'bb....bb'], trophy: ['yyyyyyyy', 'yYYYYYYy', 'yYYYYYYy', '.yYYYYy.', '..yYYy..', '...yy...', '..yyyy..', '.yyyyyy.'],
   skull: ['.wwwwww.', 'wwwwwwww', 'w..ww..w', 'w..ww..w', 'wwwwwwww', '.ww..ww.', '.wwwwww.', '.w.w.w..'], fire: ['...r....', '..rr..r.', '..rRr.r.', '.rRRrrr.', '.rRyRRr.', 'rRyyyRRr', 'rRyyyyRr', '.rrrrrr.'],
@@ -530,7 +533,7 @@ function passMatch(m) { if (m.win) passAdd(PASS_WIN); }
 /* season quests (user 2026-11-14): six daily (PASS_SQ each, COS.sd) and six weekly (PASS_WQ each, new every Monday, COS.sw), shown under the pass road */
 function sqList(day) {
   const rnd = dayRnd(day + 31), pk = a => a[Math.floor(rnd() * a.length)];
-  const modes = (typeof MODES !== 'undefined' ? MODES : []).filter(m => m.ready !== false), m = pk(modes), m2 = pk(modes), h = pk(ROSTER), solo = modes.find(x => x.id === 'solo'), hn = HEROES[h] ? HEROES[h].name : h;
+  const modes = dayModes(day), m = pk(modes), m2 = pk(modes), h = pk(ROSTER), solo = modes.find(x => x.id === 'solo'), hn = HEROES[h] ? HEROES[h].name : h;
   const a = pk([{ t: 'play', n: 3, txt: '3판 하기' }, { t: 'kill', n: 10, txt: '10킬' }]);
   const b = pk([{ t: 'win', n: 2, txt: '2승' }, { t: 'dmg', n: 8000, txt: '피해 8,000' }]);
   const c = pk([m && { t: 'play', n: 2, mode: m.id, txt: m.name + ' 2판' }, solo && { t: 'top3', n: 1, mode: 'solo', txt: solo.name + ' 3등 안' }].filter(Boolean));
@@ -738,7 +741,7 @@ function drawChatBubble(f) {
 let winRun = 0;
 function winScreen(won, draw) {
   const cvs = document.getElementById('winCanvas'), c = cvs.getContext('2d'), run = ++winRun, Wc = cvs.width, Hc = cvs.height;
-  const mine = fighters.filter(f => f && f.team === VIEW), rt = curMode === 'hot4' ? [0, 1, 2, 3].filter(t => t !== VIEW).sort((a, b) => (score[b] | 0) - (score[a] | 0))[0] : curMode === 'duo' ? (RD.win >= 0 && RD.win !== VIEW ? RD.win : RD.out.filter(t => t !== VIEW).pop() ?? -1) : -1, theirs = fighters.filter(f => f && f.team !== VIEW && (rt < 0 || f.team === rt));      // 4팀 핫존: only the best other team stands opposite (투 레프트: the winning pair, or the pair that lasted longest)
+  const mine = fighters.filter(f => f && f.team === VIEW), rt = curMode === 'star' || curMode === 'ko3' ? score.map((v, t) => t).filter(t => t !== VIEW).sort((a, b) => (score[b] | 0) - (score[a] | 0))[0] : curMode === 'hot4' ? [0, 1, 2, 3].filter(t => t !== VIEW).sort((a, b) => (score[b] | 0) - (score[a] | 0))[0] : curMode === 'duo' ? (RD.win >= 0 && RD.win !== VIEW ? RD.win : RD.out.filter(t => t !== VIEW).pop() ?? -1) : -1, theirs = fighters.filter(f => f && f.team !== VIEW && (rt < 0 || f.team === rt));      // 4팀 핫존: only the best other team stands opposite (투 레프트: the winning pair, or the pair that lasted longest)
   const figs = [];
   const place = (list, x0, x1, win) => { const n = list.length, sc = n >= 3 ? 1.15 : n === 2 ? 1.5 : 1.9; list.forEach((f, i) => figs.push({ f, win, x: x0 + (x1 - x0) * (n === 1 ? .5 : (i + .5) / n), sc })); };
   place(mine, 10, Wc / 2 - 10, won || draw); place(theirs, Wc / 2 + 10, Wc - 10, !won || draw);
