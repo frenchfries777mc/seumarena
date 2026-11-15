@@ -143,14 +143,15 @@ hero('grenade', { p: ['폭발광', '폭발 점프로 피해를 주면 착지 때
     [5, '화염병', 'hit', '조준한 곳에 화염병을 던짐 · 3초 동안 불길이 남아 안에 있는 상대는 초당 120 피해', [100, 7 * T], f => { const p = aimPt(f, 7 * T); strike(f, p.x, p.y, 90, .4, () => { burst(p.x, p.y, '#ff7a2a', 14, 220); zone({ by: f, x: p.x, y: p.y, r: 90, t: 3, col: '#ff7a2a', op: .3, fn: (z, dt) => { z.acc += dt; if (z.acc >= .5) { z.acc -= .5; circ(f, z.x, z.y, z.r, 10, { quiet: 1 }); } } }); }, '#ff7a2a'); }]
   ] });
 
-hero('bazooka', { p: ['화력 집중', '스킬 로켓 3발이 모두 맞으면 그 자리에 3초 동안 화염 (닿으면 초당 30 피해)'],
+hero('bazooka', { p: ['화력 집중', '일반 공격 로켓이 3번 맞을 때마다 3번째로 맞은 자리에 3초 동안 화염 (닿으면 초당 21 피해)'], spd: () => .92,
+  onDeal(f, e, d, o) { if (!(o.basic || SRC === '기본 공격') || o.quiet || e.minion || f.st.bzT === time) return; f.st.bzT = time; f.st.bzN = (f.st.bzN || 0) + 1; if (f.st.bzN >= 3) { f.st.bzN = 0; fire3(f, e.x, e.y, 70, 3, 3); } },
   pre(f, o) { if (f.st.homing) { f.st.homing = 0; o.homing = true; o.turn = 6; o.range = 12 * T; } return o; },
   ult: ['유도탄', '다음 공격이 적을 추적하는 유도탄', [0, 10 * T], f => { f.st.homing = 1; f.fireCd = Math.min(f.fireCd, .2); }],
   skills: [
-    [1, '3연발', 'hit', '조준 방향으로 로켓을 연속 3발 발사 (발당 피해 300)', [100, 8 * T], (f, a) => { let n = 0; seq(f, 3, .18, () => emit(f, f.aim, { skill: 1, dmg: 30, splash: 55, shape: 'rocket', onSplash: e => { if (++n === 3) fire3(f, e.x, e.y, 70, 3, 3); } })); }],
+    [1, '3연발', 'hit', '조준 방향으로 로켓을 연속 3발 발사 (발당 피해 210)', [100, 8 * T], (f, a) => { seq(f, 3, .18, () => emit(f, f.aim, { skill: 1, dmg: 30, splash: 55, shape: 'rocket' })); }],
     [2, '연막 로켓', 'hit', '로켓을 쏴 맞은 자리에 연기 폭발 · 연기 안의 적은 시야가 가려지고 느려짐', [100, 8 * T], (f, a) => emit(f, a, { skill: 1, dmg: 10, shape: 'rocket', splash: 40, onEnd: b => smoke(f, b.x, b.y, 110, 2.5) })],
-    [3, '화염 로켓', 'hit', '로켓을 쏴 화염 피해(400) · 터진 자리에 3초 동안 화염 지대가 생김', [100, 8 * T], (f, a) => emit(f, a, { skill: 1, dmg: 40, el: 1, shape: 'rocket', splash: 80, onEnd: b => fire3(f, b.x, b.y, 80, 3, 8) })],
-    [4, '전기 로켓', 'hit', '로켓을 쏴 전기 피해(350) · 폭발에 맞은 적은 0.95초 동안 기절', [100, 8 * T], (f, a) => emit(f, a, { skill: 1, dmg: 35, el: 1, shape: 'rocket', splash: 80, stun: .95, col: '#7df0ff' })]
+    [3, '화염 로켓', 'hit', '로켓을 쏴 화염 피해(280) · 터진 자리에 3초 동안 화염 지대가 생김', [100, 8 * T], (f, a) => emit(f, a, { skill: 1, dmg: 40, el: 1, shape: 'rocket', splash: 80, onEnd: b => fire3(f, b.x, b.y, 80, 3, 8) })],
+    [4, '전기 로켓', 'hit', '로켓을 쏴 전기 피해(245) · 폭발에 맞은 적은 0.95초 동안 기절', [100, 8 * T], (f, a) => emit(f, a, { skill: 1, dmg: 35, el: 1, shape: 'rocket', splash: 80, stun: .95, col: '#7df0ff' })]
   ] });
 
 hero('dagger', { p: ['날렵함', '대쉬 쿨타임이 0.5초 (기본 1.5초)'], dashCd: () => .5,

@@ -3179,7 +3179,7 @@ for(const [ch,nm,price,tint,fx] of [
   ['smg','루비 야시경 고글',900,'#e0304f','glow'], ['magiccard','에메랄드 카드 실크햇',900,'#1fa06a','sparkle'], ['samurai','은빛 쌍검 머리띠',900,'#e8edf5','glow'],
   ['harald','룬 새김 투구',900,'#3c7fd0','frost'], ['shade','석양 네온',900,'#ff7a3d','glow'], ['tionis','레몬 광대 조끼',900,'#f5c94c'],
   ['portalgun','황금 차원 고글',900,'#ffcf3a','sparkle'], ['gardener','단풍 밀짚모자',900,'#e0662a'], ['herbal','민트 허브 두건',900,'#5fd6b0','sparkle'],
-  ['shieldman','에메랄드 기사단',900,'#2e9e6a','glow']
+  ['shieldman','에메랄드 기사단',900,'#2e9e6a','glow'], ['bazooka','사막 모래 방독면',900,'#c9a463']
 ]) if(!COSMETICS['skin_'+ch+'_7']) COSMETICS['skin_'+ch+'_7']=Object.assign({cat:'skin', char:ch, name:nm, price, tint}, fx?{fx}:{});
 /* ===== the character's own color in a match: plain colors are free, the shiny ones are bought (cat 'bcol', equipped as saveData.equipped.bcol, sent as cos.col) ===== */
 [['red','빨강','#ff4d4d'],['mint','민트','#3fe0c5'],['yellow','노랑','#f5c94c'],['blue','파랑','#7c9eff'],['pink','분홍','#ff8fd9'],['lime','연두','#8dff7c'],
@@ -6379,14 +6379,15 @@ hero('grenade', { p: ['폭발광', '폭발 점프로 피해를 주면 착지 때
     [5, '화염병', 'hit', '조준한 곳에 화염병을 던짐 · 3초 동안 불길이 남아 안에 있는 상대는 초당 120 피해', [100, 7 * T], f => { const p = aimPt(f, 7 * T); strike(f, p.x, p.y, 90, .4, () => { burst(p.x, p.y, '#ff7a2a', 14, 220); zone({ by: f, x: p.x, y: p.y, r: 90, t: 3, col: '#ff7a2a', op: .3, fn: (z, dt) => { z.acc += dt; if (z.acc >= .5) { z.acc -= .5; circ(f, z.x, z.y, z.r, 10, { quiet: 1 }); } } }); }, '#ff7a2a'); }]
   ] });
 
-hero('bazooka', { p: ['화력 집중', '스킬 로켓 3발이 모두 맞으면 그 자리에 3초 동안 화염 (닿으면 초당 30 피해)'],
+hero('bazooka', { p: ['화력 집중', '일반 공격 로켓이 3번 맞을 때마다 3번째로 맞은 자리에 3초 동안 화염 (닿으면 초당 21 피해)'], spd: () => .92,
+  onDeal(f, e, d, o) { if (!(o.basic || SRC === '기본 공격') || o.quiet || e.minion || f.st.bzT === time) return; f.st.bzT = time; f.st.bzN = (f.st.bzN || 0) + 1; if (f.st.bzN >= 3) { f.st.bzN = 0; fire3(f, e.x, e.y, 70, 3, 3); } },
   pre(f, o) { if (f.st.homing) { f.st.homing = 0; o.homing = true; o.turn = 6; o.range = 12 * T; } return o; },
   ult: ['유도탄', '다음 공격이 적을 추적하는 유도탄', [0, 10 * T], f => { f.st.homing = 1; f.fireCd = Math.min(f.fireCd, .2); }],
   skills: [
-    [1, '3연발', 'hit', '조준 방향으로 로켓을 연속 3발 발사 (발당 피해 300)', [100, 8 * T], (f, a) => { let n = 0; seq(f, 3, .18, () => emit(f, f.aim, { skill: 1, dmg: 30, splash: 55, shape: 'rocket', onSplash: e => { if (++n === 3) fire3(f, e.x, e.y, 70, 3, 3); } })); }],
+    [1, '3연발', 'hit', '조준 방향으로 로켓을 연속 3발 발사 (발당 피해 210)', [100, 8 * T], (f, a) => { seq(f, 3, .18, () => emit(f, f.aim, { skill: 1, dmg: 30, splash: 55, shape: 'rocket' })); }],
     [2, '연막 로켓', 'hit', '로켓을 쏴 맞은 자리에 연기 폭발 · 연기 안의 적은 시야가 가려지고 느려짐', [100, 8 * T], (f, a) => emit(f, a, { skill: 1, dmg: 10, shape: 'rocket', splash: 40, onEnd: b => smoke(f, b.x, b.y, 110, 2.5) })],
-    [3, '화염 로켓', 'hit', '로켓을 쏴 화염 피해(400) · 터진 자리에 3초 동안 화염 지대가 생김', [100, 8 * T], (f, a) => emit(f, a, { skill: 1, dmg: 40, el: 1, shape: 'rocket', splash: 80, onEnd: b => fire3(f, b.x, b.y, 80, 3, 8) })],
-    [4, '전기 로켓', 'hit', '로켓을 쏴 전기 피해(350) · 폭발에 맞은 적은 0.95초 동안 기절', [100, 8 * T], (f, a) => emit(f, a, { skill: 1, dmg: 35, el: 1, shape: 'rocket', splash: 80, stun: .95, col: '#7df0ff' })]
+    [3, '화염 로켓', 'hit', '로켓을 쏴 화염 피해(280) · 터진 자리에 3초 동안 화염 지대가 생김', [100, 8 * T], (f, a) => emit(f, a, { skill: 1, dmg: 40, el: 1, shape: 'rocket', splash: 80, onEnd: b => fire3(f, b.x, b.y, 80, 3, 8) })],
+    [4, '전기 로켓', 'hit', '로켓을 쏴 전기 피해(245) · 폭발에 맞은 적은 0.95초 동안 기절', [100, 8 * T], (f, a) => emit(f, a, { skill: 1, dmg: 35, el: 1, shape: 'rocket', splash: 80, stun: .95, col: '#7df0ff' })]
   ] });
 
 hero('dagger', { p: ['날렵함', '대쉬 쿨타임이 0.5초 (기본 1.5초)'], dashCd: () => .5,
@@ -6789,14 +6790,14 @@ hero('portalgun', { p: ['차원 반사', '포탈건 탄환은 벽에 닿으면 �
    기사 sword · 마법사 wizard · 마술사 magiccard · 로빈 후드 bow · 네온 shade · 카다스 kadas · 티오니스 tionis · 하랄드 harald
    제임스 pistol · 군인 rifle · 특수요원 smg · 닌자 shuriken · 폭발광 grenade · 보안관 shotgun
    차원 여행자 portalgun · 복서 gloves (2026-11-13) */
-const ACTIVE_HEROES = ['sword', 'wizard', 'magiccard', 'bow', 'shade', 'tionis', 'harald', 'pistol', 'rifle', 'smg', 'shuriken', 'grenade', 'shotgun', 'portalgun', 'gloves', 'samurai'];
+const ACTIVE_HEROES = ['sword', 'wizard', 'magiccard', 'bow', 'shade', 'tionis', 'harald', 'pistol', 'rifle', 'smg', 'shuriken', 'grenade', 'shotgun', 'portalgun', 'gloves', 'samurai', 'bazooka'];
 const HEROES_OFF = {};
 /* per-hero damage multiplier (applied in damage() to everything the hero deals: basic attack, skills, ultimate, DoTs).
    Balance table from the 14-hero bot sim, 2026-11-10; skill description numbers in kits1/kits2 already include these. */
-const DMG_MUL = { harald: .95, shade: .85, sword: 1.2, grenade: .6, shotgun: .8, magiccard: 1.2, kadas: 1.6, wizard: 1.5, rifle: .95, tionis: 2, bow: 1.25, pistol: 1.4, smg: 1.1, shuriken: 1.6, portalgun: 1.65, gloves: 1.25 };      // 2026-11-13 duel + team bot sim retune (gardener: gardener.js)
+const DMG_MUL = { bazooka: .7, harald: .95, shade: .85, sword: 1.2, grenade: .6, shotgun: .8, magiccard: 1.2, kadas: 1.6, wizard: 1.5, rifle: .95, tionis: 2, bow: 1.25, pistol: 1.4, smg: 1.1, shuriken: 1.6, portalgun: 1.65, gloves: 1.25 };      // 2026-11-13 duel + team bot sim retune (gardener: gardener.js)
 for (const id in DMG_MUL) HEROES[id].xm = DMG_MUL[id];
 /* per-hero max hp in the original (small) units, ×STAT_X applied here. Tuned 2026-11-10 with bots that kite (14-hero sim: all win rates 46–55%). */
-const HP_TABLE = { sword: 580, shade: 490, harald: 500, grenade: 540, shotgun: 600, rifle: 600, magiccard: 610, kadas: 630, wizard: 640, bow: 690, pistol: 720, smg: 760, shuriken: 780, tionis: 830, portalgun: 770, gloves: 850, samurai: 720 };
+const HP_TABLE = { bazooka: 700, sword: 580, shade: 490, harald: 500, grenade: 540, shotgun: 600, rifle: 600, magiccard: 610, kadas: 630, wizard: 640, bow: 690, pistol: 720, smg: 760, shuriken: 780, tionis: 830, portalgun: 770, gloves: 850, samurai: 720 };
 for (const id in HP_TABLE) HEROES[id].hp = HP_TABLE[id] * STAT_X;
 for (const id of Object.keys(HEROES)) if (!ACTIVE_HEROES.includes(id)) { HEROES_OFF[id] = HEROES[id]; delete HEROES[id]; }
 ROSTER.splice(0, ROSTER.length, ...ACTIVE_HEROES.filter(id => HEROES[id]));
@@ -8108,6 +8109,7 @@ function drawZoneArt(z, menu) {       // tail.js asks this for every zone first;
   if (z.col === '#9a4cff' && !z.kind) { drawDarkLump(z); return true; }
   if (z.kind === 'circle') { drawWizCircle(z); return true; }
   if (z.col === '#ff7a2a' && !z.kind) { drawFirePuddle(z); return true; }      // (폭발광 화염병)
+  if (z.kind === 'fire') { drawFirePuddle(z); return true; }      // fire3 fields (중화기병 화염 등): same flames, not a flat circle
   return false;
 }
 function drawMuzzles() {               // the flash at the mouth of whatever fired (the original's drawMuzzle): bright for a few frames
@@ -8839,7 +8841,7 @@ const PVS = {
   'gloves:1': R('arc', { len: 90, half: 1.2 }), 'gloves:3': R('arc', { len: 80, half: 1 }), 'gloves:4': R('arc', { len: 90, half: 1.4 }), 'gloves:5': R('dash', { len: 192, w: 44 }), 'gloves:u': R('self', { r: 110 }),
   'portalgun:1': R('ring'), 'portalgun:2': R('ground', { max: 320, r: 40 }), 'portalgun:3': R('bounce', { len: 1024, n: 6, w: 24 }), 'portalgun:4': R('ground', { max: 384, r: 95 }), 'portalgun:5': R('ring'), 'portalgun:u': R('ground', { max: 576, r: 34 }),
   'grenade:1': R('dashEnd', { len: 256, r: 90, over: 1 }), 'grenade:5': R('ground', { max: 448, r: 90 }), 'grenade:2': R('fan2', { len: 320, half: .175, n: 2, over: 1 }), 'grenade:3': R('line', { len: 384, w: 26 }), 'grenade:4': R('ground', { max: 448, r: 100 }), 'grenade:u': R('fan', { over: 1, len: 384, half: .5, n: 5 }),
-  'bazooka:1': R('line', { len: 512, w: 28 }), 'bazooka:2': R('lob', { len: 512, r: 40 }), 'bazooka:3': R('lob', { len: 512, r: 80 }), 'bazooka:4': R('lob', { len: 512, r: 80 }), 'bazooka:u': R('line', { len: 640, w: 28 }),
+  'bazooka:1': R('line', { len: 512, w: 28 }), 'bazooka:2': R('rocket', { len: 512, r: 40 }), 'bazooka:3': R('rocket', { len: 512, r: 80 }), 'bazooka:4': R('rocket', { len: 512, r: 80 }), 'bazooka:u': R('line', { len: 640, w: 28 }),
   'dagger:1': R('self', { r: 384, faint: 1 }), 'dagger:2': R('dash', { len: 717, w: 60 }), 'dagger:4': R('dash', { len: 205, w: 44, back: 1 }),
   'dracula:2': R('dash', { len: 256, w: 60 }),
   'wizard:1': R('self', { r: 130 }), 'wizard:2': R('line', { len: 512, w: 44, over: 1 }), 'wizard:3': R('line', { len: 512, w: 26, over: 1 }), 'wizard:4': R('line', { len: 512, w: 64, over: 1 }), 'wizard:5': R('self', { r: 54 }), 'wizard:u': R('self', { r: 198 }),
@@ -8891,6 +8893,7 @@ function basicSpec(f) {
   if (h.id === 'pel') return R('multi', { len: h.range, n: Math.max(1, f.st.dr || 1), w: 22 });
   if (w.bounces) return R('bounce', { len: h.range, n: w.bounces, w: 14 });      // 차원 여행자: the path with its wall bounces
   if (h.boom) return R('boom', { len: h.range, w: 26 });
+  if (h.splash && h.w && h.w.shape === 'rocket' && !h.wallPass) return R('rocket', { len: h.range, r: h.splash });
   if (h.splash) return R('lob', { len: h.range * (w.shape === 'bomb' || h.wallPass ? bombFrac(f) : 1), r: h.splash, over: h.w && (h.w.shape === 'bomb' || h.wallPass) ? 1 : 0 });      // over: thrown bombs fly over walls
   if (h.count > 1) return R('fan', { len: h.range, half: h.fan / 2, n: h.count });
   if (h.burst > 1) return R('line', { len: h.range, w: 26, dots: h.burst });
@@ -8929,6 +8932,7 @@ function drawSpec(f, s, a, tx, ty, col, ready, move) {
       if (s.t === 'rect') arrowHead(x + Math.cos(a) * d, y + Math.sin(a) * d, a, 9);
       break;
     }
+    case 'rocket': { const d = rayLen(x, y, a, s.len), ex = x + Math.cos(a) * d, ey = y + Math.sin(a) * d; capsule(x, y, a, 20, d, s.w || 28); arrowHead(ex, ey, a, 11); break; }      // straight rocket: wide lane that stops at walls, no blast circle (user)
     case 'multi': { const n = s.n, d = rayLen(x, y, a, s.len); for (let i = 0; i < n; i++) { const off = (i - (n - 1) / 2) * 16, nx = -Math.sin(a) * off, ny = Math.cos(a) * off; ctx.save(); ctx.translate(nx, ny); capsule(x, y, a, 20, d, 8); ctx.restore(); } break; }
     case 'boom': { const d = rayLen(x, y, a, s.len), c = Math.cos(a), sn = Math.sin(a); ctx.save(); ctx.translate(x + c * (20 + d) / 2, y + sn * (20 + d) / 2); ctx.rotate(a); ctx.beginPath(); ctx.ellipse(0, 0, (d - 20) / 2, s.w * .7, 0, 0, 6.3); ctx.fill(); ctx.stroke(); ctx.restore(); break; }
     case 'arc': {

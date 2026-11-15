@@ -22,7 +22,7 @@ const PVS = {
   'gloves:1': R('arc', { len: 90, half: 1.2 }), 'gloves:3': R('arc', { len: 80, half: 1 }), 'gloves:4': R('arc', { len: 90, half: 1.4 }), 'gloves:5': R('dash', { len: 192, w: 44 }), 'gloves:u': R('self', { r: 110 }),
   'portalgun:1': R('ring'), 'portalgun:2': R('ground', { max: 320, r: 40 }), 'portalgun:3': R('bounce', { len: 1024, n: 6, w: 24 }), 'portalgun:4': R('ground', { max: 384, r: 95 }), 'portalgun:5': R('ring'), 'portalgun:u': R('ground', { max: 576, r: 34 }),
   'grenade:1': R('dashEnd', { len: 256, r: 90, over: 1 }), 'grenade:5': R('ground', { max: 448, r: 90 }), 'grenade:2': R('fan2', { len: 320, half: .175, n: 2, over: 1 }), 'grenade:3': R('line', { len: 384, w: 26 }), 'grenade:4': R('ground', { max: 448, r: 100 }), 'grenade:u': R('fan', { over: 1, len: 384, half: .5, n: 5 }),
-  'bazooka:1': R('line', { len: 512, w: 28 }), 'bazooka:2': R('lob', { len: 512, r: 40 }), 'bazooka:3': R('lob', { len: 512, r: 80 }), 'bazooka:4': R('lob', { len: 512, r: 80 }), 'bazooka:u': R('line', { len: 640, w: 28 }),
+  'bazooka:1': R('line', { len: 512, w: 28 }), 'bazooka:2': R('rocket', { len: 512, r: 40 }), 'bazooka:3': R('rocket', { len: 512, r: 80 }), 'bazooka:4': R('rocket', { len: 512, r: 80 }), 'bazooka:u': R('line', { len: 640, w: 28 }),
   'dagger:1': R('self', { r: 384, faint: 1 }), 'dagger:2': R('dash', { len: 717, w: 60 }), 'dagger:4': R('dash', { len: 205, w: 44, back: 1 }),
   'dracula:2': R('dash', { len: 256, w: 60 }),
   'wizard:1': R('self', { r: 130 }), 'wizard:2': R('line', { len: 512, w: 44, over: 1 }), 'wizard:3': R('line', { len: 512, w: 26, over: 1 }), 'wizard:4': R('line', { len: 512, w: 64, over: 1 }), 'wizard:5': R('self', { r: 54 }), 'wizard:u': R('self', { r: 198 }),
@@ -74,6 +74,7 @@ function basicSpec(f) {
   if (h.id === 'pel') return R('multi', { len: h.range, n: Math.max(1, f.st.dr || 1), w: 22 });
   if (w.bounces) return R('bounce', { len: h.range, n: w.bounces, w: 14 });      // 차원 여행자: the path with its wall bounces
   if (h.boom) return R('boom', { len: h.range, w: 26 });
+  if (h.splash && h.w && h.w.shape === 'rocket' && !h.wallPass) return R('rocket', { len: h.range, r: h.splash });
   if (h.splash) return R('lob', { len: h.range * (w.shape === 'bomb' || h.wallPass ? bombFrac(f) : 1), r: h.splash, over: h.w && (h.w.shape === 'bomb' || h.wallPass) ? 1 : 0 });      // over: thrown bombs fly over walls
   if (h.count > 1) return R('fan', { len: h.range, half: h.fan / 2, n: h.count });
   if (h.burst > 1) return R('line', { len: h.range, w: 26, dots: h.burst });
@@ -112,6 +113,7 @@ function drawSpec(f, s, a, tx, ty, col, ready, move) {
       if (s.t === 'rect') arrowHead(x + Math.cos(a) * d, y + Math.sin(a) * d, a, 9);
       break;
     }
+    case 'rocket': { const d = rayLen(x, y, a, s.len), ex = x + Math.cos(a) * d, ey = y + Math.sin(a) * d; capsule(x, y, a, 20, d, s.w || 28); arrowHead(ex, ey, a, 11); break; }      // straight rocket: wide lane that stops at walls, no blast circle (user)
     case 'multi': { const n = s.n, d = rayLen(x, y, a, s.len); for (let i = 0; i < n; i++) { const off = (i - (n - 1) / 2) * 16, nx = -Math.sin(a) * off, ny = Math.cos(a) * off; ctx.save(); ctx.translate(nx, ny); capsule(x, y, a, 20, d, 8); ctx.restore(); } break; }
     case 'boom': { const d = rayLen(x, y, a, s.len), c = Math.cos(a), sn = Math.sin(a); ctx.save(); ctx.translate(x + c * (20 + d) / 2, y + sn * (20 + d) / 2); ctx.rotate(a); ctx.beginPath(); ctx.ellipse(0, 0, (d - 20) / 2, s.w * .7, 0, 0, 6.3); ctx.fill(); ctx.stroke(); ctx.restore(); break; }
     case 'arc': {
