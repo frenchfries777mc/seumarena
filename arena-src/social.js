@@ -66,13 +66,15 @@ function accountUi() {
 
 /* cosmetics: everything the original game sells or gives is free to wear here */
 const COS_KEY = 'seumArenaCos';
-const cosDefault = () => ({ skin: {}, col: null, name: null, kfx: null, pose: 'pose_cheer', emo: [0, 1, 2, 3, 4, 5, 6, 7], gold: 500, own: null, v: 0 });
+const cosDefault = () => ({ skin: {}, col: null, name: null, kfx: null, pose: 'pose_cheer', emo: [0, 1, 2, 3, 4, 5, 6, 7], gold: 500, own: null, v: 0, cr: 0, su: [] });
 function cosNorm(C) {      // the save-version fixes, run on this browser's save and on one that comes from the account (cloud.js)
+  if (!(C.v >= 5)) { if ((C.v | 0) >= 2) C.suAll = 1; }      // v5: skills past the first two are unlocked with crystals; a save from before that keeps every skill open (user 2026-11-15)
   if (!Array.isArray(C.own) || !(C.v >= 2)) { C.own = []; C.skin = {}; C.gold = Math.max(500, +C.gold || 0); C.v = 2; }      // skins worn before gold existed are not owned: they have to be bought (v2 also takes back the ones an earlier build handed out)
   C.gold = Math.max(0, Math.floor(+C.gold || 0)); C.karma = Math.max(0, Math.floor(+C.karma || 0)); if (!Array.isArray(C.kr) || C.v < 3) C.kr = []; if (!Array.isArray(C.cd)) C.cd = [];
   if (C.v < 4) for (const k of ['col', 'name', 'kfx']) if (C[k] && !C.own.includes(C[k])) C[k] = null;      // v4: character colours, name colours and kill effects are bought with gold too
-  C.v = 4;      // v3: the road got new steps, nothing on it is taken yet
+  C.v = 5;      // v3: the road got new steps, nothing on it is taken yet
   C.xp = Math.max(0, Math.floor(+C.xp || 0)); if (!C.mp || typeof C.mp !== 'object') C.mp = {};
+  C.cr = Math.max(0, Math.floor(+C.cr || 0)); if (!Array.isArray(C.su)) C.su = [];
   return C;
 }
 let COS = cosDefault();
@@ -101,7 +103,7 @@ const skinOwned = id => COS.own.includes(id);
 const cosLocked = id => skinPrice(id) > 0 && !skinOwned(id);      // has a price and is not bought yet
 if (COS.pose && cosLocked(COS.pose)) COS.pose = null;      // (victory poses used to be free: one worn but not bought goes back to 만세)
 const COS_SLOT = { bcol: 'col', name: 'name', kfx: 'kfx', pose: 'pose' };
-function goldUi() { for (const el of document.querySelectorAll('.goldN')) el.textContent = COS.gold.toLocaleString('en-US'); for (const el of document.querySelectorAll('.karmaN')) el.textContent = COS.karma.toLocaleString('en-US'); const sk = document.getElementById('streak'); if (sk) { sk.hidden = !((COS.ws | 0) >= 2); sk.querySelector('b').textContent = COS.ws | 0; }
+function goldUi() { for (const el of document.querySelectorAll('.goldN')) el.textContent = COS.gold.toLocaleString('en-US'); for (const el of document.querySelectorAll('.crN')) el.textContent = (COS.cr | 0).toLocaleString('en-US'); for (const el of document.querySelectorAll('.karmaN')) el.textContent = COS.karma.toLocaleString('en-US'); const sk = document.getElementById('streak'); if (sk) { sk.hidden = !((COS.ws | 0) >= 2); sk.querySelector('b').textContent = COS.ws | 0; }
   { const kb = document.querySelector('#karmaBar i'); { let lo = 0, hi = 0; for (const r of KARMA_ROAD) { if (COS.karma >= r[0]) lo = r[0]; else { hi = r[0]; break; } } const w = (hi ? Math.round((COS.karma - lo) / (hi - lo) * 100) : 100) + '%'; if (kb) kb.style.width = w; const hb = document.querySelector('.khBar i'), hn = document.getElementById('karmaNextN'); if (hb) hb.style.width = w; if (hn) hn.textContent = hi ? COS.karma.toLocaleString('en-US') + ' / ' + hi.toLocaleString('en-US') : ''; } }      // the banner's bar: the way to the next step of the road
   const kd = document.getElementById('karmaDot'); if (kd) kd.hidden = !karmaOpen(); questUi(); passUi();
   const ai = document.getElementById('acctIcon'); if (ai) { const l = levelOf(); ai.textContent = l.lv; ai.style.setProperty('--p', Math.round(l.into / l.need * 100)); ai.title = '레벨 ' + l.lv + ' · ' + l.into + ' / ' + l.need; } }
@@ -116,12 +118,13 @@ const KARMA_ROAD = (() => {      // paced like a trophy road (user 2026-11-12): 
     const gap = n - prev, kind = ['g', 'rx', 'g', 'box', 'cx'][i % 5]; prev = n;
     if (big[n]) { out.push([n, big[n][0], big[n][1], 1]); continue; }      // a big step does not use up a turn of the cycle
     i++;
-    out.push(kind === 'box' ? [n, gap >= 500 ? 'ebox' : 'box'] : [n, kind, kind === 'g' ? amt(gap, [50, 150, 300, 500, 800, 1200]) : amt(gap, [100, 200, 300, 500, 700, 1000])]);
+    out.push(kind === 'box' ? [n, gap >= 500 ? 'ebox' : 'box', 0, 0, gap <= 20 ? 20 : gap <= 50 ? 30 : gap <= 100 ? 40 : 50] : [n, kind, kind === 'g' ? amt(gap, [50, 150, 300, 500, 800, 1200]) : amt(gap, [100, 200, 300, 500, 700, 1000])]);
   }
   return out;
 })();
 /* what a box can hold: [chance weight, kind, least, most] */
-const BOX_LOOT = { box: [[50, 'g', 150, 400], [30, 'rx', 150, 300], [12, 'cx', 150, 250], [8, 'skin', 1000, 1000]], ebox: [[35, 'g', 600, 1200], [20, 'rx', 500, 800], [20, 'cx', 400, 600], [25, 'skin', 2500, 2500]] };
+const BOX_LOOT = { box: [[50, 'g', 150, 400], [30, 'rx', 150, 300], [12, 'cx', 150, 250], [8, 'skin', 1000, 1000], [25, 'cr', 40, 80]], ebox: null };      // an epic box gives 3 prizes, one after another (user 2026-11-15); each prize is drawn exactly like a random box (user 2026-11-15)
+BOX_LOOT.ebox = BOX_LOOT.box; const EBOX_N = 3;
 /* character mastery: every step is MP_STEP points (about 16 matches at ~50 a match) */
 const MP_STEP = 800, MASTERY = [];
 for (const [nm, n, col] of [['브론즈', 3, '#c8803a'], ['실버', 3, '#c0c8d4'], ['골드', 3, '#ffd34d'], ['플래티넘', 3, '#6fe0d0'], ['다이아', 3, '#6fb8ff'], ['아메시스트', 3, '#b07cff'], ['마스터', 5, '#ff8a4d'], ['그랜드마스터', 5, '#ff4d6d']]) for (let i = 0; i < n; i++) MASTERY.push({ name: nm + ' ' + ['I', 'II', 'III', 'IV', 'V'][i], col });
@@ -169,14 +172,18 @@ function streakStep(win, draw, keep) {
 }
 /* gives one reward and says what it was: { kind, n, hero, skin } */
 function giveReward(kind, n) {
-  if (kind === 'box' || kind === 'ebox') { const L = BOX_LOOT[kind]; let r = Math.random() * L.reduce((a, l) => a + l[0], 0), l = L[0]; for (const x of L) { if ((r -= x[0]) < 0) { l = x; break; } } const tr = Math.random(), tier = l[1] === 'skin' ? 2 : kind === 'ebox' ? (tr < .25 ? 2 : 1) : tr < .05 ? 2 : tr < .25 ? 1 : 0;      // a box opens as common, rare or legendary: rare doubles what is inside, legendary gives four times (a skin is always legendary)
-    const got = giveReward(l[1], l[1] === 'skin' ? l[2] : Math.round((l[2] + Math.random() * (l[3] - l[2])) * (kind === 'ebox' ? [1, 1, 2] : [1, 2, 4])[tier] / 10) * 10); got.box = kind; got.tier = tier; return got; }
+  if (kind === 'ebox' && n !== -1) {      // three draws; at most one skin per box (a second skin roll draws again without skins)
+    const list = []; for (let i = 0; i < EBOX_N; i++) { let g = giveReward('ebox', -1); if (g.skin && list.some(x => x.skin)) { const keep = BOX_LOOT.ebox; BOX_LOOT.ebox = keep.filter(l => l[1] !== 'skin'); try { g = giveReward('ebox', -1); } finally { BOX_LOOT.ebox = keep; } } list.push(g); }
+    const got = list[0]; got.list = list; return got; }
+  if (kind === 'box' || kind === 'ebox') { const L = BOX_LOOT[kind]; let r = Math.random() * L.reduce((a, l) => a + l[0], 0), l = L[0]; for (const x of L) { if ((r -= x[0]) < 0) { l = x; break; } } const tr = Math.random(), tier = l[1] === 'skin' ? 2 : tr < .05 ? 2 : tr < .25 ? 1 : 0;      // a box opens as common, rare or legendary: rare doubles what is inside, legendary gives four times (a skin is always legendary)
+    const got = giveReward(l[1], l[1] === 'skin' ? l[2] : Math.round((l[2] + Math.random() * (l[3] - l[2])) * [1, 2, 4][tier] / 10) * 10); got.box = kind; got.tier = tier; return got; }
   if (kind === 'skin') {      // a skin not owned yet, from the dearest tier allowed; nothing left to give: its worth in gold
     const pool = COS_IDS('skin').filter(id => HEROES[COSMETICS[id].char] && !skinOwned(id) && !passLimited(id) && skinPrice(id) <= n), top = Math.max(0, ...pool.map(skinPrice)), best = pool.filter(id => skinPrice(id) === top);
     if (best.length) { const id = pick(best); COS.own.push(id); return { kind, skin: id, hero: COSMETICS[id].char }; }
     kind = 'g';
   }
   if (kind === 'g') { COS.gold += n; return { kind, n }; }
+  if (kind === 'cr') { COS.cr = (COS.cr | 0) + n; return { kind, n }; }
   if (kind === 'px') { COS.xp += n; return { kind, n }; }
   if (kind === 'k') { COS.karma += n; return { kind, n }; }
   const hero = kind === 'cx' && HEROES[chosen] ? chosen : pick(Object.keys(HEROES)); addMp(hero, n); return { kind, n, hero };
@@ -184,11 +191,18 @@ function giveReward(kind, n) {
 const karmaOpen = () => KARMA_ROAD.some(r => COS.karma >= r[0] && !COS.kr.includes(r[0]));
 function karmaTake(r) {
   if (COS.karma < r[0] || COS.kr.includes(r[0])) return null;
-  COS.kr.push(r[0]); const got = giveReward(r[1], r[2]);
+  COS.kr.push(r[0]); const got = crExtra(giveReward(r[1], r[2]), r[4]);
   try { sfx(880, .18, 'triangle', .06); } catch (e) {}
   saveCos(); goldUi(); return got;
 }
-const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin' };
+const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin', cr: 'ic-cr' };
+/* crystals: a road or pass step can carry some on top of its own reward (r[4]); they show after it */
+function crExtra(got, n) { if (!got || !(n > 0)) return got; const c = giveReward('cr', n); got.list = (got.list || [got]).concat([c]); return got; }
+function crBadge(box, n) { if (!(n > 0)) return; const s = document.createElement('span'); s.className = 'kCr'; s.innerHTML = '<i class="ic-cr"></i>'; s.append('+' + n); box.append(s); }
+/* skills: the first two of a character are open; the rest are unlocked with crystals (a save from before keeps them all, COS.suAll) */
+const SK_PRICE = 300;
+const skOpen = (id, n) => { const h = HEROES[id]; if (!h || COS.suAll) return true; const i = h.skills.findIndex(s => s.n === n); return i < 2 || COS.su.includes(id + ':' + n); };
+function skUnlock(id, n) { if (skOpen(id, n) || (COS.cr | 0) < SK_PRICE) return false; COS.cr -= SK_PRICE; COS.su.push(id + ':' + n); try { sfx(1320, .16, 'triangle', .07); } catch (e) {} saveCos(); goldUi(); return true; }
 function rewardIcon(kind) { const i = document.createElement('i'); if (kind === 'sx') { i.className = 'sxI'; i.innerHTML = '<svg aria-hidden="true"><use href="#mi-pass"/></svg>'; return i; } if (kind === 'k') { i.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>'; return i; } if (kind === 'skin') { const c = document.createElement('canvas'); c.width = c.height = 96; c.className = 'rwI'; try { const id = COS_IDS('skin').find(x => HEROES[COSMETICS[x].char] && skinPrice(x) > 0); drawItemPreview(c, id, 0); } catch (e) {} return c; }      // a skin reward shows a real worn skin, as in the shop
   i.className = kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[kind]; return i; }
 function renderKarma(got) {
@@ -200,7 +214,7 @@ function renderKarma(got) {
     const b = document.createElement('button'), box = document.createElement('span'), pin = document.createElement('span'), num = document.createElement('span');
     const done = COS.kr.includes(r[0]), reach = !done && COS.karma >= r[0];
     b.type = 'button'; b.className = 'kStep ' + (done ? 'done' : reach ? 'reach' : 'lock') + ' k-' + r[1] + (r[3] ? ' big' : ''); b.dataset.k = r[0]; box.className = 'kBox'; pin.className = 'kPin'; num.className = 'kNum'; num.textContent = r[0].toLocaleString('en-US');
-    box.append(rewardIcon(r[1]), r[1] === 'g' || r[1] === 'rx' || r[1] === 'cx' ? r[2].toLocaleString('en-US') : LBL[r[1]]);
+    box.append(rewardIcon(r[1]), r[1] === 'g' || r[1] === 'rx' || r[1] === 'cx' ? r[2].toLocaleString('en-US') : LBL[r[1]]); crBadge(box, r[4]);
     b.setAttribute('aria-label', r[0] + ' 카르마: ' + LBL[r[1]] + (r[2] && r[1] !== 'skin' ? ' ' + r[2] : '')); b.title = LBL[r[1]];
     b.disabled = !reach; b.append(box, pin, num);
     if (reach) b.addEventListener('click', () => renderKarma(karmaTake(r) || null));
@@ -235,13 +249,15 @@ function kRing(head, frac, txt) {
 /* the line that says what a reward turned out to be */
 function showGot(g, got) { g.hidden = true; if (got) rewardFx(got); }
 /* the burst over the whole screen when a reward is taken (head.html #rwFx): a box shakes and opens first, then the prize pops in with rays, sparks, a little tune and its number counting up. A tap puts it away */
-let rwTimer = 0, rwRaf = 0;
-function rewardFx(got) {
+let rwTimer = 0, rwRaf = 0; const rwQ = [];
+function rewardFx(got, step) {
   const fx = document.getElementById('rwFx'); if (!fx) return;
+  if (step == null && !fx.hidden && !fx.classList.contains('out')) { rwQ.push(got); return; }      // one at a time: a reward that comes while another shows waits its turn
+  const L = got.list || [got], k = step | 0; if (k) got = L[k];
   const ic = fx.querySelector('.rwIc'), cvs = fx.querySelector('canvas'), txt = fx.querySelector('.rwTxt'), spk = fx.querySelector('.rwSpk');
   const setIcon = kind => { cvs.hidden = true; ic.hidden = false; ic.textContent = ''; ic.className = 'rwIc ' + (kind === 'k' ? '' : kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[kind]); if (kind === 'k') ic.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>'; };
   const note = (f, at) => setTimeout(() => { try { sfx(f, .16, 'triangle', .07); } catch (e) {} }, at);
-  const close = () => { clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.classList.add('out'); rwTimer = setTimeout(() => { fx.hidden = true; fx.classList.remove('out', 'open', 'shake'); }, 220); for (const el of document.querySelectorAll('.goldPill, #karma, #acctIcon')) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } };
+  const close = () => { clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.classList.add('out'); rwTimer = setTimeout(() => { fx.hidden = true; fx.classList.remove('out', 'open', 'shake'); if (k + 1 < L.length) rewardFx(L[0], k + 1); else if (rwQ.length) rewardFx(rwQ.shift()); }, 220); for (const el of document.querySelectorAll('.goldPill, #karma, #acctIcon')) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } };
   const open = () => {
     fx.classList.remove('shake'); void fx.offsetWidth; fx.classList.add('open');
     if (got.skin) { ic.hidden = true; cvs.hidden = false; try { drawItemPreview(cvs, got.skin, performance.now()); } catch (e) {} txt.textContent = HEROES[got.hero].name + ' · ' + COSMETICS[got.skin].name; }
@@ -253,12 +269,12 @@ function rewardFx(got) {
     spk.textContent = ''; const cols = tier === 2 ? ['#ffe07a', '#fff', '#ffb020', '#ff7ad9', '#7fe0ff'] : tier === 1 ? ['#d9a8ff', '#a45cff', '#fff', '#7fb4ff'] : got.kind === 'k' ? ['#e3c4ff', '#a45cff', '#fff'] : ['#ffe07a', '#fff3b0', '#ff9a3d', '#7fe0a0'], np = [22, 34, 56][tier];
     for (let i = 0; i < np; i++) { const p = document.createElement('i'), a = Math.PI * 2 * i / np + Math.random() * .3, r = (110 + Math.random() * 120) * (1 + tier * .25); p.style.setProperty('--x', Math.round(Math.cos(a) * r) + 'px'); p.style.setProperty('--y', Math.round(Math.sin(a) * r) + 'px'); p.style.setProperty('--c', cols[i % cols.length]); p.style.setProperty('--d', (Math.random() * .12).toFixed(2) + 's'); spk.append(p); }
     note(660, 0); note(880, 90); note(1320, 180); if (got.skin || got.box === 'ebox' || tier) note(1760, 300); if (tier === 2) { note(2090, 420); note(2640, 560); }
-    rwTimer = setTimeout(close, got.skin || tier === 2 ? 2800 : 1900);
+    rwTimer = setTimeout(close, got.skin || tier === 2 ? 2800 : L.length > 1 ? 1500 : 1900);
   };
   clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.hidden = false; fx.classList.remove('out', 'open', 'shake', 't1', 't2'); txt.textContent = ''; spk.textContent = '';
-  const tier = got.box ? got.tier | 0 : 0, tg = fx.querySelector('.rwTier'); if (tier) fx.classList.add('t' + tier); if (tg) tg.textContent = got.box ? ['', '희귀', '전설'][tier] : '';
+  const tier = got.box ? got.tier | 0 : 0, tg = fx.querySelector('.rwTier'); if (tier) fx.classList.add('t' + tier); if (tg) tg.textContent = (got.box ? ['', '희귀', '전설'][tier] : '') + (L.length > 1 ? (tier ? ' · ' : '') + (k + 1) + '/' + L.length : '');
   fx.onclick = () => { if (fx.classList.contains('shake')) { clearTimeout(rwTimer); open(); } else close(); };
-  if (got.box) { setIcon(got.box); void fx.offsetWidth; fx.classList.add('shake'); const sh = [720, 1000, 1500][tier]; fx.style.setProperty('--sh', sh + 'ms'); for (let i = 0; i < sh / 130 - 1; i++) note(300 + i * (40 + tier * 15), 150 + i * 120); rwTimer = setTimeout(open, sh); }
+  if (got.box) { setIcon(got.box); void fx.offsetWidth; fx.classList.add('shake'); const sh = k ? [480, 700, 1100][tier] : [720, 1000, 1500][tier]; fx.style.setProperty('--sh', sh + 'ms'); for (let i = 0; i < sh / 130 - 1; i++) note(300 + i * (40 + tier * 15), 150 + i * 120); rwTimer = setTimeout(open, sh); }
   else open();
 }
 /* ---------- daily quests: three a day (one easy, one middling, one hard), picked by the date on this device. COS.dq = { d: day, p: progress x3, c: taken x3 } ---------- */
@@ -520,7 +536,7 @@ const PASS = (() => { const sk = SEASONS[GAME_VER].skins, out = [];
   for (let i = 1; i <= PASS_N; i++) {
     if (i === 15 && sk[0]) out.push([i, 'ps', sk[0], 1]); else if (i === PASS_N && sk[1]) out.push([i, 'ps', sk[1], 1]);
     else if (i % 10 === 0) out.push([i, 'ebox', 0, 1]);
-    else out.push([i, ...[['g', 100 + 20 * i], ['box'], ['px', 100 + 10 * i], ['g', 150 + 20 * i], ['cx', 150 + 10 * i]][i % 5]]);
+    else out.push([i, ...[['g', 100 + 20 * i], ['box', 0, 0, 20 + Math.round(i * 6 / 26) * 5], ['px', 100 + 10 * i], ['g', 150 + 20 * i], ['cx', 150 + 10 * i]][i % 5]]);
   }
   return out; })();
 const passXp = () => Math.max(0, Math.floor(+((COS.sx || {})[GAME_VER]) || 0));
@@ -567,7 +583,7 @@ function sqTake(i, wk) {
 function passTake(r) {
   if (passXp() < r[0] * PASS_STEP || passTaken(r[0])) return null;
   if (!Array.isArray(COS.sk)) COS.sk = []; COS.sk.push(GAME_VER + ':' + r[0]);
-  let got; if (r[1] === 'ps') { if (!skinOwned(r[2]) && COSMETICS[r[2]]) { COS.own.push(r[2]); got = { kind: 'skin', skin: r[2], hero: COSMETICS[r[2]].char }; } else got = giveReward('g', 2000); } else got = giveReward(r[1], r[2]);
+  let got; if (r[1] === 'ps') { if (!skinOwned(r[2]) && COSMETICS[r[2]]) { COS.own.push(r[2]); got = { kind: 'skin', skin: r[2], hero: COSMETICS[r[2]].char }; } else got = giveReward('g', 2000); } else got = crExtra(giveReward(r[1], r[2]), r[4]);
   try { sfx(880, .18, 'triangle', .06); } catch (e) {}
   saveCos(); goldUi(); return got;
 }
@@ -599,7 +615,7 @@ function renderPass(got) {
     const done = passTaken(r[0]), reach = !done && xp >= r[0] * PASS_STEP;
     b.type = 'button'; b.className = 'kStep ' + (done ? 'done' : reach ? 'reach' : 'lock') + ' k-' + (r[1] === 'ps' ? 'skin' : r[1]) + (r[3] ? ' big' : ''); box.className = 'kBox'; pin.className = 'kPin'; num.className = 'kNum'; num.textContent = r[0];
     if (r[1] === 'ps') { const cv = document.createElement('canvas'); cv.width = cv.height = 96; cv.className = 'psCv'; try { drawItemPreview(cv, r[2], performance.now()); } catch (e) {} box.append(cv); b.title = HEROES[COSMETICS[r[2]].char].name + ' · ' + COSMETICS[r[2]].name; }
-    else { box.append(rewardIcon(r[1]), r[2] ? r[2].toLocaleString('en-US') : LBL[r[1]]); b.title = LBL[r[1]]; }
+    else { box.append(rewardIcon(r[1]), r[2] ? r[2].toLocaleString('en-US') : LBL[r[1]]); b.title = LBL[r[1]]; crBadge(box, r[4]); }
     b.setAttribute('aria-label', r[0] + '단계: ' + (r[1] === 'ps' ? b.title : LBL[r[1]] + (r[2] ? ' ' + r[2] : '')));
     b.disabled = !reach; b.append(box, pin, num);
     if (reach) b.addEventListener('click', () => renderPass(passTake(r) || null));

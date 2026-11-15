@@ -335,6 +335,7 @@ function snapFighter(f) {
   if (s0.neck) st.nk = r2(time - s0.neck);
   for (const k of ['g', 'chip', 'stack', 'pz', 'over', 'heat', 'pn']) if (s0[k]) st[k] = r2(s0[k]);
   if (s0.morph) st.morph = 1;
+  if (s0.hand != null) st.hd = s0.hand;      // 사무라이: which hand swings (guests draw it too)
   const s = { h: f.h.id, h0: f.h0.id, tm: f.team, x: Math.round(f.x), y: Math.round(f.y), a: r2(f.aim), hp: Math.ceil(f.hp), mh: f.mhp, d: f.dead ? 1 : 0, rt: r1(f.respawnT),
     fm: f.form || 0, sw: r2(f.swing), sp: r2(f.spin), sh: Math.round(f.shield), iv: f.inv > 0 ? 1 : 0, bb, st, k: f.kos, de: f.deaths, lf: r1(Math.min(9, time - f.lastFire)), lh: r1(Math.min(9, time - f.lastHit)), hu: f.human ? 1 : 0 };
   if (f.remote) s.cd = cdInfo(f);
@@ -462,7 +463,7 @@ function applySnap(s) {
     f.swing = d.sw; f.spin = d.sp; f.shield = d.sh; f.inv = d.iv ? .1 : 0; f.kos = d.k; f.deaths = d.de;
     f.lastFire = time - d.lf; f.lastHit = time - d.lh;
     f.b = {}; NET_BUFFS.forEach((k, j) => { if (d.bb & (1 << j)) f.b[k] = { t: 1, v: k === 'charm' ? { team: 1 - d.tm } : 1 }; });
-    const st = d.st; f.st = { hat: st.hat ? { x: st.hat[0], y: st.hat[1] } : null, orb: st.orb ? { n: st.orb, t: 1 } : null, dr: st.dr, fsh: st.fsh ? { hp: 1 } : null, neck: st.nk != null ? time - st.nk : 0, morph: st.morph ? 1 : null, th: st.th, mk: st.mk };
+    const st = d.st; f.st = { hat: st.hat ? { x: st.hat[0], y: st.hat[1] } : null, orb: st.orb ? { n: st.orb, t: 1 } : null, dr: st.dr, fsh: st.fsh ? { hp: 1 } : null, neck: st.nk != null ? time - st.nk : 0, morph: st.morph ? 1 : null, th: st.th, mk: st.mk, hand: st.hd };
     for (const k of ['g', 'chip', 'stack', 'pz', 'over', 'heat', 'pn']) f.st[k] = st[k] || 0;
     f.net = d.cd || null;
     if (me) NET.ps = d.cd && d.cd.pm && !d.d ? { x: d.x, y: d.y, ak: d.cd.ak | 0, ao: d.cd.ao || 0, sp: d.cd.pm } : null;

@@ -11,7 +11,8 @@ hero('samurai', { p: ['검무', '두 손의 검으로 번갈아 4연타(220 ×3 
   cdf(f) { return (samIdx(f) === 3 ? .53 : .18) / ATK_CD_MUL; },
   dmgf(f) { return (samIdx(f) === 3 ? 50 : 22) * (1 + .03 * Math.min(5, samStreak(f))); },
   mo(f) { return samIdx(f) === 3 ? { kb: 140 } : null; },
-  onSwing(f, hits, ang) { const i = samIdx(f); f.st.hand = i === 3 ? 2 : i % 2 ? 0 : 1; f.st.cb = i + 1; f.st.la = time; if (f.st.cb % 4 === 0) fxAt(f, 'skillring', { color: '#dfe9ff' }); },
+  onSwing(f, hits, ang) { const i = samIdx(f); f.st.lh = f.st.lh === 1 ? 0 : 1; f.st.hand = i === 3 ? 2 : f.st.lh;      // hands always alternate swing to swing (also when the combo dropped and starts over)
+    f.st.cb = i + 1; f.st.la = time; if (f.st.cb % 4 === 0) fxAt(f, 'skillring', { color: '#dfe9ff' }); },
   onDeal(f, e, d, o) { if (e.minion) return; if (f.st.tg === e && time - (f.st.lt || -9) < 1) f.st.sk = (f.st.sk || 0) + 1; else f.st.sk = 0; f.st.tg = e; f.st.lt = time; },
   onHurt(f, d, by) { if (!B(f, 'parry') && time - (f.st.la || -9) < 1) return d * .85; if (B(f, 'parry') && by && by !== f && !by.dead && dist(f, by) < 2.4 * T) { unbuff(f, 'parry'); say(f, '흘려 베기', '#dfe9ff'); f.aim = angTo(f, by); seq(f, 4, .08, i => { f.swing = .14; f.st.hand = i === 3 ? 2 : i % 2 ? 0 : 1; arc(f, angTo(f, by), f.h.range * 1.15, .9, i === 3 ? 50 : 22, i === 3 ? { kb: 200 } : {}); }); return 0; } },
   ult: ['쌍검 난무', '가장 가까운 적(4칸 안)에게 붙어 1.5초 동안 12번 베기 (11번 32 + 마지막 X자 300, 합 652, 마지막에 밀쳐냄) · 그동안 상대는 30% 느려지고, 멀어지면 순간이동으로 따라붙음 · 무적 아님, 기절하면 끊김', [0, 4 * T], f => {
@@ -21,8 +22,8 @@ hero('samurai', { p: ['검무', '두 손의 검으로 번갈아 4연타(220 ×3 
     seq(f, 12, .125, i => { if (e.dead || f.dead || B(f, 'stun')) return; if (dist(f, e) > 70 && dist(f, e) < 6 * T) { const g = angTo(e, f); blinkTo(f, e.x + Math.cos(g) * 46, e.y + Math.sin(g) * 46); } const a = angTo(f, e); f.aim = a; f.swing = .12; f.st.hand = i === 11 ? 2 : i % 2 ? 0 : 1; addSwing(f, a); arc(f, a, f.h.range * 1.2, 1, i === 11 ? 30 : 3.2, i === 11 ? { kb: 420 } : {}); if (i === 11) fx('samcut', e.x, e.y + BODY, { ang: 0, gy: e.y + 16 }); });
   }],
   skills: [
-    [1, '십자 베기', 'move', '앞으로 2칸 파고들며 두 검으로 X자 베기 · 540 피해 + 1초 동안 30% 둔화', [60, 2 * T], (f, a) => { lunge(f, a, 2 * T, .15, { end: g => { g.swing = .2; addSwing(g, g.aim); arc(g, g.aim, g.h.range * 1.25, 1.1, 54, { slow: [.7, 1] }); fx('samcut', g.x + Math.cos(g.aim) * 50, g.y + BODY + Math.sin(g.aim) * 50, { ang: 0, gy: g.y + 16 }); } }); }],
-    [2, '거합', 'move', '조준 방향으로 순식간에 베고 지나가며 경로 위의 적에게 300 피해 · 2명 이상 베면 쿨타임 절반', [60, px(430)], (f, a, i) => { const r = blink(f, a, px(430)); f.swing = .22; fxLine('iai', r.x0, r.y0 + BODY, f.x, f.y + BODY, { wid: 'samurai', cos: f.cos, gy: f.y + 16 }); const n = pathHit(f, r.x0, r.y0, f.x, f.y, 34, 30).length; if (n >= 2) later(0, () => { f.scd[i] *= .5; }); }],
+    [1, '십자 베기', 'move', '앞으로 2칸 파고들며 두 검으로 X자 베기 · 540 피해 + 1초 동안 30% 둔화', [60, 2 * T], (f, a) => { f.st.hand = 2; lunge(f, a, 2 * T, .15, { end: g => { g.swing = .2; addSwing(g, g.aim); arc(g, g.aim, g.h.range * 1.25, 1.1, 54, { slow: [.7, 1] }); fx('samcut', g.x + Math.cos(g.aim) * 50, g.y + BODY + Math.sin(g.aim) * 50, { ang: 0, gy: g.y + 16 }); } }); }],
+    [2, '거합', 'move', '조준 방향으로 순식간에 베고 지나가며 경로 위의 적에게 300 피해 · 2명 이상 베면 쿨타임 절반', [60, px(430)], (f, a, i) => { const r = blink(f, a, px(430)); f.st.lh = f.st.lh === 1 ? 0 : 1; f.st.hand = f.st.lh; f.swing = .22; fxLine('iai', r.x0, r.y0 + BODY, f.x, f.y + BODY, { wid: 'samurai', cos: f.cos, gy: f.y + 16 }); const n = pathHit(f, r.x0, r.y0, f.x, f.y, 34, 30).length; if (n >= 2) later(0, () => { f.scd[i] *= .5; }); }],
     [3, '검 던지기', 'hit', '한 자루를 던져(적을 뚫고 감) 맞은 적마다 400 피해 · 0.35초 뒤 검이 날아간 곳으로 순간이동해 다시 쥠', [0, 5 * T], (f, a) => { emit(f, a, { skill: 1, dmg: 40, range: 5 * T, r: 10, spd: 1400, pierce: 99, shape: 'katana' }); later(.35, () => { if (!f.dead) blink(f, a, 5 * T); }, f); }],
     [4, '흘려 베기', 'buff', '0.4초 동안 자세 · 그 사이 가까이(2.4칸)에서 오는 공격 한 번을 흘리고 곧바로 4연타 반격 (220 ×3 + 500) · 멀리서 쏜 공격은 그냥 맞음', [0, 110], f => { buff(f, 'parry', .4); }]
   ] });
