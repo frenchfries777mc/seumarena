@@ -1,11 +1,7 @@
 const COSMETICS={};
 const FLAME_RANGE=400, FLAME_HALF_ANGLE=0.32, FLAME_DIRECT_DPS=31;
-const VAC_SKILL_COST=3, VAC_SKILL_R=330, VAC_SKILL_PULL=800, VAC_SKILL_STUN=1.0;
-const VACUUM_RANGE=480, VACUUM_HALF_ANGLE=0.34, VACUUM_MAX_STACKS=8, VACUUM_PULL_FORCE=90;
-const FLAME_MAX_HOLD=9, FLAME_OVERHEAT_COOLDOWN=2;
-const FLAME_SHIELD_MAXHP=60, FLAME_SHIELD_DURATION=6;
-const SPACE_ON=true;      // 0.9 space update: the three space characters are selectable
-const SPACE_IDS=['cleon','pel','tionis'], INTERNAL_WEAPONS=['none','guard','syringe','dsfire','dspaper','shsword'];
+const VAC_SKILL_R=330;
+const VACUUM_RANGE=480, VACUUM_HALF_ANGLE=0.34;
 const WEAPONS = {
   pistol:  {id:'pistol',  name:'권총',     emoji:'🔫', kind:'gun',      dmg:17, cd:0.85, bulletSpeed:950, shape:'bullet',
             desc:'데미지 17 · 연사속도 0.85초 · 준수한 위력과 안정적인 명중률의 표준형 권총'},

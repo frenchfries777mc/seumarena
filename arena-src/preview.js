@@ -77,6 +77,7 @@ function basicSpec(f) {
   if (h.splash && h.w && h.w.shape === 'rocket' && !h.wallPass) return R('rocket', { len: h.range, r: h.splash });
   if (h.splash) return R('lob', { len: h.range * (w.shape === 'bomb' || h.wallPass ? bombFrac(f) : 1), r: h.splash, over: h.w && (h.w.shape === 'bomb' || h.wallPass) ? 1 : 0 });      // over: thrown bombs fly over walls
   if (h.count > 1) return R('fan', { len: h.range, half: h.fan / 2, n: h.count });
+  if (h.burst > 1 && h.spread > 0) return R('spray', { len: h.range, half: h.spread, w: 26, dots: h.burst });      // 특수요원 등: fan as wide as the widest random spread, each edge stopping at walls
   if (h.burst > 1) return R('line', { len: h.range, w: 26, dots: h.burst });
   return R('line', { len: h.range, w: 26, over: h.wallPass ? 1 : 0 });
 }
@@ -121,6 +122,11 @@ function drawSpec(f, s, a, tx, ty, col, ready, move) {
       if (s.ticks) { ctx.beginPath(); ctx.arc(x, y, s.len, a - s.half, a + s.half); ctx.lineWidth = 4; ctx.stroke(); }
       if (s.flame) { ctx.setLineDash([4, 6]); ctx.beginPath(); ctx.arc(x, y, s.len * .55, a - s.half, a + s.half); ctx.stroke(); }
       if (s.suck) { for (const k of [.45, .75]) { const rr = s.len * k; ctx.beginPath(); ctx.arc(x, y, rr, a - s.half * .8, a + s.half * .8); ctx.stroke(); arrowHead(x + Math.cos(a) * rr, y + Math.sin(a) * rr, a + PI, 7); } }
+      break;
+    }
+    case 'spray': {      // 특수요원: plain fan, as wide as the widest random spread (engine emit: ang ± spread), stopping at walls like 'fan'
+      const d = Math.min(s.len, rayLen(x, y, a, s.len) + 40); sector(x, y, a, d, s.half);
+      ctx.fillStyle = ctx.strokeStyle; for (let i = 1; i <= s.dots; i++) { ctx.beginPath(); ctx.arc(x + Math.cos(a) * (20 + (d - 20) * i / (s.dots + 1)), y + Math.sin(a) * (20 + (d - 20) * i / (s.dots + 1)), 3, 0, 6.3); ctx.fill(); }
       break;
     }
     case 'fan': case 'fan2': {

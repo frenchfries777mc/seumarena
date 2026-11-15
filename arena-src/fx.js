@@ -66,7 +66,7 @@ FXF.sp = (type, x, y, ex) => {
   if (!fxInView(x, y) && type !== 'cfleet') return;
   if (type === 'cards') { if (state !== 'play') return; const c = document.getElementById('diceBannerContainer'); if (c) c.textContent = ''; }
   FX_GY = ex.gy != null ? ex.gy : y + 30; FX_NEW = ex.rot ? [] : null; FX_WID = ex.wid || null; FX_COS = ex.cos || null; FX_ANG = ex.rot || 0;
-  try { spawnFx0(Object.assign({ type, x, y }, ex)); } catch (e) {}
+  try { spawnFx0(Object.assign({ type, x, y }, ex)); } catch (e) { quietErr(e); }
   if (ex.rot && FX_NEW) { const c = Math.cos(ex.rot), s = Math.sin(ex.rot); for (const q of FX_NEW) rotQ(q, x, y, c, s); }
   FX_GY = null; FX_NEW = null; FX_WID = null; FX_COS = null;
 };
@@ -250,10 +250,10 @@ function drawShot(b) {          // a projectile in the original art, turned alon
 }
 function drawSwings(dt) {
   drawBuffAuras(dt);
-  try { drawSkillArt(); } catch (e) {}
+  try { drawSkillArt(); } catch (e) { quietErr(e); }
   for (let i = swings.length - 1; i >= 0; i--) {
     const s = swings[i]; s.life -= dt; if (s.life <= 0) { swings.splice(i, 1); continue; }
-    ctx.save(); try { drawProjectileBase(s); } catch (e) {} ctx.restore();
+    ctx.save(); try { drawProjectileBase(s); } catch (e) { quietErr(e); } ctx.restore();
   }
 }
 
@@ -345,21 +345,6 @@ function ultFx(f) {
 /* the layers every cast gets on top of its own effect (the original builds a skill from a wind-up, the strike itself and an after-glow:
    rings that come in, a fan of streaks along the aim, a column of light, staged ripples) */
 const later2 = (s, fn) => setTimeout(() => { try { fn(); } catch (e) { } }, s * 1000);
-function castLayers(f, def) {
-  const c = themeCol(f.h.id), a = +f.aim.toFixed(2), ca = Math.cos(f.aim), sa = Math.sin(f.aim), fy = f.y + BODY;
-  fxAt(f, 'converge', { color: c, r: def.k === 'buff' ? 74 : 58 });
-  if (def.k === 'hit') fx('fan', f.x + ca * 22, fy + sa * 22, { ang: a, color: c, n: 9, spread: .42, len: 330 });
-  else if (def.k === 'move') fx('afterimage', f.x, fy, { x2: Math.round(f.x + ca * 170), y2: Math.round(fy + sa * 170), color: c });
-  else fxAt(f, 'column', { color: c, h: 70 });
-}
-function ultStage(f) {
-  const T = (ULT_THEMES[f.h.id] || ULT_THEMES._), c = T.c, fy = f.y + BODY, big = { gy: f.y + 16 };
-  fx('glyph', f.x, f.y + 6, { color: c[0], r: 130, gy: f.y + 16 });
-  fx('column', f.x, fy, Object.assign({ color: c[0], h: 170 }, big));
-  for (let i = 0; i < 8; i++) fx('spark', f.x, fy - 8, Object.assign({ ang: +(i * Math.PI / 4).toFixed(2), color: i % 2 ? c[1] : c[0] }, big));
-  later2(.10, () => { if (f.dead) return; fx('skillring', f.x, fy, { color: c[1], r: 170 }); });
-  later2(.22, () => { if (f.dead) return; fx('skillring', f.x, fy, { color: c[2], r: 250 }); });
-}
 
 /* ---------- buffs you can see: while a power-up lasts, the one who has it shows it ----------
    (before, a buff was a ring at the moment of casting and then nothing). The host looks at the buffs a skill just gave (to the caster or
@@ -466,13 +451,27 @@ function drawWizCircle(z) {      // calm version (2026-11-13): soft floor, one c
   }
   ctx.restore(); ctx.globalAlpha = 1;
 }
+/* smoke: soft grey puffs that drift and breathe, no ring; they thin out over the last 0.6 s so nothing is left when the smoke ends */
+function drawSmokeCloud(z) {
+  const c = ctx, a = Math.min(1, z.t / .6) * Math.min(1, ((z.t0 || 2.5) - z.t) / .15), now = performance.now() / 1000, n = lowFx() ? 6 : 10, sd = z.x * .13 + z.y * .07;
+  if (!(a > 0)) return;
+  c.save();
+  for (let i = 0; i < n; i++) {
+    const ang = sd + i * 2.39996, d = i ? z.r * (.3 + .38 * ((i * 37) % 10) / 10) : 0, w = Math.sin(now * .7 + i * 1.3);
+    const px = z.x + Math.cos(ang + now * .08) * d, py = z.y + Math.sin(ang + now * .08) * d * .85, pr = z.r * (i ? .42 : .55) * (1 + .06 * w);
+    c.globalAlpha = a * (i % 3 ? .42 : .5); c.fillStyle = i % 3 === 1 ? '#c7ccd8' : i % 3 ? '#aab1c2' : '#9aa3b8';
+    c.beginPath(); c.arc(px, py, pr, 0, 6.3); c.fill();
+  }
+  c.restore();
+}
 function drawZoneArt(z, menu) {       // tail.js asks this for every zone first; true = drawn here
   if (z.kind && z.kind.startsWith('hb') && typeof drawHerbZone === 'function' && drawHerbZone(z)) return true;      // (약초꾼: herbshield.js)
   if ((z.kind === 'sprout' || z.kind === 'vine') && typeof drawGardenZone === 'function') return drawGardenZone(z);      // (정원사: gardener.js)
   if (z.col === '#9a4cff' && !z.kind) { drawDarkLump(z); return true; }
   if (z.kind === 'circle') { drawWizCircle(z); return true; }
   if (z.col === '#ff7a2a' && !z.kind) { drawFirePuddle(z); return true; }      // (폭발광 화염병)
-  if (z.kind === 'fire') { drawFirePuddle(z); return true; }      // fire3 fields (중화기병 화염 등): same flames, not a flat circle
+  if (z.kind === 'fire') { drawFirePuddle(z); return true; }
+  if (z.kind === 'smoke') { drawSmokeCloud(z); return true; }      // (특수요원 연막탄 · 연막 로켓)      // fire3 fields (중화기병 화염 등): same flames, not a flat circle
   return false;
 }
 function drawMuzzles() {               // the flash at the mouth of whatever fired (the original's drawMuzzle): bright for a few frames
@@ -579,7 +578,7 @@ function drawDragonMinion(m) {
   const face = Math.cos(m.a * .7 + Math.PI / 2) >= 0 ? -1 : 1;
   ctx.save(); ctx.translate(m.x, m.y - 40); ctx.scale(1.25, 1.25);
   ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 120, 70, 16, 0, 0, 6.3); ctx.fill();
-  try { drawFireDragon(ctx, performance.now(), face, 3, m.breath && time - m.breath < .42 ? 1 - (time - m.breath) / .42 : 0); } catch (e) {}
+  try { drawFireDragon(ctx, performance.now(), face, 3, m.breath && time - m.breath < .42 ? 1 - (time - m.breath) / .42 : 0); } catch (e) { quietErr(e); }
   ctx.restore();
 }
 function drawCrowMinion(m) {
@@ -908,19 +907,19 @@ function flagShow(f, scored) {
 /* ===== 2026-11-13: proper effects for the new skills (thrown grenade / molotov, fire puddle, axe whirl, neon trails, focus fire, syringe, exit) ===== */
 const LOBS = [], SPINS = [], SKTR = {};                 // flying thrown things, axe whirls, per-fighter trails (key = fighter index)
 const fxLow = () => typeof lowFx === 'function' && lowFx();
-FXF.lob = (x0, y0, x1, y1, d, kind) => { LOBS.push({ x0, y0, x1, y1, d, kind, t0: performance.now() }); try { sfx(kind === 'molo' ? 330 : 420, .12, 'triangle', .04, .7); } catch (e) {} };
+FXF.lob = (x0, y0, x1, y1, d, kind) => { LOBS.push({ x0, y0, x1, y1, d, kind, t0: performance.now() }); try { sfx(kind === 'molo' ? 330 : 420, .12, 'triangle', .04, .7); } catch (e) { quietErr(e); } };
 FXF.spin = (fi, r, d) => {
   const f = fighters[fi]; if (!f) return; SPINS.push({ fi, r, d, t0: performance.now(), dir: Math.cos(f.aim) < 0 ? -1 : 1, a0: f.aim });
   if (!fxInView(f.x, f.y)) return;
   burstP(f.x, f.y + 16, fxLow() ? 8 : 20, { a0: 0, a1: 6.28, s0: 160, s1: 360, l0: .35, l1: .6, z0: 5, z1: 10, colors: ['#b9a58a', '#8f7c62', '#d8cbb4'], drag: 3, shape: 'smoke', add: false });
-  try { snd({ n: .1, nt: 'bandpass', nf: 900, nd: .32, b: .12, bf: 160, be: 60, bd: .3, bt: 'sawtooth' }); } catch (e) {}
+  try { snd({ n: .1, nt: 'bandpass', nf: 900, nd: .32, b: .12, bf: 160, be: 60, bd: .3, bt: 'sawtooth' }); } catch (e) { quietErr(e); }
   if (typeof shakeFrom === 'function') shakeFrom(f.x, f.y, 5, 260);
 };
 FXF.trail = (fi, dur, col, style) => { SKTR[fi] = { until: performance.now() + dur * 1000, col, style, pts: [], last: 0 };
   const f = fighters[fi]; if (!f) return;
-  if (style === 'dash') try { snd({ n: .07, nt: 'highpass', nf: 2400, nd: .18, b: .08, bf: 900, be: 1800, bd: .16, bt: 'square' }); } catch (e) {}
-  if (style === 'haste') try { sfx(520, .25, 'sine', .05, 2.2); } catch (e) {}
-  if (style === 'focus') try { sfx(180, .3, 'sawtooth', .04, 1.8); } catch (e) {}
+  if (style === 'dash') try { snd({ n: .07, nt: 'highpass', nf: 2400, nd: .18, b: .08, bf: 900, be: 1800, bd: .16, bt: 'square' }); } catch (e) { quietErr(e); }
+  if (style === 'haste') try { sfx(520, .25, 'sine', .05, 2.2); } catch (e) { quietErr(e); }
+  if (style === 'focus') try { sfx(180, .3, 'sawtooth', .04, 1.8); } catch (e) { quietErr(e); }
 };
 FXF.exitpuff = (x, y, x2, y2) => {
   if (fxInView(x, y)) {
@@ -930,10 +929,10 @@ FXF.exitpuff = (x, y, x2, y2) => {
     addP({ x, y, life: .3, color: '#ff6b9a', shape: 'ring', r0: 6, r1: 70, lw: 4 });
   }
   if (x2 != null && fxInView(x2, y2)) { addP({ x: x2, y: y2, life: .25, color: '#ffffff', shape: 'flash', size: 60 }); burstP(x2, y2, 10, { a0: 0, a1: 6.28, s0: 60, s1: 200, l0: .3, l1: .5, z0: 2, z1: 3.5, colors: ['#ff6b9a', '#ffffff'], drag: 2 }); }
-  try { sfx(880, .08, 'square', .04, .5); setTimeout(() => { try { sfx(660, .18, 'triangle', .04, 1.5); } catch (e) {} }, 70); } catch (e) {}
+  try { sfx(880, .08, 'square', .04, .5); setTimeout(() => { try { sfx(660, .18, 'triangle', .04, 1.5); } catch (e) { quietErr(e); } }, 70); } catch (e) { quietErr(e); }
 };
 FXF.petals = (x, y, ang) => {                 // 꽃잎 바람: a fan of pink and white petals blown forward, swirling as they go
-  try { snd({ n: .08, nt: 'bandpass', nf: 1400, nd: .45, b: 0, bf: 0, be: 0, bd: 0 }); sfx(900, .3, 'sine', .03, .6); } catch (e) {}
+  try { snd({ n: .08, nt: 'bandpass', nf: 1400, nd: .45, b: 0, bf: 0, be: 0, bd: 0 }); sfx(900, .3, 'sine', .03, .6); } catch (e) { quietErr(e); }
   if (!fxInView(x, y)) return;
   const n = fxLow() ? 14 : 34, cols = ['#ffb3d1', '#ff8fb8', '#ffffff', '#ffd6e6', '#9be36f'];
   for (let i = 0; i < n; i++) { const a = ang + RND(-.6, .6), s = RND(380, 760), side = a - ang;
@@ -945,7 +944,7 @@ FXF.bowsnap = (x, y, ang) => {
   if (!fxInView(x, y)) return;
   addP({ x, y, life: .18, color: '#d8ffb0', shape: 'ring', r0: 4, r1: 26, lw: 2.5 });
   for (let i = 0; i < 5; i++) { const a = ang + Math.PI + RND(-.5, .5), s = RND(80, 200); addP({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, drag: 3, life: RND(.25, .45), size: 2.4, color: i % 2 ? '#9be36f' : '#ffffff', shape: 'streak' }); }
-  try { sfx(1200, .05, 'triangle', .035, .4); } catch (e) {}
+  try { sfx(1200, .05, 'triangle', .035, .4); } catch (e) { quietErr(e); }
 };
 const SKILL_FX2 = {
   'bow:5': f => { for (let i = 0; i < 3; i++) later2(i * .12, () => fxPlay('bowsnap', Math.round(f.x + Math.cos(f.aim) * 30), Math.round(f.y + BODY + Math.sin(f.aim) * 30), +f.aim.toFixed(2))); },
@@ -970,7 +969,7 @@ function lobLand(q) {
     for (let i = 0; i < (fxLow() ? 10 : 24); i++) { const a = RND(0, 6.28), s = RND(160, 420); addP({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 80, grav: 700, gy: y + RND(-60, 60), drag: 1.2, life: RND(.5, .9), size: RND(2.4, 3.6), color: i % 3 ? '#e9c46a' : '#8a5a2b', shape: 'dot', add: false }); }
     burstP(x, y, fxLow() ? 6 : 16, { a0: 0, a1: 6.28, s0: 100, s1: 300, l0: .6, l1: 1.1, z0: 3, z1: 5, colors: ['#7be05a', '#4caf50', '#b6f28a'], grav: 120, drag: 2, shape: 'square' });
     for (let i = 0; i < (fxLow() ? 3 : 7); i++) { const a = RND(0, 6.28), rr = RND(10, 80); addP({ x: x + Math.cos(a) * rr, y: y + Math.sin(a) * rr, vx: 0, vy: -30, life: .9, size: 5, color: '#6fd64a', shape: 'fire', add: false }); }
-    try { snd({ n: .08, nt: 'lowpass', nf: 900, nd: .25, b: .1, bf: 220, be: 90, bd: .3, bt: 'sine' }); sfx(700, .1, 'triangle', .03, 1.6); } catch (e) {}
+    try { snd({ n: .08, nt: 'lowpass', nf: 900, nd: .25, b: .1, bf: 220, be: 90, bd: .3, bt: 'sine' }); sfx(700, .1, 'triangle', .03, 1.6); } catch (e) { quietErr(e); }
     return;
   }
   if (q.kind === 'frag') {
@@ -982,7 +981,7 @@ function lobLand(q) {
     burstP(x, y, fxLow() ? 10 : 26, { a0: 0, a1: 6.28, s0: 120, s1: 380, l0: .35, l1: .7, z0: 5, z1: 11, colors: ['#ffe14d', '#ff9b2e', '#ff5a1f'], drag: 2.4, grav: -120, shape: 'fire' });
     addP({ x, y, life: .3, color: '#ffb347', shape: 'flash', size: 140 });
     addP({ x, y, life: .4, color: '#ff7a2a', shape: 'ring', r0: 10, r1: 95, lw: 6 });
-    try { snd({ n: .12, nt: 'lowpass', nf: 1800, nd: .4, b: .1, bf: 140, be: 50, bd: .35, bt: 'triangle' }); sfx(1500, .06, 'square', .03, .3); } catch (e) {}
+    try { snd({ n: .12, nt: 'lowpass', nf: 1800, nd: .4, b: .1, bf: 140, be: 50, bd: .35, bt: 'triangle' }); sfx(1500, .06, 'square', .03, .3); } catch (e) { quietErr(e); }
   }
 }
 function drawLob(q, now) {
@@ -1147,7 +1146,7 @@ function ucFace(f, px, bg) {      // head and shoulders of the caster, in their 
   const cv = document.createElement('canvas'); cv.width = cv.height = px;
   const c = cv.getContext('2d'); c.fillStyle = bg; c.fillRect(0, 0, px, px);
   const k = px / 36; c.translate(px / 2, px / 2 + 46 * k); c.scale(k, k);
-  try { drawStick(c, f.h.id, f.team === VIEW ? '#3fe0c5' : '#ff8a7a', .3, 0, 0, performance.now() / 1000, f.cos); } catch (e) {}
+  try { drawStick(c, f.h.id, f.team === VIEW ? '#3fe0c5' : '#ff8a7a', .3, 0, 0, performance.now() / 1000, f.cos); } catch (e) { quietErr(e); }
   return cv;
 }
 const ucAdd = (el, ms) => { document.body.appendChild(el); setTimeout(() => el.remove(), ms); return el; };
@@ -1160,7 +1159,7 @@ function ultCut(f) {
     w.innerHTML = '<i class="d"></i><i class="bd"></i><i class="who"></i><em></em><b></b><i class="fl"></i>';
     const cv = document.createElement('canvas'), ch = Math.round(Math.min(H * .24, 130)), k = ch / 120;
     cv.width = Math.round(ch * .8); cv.height = ch; const c = cv.getContext('2d'); c.translate(cv.width * .45, ch * .97); c.scale(k * .95, k * .95);
-    try { drawStick(c, f.h.id, '#3fe0c5', -.9, 0, .6, performance.now() / 1000, f.cos); } catch (e) {}
+    try { drawStick(c, f.h.id, '#3fe0c5', -.9, 0, .6, performance.now() / 1000, f.cos); } catch (e) { quietErr(e); }
     w.querySelector('.who').appendChild(cv);
     w.querySelector('em').textContent = (f.h.name || '') + ' · 궁극기'; w.querySelector('b').textContent = name + '!';
     ucAdd(w, 1000);
@@ -1178,4 +1177,4 @@ function ultCut(f) {
   t.innerHTML = '<small></small><b></b>'; t.firstChild.textContent = who + (f.nick ? ' · ' + f.h.name : ''); t.lastChild.textContent = name + '!';
   el.appendChild(t); ucCards.push(ucAdd(el, 2000));
 }
-FXF.cut = i => { try { ultCut(fighters[i]); } catch (e) {} };
+FXF.cut = i => { try { ultCut(fighters[i]); } catch (e) { quietErr(e); } };

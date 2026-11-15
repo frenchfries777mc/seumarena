@@ -10,11 +10,11 @@ endGame = function (keep) {
   const k = lastKO && performance.now() - lastKO.at < 700 ? lastKO : null;
   if (!k) return endGame0.apply(this, arguments);
   state = 'over';
-  if (NET.role === 'guest' && NET.stats) try { applyMatchStats(NET.stats); } catch (e) {}      // (the connection is closed before the result screen comes up)
+  if (NET.role === 'guest' && NET.stats) try { applyMatchStats(NET.stats); } catch (e) { quietErr(e); }      // (the connection is closed before the result screen comes up)
   const v = k.f, by = k.by && !k.by.dead && Math.hypot(k.by.x - v.x, k.by.y - v.y) < 9 * T ? k.by : null;
   KCAM = { t0: performance.now(), x: by ? (v.x + by.x) / 2 : v.x, y: (by ? (v.y + by.y) / 2 : v.y) + BODY, vx: v.x, vy: v.y + BODY, col: TC(by ? by.team : 1 - v.team), done: false };
   kcamSound();
-  try { showPlayUi(false); } catch (e) {}
+  try { showPlayUi(false); } catch (e) { quietErr(e); }
   setTimeout(() => { KCAM = null; FX_TS = 1; endGame0.call(null, keep); }, KC_MS);
 };
 function kcamSound() {      // a deep slowed-down boom with a falling ring over it
@@ -23,7 +23,7 @@ function kcamSound() {      // a deep slowed-down boom with a falling ring over 
     const t = ac.currentTime, v = (typeof SET === 'object' && SET.vol != null ? SET.vol / 100 : 1);
     const tone = (f0, f1, d, type, g0) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + d); g.gain.setValueAtTime(g0 * v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + d); };
     tone(110, 32, 1.1, 'sine', .22); tone(1320, 330, .9, 'triangle', .05); tone(660, 160, .7, 'sawtooth', .025);
-  } catch (e) {}
+  } catch (e) { quietErr(e); }
 }
 function kcamK() { return KCAM ? Math.min(1, (performance.now() - KCAM.t0) / KC_MS) : 0; }
 function kcamCam() {      // (tail.js render, after the camera is placed) ease in on the knock-out

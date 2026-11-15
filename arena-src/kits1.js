@@ -16,11 +16,10 @@ function hero(id, k) {
   k.skills = k.skills.map(s => Object.assign({ n: s[0], name: s[1], k: s[2], d: s[3], r: s[4], f: s[5] }, s[6]));
   HEROES[id] = Object.assign(h, k); h.hp *= STAT_X; ROSTER.push(id);
 }
-const smoke = (by, x, y, r, t) => zone({ by, x, y, r, t, col: '#9aa3b8', op: .55, fn: z => { for (const e of fighters) if (!e.dead && inZone(z, e)) { buff(e, 'slow', .2, .5); buff(e, 'blind', .25); } } });
+const smoke = (by, x, y, r, t) => zone({ by, x, y, r, t, t0: t, kind: 'smoke', col: '#9aa3b8', op: .55, fn: z => { for (const e of fighters) if (!e.dead && inZone(z, e)) { buff(e, 'slow', .2, .5); buff(e, 'blind', .25); } } });
 const fire3 = (by, x, y, r, t, dps) => zone({ by, x, y, r, t, col: '#ff7a1a', kind: 'fire', fn: (z, dt) => { z.acc += dt; if (z.acc >= .5) { z.acc -= .5; circ(by, z.x, z.y, z.r, dps * .5, { quiet: 1, el: 1, burn: [3, 1] }); } } });
 const trap = (by, x, y, t, max, key, fn, col, hidden) => { const mine = zones.filter(z => z.key === key && z.by === by); if (mine.length >= max) mine[0].dead = true;
   return zone({ by, x, y, r: 26, t, col: col || '#c9a463', key, hidden, op: .7, fn: z => { if (z.armed === undefined) z.armed = time + .4; if (time < z.armed) return; for (const e of foes(by)) if (!e.minion && inZone(z, e)) { z.dead = true; fn(e, z); fx('snare', z.x, z.y, { hit: true }); break; } } }); };
-const allCd = (f, n, noUlt) => { f.scd[0] -= n; f.scd[1] -= n; f.dcd -= n; if (!noUlt) f.ucd -= n; };
 const taken3 = f => f.recent.reduce((s, r) => s + r[1], 0);
 
 hero('sword', { p: ['기사도', '상대에게 피해를 줄 때마다 5% 확률로 120 추가 피해'],
@@ -203,6 +202,7 @@ hero('magiccard', { p: ['카드 마술', '기본 공격은 맞은 상대를 느�
     [4, '꽃 마술', 'buff', '손에서 꽃을 만들어 냄 · 다음 공격으로 꽃을 던져, 맞은 상대는 1초 동안 공격 불가 (10초 안에 던지지 않으면 사라짐)', [0, 7 * T], f => { f.st.flower = time + 10; }],
     [5, '카드 날리기', 'hit', '일반 공격(카드 3장 부채꼴)을 0.25초 간격으로 세 번 연속 발사', [0, 7 * T], f => seq(f, 3, .25, () => emit(f, f.aim))]
   ] });
+HEROES.magiccard.skMul = 1.1;      // 2026-11-15 user: 마술사 skill cooldowns a little longer (5→5.5 s, 10→11 s); ult unchanged
 HEROES.magiccard.tick = (o => function (f, dt) { o(f, dt); if (f.form === 'dove') { const e = nearest(f, 9 * T, null, 0, false); if (e) { f.kx = 0; const a = angTo(f, e); f.x += 0; moveFighter(f, Math.cos(a) * 240 * dt, Math.sin(a) * 240 * dt); if (dist(f, e) < 40) { buff(e, 'stun', .9); f.form = null; unbuff(f, 'fly'); unbuff(f, 'haste'); unstick(f); } } } })(HEROES.magiccard.tick);
 
 const CARD_V = c => c % 13 + 1, CARD_S = c => Math.floor(c / 13);

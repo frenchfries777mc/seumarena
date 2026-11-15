@@ -21,8 +21,8 @@ function hbPuddle(f, x, y) {
   } });
 }
 /* ---------- 약초꾼 ---------- */
-hero('herbal', { p: ['약초 향기', '물약이 깨진 자리 근처 아군(나 포함)은 체력 40 회복 · 상대에게 피해를 주면 그 피해의 8%만큼 내 체력 회복'],
-  onDeal(f, e, d, o) { if (!e.minion && !o.hbx) { const n = d / STAT_X * .08; if (n > 0) heal(f, n); } },
+hero('herbal', { p: ['약초 향기', '물약이 깨진 자리 근처 아군(나 포함)은 체력 40 회복 · 상대에게 피해를 주면 그 피해의 5%만큼 내 체력 회복'],
+  onDeal(f, e, d, o) { if (!e.minion && !o.hbx) { const n = d / STAT_X * .05; if (n > 0) heal(f, n); } },
   pre(f, o) { o.onEnd = b => { hbSplashHeal(f, b.x, b.y, 60, 4); hbPuddle(f, b.x, b.y); fxPlay('hbsplash', Math.round(b.x), Math.round(b.y), 0); }; return o; },
   ult: ['생명의 정원', '내 주변 반지름 4칸에 5초 동안 꽃밭이 피어남 · 안의 아군은 초당 체력 240 회복, 상대는 30% 둔화', [0, 6 * T], f => {
     const x = f.x, y = f.y;
@@ -44,11 +44,11 @@ hero('herbal', { p: ['약초 향기', '물약이 깨진 자리 근처 아군(나
       zone({ by: f, x: p.x, y: p.y, r: 2 * T, t: 4, col: HB.p, op: 0, kind: 'hbpoison', fn: (z, dt) => { z.acc += dt; if (z.acc < .5) return; z.acc -= .5; circ(f, z.x, z.y, z.r, 10, { quiet: 1, slow: [.8, .6] }); } });
       fxPlay('hbmist', Math.round(p.x), Math.round(p.y), 1);
     }],
-    [3, '응급 붕대', 'buff', '조준 방향 6칸 안의 아군 중 가장 많이 다친 아군에게 붕대를 던져 체력 900 회복 · 아군이 없으면 내 체력 600 회복', [0, 99 * T], (f, a) => {
+    [3, '응급 붕대', 'buff', '조준 방향 6칸 안의 아군 중 가장 많이 다친 아군에게 붕대를 던져 체력 900 회복 · 아군이 없으면 내 체력 450 회복', [0, 99 * T], (f, a) => {
       let t = null, s = 2;
       for (const o of allies(f)) { if (o === f) continue; const d = Math.hypot(o.x - f.x, o.y - f.y); if (d > 6 * T) continue; let da = Math.atan2(o.y - f.y, o.x - f.x) - a; da = Math.atan2(Math.sin(da), Math.cos(da)); if (!f.ai && Math.abs(da) > .6) continue; const k = o.hp / o.mhp; if (k < s) { s = k; t = o; } }
       if (t && t.hp >= t.mhp) t = null;
-      if (t) heal(t, 90); else heal(f, 60);
+      if (t) heal(t, 90); else heal(f, 45);
       const g = t || f; fxPlay('hbbandage', fighters.indexOf(f), fighters.indexOf(g));
     }, { ok: f => f.hp < f.mhp * .6 || !!hbMostHurt(f, 6 * T) && hbMostHurt(f, 6 * T).hp < hbMostHurt(f, 6 * T).mhp * .6 }],
     [4, '물약 소나기', 'hit', '조준한 곳 근처로 물약 5병을 한꺼번에 던짐 · 병마다 떨어지는 자리가 조금씩 흩어짐 · 한 병당 상대 126 피해, 깨진 자리 아군 40 회복', [0, 7 * T], (f, a) => {
@@ -57,7 +57,7 @@ hero('herbal', { p: ['약초 향기', '물약이 깨진 자리 근처 아군(나
       off.forEach(([da, dd], i) => later(i * .06, () => { if (!f.dead) hbPotion(f, a + da, d0 * (1 + dd)); }, f));
       fxPlay('hbvolley', fighters.indexOf(f), +a.toFixed(2));
     }],
-    [5, '해독 물약', 'buff', '물약을 마셔 체력 700 회복 + 1.5초 동안 이동속도 30% 증가', [0, 99 * T], f => { heal(f, 70); buff(f, 'haste', 1.5, 1.3); fxPlay('hbdrink', fighters.indexOf(f)); }, { ok: f => f.hp < f.mhp * .55 }]
+    [5, '해독 물약', 'buff', '물약을 마셔 체력 550 회복 + 1.5초 동안 이동속도 30% 증가', [0, 99 * T], f => { heal(f, 55); buff(f, 'haste', 1.5, 1.3); fxPlay('hbdrink', fighters.indexOf(f)); }, { ok: f => f.hp < f.mhp * .55 }]
   ] });
 HEROES.herbal.name = '약초꾼';
 HEROES.herbal.hp = 500 * STAT_X;
@@ -104,7 +104,7 @@ hero('shieldman', { p: ['든든한 방패', '이동속도 5% 느림 · 정면에
     }, { ok: f => !!hbMostHurt(f, 5 * T) }]
   ] });
 HEROES.shieldman.name = '방패병';
-HEROES.shieldman.hp = 850 * STAT_X;
+HEROES.shieldman.hp = 780 * STAT_X;      // 2026-11-15 user: 850 -> 780 (placeholder)
 HEROES.shieldman.xm = 1.4;
 for (const id of ['herbal', 'shieldman']) if (!ACTIVE_HEROES.includes(id)) ACTIVE_HEROES.push(id);
 ULT_THEMES.herbal = { c: [HB.g, '#fff4d6', HB.gd], k: 'wave', f: '200,255,210' };
@@ -228,7 +228,7 @@ function drawTauntMark(f) {
 }
 
 /* ================= effects (FXF: played on every screen through fxPlay) ================= */
-const hbSnd = o => { try { snd(o); } catch (e) {} };
+const hbSnd = o => { try { snd(o); } catch (e) { quietErr(e); } };
 FXF.hbsplash = (x, y) => {      // potion breaks: glass shards, a green puff, a couple of leaves float up
   if (!fxInView(x, y)) return;
   addP({ x, y, life: .25, color: '#c8ffd4', shape: 'flash', size: 70 });
@@ -263,7 +263,7 @@ FXF.hbgarden = (x, y) => {      // the garden bursts open: a ring of petals rush
   if (!fxInView(x, y)) return;
   addP({ x, y: y + 14, life: .5, color: '#d8ffd0', shape: 'flash', size: 200 });
   for (let i = 0; i < (fxLow() ? 12 : 30); i++) { const a = i / 30 * 6.28, s = RND(300, 420); addP({ x, y: y + 14, vx: Math.cos(a) * s, vy: Math.sin(a) * s * .62, drag: 3, life: RND(.6, .9), size: RND(3, 5), color: i % 3 ? '#fff4d6' : '#ffc2d6', shape: 'square' }); }
-  hbSnd({ b: .1, bf: 660, be: 880, bd: .6, bt: 'sine' }); try { sfx(990, .4, 'sine', .04, 1.2); } catch (e) {}
+  hbSnd({ b: .1, bf: 660, be: 880, bd: .6, bt: 'sine' }); try { sfx(990, .4, 'sine', .04, 1.2); } catch (e) { quietErr(e); }
 };
 FXF.hbraise = fi => {      // shield raised: a blue half-ring on the facing side with an arrow, a clank
   const f = fighters[fi]; if (!f || !fxInView(f.x, f.y)) return; const a = f.aim, y = f.y + BODY;

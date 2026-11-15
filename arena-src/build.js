@@ -5,12 +5,12 @@ let art=[fs.readFileSync(S+'art/chars.js','utf8').replace('const COSMETICS={};',
 // music: by default the page points at arena-src/art/music/*.mp3 (downloaded after the page is up); EMBED_MUSIC=1 puts the songs inside the file (standalone copy)
 const mus=n=>{if(!process.env.EMBED_MUSIC) return 'arena-src/art/music/'+n+'.mp3'; try{return fs.readFileSync(S+'art/music/'+n+'.mp3').toString('base64')}catch(e){return ''}};
 art+='\n'+fs.readFileSync(S+'art/emoji.js','utf8');
-art+='\n'+fs.readFileSync(S+'art/music.js','utf8').replace('@@LOBBY@@',()=>mus('lobby')).replace('@@BATTLE@@',()=>mus('battle'));
+art+='\n'+fs.readFileSync(S+'art/music.js','utf8').replace('@@LOBBY@@',()=>mus('lobby')).replace('@@BATTLE@@',()=>mus('battle')).replace('@@RESULT@@',()=>mus('result'));
 const menucss=fs.readFileSync(S+'art/menu.css','utf8');
 let head=fs.readFileSync(S+'head.html','utf8').replace('/*@@CHARS@@*/',()=>art).replace('/*@@MENUCSS@@*/',()=>menucss);
 // news: the list in ../news/news.json at build time is baked in (shown offline / where the live list cannot be read)
 const news=(()=>{try{return JSON.stringify(JSON.parse(fs.readFileSync(S+'../news/news.json','utf8'))).replace(/</g,'\\u003c')}catch(e){return 'null'}})();
-const src=head+'\n'+['engine.js','ball.js','kits1.js','kits2.js','social.js','fx.js','preview.js','gardener.js','boxer.js','herbshield.js','net.js','intro.js','news.js','sitebtn.js','cloud.js','mapart.js','killfx.js','tail.js'].map(f=>{const t=fs.readFileSync(S+f,'utf8');if(f==='tail.js'){const i=t.lastIndexOf('})();');return t.slice(0,i)+fs.readFileSync(S+'mobset.js','utf8')+'\n'+t.slice(i)} return f==='news.js'?t.replace('/*@@NEWS@@*/null',()=>news):t}).join('\n');
+const src=head+'\n'+['engine.js','ball.js','kits1.js','kits2.js','social.js','fx.js','preview.js','gardener.js','boxer.js','herbshield.js','net.js','intro.js','news.js','sitebtn.js','cloud.js','mapart.js','killfx.js','leave.js','tail.js'].map(f=>{const t=fs.readFileSync(S+f,'utf8');if(f==='tail.js'){const i=t.lastIndexOf('})();');return t.slice(0,i)+fs.readFileSync(S+'mobset.js','utf8')+'\n'+t.slice(i)} return f==='news.js'?t.replace('/*@@NEWS@@*/null',()=>news):t}).join('\n');
 fs.writeFileSync(process.env.OUT||require('path').join(__dirname,'..','seumarena.html'),src);
 fs.writeFileSync(require('path').join(__dirname,'t.html'),'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}[hidden]{display:none!important}</style></head><body>'+src+'</body></html>');
 // checks: syntax, and the same top-level name defined twice

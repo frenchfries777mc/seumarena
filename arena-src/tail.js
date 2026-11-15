@@ -10,9 +10,9 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   const ax = Math.cos(a), ay = Math.sin(a);
   PERSONA_FACE = face;
   c.save();
-  if (lux >= 3) { c.save(); try { drawSkinLux(c, lux, tint, now, 7, 'back'); } catch (e) {} c.restore(); }
-  if (spec) { try { const mo = skinMotion(sid, now / 1000); c.translate(mo.dx, mo.dy); c.rotate(mo.rot); } catch (e) {} }
-  c.save(); try { if (id === 'dracula') drawDraculaCape(c, -face, 3, SH, tint); if (id === 'kadas') drawKadasBack(c, -face, SH, HIP, t, cp); } catch (e) {} c.restore();
+  if (lux >= 3) { c.save(); try { drawSkinLux(c, lux, tint, now, 7, 'back'); } catch (e) { quietErr(e); } c.restore(); }
+  if (spec) { try { const mo = skinMotion(sid, now / 1000); c.translate(mo.dx, mo.dy); c.rotate(mo.rot); } catch (e) { quietErr(e); } }
+  c.save(); try { if (id === 'dracula') drawDraculaCape(c, -face, 3, SH, tint); if (id === 'kadas') drawKadasBack(c, -face, SH, HIP, t, cp); } catch (e) { quietErr(e); } c.restore();
   const body = () => { c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 5; c.lineCap = 'round'; c.lineJoin = 'round'; };
   body();
   const s = Math.sin(walk) * 6;
@@ -20,19 +20,19 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   c.beginPath(); c.moveTo(0, HIP); c.lineTo(7 - s, 0); c.stroke();
   c.beginPath(); c.moveTo(0, HIP); c.lineTo(0, SH); c.stroke();
   c.beginPath(); c.arc(0, HEADCY, HEADR, 0, 7); c.fill();
-  c.save(); try { if (WEAPON_PERSONA_NAME[id]) drawWeaponPersona(c, id, 0, HEADCY, HEADR, SH, tint, cp); } catch (e) {} c.restore();
+  c.save(); try { if (WEAPON_PERSONA_NAME[id]) drawWeaponPersona(c, id, 0, HEADCY, HEADR, SH, tint, cp); } catch (e) { quietErr(e); } c.restore();
   body();
   const hx = ax * reach, hy = SH + 6 + ay * reach;
   if (id !== 'harald') { c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(hx, hy); c.stroke(); }      // (하랄드 draws both of his bent arms himself, in art/chars.js)
   if (id === 'kadas') { c.strokeStyle = '#c4182e'; c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(hx, hy); c.stroke(); }
   if (id === 'samurai') { c.save(); try {      // 쌍검 사무라이 (2026-11-15): the off hand holds a second katana and sweeps the other way
     const b = swing > 0 && samHand !== 1 ? ang - (swing - .5) * 2.4 * face : ang + 1.05 * face, ox = -face * 3, bx = ox + Math.cos(b) * (reach - 3), by = SH + 7 + Math.sin(b) * (reach - 3);
-    body(); c.globalAlpha *= .82; c.beginPath(); c.moveTo(ox, SH + 7); c.lineTo(bx, by); c.stroke(); c.globalAlpha /= .82;      /* left arm a little behind the body (darker, shoulder offset) so the two hands read apart */ drawHeldWeapon(c, id, Math.cos(b), Math.sin(b), bx, by, swing, cp); } catch (e) {} c.restore(); }
-  c.save(); try { if (id === 'herbal' && typeof drawHerbal === 'function') drawHerbal(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'shieldman' && typeof drawShieldman === 'function') drawShieldman(c, { face, ax, ay, hx, hy, swing, t: now / 1000, HEADCY, HEADR, SH, HIP, tint, raise: 0 }); else if (id === 'gardener' && typeof drawGardener === 'function') drawGardener(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) {} c.restore();      // (정원사's hat, slingshot and pouch: gardener.js)
-  if (it && it.fx) { c.save(); try { drawSkinFx(c, lux >= 4 ? 'sparkle' : it.fx, lux >= 4 ? auroraHex(now / 1000 * .9, 1) : tint, 0, HEADCY, HEADR * 1.3, now); } catch (e) {} c.restore(); }
-  if (cos && cos.col && COSMETICS[cos.col] && COSMETICS[cos.col].shine) { c.save(); try { drawShineGlints(c, now, 0); } catch (e) {} c.restore(); }
+    body(); c.globalAlpha *= .82; c.beginPath(); c.moveTo(ox, SH + 7); c.lineTo(bx, by); c.stroke(); c.globalAlpha /= .82;      /* left arm a little behind the body (darker, shoulder offset) so the two hands read apart */ drawHeldWeapon(c, id, Math.cos(b), Math.sin(b), bx, by, swing, cp); } catch (e) { quietErr(e); } c.restore(); }
+  c.save(); try { if (id === 'herbal' && typeof drawHerbal === 'function') drawHerbal(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'shieldman' && typeof drawShieldman === 'function') drawShieldman(c, { face, ax, ay, hx, hy, swing, t: now / 1000, HEADCY, HEADR, SH, HIP, tint, raise: 0 }); else if (id === 'gardener' && typeof drawGardener === 'function') drawGardener(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) { quietErr(e); } c.restore();      // (정원사's hat, slingshot and pouch: gardener.js)
+  if (it && it.fx) { c.save(); try { drawSkinFx(c, lux >= 4 ? 'sparkle' : it.fx, lux >= 4 ? auroraHex(now / 1000 * .9, 1) : tint, 0, HEADCY, HEADR * 1.3, now); } catch (e) { quietErr(e); } c.restore(); }
+  if (cos && cos.col && COSMETICS[cos.col] && COSMETICS[cos.col].shine) { c.save(); try { drawShineGlints(c, now, 0); } catch (e) { quietErr(e); } c.restore(); }
   c.restore();
-  if (lux >= 3) { c.save(); try { drawSkinLux(c, lux, tint, now, 7, 'front'); } catch (e) {} c.restore(); }
+  if (lux >= 3) { c.save(); try { drawSkinLux(c, lux, tint, now, 7, 'front'); } catch (e) { quietErr(e); } c.restore(); }
 }
 /* hit flash: the figure is drawn into a small canvas and only that one picture goes through the filter
    (a filter left on while every line of the figure was drawn made each line its own filtered layer: very slow on phones) */
@@ -255,7 +255,6 @@ function render() {
   drawTiles(ctx, c0, c1, r0, r1, 1);      // walls go under the fighters, so a wall never covers a player
   if (typeof drawBall === 'function') drawBall(ctx);      // (볼 배틀, ball.js)
   const inBush = [];
-  if (me && state === 'play') { if (!drawPreviews(me)) drawBasicGuide(me); }
   const order = fighters.filter(f => !f.dead).concat(minions.filter(m => m.kind !== 'dragon' && m.kind !== 'crow')).sort((a, b) => a.y - b.y);
   for (const f of order) {
     if (f.minion) { drawMinion(f); continue; }
@@ -265,6 +264,7 @@ function render() {
   }
   drawFleet();
   drawTiles(ctx, c0, c1, r0, r1, 2);
+  if (me && state === 'play') { if (!drawPreviews(me)) drawBasicGuide(me); }      // previews over the bush tiles, so a bush never hides them
   for (const f of inBush) drawFighter(f, f.team === VIEW ? .6 : .85);
   for (const b of bullets) if (!(b.shape === 'potion' && typeof drawPotionShot === 'function' && drawPotionShot(b)) && !(b.shape === 'seed' && typeof drawSeedShot === 'function' && drawSeedShot(b)) && !drawShot(b)) drawBullet(b);      // shots and swings over walls and bushes, so nothing hides them
   { const now = performance.now(); drawSwings(Math.min(.05, (now - (render.last || now)) / 1000)); render.last = now; }
@@ -335,7 +335,8 @@ function updateHud() {
   if (hq) ['sb', 'sr', 'sg', 'sy'].forEach((id, i) => { const t = hq.ord[i], b = $(id).parentNode; $(id).textContent = hq.v[i] + '%'; b.style.setProperty('--p', hq.v[i] + '%'); b.style.setProperty('--c', TC(t)); b.classList.toggle('on', hq.own === t); });      // 4팀 핫존: four bars, mine first
   else { $('sb').textContent = mine; $('sr').textContent = theirs; $('sbL').textContent = curMode === 'ko3' ? '우리' : curMode === 'star' ? '내 별' : solo ? '킬' : '블루'; $('srL').textContent = curMode === 'ko3' ? '상대' : curMode === 'star' ? '1위' : solo ? '생존' : '레드'; }
   $('timer').textContent = ot ? '연장전' : Math.floor(tl / 60) + ':' + String(tl % 60).padStart(2, '0');
-  $('timer').classList.toggle('hot', ot || tl <= 15);
+  if (modeNow().fog) { const a = Math.floor(timeLeft); $('timer').textContent = Math.floor(a / 60) + ':' + String(a % 60).padStart(2, '0'); }
+  $('timer').classList.toggle('hot', ot || (tl <= 15 && !modeNow().fog) || (modeNow().fog && SZ.on && SZ.r < SZ.r0 - 1));
   ultBtn.style.setProperty('--p', up); ultBtn.classList.toggle('ready', up >= 100);
   $('ultName').textContent = c.un; $('ultHint').textContent = up >= 100 ? (touchUi() ? '궁극기' : 'R') : Math.ceil(c.u) + '초';
   dashBtn.style.setProperty('--p', dp); dashBtn.classList.toggle('ready', dp >= 100); $('dashHint').textContent = touchUi() ? '' : 'Q';
@@ -390,9 +391,9 @@ function setBeep() {
     const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
     o.type = 'triangle'; o.frequency.value = 660; g.gain.setValueAtTime(.07 * SET.vol / 100, t); g.gain.exponentialRampToValueAtTime(.0001, t + .18);
     o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + .18);
-  } catch (e) {}
+  } catch (e) { quietErr(e); }
 }
-function setMusicVol() { try { if (window.SeumMusic && SeumMusic.setVolume) SeumMusic.setVolume(SET.vol / 100 * .5); } catch (e) {} }      // music default is half of the slider: slider 100% = music 0.5
+function setMusicVol() { try { if (window.SeumMusic && SeumMusic.setVolume) SeumMusic.setVolume(SET.vol / 100 * .5); } catch (e) { quietErr(e); } }      // music default is half of the slider: slider 100% = music 0.5
 setMusicVol();
 $('setVol').addEventListener('input', e => { SET.vol = +e.target.value; $('setVolV').textContent = SET.vol + '%'; saveSet(); setMusicVol(); });
 $('setVol').addEventListener('change', setBeep);
@@ -408,14 +409,14 @@ addEventListener('keydown', e => { if (setEl.hidden) return; if (e.code === 'Esc
 /* ---------- device (모바일 / 컴퓨터): picked once on the first start, changed in the settings (engine.js DEVICE; net.js reads the same key) ---------- */
 function devFill() { const cur = DEVICE || deviceGuess(); for (const b of document.querySelectorAll('[data-dev]')) { const on = b.dataset.dev === cur; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); } document.body.classList.toggle('mob', cur === 'mobile'); if (typeof pcqFill === 'function') pcqFill(); }
 function setDevice(v) {
-  DEVICE = v; try { localStorage.setItem('seum_device', v); } catch (e) {}
+  DEVICE = v; try { localStorage.setItem('seum_device', v); } catch (e) { quietErr(e); }
   RSCALE = RS_STEPS[0]; resize(); touchUiSync(); devFill(); lastHud = '';
-  try { if (typeof window.netDeviceChanged === 'function') window.netDeviceChanged(); } catch (e) {}
+  try { if (typeof window.netDeviceChanged === 'function') window.netDeviceChanged(); } catch (e) { quietErr(e); }
 }
 for (const b of document.querySelectorAll('#setDev [data-dev]')) b.addEventListener('click', () => setDevice(b.dataset.dev));
 function pcqFill() { const r = $('setPcq'); if (r) r.hidden = mobileMode(); for (const b of document.querySelectorAll('#setPcq [data-pcq]')) { const on = b.dataset.pcq === PCQ; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); } }
 for (const b of document.querySelectorAll('#setPcq [data-pcq]')) b.addEventListener('click', () => {
-  PCQ = b.dataset.pcq; try { localStorage.setItem('seum_pcq', PCQ); localStorage.removeItem('seum_pcauto'); } catch (e) {}      // (picking 자동 again starts the measuring over)
+  PCQ = b.dataset.pcq; try { localStorage.setItem('seum_pcq', PCQ); localStorage.removeItem('seum_pcauto'); } catch (e) { quietErr(e); }      // (picking 자동 again starts the measuring over)
   pcInit(); resize(); pcqFill();
 });
 pcqFill();
@@ -452,10 +453,10 @@ function modeApply() {
   if (typeof modeChoice !== 'undefined') modeChoice = modeSel;
   if (mapChoice >= 0 && !modeMaps().includes(mapChoice)) { const i = mapByMode[mapKey(modeCur())]; mapChoice = Number.isInteger(i) && modeMaps().includes(i) ? i : -1; }      // a choice from another list (an older save): the group's remembered map, or random
 }
-try { const s = JSON.parse(localStorage.getItem('seumArena') || '{}'); if (HEROES[s.c]) chosen = s.c; if (s.m >= -1 && s.m < MAPS.length) mapChoice = s.m | 0; if (s.l && typeof s.l === 'object') loadouts = s.l; if (typeof s.g === 'string') modeSel = s.g; if (s.mm && typeof s.mm === 'object') mapByMode = s.mm; } catch (e) {}
+try { const s = JSON.parse(localStorage.getItem('seumArena') || '{}'); if (HEROES[s.c]) chosen = s.c; if (s.m >= -1 && s.m < MAPS.length) mapChoice = s.m | 0; if (s.l && typeof s.l === 'object') loadouts = s.l; if (typeof s.g === 'string') modeSel = s.g; if (s.mm && typeof s.mm === 'object') mapByMode = s.mm; } catch (e) { quietErr(e); }
 /* 듀얼 배틀 picks: slot 1 is always `chosen`, duelMore = slots 2 and 3 (null = empty, the engine fills an empty slot with a random hero) */
 let duelMore = [null, null], DSLOT = 0;
-try { const s = JSON.parse(localStorage.getItem('seumArena') || '{}'); if (Array.isArray(s.dl)) duelMore = [0, 1].map(i => HEROES[s.dl[i]] ? s.dl[i] : null); } catch (e) {}
+try { const s = JSON.parse(localStorage.getItem('seumArena') || '{}'); if (Array.isArray(s.dl)) duelMore = [0, 1].map(i => HEROES[s.dl[i]] ? s.dl[i] : null); } catch (e) { quietErr(e); }
 const duelIds = () => [chosen, ...duelMore];
 function myDuelLine() { return duelIds().filter(id => id && HEROES[id]).map(id => ({ hero: id, lo: loadoutOf(id), cos: myCos(id) })); }
 function duelPut(k, id) {      // a hero already in another slot swaps places with what was in slot k
@@ -473,7 +474,7 @@ function renderDuelLine() {
     box.append(b);
   });
 }
-const savePrefs = () => { mapByMode[mapKey(modeCur())] = mapChoice; try { localStorage.setItem('seumArena', JSON.stringify({ c: chosen, m: mapChoice, l: loadouts, g: modeSel, mm: mapByMode, dl: duelMore })); } catch (e) {} if (typeof cloudMark === 'function') cloudMark(); };
+const savePrefs = () => { mapByMode[mapKey(modeCur())] = mapChoice; try { localStorage.setItem('seumArena', JSON.stringify({ c: chosen, m: mapChoice, l: loadouts, g: modeSel, mm: mapByMode, dl: duelMore })); } catch (e) { quietErr(e); } if (typeof cloudMark === 'function') cloudMark(); };
 const KIND_LABEL = { melee: '근접', shot: '원거리', flame: '방사', cone: '흡입' }, SK_LABEL = { hit: '공격', move: '이동', buff: '강화' };
 /* skill / passive / ult texts are written in melee units; ranged heroes really deal DMG_RANGED more (engine.js damage), so their damage numbers are scaled when shown */
 function dmgDesc(h, t) {
@@ -500,6 +501,7 @@ function showScreen(id) {
   for (const s of lobby.querySelectorAll('.card')) s.classList.toggle('active', s.id === id);
   const menu = id === 'menuScreen'; if (id === 'weaponScreen') markMastery();
   $('brandDisplay').classList.toggle('show', menu); $('lobbyChar').classList.toggle('show', menu); $('acct').hidden = !menu; $('karma').hidden = !menu; $('quest').hidden = !menu; if ($('pass')) $('pass').hidden = !menu; $('topRight').hidden = !menu;
+  if (!menu) $('lobbyDuel').hidden = true;
   if (menu) { updatePick(); lobbyCharPlace(); }
 }
 /* the lobby figure stands on the bottom-left corner of the lowest menu button: its feet on the button's bottom edge, its body just left of the corner */
@@ -528,16 +530,43 @@ function lobbyCharPlace() {
   box.style.top = Math.round(r.bottom - feet) + 'px';
   box.style.left = Math.round(Math.max(80, Math.min(150, innerWidth * .1 + 40)) - dw / 2) + 'px';      // the figure stands near the left edge of the screen (the empty sides of the canvas may run off-screen)
   $('lobbyCharName').style.marginTop = Math.round(-(dh * .3) + 8) + 'px';
+  lobbyDuelPlace(cr, r.bottom, Math.min(...rs.map(q => q.left)));
+}
+/* 듀얼 배틀 on a wide screen (user 2026-11-15): picks 2 and 3 stand to the right of the big figure on the same floor; an empty pick is a '+' that opens the character list */
+function renderLobbyDuel() {
+  const box = $('lobbyDuel'); box.textContent = '';
+  if (modeSel !== 'duel') { box.hidden = true; return; }
+  duelMore.forEach((id, j) => {
+    const k = j + 1, b = document.createElement('button'), n = document.createElement('div'), no = document.createElement('b');
+    b.type = 'button'; b.className = 'ldS' + (id ? '' : ' add'); b.setAttribute('aria-label', k + '번 캐릭터' + (id ? ' ' + HEROES[id].name : ' 고르기'));
+    if (id) { const c = document.createElement('canvas'); c.width = 360; c.height = 414; c.dataset.id = id; b.append(c); drawPortrait(c, id); }
+    else { const c = document.createElement('div'), pl = document.createElement('div'); c.className = 'ldC'; pl.className = 'ldP'; pl.textContent = '+'; c.append(pl); b.append(c); }
+    n.className = 'ldN'; no.textContent = k + 1; n.append(no, id ? HEROES[id].name : '캐릭터 고르기'); b.append(n);
+    b.addEventListener('click', () => { DSLOT = k; showScreen('weaponScreen'); if (id) openDetail(id); else { closeDetail(); renderDuelLine(); } });
+    box.append(b);
+  });
+}
+function lobbyDuelPlace(cr, floor, right) {
+  const box = $('lobbyDuel'); if (modeSel !== 'duel' || !box.children.length) { box.hidden = true; document.body.classList.remove('ldOn'); return; }
+  const w = Math.round(cr.width * .72), off = Math.round(cr.width * .66), step = Math.round(cr.width * .5), cx = cr.left + cr.width / 2;
+  const fits = cx + off + step + w * .45 <= right - 16 && innerHeight >= 560; document.body.classList.toggle('ldOn', fits);
+  if (!fits) { box.hidden = true; return; }      // not enough room left of the menu: only the big figure, as before
+  box.hidden = false; box.style.columnGap = (step - w) + 'px';
+  const h = Math.round(w * 414 / 360);
+  for (const b of box.children) { const c = b.querySelector('canvas,.ldC'); c.style.width = w + 'px'; c.style.height = h + 'px'; }
+  box.style.setProperty('--nm', Math.round(-(h * .3) + 6) + 'px');
+  box.style.left = Math.round(cx + off - w / 2) + 'px'; box.style.top = Math.round(floor - h * .7) + 'px';
 }
 addEventListener('resize', () => lobbyCharPlace());
 function updatePick() {
+  renderLobbyDuel();
   const el = $('lobbyPick'), h = HEROES[chosen], lo = loadoutOf(chosen); el.textContent = '';
   const b2 = document.createElement('b'), b3 = document.createElement('b'), m = modeCur();
   b2.textContent = h.name; b3.textContent = lo.map(n => nameOf(h.skills.find(s => s.n === n))).join(' / ');
   el.append('캐릭터 ', b2, ' · 스킬 ', b3);
   modeIcon($('modeChipIco'), m); $('modeChipName').textContent = m.name;
   $('modeChipMeta').textContent = (m.size ? m.size + ' · ' : '') + (mapChoice < 0 ? '무작위 맵' : MAPS[mapChoice].name);
-  { const m = masteryOf(chosen), nm = $('lobbyCharName'), rk = document.createElement('small'); nm.textContent = h.name; rk.textContent = m.name; rk.style.color = m.col; nm.append(rk); }
+  { const m = masteryOf(chosen), nm = $('lobbyCharName'), rk = document.createElement('small'); nm.textContent = h.name; if (modeSel === 'duel') { const no = document.createElement('b'); no.className = 'ldNo'; no.textContent = '1'; nm.prepend(no); } rk.textContent = m.name; rk.style.color = m.col; nm.append(rk); }
 }
 function drawPortrait(canvas, id, breathe) {
   const c = canvas.getContext('2d'), k = canvas.width / 200;
@@ -676,7 +705,7 @@ function modeRules(m) {
   else if (m.id === 'hot4') r.push(['zone', (m.win || 100) + '%']);
   else if (m.id === 'ball') r.push(['ball', m.win + '골']);
   else if (m.win) r.push(['kill', m.win + '킬']);
-  if (m.time) r.push(['clock', (m.rounds ? '판당 ' : '') + mmss(m.time)]);
+  if (m.time) r.push(['clock', (m.rounds ? '판당 ' : '') + mmss(m.time)]); else if (m.fog) r.push(['zone', '좁혀지는 안개']);
   return r;
 }
 const modeMapCache = new Map();
@@ -798,7 +827,7 @@ function showModes() {
 }
 let modeResizeT = 0;
 addEventListener('resize', () => { if (!$('modeScreen').classList.contains('active')) return; clearTimeout(modeResizeT); modeResizeT = setTimeout(showModes, 150); });
-/* 오늘의 모드: the time left until 0:00 GMT on the mode screen; past midnight a mode that is now closed is swapped for an open one (a match being played goes on) */
+/* 오늘의 모드: the time left until the next 3-hour change on the mode screen; after a change a mode that is now closed is swapped for an open one (a match being played goes on) */
 function modeFixDay() { if (modeOk(MODE_LIST.find(x => x.id === modeSel))) return false; mapByMode = {}; mapChoice = -1; modeApply(); savePrefs(); if (state !== 'play') setup(false); return true; }      // the picked mode closed (a new GMT day): an open one instead
 let modeDayNow = typeof modeDay === 'function' ? modeDay() : 0;
 function modeDayTick() {
@@ -828,7 +857,7 @@ function enterPlay() {
   state = 'play'; feed.textContent = ''; lastHud = '';
   soloOutAt = 0; soloOutShown = false; $('specBack').hidden = true;
   mouse.down = false; stickM = stickA = pendingFire = null; wantUlt = wantDash = false; wantSk = [false, false]; pvClear();
-  lobby.hidden = true; cv.classList.remove('inLobby'); showPlayUi(true);
+  lobby.hidden = true; cv.classList.remove('inLobby'); showPlayUi(true); leaveMark(true);
 }
 function startMatch(humans) { setup(true, humans); enterPlay(); }
 /* the best fighter of the match, shown big for a moment before the result (head.html #mvpFx): the best of the winning team (of everyone on a draw), in solo the one left standing. A tap puts it away */
@@ -849,12 +878,12 @@ function mvpFx(win, draw) {
   fx.querySelector('.mvStat').textContent = (f.kos || 0) + '킬 · ' + Math.round(f.dealt || 0).toLocaleString('en-US');
   const close = () => { if (run !== mvpRun) return; mvpRun++; clearTimeout(mvpTimer); fx.classList.add('out'); mvpTimer = setTimeout(() => { fx.hidden = true; fx.classList.remove('out'); }, 220); };
   fx.onclick = close; mvpTimer = setTimeout(close, 2400);
-  [523, 659, 784, 1047].forEach((n, i) => setTimeout(() => { try { if (run === mvpRun) sfx(n, .2, 'triangle', .06); } catch (e) {} }, i * 110));
+  [523, 659, 784, 1047].forEach((n, i) => setTimeout(() => { try { if (run === mvpRun) sfx(n, .2, 'triangle', .06); } catch (e) { quietErr(e); } }, i * 110));
   (function fr(now) {
     if (run !== mvpRun) return;
     c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cvs.width, cvs.height); c.translate(cvs.width / 2, cvs.height - 40); c.scale(2.7, 2.7);
     c.shadowColor = col; c.shadowBlur = 10; c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 5; c.lineCap = 'round'; c.lineJoin = 'round';
-    try { drawWinPose(c, (f.cos && f.cos.pose) || 'pose_cheer', now / 1000, wid, tint); } catch (e) {}
+    try { drawWinPose(c, (f.cos && f.cos.pose) || 'pose_cheer', now / 1000, wid, tint); } catch (e) { quietErr(e); }
     requestAnimationFrame(fr);
   })(performance.now());
 }
@@ -897,6 +926,7 @@ function soloOutCheck() {
 /* watching on after being knocked out: the result screen is put away, the camera follows the ones still alive (render), a small button brings the result back */
 function soloWatch(on) { lobby.hidden = on; cv.classList.toggle('inLobby', !on); $('specBack').hidden = !on; if (!on) showScreen('overScreen'); }
 function endGame(keepRunning) {
+  leaveMark(false);
   if (keepRunning !== true) { state = 'over'; if (NET.role === 'guest' && NET.stats) applyMatchStats(NET.stats); hostEnd(); }
   if (soloOutShown) {      // this player already got the result screen (and the pay) when knocked out: now the match is really over, so the whole table is known
     showPlayUi(false); buildOverStats(false, false); $('specBtn').hidden = true; soloWatch(false); mvpFx(false, false); return;
@@ -918,11 +948,18 @@ function endGame(keepRunning) {
     const sk = pay ? streakStep(first, draw, oc.place >= 2 && oc.place <= (curMode === 'solo' || curMode === 'star' ? 3 : curMode === 'duo' || curMode === 'hot4' ? 2 : 0)) : null;      // 원 레프트 2-3등, 투 레프트 / 4팀 핫존 2등 keep the win streak
     if (sk) { pay.karma += sk.karma; pay.gold = Math.round(pay.gold * sk.gm); }
     { const e = $('streakGain'); e.hidden = !(sk && sk.st); if (sk && sk.st) { e.className = sk.st; e.textContent = sk.st === 'up' ? '🔥 ' + sk.ws + '연승' : sk.st === 'keep' ? '🔥 ' + sk.ws + '연승 유지' : '연승 끊김'; } }
-    $('goldGain').hidden = !pay;
+    $('goldGain').hidden = !pay; $('mpCard').hidden = true;
     if (pay) {
-      COS.gold += pay.gold; COS.karma += pay.karma; COS.xp += pay.xp; addMp(hid, pay.mp); dqMatch({ mode: curMode, win, kills: player.kos || 0, place: solo ? oc.place : 0, hero: hid, dealt: player.dealt || 0 }); achMatch({ mode: curMode, win, first, kills: player.kos || 0, deaths: player.deaths || 0, hero: hid, n: fighters.length, mvp: matchMvp(first, draw) === player }); saveCos(); goldUi();
+      const m0 = masteryOf(hid); COS.gold += pay.gold; COS.karma += pay.karma; COS.xp += pay.xp; addMp(hid, pay.mp); dqMatch({ mode: curMode, win, kills: player.kos || 0, place: solo ? oc.place : 0, hero: hid, dealt: player.dealt || 0 }); achMatch({ mode: curMode, win, first, kills: player.kos || 0, deaths: player.deaths || 0, hero: hid, n: fighters.length, mvp: matchMvp(first, draw) === player }); saveCos(); goldUi();
       $('goldGainN').textContent = '+' + pay.gold; $('karmaGain').hidden = !pay.karma; $('karmaGainN').textContent = '+' + pay.karma; $('mpGainN').textContent = '+' + pay.mp; $('xpGainN').textContent = '+' + pay.xp;
       $('mpGain').style.color = masteryOf(hid).col;
+      { /* mastery card: logo, rank, bar (old part solid, this match lighter), rank-up line */
+        const m1 = masteryOf(hid), up = m1.i > m0.i, c = m1.col; drawMasteryLogo($('mpLogo'), m1.i);
+        $('mpHero').textContent = HEROES[hid].name + ' 마스터리'; $('mpRank').textContent = m1.name; $('mpRank').style.color = c; $('mpCardN').textContent = '+' + pay.mp; $('mpCardN').style.color = c;
+        const old = up ? 0 : m0.into / m0.need * 100, now = m1.top ? 100 : m1.into / m1.need * 100, o = $('mpOld'), nw = $('mpNew');
+        o.style.background = nw.style.background = c; o.style.width = old + '%'; nw.style.transition = 'none'; nw.style.left = old + '%'; nw.style.width = '0'; void nw.offsetWidth; nw.style.transition = ''; nw.style.width = Math.max(0, now - old) + '%';
+        $('mpUp').hidden = !up; if (up) { $('mpUp').textContent = '▲ ' + m1.name + ' 달성!'; $('mpUp').style.color = c; }
+        $('mpCard').hidden = false; }
     }
   }
   $('specBtn').hidden = !(soloOutShown && state === 'play'); $('specBack').hidden = true;
@@ -930,7 +967,7 @@ function endGame(keepRunning) {
   emoteWheel(false); chatOpen(false);
   winScreen(win, draw); mvpFx(first, draw);
 }
-function toMenu() { mvpRun++; $('mvpFx').hidden = true; netReset(); VIEW = 0; state = 'menu'; setup(false); showPlayUi(false); lobby.hidden = false; cv.classList.add('inLobby'); showScreen('menuScreen'); }
+function toMenu() { leaveMark(false); mvpRun++; $('mvpFx').hidden = true; netReset(); VIEW = 0; state = 'menu'; setup(false); showPlayUi(false); lobby.hidden = false; cv.classList.add('inLobby'); showScreen('menuScreen'); }
 $('startBtn').addEventListener('click', startOnline);
 $('againBtn').addEventListener('click', () => { netReset(); if (state !== 'menu') { VIEW = 0; state = 'menu'; setup(false); } startOnline(); });
 $('lobbyBtn').addEventListener('click', toMenu);
@@ -939,7 +976,7 @@ $('specBack').addEventListener('click', () => soloWatch(false));
 $('roomCancelBtn').addEventListener('click', () => { netReset(); showScreen('menuScreen'); });
 $('goCosBtn').addEventListener('click', () => { showScreen('cosScreen'); renderCos(); });
 $('cosBackBtn').addEventListener('click', () => showScreen('menuScreen'));
-$('acctBtn').addEventListener('click', () => { const A = window.FFAuth; if (!A) return; if (!PROF.guest) { showScreen('profScreen'); renderProfile(); return; } try { A.openLogin(); } catch (e) {} });
+$('acctBtn').addEventListener('click', () => { const A = window.FFAuth; if (!A) return; if (!PROF.guest) { showScreen('profScreen'); renderProfile(); return; } try { A.openLogin(); } catch (e) { quietErr(e); } });
 tapBtnUi($('emoteBtn'), () => emoteWheel());
 tapBtnUi($('chatBtn'), () => chatOpen(true));
 $('chatSend').addEventListener('click', () => { sendChat($('chatInput').value); chatOpen(false); });
@@ -998,7 +1035,6 @@ function pointerEnd(e) {
   } else if (e.button === 0 || e.type === 'pointercancel') { if (mouse.down && e.type === 'pointerup' && e.button === 0 && state === 'play') mouseRel = true; mouse.down = false; }
 }
 cv.addEventListener('pointerup', pointerEnd); cv.addEventListener('pointercancel', pointerEnd);
-const tapBtn = (b, fn) => b.addEventListener('pointerdown', e => { e.preventDefault(); if (e.pointerType === 'touch') touchMode = true; fn(); });
 for (const [b, t] of [[ultBtn, ['u']], [dashBtn, ['d']], [skBtn[0], ['s', 0]], [skBtn[1], ['s', 1]]]) {
   b.addEventListener('pointerdown', e => { e.preventDefault(); if (e.pointerType === 'touch') touchMode = true; pvTouchStart(t, b, e); });
   b.addEventListener('pointermove', e => { const p = PV.touch, k = SET.aim / 100; if (p && k !== 1 && p.id === e.pointerId) pvTouchMove({ pointerId: e.pointerId, clientX: p.ox + (e.clientX - p.ox) * k, clientY: p.oy + (e.clientY - p.oy) * k }); else pvTouchMove(e); }); b.addEventListener('pointerup', pvTouchEnd); b.addEventListener('pointercancel', pvTouchEnd);
@@ -1048,7 +1084,7 @@ function frame(now) {
   if (state === 'play') updateHud();
   if (!still || now - stillAt > 1000 || stillW !== cv.width + 'x' + cv.height) { render(); stillAt = now; stillW = cv.width + 'x' + cv.height; }
   if (!lobby.hidden) {
-    if ($('menuScreen').classList.contains('active')) drawPortrait($('lobbyCharCanvas'), chosen, true);
+    if ($('menuScreen').classList.contains('active')) { drawPortrait($('lobbyCharCanvas'), chosen, true); if (!still && !$('lobbyDuel').hidden) for (const c of $('lobbyDuel').querySelectorAll('canvas')) drawPortrait(c, c.dataset.id, true); }
     else if (viewing) drawPortrait($('weaponPortraitCanvas'), viewing, true);
   }
   requestAnimationFrame(frame);
@@ -1062,7 +1098,7 @@ setInterval(() => {
   for (let t = el; t > 0; t -= .033) { if (state === 'play') step(Math.min(.033, t)); netTick(Math.min(.033, t)); }
 }, 50);
 addEventListener('beforeunload', () => netReset());
-document.addEventListener('visibilitychange', () => { try { if (ac && ac.state !== 'running' && ac.state !== 'closed') ac.resume().catch(() => {}); } catch (e) {} });      // sound effects: start again if the browser paused them while the tab was hidden
+document.addEventListener('visibilitychange', () => { try { if (ac && ac.state !== 'running' && ac.state !== 'closed') ac.resume().catch(() => {}); } catch (e) { quietErr(e); } });      // sound effects: start again if the browser paused them while the tab was hidden
 buildChars(); updatePick(); setup(false); loadAccount(); if (achScan()) saveCos(); setTimeout(() => achSync(true), 2500);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => lobbyCharPlace());
 setTimeout(lobbyCharPlace, 60);

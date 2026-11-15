@@ -5,12 +5,15 @@
      SA_GAME=/opt/sa-host/seumarena.html   게임 파일 (install.sh 가 받아 둬요)
      SA_WAITING=1      모드마다 기다리는 빈 방 수
      SA_MAX=12         한꺼번에 열어 둘 방 수 (진행 중 포함, 램 약 250MB/방)
-     SA_RESTART_H=6    이만큼 지나고 진행 중인 경기가 없으면 스스로 다시 시작 (새 게임 파일을 읽어요) */
+     SA_RESTART_H=6    이만큼 지나고 진행 중인 경기가 없으면 스스로 다시 시작 (새 게임 파일을 읽어요)
+     (대기: 다른 방에서 기다리는 사람이 아무도 없으면 15초 대신 3초만 기다려요) */
 const { chromium } = require('playwright');
 const fs = require('fs'), os = require('os');
 const GAME = process.env.SA_GAME || '/opt/sa-host/seumarena.html';
 const MAXR = Math.max(1, Math.min(+process.env.SA_MAX || 12, Math.floor(os.totalmem() / 1048576 / 250)));
 const WAITING = Math.max(1, +process.env.SA_WAITING || 1), RESTART_H = +process.env.SA_RESTART_H || 6;
+const online = () => live.reduce((n, h) => n + (h.closed ? 0 : h.humans | 0), 0);      // 지금 서버의 모든 방에 있는 사람 수
+const waitingElse = me => live.reduce((n, h) => n + (h === me || h.closed || h.started ? 0 : h.humans | 0), 0);      // 이 방 말고 다른 대기 방에 있는 사람 수
 const ORIGIN = 'https://sa-host.local/', ROOMS = 8;
 const T0 = Date.now(), log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -18,7 +21,7 @@ let browser = null, stopping = false, html = '', modes = [];
 const live = [];                 // {mode, k, page, ctx, started, closed}
 const blocked = new Map();
 const STATUS = process.env.SA_STATUS || '/opt/sa-host/status.json';
-function writeStatus() { try { fs.writeFileSync(STATUS + '.tmp', JSON.stringify({ t: Date.now(), pid: process.pid, rooms: live.length, playing: live.filter(h => h.started && !h.closed).length, opened: openedCount })); fs.renameSync(STATUS + '.tmp', STATUS); } catch (e) {} }
+function writeStatus() { try { fs.writeFileSync(STATUS + '.tmp', JSON.stringify({ t: Date.now(), pid: process.pid, rooms: live.length, online: online(), playing: live.filter(h => h.started && !h.closed).length, opened: openedCount })); fs.renameSync(STATUS + '.tmp', STATUS); } catch (e) {} }
 let openedCount = 0;       // 'mode:k' -> 이 시각까지 건너뛰어요 (사람이 그 방을 열어 쓰는 중)
 
 async function newTab() {
@@ -57,6 +60,8 @@ async function watch(h) {
     await sleep(1000);
     let st; try { st = await h.page.evaluate(() => window.__sad.status()); } catch (e) { return h.close('상태 읽기 실패'); }
     if (st.err) return h.close('오류 ' + st.err);
+    h.humans = st.ended ? 0 : st.humans | 0;
+    if (!st.started) { const sec = waitingElse(h) ? 15 : 3; if (h.wait !== sec) { h.wait = sec; try { await h.page.evaluate(n => window.__sad.setWait && window.__sad.setWait(n), sec); } catch (e) {} } }      // 다른 데서 기다리는 사람이 없으면 3초만 기다려요
     if (st.started && !t0) { t0 = Date.now(); h.started = true; log('경기 시작', h.mode, h.k, '사람', st.humans); }
     if (st.ended) { if (!endedAt) { endedAt = Date.now(); log('경기 끝', h.mode, h.k); } if (Date.now() - endedAt > 3000) return h.close('경기 끝남'); }
     if (!st.started && !st.live) return h.close('방이 닫혔어요');

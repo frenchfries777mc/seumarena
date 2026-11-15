@@ -6,13 +6,14 @@
    It follows the game by itself (state 'menu' -> lobby song, 'play' -> match song, 'over' -> match song, quieter), obeys the
    "소리 켬/끔" button (muted) and has its own volume: window.SeumMusic.setVolume(0..1) / getVolume(), kept in localStorage 'seumArenaMusicVol'. */
 const SeumMusic = (() => {
-  const DATA = { lobby: '@@LOBBY@@', battle: '@@BATTLE@@' };
+  const DATA = { lobby: '@@LOBBY@@', battle: '@@BATTLE@@', result: '@@RESULT@@' };
   const CREDIT = {
     lobby: { title: 'Pixelland' },
-    battle: { title: 'Just Nasty' }
+    battle: { title: 'Just Nasty' },
+    result: { title: 'Run Amok' }
   };
   const LIC = 'Licensed under Creative Commons: By Attribution 4.0 License', LIC_URL = 'http://creativecommons.org/licenses/by/4.0/';
-  const KEY = 'seumArenaMusicVol', GAIN = { lobby: .85, battle: .8 };   // (both songs were levelled to about the same loudness; this is the headroom under the sound effects)
+  const KEY = 'seumArenaMusicVol', GAIN = { lobby: .85, battle: .8, result: .8 };   /* result: "Run Amok", only while the match result screen is up */   // (both songs were levelled to about the same loudness; this is the headroom under the sound effects)
   let vol = .5, ac = null, started = false, tracks = {}, want = null, lastWant = null, credEl = null, credHide = 0, matchCredAt = 0;
   try { const v = parseFloat(localStorage.getItem(KEY)); if (v >= 0 && v <= 1) vol = v; } catch (e) { }
 
@@ -30,11 +31,12 @@ const SeumMusic = (() => {
       .catch(() => new Promise(r => setTimeout(r, 8000 * (tries + 1))).then(() => tries < 4 && fetchSong(name, tries + 1)));
   }
   let fetching = null;
-  function fetchAll() { if (!fetching) fetching = (async () => { for (const n of ['lobby', 'battle']) if (isPath(DATA[n]) && !blobs[n]) await fetchSong(n, 0); })(); return fetching; }
+  function fetchAll() { if (!fetching) fetching = (async () => { for (const n of NAMES) if (isPath(DATA[n]) && !blobs[n]) await fetchSong(n, 0); })(); return fetching; }
   if (isPath(DATA.lobby)) {
     const go = () => setTimeout(fetchAll, 1500);
     if (document.readyState === 'complete') go(); else addEventListener('load', go, { once: true });
   }
+  const NAMES = ['lobby', 'battle', 'result'];
   function make(name) {
     if (!DATA[name]) return null;
     let url;
@@ -49,7 +51,7 @@ const SeumMusic = (() => {
   function level(name) {
     let k = vol * (GAIN[name] || 1);
     if (typeof muted !== 'undefined' && muted) k = 0;
-    if (name === 'battle' && typeof state !== 'undefined' && state === 'over') k *= .45;
+    if (name === 'battle' && typeof state !== 'undefined' && state === 'over') k *= .45;      // (only until the result song has arrived)
     return k;
   }
   function setLevel(t, k, fast) {
@@ -71,7 +73,7 @@ const SeumMusic = (() => {
       inited = true;
       try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { }   // iPhone: music also plays with the ring/silent switch on silent
       try { const C = window.AudioContext || window.webkitAudioContext; ac = new C(); } catch (e) { ac = null; }
-      for (const n of ['lobby', 'battle']) { try { tracks[n] = make(n); } catch (e) { tracks[n] = null; } }
+      for (const n of NAMES) { try { tracks[n] = make(n); } catch (e) { tracks[n] = null; } }
     }
     try { if (ac && ac.state !== 'running') ac.resume(); } catch (e) { }
     started = true; tick();
@@ -80,7 +82,7 @@ const SeumMusic = (() => {
   }
   function ok() {                                         // done with taps once the sound system runs and every song exists, is primed or playing
     if (ac && ac.state !== 'running') return false;
-    for (const n of ['lobby', 'battle']) { const t = tracks[n]; if (DATA[n] || waiting[n] || (t && !t.primed && !(t.on && !t.a.paused))) return false; }
+    for (const n of NAMES) { const t = tracks[n]; if (DATA[n] || waiting[n] || (t && !t.primed && !(t.on && !t.a.paused))) return false; }
     return true;
   }
   function play(t) {
@@ -123,7 +125,7 @@ const SeumMusic = (() => {
     if (el.dataset.mode === String(mode)) return;
     el.dataset.mode = String(mode); el.textContent = '';
     el.classList.toggle('match', mode === 'match');
-    if (mode === 'lobby') { el.append(credLine('Just Nasty'), credLine('Pixelland')); licLines(el); }
+    if (mode === 'lobby') { el.append(credLine('Just Nasty'), credLine('Pixelland'), credLine('Run Amok')); licLines(el); }
     else if (mode === 'match') { el.append(credLine('Just Nasty')); licLines(el); }
     el.classList.toggle('show', !!mode);
   }
@@ -132,9 +134,12 @@ const SeumMusic = (() => {
     const st = typeof state !== 'undefined' ? state : 'menu';
     const brand = document.getElementById('brandDisplay');
     const lobbyMain = st === 'menu' && (!brand || brand.classList.contains('show'));
-    want = st === 'menu' ? 'lobby' : 'battle';
+    const ov = document.getElementById('overScreen'), lb = document.getElementById('lobby');
+    const result = !!(ov && ov.classList.contains('active') && (!lb || !lb.hidden) && st !== 'menu');      // the result screen is showing (also a knocked-out player's own result while the match goes on; not while watching)
+    want = st === 'menu' ? 'lobby' : result && tracks.result ? 'result' : 'battle';
+    if (want === 'result' && lastWant !== 'result' && tracks.result) { try { tracks.result.a.currentTime = 0; } catch (e) { } }      // from the start every time
     if (started) {
-      for (const n of ['lobby', 'battle']) {
+      for (const n of NAMES) {
         const t = tracks[n]; if (!t) continue;
         const k = want === n ? level(n) : 0;
         if (want === n && k > 0) play(t); else if (k === 0) stop(t);

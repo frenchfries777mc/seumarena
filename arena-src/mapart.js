@@ -7,7 +7,6 @@ const msH = (a, b, s) => { let h = (Math.imul(a | 0, 374761393) + Math.imul(b | 
 const msRGB = hex => { if (hex.length === 4) hex = '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3]; const n = parseInt(hex.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
 const msMix = (a, b, t) => { const A = msRGB(a), B = msRGB(b); return '#' + A.map((v, i) => Math.max(0, Math.min(255, Math.round(v + (B[i] - v) * t))).toString(16).padStart(2, '0')).join(''); };
 const msA = (hex, a) => { const [r, g, b] = msRGB(hex); return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')'; };
-const msLum = hex => { const [r, g, b] = msRGB(hex); return (r * .299 + g * .587 + b * .114) / 255; };
 /* the outline of a group of tiles as one path: outside corners rounded, inside corners filled with a small curve.
    grow > 0 makes the shape bigger than its tiles, grow < 0 smaller; oy moves it up/down (raised wall tops) */
 function msTile(g, same, cc, r, R, grow, oy) {
@@ -49,9 +48,6 @@ function msSoft(g, I, blur, alpha, col, draw, op, invert) {
   msPut(g, o, alpha, op);
 }
 function msEl(s, x, y, rx, ry) { s.moveTo(x + rx, y); s.ellipse(x, y, rx, ry, 0, 0, 6.3); }
-function msDots(g, x, y, n, sd, cols, rmin, rmax) {
-  for (let i = 0; i < n; i++) { g.fillStyle = cols[i % cols.length]; const rr = rmin + msH(sd, i, 7) * (rmax - rmin); g.fillRect(x + msH(sd, i, 3) * T, y + msH(sd, i, 5) * T, rr, rr); }
-}
 
 
 /* ---- B3 브롤 선명 + K7 솜털 덤불 (picked 2026-11-13): checker tiles with stone joints, tall blocks, soft drop shadows, stacked fluffy bushes ---- */
@@ -68,17 +64,8 @@ const msBushes = (I, fn) => msEach(I, (t, x, y, cc, r) => { if (t === 'g') fn(x,
 const msOpen = (I, cc, r) => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (I.at(cc + dx, r + dy) !== '.') return false; return true; };
 function msBg(g, I, col) { g.fillStyle = col; g.fillRect(-I.P, -I.P, I.cols * T + 2 * I.P, I.rows * T + 2 * I.P); }
 /* sun from the upper left: a shadow to the lower right of each wall (and bush) */
-function msSun(g, I, len, blur, alpha, col, bush) {
-  msSoft(g, I, blur, alpha, col, s => msEach(I, (t, x, y) => {
-    if (t === '#') { s.moveTo(x, y + T - 2); s.lineTo(x + T, y + T - 2); s.lineTo(x + T + len, y + T + len * .7); s.lineTo(x + T + len, y + len * .7); s.lineTo(x + T, y - 6); s.lineTo(x, y - 6); s.closePath(); }
-    else if (t === 'g' && bush) msEl(s, x + 34 + len * .4, y + T - 2, 32, 13);
-  }));
-}
 /* fill a shape with parallel lines (pencil hatching) */
-function msFlower(g, x, y, r, col, mid) { g.fillStyle = col; g.beginPath(); for (let p = 0; p < 5; p++) msEl(g, x + Math.cos(p * 1.257) * r, y + Math.sin(p * 1.257) * r, r * .8, r * .8); g.fill(); g.fillStyle = mid; g.beginPath(); msEl(g, x, y, r * .6, r * .6); g.fill(); }
 function msLeaf(g, x, y, len, wid, ang) { const c = Math.cos(ang), s = Math.sin(ang), px = -s * wid, py = c * wid; g.moveTo(x, y); g.quadraticCurveTo(x + c * len * .5 + px, y + s * len * .5 + py, x + c * len, y + s * len); g.quadraticCurveTo(x + c * len * .5 - px, y + s * len * .5 - py, x, y); }
-function msSprite(w, h, fn) { const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const s = cv.getContext('2d'); fn(s); return cv; }
-const msPx = (s, x, y, col, w, h) => { s.fillStyle = col; s.fillRect(x, y, w || 1, h || 1); };
 const msWave = (c, x, y, col, k, a, lw) => { const o = Math.sin(k) * 5; c.strokeStyle = col; c.globalAlpha = a; c.lineWidth = lw || 3; c.lineCap = 'round'; c.beginPath(); c.moveTo(x + 12 + o, y + 26); c.quadraticCurveTo(x + 20 + o, y + 21, x + 28 + o, y + 26); c.moveTo(x + 34 - o, y + 46); c.quadraticCurveTo(x + 42 - o, y + 41, x + 50 - o, y + 46); c.stroke(); c.globalAlpha = 1; };
 
 function msRing(g, I, col, alpha, outer, inner) { const [cv, s] = msCanvas(g, I, 1); s.fillStyle = col; s.beginPath(); outer(s); s.fill(); s.globalCompositeOperation = 'destination-out'; s.beginPath(); inner(s); s.fill(); msPut(g, cv, alpha); }
@@ -244,6 +231,11 @@ function maFind(c) {
   if (!e) { while (MA.main.length >= (mobileMode() ? 1 : 2)) MA.main.shift(); e = maPaint(k, MAP, TH); MA.main.push(e); }      // phones keep one painting (memory); PCs two (lobby + match)
   return e;
 }
+function maTempWall(c, cc, r) {        // a wall a skill raises for a moment (특수요원 방벽 등)
+  const x = cc * T, y = r * T, H = MAP_ART.H;
+  c.fillStyle = '#2b6f8a'; c.beginPath(); c.roundRect(x + 2, y + T - H - 8, T - 4, H + 8, 6); c.fill();
+  c.fillStyle = '#56b4e9'; c.beginPath(); c.roundRect(x + 2, y - H, T - 4, T - 4, 6); c.fill();
+}
 function MS_draw(c, c0, c1, r0, r1, pass) {
   const e = maFind(c);
   if (pass === 0) {
@@ -257,13 +249,12 @@ function MS_draw(c, c0, c1, r0, r1, pass) {
   } else if (pass === 1) {
     maBlit(c, e, e.w, c0, c1, r0, r1, e.ws);
     if (tempWalls.size) for (let r = r0; r <= r1; r++) for (let cc = c0; cc <= c1; cc++) if (tile(cc, r) === '#' && MAP[r][cc] !== '#') {      // walls a skill raises for a moment
-      const x = cc * T, y = r * T, H = MAP_ART.H;
-      c.fillStyle = '#2b6f8a'; c.beginPath(); c.roundRect(x + 2, y + T - H - 8, T - 4, H + 8, 6); c.fill();
-      c.fillStyle = '#56b4e9'; c.beginPath(); c.roundRect(x + 2, y - H, T - 4, T - 4, 6); c.fill();
+      if (MAP[r][cc] !== 'g' && MAP[r][cc] !== 'G') maTempWall(c, cc, r);
     }
   } else {
     maBlit(c, e, e.b, c0, c1, r0, r1, e.bs);
     for (let r = r0; r <= r1; r++) for (let cc = c0; cc <= c1; cc++) if (MAP[r][cc] === 'G' && typeof drawPlantTile === 'function') drawPlantTile(c, cc, r, cc * T, r * T);      // (정원사's bushes: gardener.js)
+    if (tempWalls.size) for (let r = r0; r <= r1; r++) for (let cc = c0; cc <= c1; cc++) if ((MAP[r][cc] === 'g' || MAP[r][cc] === 'G') && tile(cc, r) === '#') maTempWall(c, cc, r);      // a raised wall inside a bush: drawn over the bush, or the bush hides it
   }
   return true;
 }

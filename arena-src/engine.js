@@ -1,3 +1,6 @@
+/* errors that are caught on purpose still leave one line in the console (each message once), so a bug does not vanish without a trace */
+const quietSeen = new Set();
+function quietErr(e) { try { const m = String(e && e.message || e); if (quietSeen.has(m) || quietSeen.size > 200) return; quietSeen.add(m); console.warn("[SeumArena]", m); } catch (_) { } }
 /* ===== arena engine ===== */
 const T = 64, BODY = -14, U = .6;
 const MAPS = [
@@ -138,7 +141,7 @@ const MODES = [
   { id: 'solo', name: '원 레프트', size: '8명', teams: 8, per: 1, respawn: false, win: 1, time: 150, rounds: 0, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },
   { id: 'duo', name: '투 레프트', size: '4팀', teams: 4, per: 2, respawn: false, win: 1, time: 150, rounds: 0, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },      // 2026-11-14 (developer): 4 pairs (was 5); a fallen fighter comes back next to a living partner after DUO_BACK s, both down = the pair is out. Same maps as 원 레프트      // 2026-11-13 (developer): 3 x 4 teams around one circle; maps = every MAPS entry with hot:1
   { id: 'flag', name: '캡쳐 플래그', size: '5v5', teams: 2, per: 5, respawn: true, win: 3, time: 240, rounds: 0, maps: [11, 12, 13, 14, 15, 16, 25], ready: true },      // 2026-11-12: the 3v3 version was dropped, 캡쳐 플래그 is 5v5 on the 5 big flag maps
-  { id: 'duel', name: '듀얼 배틀', size: '1v1', teams: 2, per: 1, respawn: false, win: DUEL_N, time: 60, rounds: DUEL_N, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true },      // 듀얼 배틀 and 팀 아웃 share one map list (user 2026-11-13): keep the two lists the same
+  { id: 'duel', name: '듀얼 배틀', size: '1v1', teams: 2, per: 1, respawn: false, win: DUEL_N, time: 0, rounds: DUEL_N, fog: 1, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true },      // 듀얼 배틀 and 팀 아웃 share one map list (user 2026-11-13): keep the two lists the same
   { id: 'ball', name: '볼 배틀', size: '3v3', teams: 2, per: 3, respawn: true, win: 3, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.ball ? i : -1).filter(i => i >= 0), ready: true },      // 2026-11-14 (user): 축구, ball.js
   { id: 'star', name: '리워드 헌터', size: '8명', teams: 8, per: 1, respawn: true, win: 0, time: 150, rounds: 0, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },      // 2026-11-15 (user): bounty, 8 players each alone. A kill takes the victim's stars (2..7)
   { id: 'ko3', name: '라스트 팀', size: '3팀', teams: 3, per: 4, respawn: false, win: 2, time: 90, rounds: 3, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },      // 2026-11-15 (user): knockout 4v4v4, no respawn inside a round, the last team standing takes it, first to 2 rounds
@@ -146,18 +149,20 @@ const MODES = [
 ];
 for (const m of MODES) m.max = m.teams * m.per;
 /* 오늘의 모드 (user 2026-11-15, the same way Stickseum does it): similar modes are put in one group, `n` of each group are drawn every day and only those can be
-   played. The draw comes from the GMT date, so everyone gets the same list with no server, and it changes at 0:00 GMT. A group with n >= its size is always open.
+   played. The draw comes from the GMT clock, so everyone gets the same list with no server, and it changes every 3 hours from 0:00 GMT (user 2026-11-15:
+   0, 3, 6 ... 21 GMT = KST 9, 12, 15 ... 6). A group with n >= its size is always open.
    Change the groups and numbers here. Ids not (yet) in MODES are skipped. */
 const MODE_GROUPS = [
   { name: '생존', ids: ['solo', 'duo', 'ko3'], n: 2 },      // last one / last pair / last team standing
   { name: '킬 대결', ids: ['team', 'duel', 'star'], n: 2 },      // the score is knockouts
   { name: '목표', ids: ['flag', 'ball', 'hot4'], n: 2 }      // the score is an objective (flag, goal, zone)
 ];
-const MODE_EPOCH = 20403;      // 2025-11-11 (a day number, days since 1970-01-01 GMT): the no-repeat chain starts here
-const modeDay = (t = Date.now()) => Math.floor(t / 86400000);
-const modeDayLeft = (t = Date.now()) => 86400000 - t % 86400000;      // ms until the list changes
+const MODE_SLOT = 3 * 3600000;      // the list lasts 3 hours (a divisor of 24 h, so a change always falls on 0:00 GMT)
+const MODE_EPOCH = 20403 * 8;      // 2025-11-11 0:00 GMT, in 3-hour slots since 1970-01-01: the no-repeat chain starts here
+const modeDay = (t = Date.now()) => Math.floor(t / MODE_SLOT);      // the 3-hour slot number (the name is kept from the daily version)
+const modeDayLeft = (t = Date.now()) => MODE_SLOT - t % MODE_SLOT;      // ms until the list changes
 const MODE_DAYS = {};
-function modeLineup(d = modeDay()) {      // { id: true } for the modes open on GMT day d; where a group can, it avoids yesterday's picks
+function modeLineup(d = modeDay()) {      // { id: true } for the modes open in 3-hour slot d; where a group can, it avoids the last slot's picks
   if (MODE_DAYS[d]) return MODE_DAYS[d];
   const prev = d > MODE_EPOCH ? (MODE_DAYS[d - 1] || (() => { let k = d - 1; while (k > MODE_EPOCH && !MODE_DAYS[k - 1]) k--; for (; k < d; k++) modeLineup(k); return MODE_DAYS[d - 1]; })()) : {};
   let h = (d * 2654435761) >>> 0; const rnd = () => { h = (h + 0x6D2B79F5) >>> 0; let z = h; z = Math.imul(z ^ (z >>> 15), z | 1); z ^= z + Math.imul(z ^ (z >>> 7), z | 61); return ((z ^ (z >>> 14)) >>> 0) / 4294967296; };
@@ -165,10 +170,10 @@ function modeLineup(d = modeDay()) {      // { id: true } for the modes open on 
   for (const g of MODE_GROUPS) {
     const pool = g.ids.filter(id => MODES.some(m => m.id === id && m.ready)); for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
     const n = Math.max(0, g.n | 0), fresh = pool.filter(id => !prev[id]), old = pool.filter(id => prev[id]);
-    for (const id of fresh.concat(old).slice(0, n)) out[id] = true;      // modes that were off yesterday come first, so nothing stays off two days running when the group allows it
+    for (const id of fresh.concat(old).slice(0, n)) out[id] = true;      // modes that were off in the last slot come first, so nothing stays off two slots running when the group allows it
   }
   for (const m of MODES) if (m.ready && !MODE_GROUPS.some(g => g.ids.includes(m.id))) out[m.id] = true;      // a mode in no group is always open
-  for (const k in MODE_DAYS) if (k < d - 3) delete MODE_DAYS[k];
+  for (const k in MODE_DAYS) if (k < d - 9) delete MODE_DAYS[k];
   return MODE_DAYS[d] = out;
 }
 const modeOpen = (id, d) => !!modeLineup(d)[id];
@@ -180,6 +185,7 @@ let modeChoice = 'team', curMode = 'team', RD = { n: 1, pause: 0, win: -1, out: 
 /* 캡쳐 플래그: one flag per team. by = index of the fighter carrying it (-1 = on the ground), home = standing on its base, back = seconds until a dropped flag goes home by itself */
 let FLAGS = [];
 const FLAG_BACK = 8, FLAG_R = 38;
+const DUEL_FOG = { wait: 12, close: 45 };      // 듀얼 배틀 (user 2026-11-15): no clock; each round the fog starts closing after `wait` s and covers the whole map `close` s later (placeholder values)
 const SZ = { on: false, x: 0, y: 0, r: 0, r0: 0, gx: 0, gy: 0, acc: 0 }, SZ_WAIT = 12, SZ_MIN = 2.2 * T; const SOLO_GUARD = 2.5;
 /* 4팀 핫존: one circle in the middle of the map. The team with the most fighters in it fills its bar (HZ.p, 0..100; score[t] = the whole percent); two or more teams in it = nobody fills.
    own: -1 empty, -2 contested, else the team filling. n: fighters of each team inside. SP: three spawn spots per corner (team 0 top left, 1 top right, 2 bottom left, 3 bottom right) */
@@ -234,7 +240,7 @@ let touchMode = false, mouseRel = false, stickM = null, stickA = null, pendingFi
 /* device: 'mobile' or 'pc', picked on the first start (tail.js) and changed in the settings; net.js reads the same key. Until it is picked, a phone or tablet
    (coarse pointer) counts as mobile. Mobile is tuned for speed first (2026-11-13, user): the canvas is drawn at a lower pixel ratio (RSCALE: 1.25, lowered to 1 / .8 by tail.js rsWatch while a phone
    can not keep up), no blurred glows (shadowBlur is ignored on the game canvas), far fewer particles (social.js) and a still lobby background (tail.js); pc stays as it was */
-let DEVICE = ''; try { const v = localStorage.getItem('seum_device'); if (v === 'mobile' || v === 'pc') DEVICE = v; } catch (e) {}
+let DEVICE = ''; try { const v = localStorage.getItem('seum_device'); if (v === 'mobile' || v === 'pc') DEVICE = v; } catch (e) { quietErr(e); }
 const devMq = matchMedia('(pointer:coarse)'), deviceGuess = () => devMq.matches ? 'mobile' : 'pc';
 const mobileMode = () => (DEVICE || deviceGuess()) === 'mobile';
 let RSCALE = 1.25;
@@ -243,16 +249,16 @@ let RSCALE = 1.25;
    then tail.js rsWatch steps the pixel ratio down while frames are slow (2 > 1.5 > 1.25 > 1); still slow at 1 = pcLite: the phone's light effects (fewer bits, no blur).
    high = always 2 and full effects, low = 1 and light effects */
 const PC_STEPS = [2, 1.5, 1.25, 1];
-let PCQ = 'auto'; try { const v = localStorage.getItem('seum_pcq'); if (v === 'high' || v === 'low') PCQ = v; } catch (e) {}
+let PCQ = 'auto'; try { const v = localStorage.getItem('seum_pcq'); if (v === 'high' || v === 'low') PCQ = v; } catch (e) { quietErr(e); }
 const pcWeak = () => (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
 let PCSCALE = 2, pcLite = false;
 function pcInit() {
   if (PCQ === 'high') { PCSCALE = 2; pcLite = false; return; }
   if (PCQ === 'low') { PCSCALE = 1; pcLite = true; return; }
   PCSCALE = pcWeak() ? 1.5 : 2; pcLite = false;
-  try { const o = JSON.parse(localStorage.getItem('seum_pcauto') || 'null'); if (o && PC_STEPS.includes(o.s)) { PCSCALE = o.s; pcLite = !!o.l; } } catch (e) {}
+  try { const o = JSON.parse(localStorage.getItem('seum_pcauto') || 'null'); if (o && PC_STEPS.includes(o.s)) { PCSCALE = o.s; pcLite = !!o.l; } } catch (e) { quietErr(e); }
 }
-function pcSave() { if (PCQ === 'auto') try { localStorage.setItem('seum_pcauto', JSON.stringify({ s: PCSCALE, l: pcLite })); } catch (e) {} }
+function pcSave() { if (PCQ === 'auto') try { localStorage.setItem('seum_pcauto', JSON.stringify({ s: PCSCALE, l: pcLite })); } catch (e) { quietErr(e); } }
 pcInit();
 const liteMode = () => mobileMode() || pcLite;      // light effects: a phone, or a computer that could not keep up
 function resize() {
@@ -267,9 +273,9 @@ function fitCanvas() {
   const d = Math.min(window.devicePixelRatio || 1, mobileMode() ? RSCALE : PCSCALE);
   if (W !== window.innerWidth || H !== window.innerHeight || DPR !== d || cv.width !== Math.round(W * d) || cv.height !== Math.round(H * d)) resize();
 }
-if (window.ResizeObserver) try { new ResizeObserver(() => fitCanvas()).observe(cv); } catch (e) {}
+if (window.ResizeObserver) try { new ResizeObserver(() => fitCanvas()).observe(cv); } catch (e) { quietErr(e); }
 { const d = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'shadowBlur');      // mobile: blurred glows are the most expensive thing a phone can be asked to draw, so the game canvas ignores them
-  if (d && d.set && d.get) try { Object.defineProperty(ctx, 'shadowBlur', { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, liteMode() ? 0 : v); } }); } catch (e) {} }
+  if (d && d.set && d.get) try { Object.defineProperty(ctx, 'shadowBlur', { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, liteMode() ? 0 : v); } }); } catch (e) { quietErr(e); } }
 
 let ac = null, muted = false;
 function sfx(freq, dur, type, vol, slide) {
@@ -280,7 +286,7 @@ function sfx(freq, dur, type, vol, slide) {
     if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq * slide), t + dur);
     g.gain.setValueAtTime(vol || .05, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
     o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur);
-  } catch (e) {}
+  } catch (e) { quietErr(e); }
 }
 
 /* ---------- buffs ---------- */
@@ -456,7 +462,7 @@ function ultEase(h) {
   let m;
   if (h.type === 'melee') m = 1.15 * Math.pow(1.6 * T / Math.max(T, h.range || T), .3) * (h.half > 1.2 ? .9 : 1);
   else {
-    let w = 5; try { const o = h.pre ? h.pre({ h, st: {}, b: {}, x: 0, y: 0 }, {}) : null; if (o) w = (o.r || 5) + (o.pad || 0); } catch (e) {}
+    let w = 5; try { const o = h.pre ? h.pre({ h, st: {}, b: {}, x: 0, y: 0 }, {}) : null; if (o) w = (o.r || 5) + (o.pad || 0); } catch (e) { quietErr(e); }
     m = Math.pow(7 * T / clamp(h.range || 500, 3 * T, 14 * T), .3) * Math.pow(5 / w, .25) * (h.pierce ? .85 : 1) * (h.splash ? .85 : 1);
   }
   return (h._ue = clamp(m, .75, 1.35));
@@ -663,7 +669,7 @@ function useSkill(f, i) {
   if (state === 'play' && (f.isPlayer || visibleTo(f, VIEW))) sfx(def.k === 'buff' ? 520 : def.k === 'move' ? 380 : 260, .16, 'triangle', .05, 1.6);
   return true;
 }
-function skillCd(f, i) { const def = f.sk[i]; let cd = i === 0 ? (def.cd1 || CD1) : CD2; if (f.h.cdMul) cd *= f.h.cdMul(f); return cd; }
+function skillCd(f, i) { const def = f.sk[i]; let cd = i === 0 ? (def.cd1 || CD1) : CD2; if (f.h.cdMul) cd *= f.h.cdMul(f); if (f.h.skMul) cd *= f.h.skMul; return cd; }
 function useUlt(f) {
   const u = f.h.ult;
   if (f.ucd > 0 || !canAct(f) || B(f, 'charm') || f.noSkill) return false;
@@ -1090,21 +1096,21 @@ function step(dt) {
 function roundStep(dt) {
   const MODE = modeNow();
   if (RD.pause > 0) { RD.pause -= dt; for (const f of fighters) if (f.dead) f.respawnT = Math.max(0, RD.pause); if (RD.pause <= 0) { if (score.some(v => v >= MODE.win)) endGame(); else newRound(); } return; }
-  timeLeft = Math.max(0, timeLeft - dt);
+  if (MODE.fog) fogStep(dt); else timeLeft = Math.max(0, timeLeft - dt);
   const hpOf = t => fighters.filter(f => f.team === t && !f.dead && !f.minion).reduce((s, f) => s + f.hp / f.mhp, 0), hp = score.map((_, t) => hpOf(t)), up = hp.map((v, t) => t).filter(t => hp[t] > 0);
   let w = -2;
   if (!up.length) w = -1; else if (up.length === 1) w = up[0];
-  else if (timeLeft <= 0) { const mx = Math.max(...hp), top = up.filter(t => Math.abs(hp[t] - mx) < 1e-6); w = top.length === 1 ? top[0] : -1; }      // on time: the most health left (a tie replays the round)
+  else if (MODE.time && timeLeft <= 0) { const mx = Math.max(...hp), top = up.filter(t => Math.abs(hp[t] - mx) < 1e-6); w = top.length === 1 ? top[0] : -1; }      // on time: the most health left (a tie replays the round)
   if (w === -2) return;
   if (w >= 0) score[w]++;
   RD.lost = w >= 0 && score.length === 2 ? 1 - w : -1;
-  RD.pause = 2.5; timeLeft = MODE.time;
+  RD.pause = 2.5; if (!MODE.fog) timeLeft = MODE.time;
   const done = score.some(v => v >= MODE.win);
   for (const f of fighters) if (!f.dead) say(f, w < 0 ? '무승부 · 다시' : f.team === w ? (done ? '승리!' : '라운드 승리') : '라운드 패배', w >= 0 && f.team === w ? '#ffd34d' : '#cfd3dc');
   sfx(520, .3, 'triangle', .07, 1.5);
 }
 function newRound() {
-  RD.n++; if (curMode === 'duel' && RD.lost >= 0) duelNext(RD.lost); RD.lost = -1; bullets = []; zones = []; minions = []; strikes = []; timers = []; tempWalls.clear(); NET.mapVer++; timeLeft = modeNow().time;
+  RD.n++; if (curMode === 'duel' && RD.lost >= 0) duelNext(RD.lost); RD.lost = -1; bullets = []; zones = []; minions = []; strikes = []; timers = []; tempWalls.clear(); NET.mapVer++; timeLeft = modeNow().time; if (modeNow().fog) fogReset();
   for (const f of fighters) { f.queue = []; f.dash = null; if (f.h !== f.h0) { f.h = f.h0; f.sk = f.sk0; } respawn(f); f.scd = [0, 0]; f.dcd = 0; f.ucd = 6; say(f, RD.n + '라운드', '#ffffff'); }
 }
 
@@ -1116,10 +1122,19 @@ function modeStart() {
   for (const f of fighters) f.star = curMode === 'star' ? STAR0 : 0;
   BALL.on = false; if (curMode === 'ball') ballStart();
   if (curMode === 'hot4') Object.assign(HZ, { on: true, x: WW / 2, y: WH / 2, r: (MAPS[curMap].hz || 4) * T, own: -1, p: [0, 0, 0, 0], n: [0, 0, 0, 0] });
+  if (modeNow().fog) { fogReset(); return; }
   if (!isLeft(curMode)) return;
   const g = freeNear(WW / 2, WH / 2);
   if (curMode === 'solo') for (const f of fighters) f.inv = SOLO_GUARD;      // 원 레프트: nobody can be hurt for the first SOLO_GUARD s (gold bubble, tail.js)
   Object.assign(SZ, { on: true, x: WW / 2, y: WH / 2, r0: Math.hypot(WW, WH) / 2, r: Math.hypot(WW, WH) / 2, gx: g.x, gy: g.y, acc: 0 });
+}
+function fogReset() { const g = freeNear(WW / 2, WH / 2), r0 = Math.hypot(WW, WH) / 2; Object.assign(SZ, { on: true, x: WW / 2, y: WH / 2, r0, r: r0, gx: g.x, gy: g.y, acc: 0 }); timeLeft = 0; }
+function fogStep(dt) {      // 듀얼 배틀: timeLeft counts UP (the round's age); the ring shrinks the same way as 원 레프트's and hurts the same way
+  timeLeft += dt;
+  const k = clamp((timeLeft - DUEL_FOG.wait) / DUEL_FOG.close, 0, 1);
+  SZ.r = k < .8 ? SZ.r0 + (SZ_MIN - SZ.r0) * (k / .8) : SZ_MIN * (1 - (k - .8) / .2);
+  SZ.acc += dt;
+  if (SZ.acc >= .5) { SZ.acc -= .5; for (const f of fighters) if (!f.dead && Math.hypot(f.x - SZ.x, f.y - SZ.y) > SZ.r) withSrc('안개', () => damage(f, f.mhp * (.05 + .13 * k) * .5, null, { px: 1 })); }
 }
 function soloStep(dt) {
   if (RD.pause > 0) { RD.pause -= dt; if (RD.pause <= 0) endGame(); return; }
@@ -1338,7 +1353,7 @@ function drawSafeZone() {       // screen space
 }
 
 /* ===== overtime, per-match stats ===== */
-const inOvertime = () => state === 'play' && timeLeft <= 0;       // true on host and guests: the clock sits at 0 only while sudden death runs
+const inOvertime = () => state === 'play' && timeLeft <= 0 && !modeNow().fog;       // true on host and guests: the clock sits at 0 only while sudden death runs
 function startOvertime() {
   overtime = true; otT = 0; timeLeft = 0;
   for (const f of fighters) if (!f.dead) say(f, curMode === 'hot4' ? '연장전!' : curMode === 'ball' ? '연장전! 먼저 골 넣으면 승리' : '연장전! 먼저 잡으면 승리', '#ffd34d');
