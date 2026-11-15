@@ -49,7 +49,6 @@ const SeumMusic = (() => {
   function level(name) {
     let k = vol * (GAIN[name] || 1);
     if (typeof muted !== 'undefined' && muted) k = 0;
-    if (document.hidden) k = 0;
     if (name === 'battle' && typeof state !== 'undefined' && state === 'over') k *= .45;
     return k;
   }
@@ -138,8 +137,8 @@ const SeumMusic = (() => {
       for (const n of ['lobby', 'battle']) {
         const t = tracks[n]; if (!t) continue;
         const k = want === n ? level(n) : 0;
-        if (want === n && k > 0) play(t); else if (k === 0 && (want !== n || document.hidden)) stop(t);
-        setLevel(t, k, document.hidden);
+        if (want === n && k > 0) play(t); else if (k === 0) stop(t);
+        setLevel(t, k, false);
       }
     }
     // credit text
@@ -149,7 +148,11 @@ const SeumMusic = (() => {
   }
   arm();
   setInterval(tick, 200);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && inited && ac && ac.state !== 'running') arm(); tick(); });
+  /* background tab: keep playing (user request 2026-11-15); if the browser suspended the sound anyway, start it again */
+  const wake = () => { try { if (ac && ac.state !== 'running' && ac.state !== 'closed') ac.resume().catch(() => {}); } catch (e) { }
+    for (const n in tracks) { const t = tracks[n]; if (t && t.on && t.a.paused) try { const p = t.a.play(); if (p && p.catch) p.catch(() => {}); } catch (e) { } } };
+  document.addEventListener('visibilitychange', () => { wake(); if (!document.hidden && inited && ac && ac.state !== 'running') arm(); tick(); });
+  addEventListener('pageshow', wake); addEventListener('focus', wake);
   return {
     getVolume: () => vol,
     setVolume(v) { v = +v; if (!(v >= 0)) v = 0; vol = Math.min(1, v); try { localStorage.setItem(KEY, String(vol)); } catch (e) { } tick(); },
