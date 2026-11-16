@@ -4,14 +4,14 @@
    First to MODE.win goals, or the most when the clock runs out; level = the usual overtime (next goal wins, a draw after OT_MAX).
    The host runs the ball; it rides in the mode snapshot (`bl`) and guests slide it along its speed between snapshots. ===== */
 const BALL_R = 18, BALL_MAX = 1150, BALL_FRIC = 1.3, BALL_PAUSE = 3;
-const BALL = { on: false, x: 0, y: 0, vx: 0, vy: 0, rot: 0, last: null, gt: -1, gy0: 0, gy1: 0, pp: new Map(), dx: 0, dy: 0, st: 0 };
+const BALL = { own: null, kf: null, kt: 0, inAi: 0, botKick: 0, on: false, x: 0, y: 0, vx: 0, vy: 0, rot: 0, last: null, gt: -1, gy0: 0, gy1: 0, pp: new Map(), dx: 0, dy: 0, st: 0 };
 function ballStart() {
   BALL.on = true; let r0 = 1e9, r1 = -1;
   for (let r = 1; r < ROWS - 1; r++) if (MAP[r][1] !== '#') { r0 = Math.min(r0, r); r1 = Math.max(r1, r); }
   if (r1 < 0) { r0 = (ROWS >> 1) - 2; r1 = r0 + 4; }
   BALL.gy0 = r0 * T; BALL.gy1 = (r1 + 1) * T; ballReset();
 }
-function ballReset() { Object.assign(BALL, { sci: -1, x: WW / 2, y: WH / 2, vx: 0, vy: 0, last: null, gt: -1, dx: WW / 2, dy: WH / 2 }); BALL.pp.clear(); }
+function ballReset() { Object.assign(BALL, { own: null, kf: null, kt: 0, sci: -1, x: WW / 2, y: WH / 2, vx: 0, vy: 0, last: null, gt: -1, dx: WW / 2, dy: WH / 2 }); BALL.pp.clear(); }
 const ballSpawn = (team, slot) => freeNear((team === 0 ? 4.5 : COLS - 4.5) * T, (ROWS / 2 + ((slot | 0) - 1) * 2.6) * T);
 const ballGoalOf = t => ({ x: (t === 0 ? 1.2 : COLS - 1.2) * T, y: (BALL.gy0 + BALL.gy1) / 2 });      // the goal team t defends
 /* every kick: the ball's speed along (nx, ny) becomes at least p (kicks do not stack into a rocket); by = who touched it last */
@@ -25,6 +25,7 @@ function ballKick(by, nx, ny, p, aim) {
   const ow = by && (by.minion ? by.by : by); if (ow && ow.h) BALL.last = ow;
 }
 function ballArc(f, ang, range, half, kb, hits) {
+  return;      // 2026-11-16 (user: like Brawl Ball): attacks do not move the ball; you carry it and shoot it
   const dx = BALL.x - f.x, dy = BALL.y - f.y, d = Math.hypot(dx, dy);
   if (d > range + BALL_R + 6) return;
   let da = Math.atan2(dy, dx) - ang; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) > half + .25 && d > 30) return;
@@ -33,6 +34,7 @@ function ballArc(f, ang, range, half, kb, hits) {
   ballKick(f, Math.cos(ang), Math.sin(ang), hits ? 360 : clamp(820 + (kb || 0) * .4, 820, 950), !hits);
 }
 function ballCirc(by, x, y, r, dmg, o) {
+  return;      // 2026-11-16 (user: like Brawl Ball): attacks do not move the ball; you carry it and shoot it
   if (!(dmg > 0) && !o.kb) return;
   const dx = BALL.x - x, dy = BALL.y - y, d = Math.hypot(dx, dy);
   if (d > r + BALL_R) return;
@@ -40,12 +42,14 @@ function ballCirc(by, x, y, r, dmg, o) {
   ballKick(by, a === null ? dx : Math.cos(a), a === null ? dy : Math.sin(a), clamp((dmg > 12 || o.kb ? 300 : 160) + (o.kb || 0) * .8 + (dmg || 0), 160, 620));
 }
 function ballPath(f, x0, y0, x1, y1, w) {
+  return;      // 2026-11-16 (user: like Brawl Ball): attacks do not move the ball; you carry it and shoot it
   const dx = x1 - x0, dy = y1 - y0, l2 = dx * dx + dy * dy || 1, t = clamp(((BALL.x - x0) * dx + (BALL.y - y0) * dy) / l2, 0, 1);
   if (Math.hypot(BALL.x - (x0 + dx * t), BALL.y - (y0 + dy * t)) > w + BALL_R) return;
   ballKick(f, dx, dy, 520, 1);
 }
 /* a shot touching the ball: true = the shot stops there */
 function ballShot(b) {
+  return false;      // 2026-11-16: shots fly through the ball (Brawl Ball)
   if (b.hitBall || Math.hypot(BALL.x - b.x, BALL.y + BODY - b.y) >= BALL_R + (b.r || 5) + 6) return false;
   b.hitBall = 1; ballKick(b.owner, b.vx, b.vy, clamp(420 + (b.dmg || 0) * 3, 420, 720), 1);
   if (fxInView(b.x, b.y)) burst(BALL.x, BALL.y + BODY, '#ffffff', 5, 160);
@@ -63,19 +67,37 @@ function ballMove(dt) {
   const k = Math.exp(-BALL_FRIC * dt); BALL.vx *= k; BALL.vy *= k; if (Math.hypot(BALL.vx, BALL.vy) < 6) BALL.vx = BALL.vy = 0;
   BALL.rot += Math.hypot(BALL.vx, BALL.vy) * dt / BALL_R * Math.sign(BALL.vx || 1);
 }
-/* bodies: walking into the ball dribbles it ahead a little faster than you walk; a dash kicks it */
+/* 2026-11-16 (user: "브롤처럼"): Brawl Ball possession. Walking into a loose ball picks it up; the carrier's basic attack shoots it where
+   they aim (the ultimate = a super shot), skills are off while carrying; dying, being stunned or turning into something drops it.
+   Whoever shot it cannot pick it up again for .5 s, anyone else can catch it in flight. */
+const BALL_SHOT = 1000, BALL_SUPER = 1150;
+function ballFire(f, ang) {
+  if (BALL.inAi && !BALL.botKick) return false;      // bots shoot only when ballBot means it
+  if (f.fireCd > 0 || B(f, 'stun') || f.dead) return false;
+  f.aim = ang; f.lastFire = time; f.fireCd = .45; ballShoot(f, ang, 0); return true;
+}
+function ballShoot(f, ang, sup) {
+  BALL.own = null; BALL.kf = f; BALL.kt = time + .5; BALL.last = f;
+  const p = sup ? BALL_SUPER : BALL_SHOT; BALL.vx = Math.cos(ang) * p; BALL.vy = Math.sin(ang) * p;
+  if (fxInView(BALL.x, BALL.y)) { burst(BALL.x, BALL.y, '#ffffff', sup ? 16 : 8, sup ? 320 : 200); if (sup) ring(BALL.x, BALL.y, 50, TC(f.team), .3); }
+  if (f.isPlayer || fxInView(f.x, f.y)) sfx(sup ? 180 : 240, sup ? .2 : .1, 'triangle', .07, sup ? 2.4 : 1.6);
+}
+const ballCanHold = f => !f.dead && !f.ghost && !f.minion && f.form !== 'gone' && f.form !== 'sub' && f.form !== 'dove' && !(f.dash && f.dash.fly) && !B(f, 'stun');
 function ballBodies(dt) {
-  for (const f of fighters) {
-    if (f.dead || f.ghost || f.form === 'gone' || f.form === 'sub' || (f.dash && f.dash.fly)) { BALL.pp.delete(f); continue; }
-    const p = BALL.pp.get(f), fvx = p && dt > 0 ? (f.x - p[0]) / dt : 0, fvy = p && dt > 0 ? (f.y - p[1]) / dt : 0;
-    BALL.pp.set(f, [f.x, f.y]);
-    const dx = BALL.x - f.x, dy = BALL.y - f.y, d = Math.hypot(dx, dy), md = BALL_R + 20;
-    if (d >= md) continue;
-    const nx = d > 1e-3 ? dx / d : Math.cos(f.aim || 0), ny = d > 1e-3 ? dy / d : Math.sin(f.aim || 0);
-    if (!solidAt(f.x + nx * md, f.y + ny * md)) { BALL.x = f.x + nx * md; BALL.y = f.y + ny * md; }
-    const fv = Math.min(700, fvx * nx + fvy * ny);
-    ballKick(f, nx, ny, f.dash ? 780 : Math.max(60, fv * 1.3 + 40), !!f.dash);
+  const o = BALL.own;
+  if (o) {
+    if (!fighters.includes(o) || !ballCanHold(o)) { BALL.own = null; BALL.kf = o; BALL.kt = time + .3; BALL.vx = BALL.vy = 0; return; }
+    const a = o.aim || 0, px = o.x + Math.cos(a) * 26, py = o.y + Math.sin(a) * 26 + 6, p = BALL.pp.get(o);
+    if (!solidAt(px, py)) { BALL.x = px; BALL.y = py; } else { BALL.x = o.x; BALL.y = o.y + 6; }
+    BALL.vx = p && dt > 0 ? (o.x - p[0]) / dt : 0; BALL.vy = p && dt > 0 ? (o.y - p[1]) / dt : 0; BALL.pp.set(o, [o.x, o.y]);
+    return;
   }
+  let best = null, bd = BALL_R + 22;
+  for (const f of fighters) {
+    if (!ballCanHold(f) || (f === BALL.kf && time < BALL.kt)) continue;
+    const d = Math.hypot(BALL.x - f.x, BALL.y - f.y); if (d < bd) { bd = d; best = f; }
+  }
+  if (best) { BALL.own = best; BALL.last = best; BALL.pp.delete(best); if (best.isPlayer) sfx(520, .06, 'triangle', .05, 1.4); }
 }
 /* true while a goal is being celebrated (step() skips its own end checks then) */
 function ballStep(dt) {
@@ -114,36 +136,38 @@ function ballKickoff() {
   ballReset(); bullets = []; zones = []; minions = []; strikes = []; timers = []; tempWalls.clear(); NET.mapVer++;
   for (const f of fighters) { f.queue = []; f.dash = null; if (f.h !== f.h0) { f.h = f.h0; f.sk = f.sk0; } respawn(f); f.inv = 1; }
 }
-/* bots: the one nearest the ball goes for it from behind (pushing / kicking it at the other goal), the next one comes along ahead of it,
-   the last one waits between the ball and our goal and clears it when it comes close */
+/* bots (Brawl Ball): the carrier runs at the enemy goal and shoots when it has a clear line; the nearest other bot fetches a loose ball
+   or chases the enemy carrier, the last one guards our goal, the rest escort the carrier or wait ahead */
 function ballBot(f) {
   if (curMode !== 'ball' || !BALL.on || f.dead || f.minion || B(f, 'charm') || state !== 'play') return null;
   if (RD.pause > 0) { const s = ballSpawn(f.team, f.slot); return pathTo(f, s.x, s.y); }
-  const mates = fighters.filter(o => !o.dead && !o.minion && o.team === f.team).sort((a, b) => Math.hypot(a.x - BALL.x, a.y - BALL.y) - Math.hypot(b.x - BALL.x, b.y - BALL.y));
-  const role = mates.indexOf(f), OG = ballGoalOf(f.team), EG = ballGoalOf(1 - f.team), bd = f.ai.bd || 1e9;
-  const nearOwn = Math.hypot(BALL.x - OG.x, BALL.y - OG.y) < 7 * T;
-  const last = role === mates.length - 1 && mates.length > 1;
-  if (role === 0 || (last && nearOwn)) {
-    if (bd < 1.0 * T) return null;      // somebody is in my face: fight
-    const [dx, dy] = role === 0 && !(nearOwn && last) ? norm(EG.x - BALL.x, EG.y - BALL.y) : norm(BALL.x - OG.x, BALL.y - OG.y);
-    const fx0 = BALL.x - f.x, fy0 = BALL.y - f.y, d = Math.hypot(fx0, fy0), along = fx0 * dx + fy0 * dy, side = fx0 * dy - fy0 * dx;
-    if (along > 0 && Math.abs(side) < Math.max(34, along * .35)) {      // lined up behind the ball: run through it, and hit it
-      const reach = f.h.type === 'melee' ? (f.h.range || 60) + BALL_R : Math.min(f.h.range || 400, 6 * T);
-      if (d < reach) fire(f, Math.atan2(fy0, fx0));
-      return pathTo(f, BALL.x + dx * 40, BALL.y + dy * 40);
+  const OG = ballGoalOf(f.team), EG = ballGoalOf(1 - f.team), bd = f.ai.bd || 1e9, own = BALL.own;
+  if (own === f) {
+    const gx = f.team === 0 ? WW - 2 * T : 2 * T, gy = clamp(f.y, BALL.gy0 + 40, BALL.gy1 - 40), d = Math.hypot(gx - f.x, gy - f.y);
+    if (d < 9 * T && los(f.x, f.y, gx, gy) && Math.abs(gx - f.x) > 1.5 * T) {
+      const a = Math.atan2(gy - f.y, gx - f.x) + (Math.random() - .5) * .25;
+      BALL.botKick = 1; fire(f, a); BALL.botKick = 0;
     }
-    const bx = BALL.x - dx * (BALL_R + 40), by = BALL.y - dy * (BALL_R + 40);
-    if (d < 90 && along < 0) { const s = side >= 0 ? 1 : -1; return pathTo(f, bx - dy * s * 70, by + dx * s * 70); }      // on the wrong side: go round it
-    return pathTo(f, bx, by);
+    return pathTo(f, EG.x - (f.team === 0 ? 1 : -1) * 2 * T, EG.y);
   }
-  if (last) {
+  const mates = fighters.filter(o => !o.dead && !o.minion && o.team === f.team && o !== own).sort((a, b) => Math.hypot(a.x - BALL.x, a.y - BALL.y) - Math.hypot(b.x - BALL.x, b.y - BALL.y));
+  const role = mates.indexOf(f), last = role === mates.length - 1 && mates.length > 1;
+  if (own && own.team !== f.team) {      // they have it: the nearest two go for the carrier, the last one stays home
+    if (last) { const [ux, uy] = norm(own.x - OG.x, own.y - OG.y); return pathTo(f, OG.x + ux * 3 * T, OG.y + uy * 3 * T); }
+    const d = Math.hypot(own.x - f.x, own.y - f.y), reach = f.h.type === 'melee' ? (f.h.range || 60) + 20 : Math.min(f.h.range || 400, 7 * T);
+    if (d < reach) { f.aim = Math.atan2(own.y - f.y, own.x - f.x); fire(f, f.aim); }
+    return pathTo(f, own.x, own.y);
+  }
+  if (!own) {
+    if (role === 0) return pathTo(f, BALL.x, BALL.y);
+    if (last) { if (bd < 4 * T) return null; const [ux, uy] = norm(BALL.x - OG.x, BALL.y - OG.y); return pathTo(f, OG.x + ux * 3.5 * T, OG.y + uy * 3.5 * T); }
     if (bd < 4 * T) return null;
-    const [ux, uy] = norm(BALL.x - OG.x, BALL.y - OG.y); return pathTo(f, OG.x + ux * 3.5 * T, OG.y + uy * 3.5 * T);
+    return pathTo(f, BALL.x, BALL.y);
   }
-  if (bd < 5 * T) return null;
-  const [ux, uy] = norm(EG.x - BALL.x, EG.y - BALL.y), sd = f.slot % 2 ? 1 : -1;
-  const tx = clamp(BALL.x + ux * 3 * T - uy * sd * 2 * T, 2.5 * T, WW - 2.5 * T), ty = clamp(BALL.y + uy * 3 * T + ux * sd * 2 * T, 1.5 * T, WH - 1.5 * T);
-  const p = freeNear(tx, ty); return pathTo(f, p.x, p.y);
+  if (bd < 4 * T) return null;      // a mate has it: escort, fight whoever comes close
+  const [ux, uy] = norm(EG.x - own.x, EG.y - own.y), sd = f.slot % 2 ? 1 : -1;
+  const tx = clamp(own.x + ux * 2.5 * T - uy * sd * 2 * T, 2.5 * T, WW - 2.5 * T), ty = clamp(own.y + uy * 2.5 * T + ux * sd * 2 * T, 1.5 * T, WH - 1.5 * T);
+  const q = freeNear(tx, ty); return pathTo(f, q.x, q.y);
 }
 /* ----- drawing ----- */
 function drawPitch(c) {       // world space, on the floor: lines, centre circle, goal mouths with nets
@@ -180,6 +204,7 @@ function drawBall(c) {       // world space, after the walls and before the figh
   if (!BALL.on) return;
   const [x, y] = ballPos(), s = Math.hypot(BALL.vx, BALL.vy);
   c.save();
+  const ow = BALL.own; if (ow && !ow.dead) { c.strokeStyle = TC(ow.team); c.lineWidth = 4; c.globalAlpha = .85; c.beginPath(); c.ellipse(ow.x, ow.y + 20, 34, 15, 0, 0, 7); c.stroke(); c.globalAlpha = 1; }      // the carrier stands in a ring of their team colour
   if (s > 260 && !lowFx()) { const [ux, uy] = norm(BALL.vx, BALL.vy), l = Math.min(70, s * .07); c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineCap = 'round'; c.lineWidth = BALL_R * 1.1; c.beginPath(); c.moveTo(x, y - 4); c.lineTo(x - ux * l, y - 4 - uy * l); c.stroke(); }
   c.fillStyle = 'rgba(0,0,0,.3)'; c.beginPath(); c.ellipse(x + 3, y + BALL_R - 3, BALL_R * 1.05, BALL_R * .4, 0, 0, 7); c.fill();
   c.translate(x, y - 4); c.fillStyle = '#ffffff'; c.strokeStyle = '#1b1d24'; c.lineWidth = 3; c.beginPath(); c.arc(0, 0, BALL_R, 0, 7); c.fill();

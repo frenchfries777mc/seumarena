@@ -197,14 +197,14 @@ function starStep(dt) { timeLeft = Math.max(0, timeLeft - dt); if (timeLeft <= 0
 const modeOf = id => MODES.find(m => m.id === id && m.ready) || MODES[0];
 const modeNow = () => modeOf(curMode);
 /* the small mode state that rides in every snapshot (net.js: `md`) so guests can draw it: round number, and later the flags / safe zone */
-function modeSnap() { const o = { rn: RD.n, rp: RD.pause > 0 ? 1 : 0 }; if (curMode === 'star') o.st = fighters.map(f => f.star | 0); if (DUEL.line) { o.dl = DUEL.line; o.di = DUEL.li; } if (SZ.on) { o.z = [Math.round(SZ.x), Math.round(SZ.y), Math.round(SZ.r)]; o.w = RD.win; o.o = RD.out; } if (FLAGS.length) o.f = FLAGS.map(g => [Math.round(g.x), Math.round(g.y), g.by, g.home ? 1 : 0, Math.round(g.back * 10) / 10]); if (HZ.on) o.h = [HZ.own, Math.round(HZ.x), Math.round(HZ.y), Math.round(HZ.r)]; if (BALL.on) o.bl = [Math.round(BALL.x), Math.round(BALL.y), Math.round(BALL.vx), Math.round(BALL.vy), BALL.gt, BALL.sci]; return o; }
+function modeSnap() { const o = { rn: RD.n, rp: RD.pause > 0 ? 1 : 0 }; if (curMode === 'star') o.st = fighters.map(f => f.star | 0); if (DUEL.line) { o.dl = DUEL.line; o.di = DUEL.li; } if (SZ.on) { o.z = [Math.round(SZ.x), Math.round(SZ.y), Math.round(SZ.r)]; o.w = RD.win; o.o = RD.out; } if (FLAGS.length) o.f = FLAGS.map(g => [Math.round(g.x), Math.round(g.y), g.by, g.home ? 1 : 0, Math.round(g.back * 10) / 10]); if (HZ.on) o.h = [HZ.own, Math.round(HZ.x), Math.round(HZ.y), Math.round(HZ.r)]; if (BALL.on) o.bl = [Math.round(BALL.x), Math.round(BALL.y), Math.round(BALL.vx), Math.round(BALL.vy), BALL.gt, BALL.sci, BALL.own ? fighters.indexOf(BALL.own) : -1]; return o; }
 function applyModeSnap(o) {
   if (!o || typeof o !== 'object') return;
   if (Array.isArray(o.st)) o.st.forEach((v, i) => { if (fighters[i]) fighters[i].star = clamp(v | 0, 0, STAR_MAX); });
   if (o.rn > 0) RD.n = o.rn | 0; RD.pause = o.rp ? 1 : 0;
   if (Array.isArray(o.dl) && o.dl.length === 2 && Array.isArray(o.di)) { DUEL.line = o.dl.map(l => Array.isArray(l) ? l.slice(0, DUEL_N).map(id => HEROES[id] ? id : null) : []); DUEL.li = [o.di[0] | 0, o.di[1] | 0]; } else DUEL.line = null;
   SZ.on = Array.isArray(o.z) && o.z.length === 3;
-  if (Array.isArray(o.bl) && o.bl.length >= 5) { if (!BALL.on) ballStart(); BALL.x = +o.bl[0] || 0; BALL.y = +o.bl[1] || 0; BALL.vx = +o.bl[2] || 0; BALL.vy = +o.bl[3] || 0; BALL.gt = o.bl[4] | 0; BALL.sci = o.bl[5] == null ? -1 : o.bl[5] | 0; BALL.st = performance.now(); } else BALL.on = false;
+  if (Array.isArray(o.bl) && o.bl.length >= 5) { if (!BALL.on) ballStart(); BALL.x = +o.bl[0] || 0; BALL.y = +o.bl[1] || 0; BALL.vx = +o.bl[2] || 0; BALL.vy = +o.bl[3] || 0; BALL.gt = o.bl[4] | 0; BALL.sci = o.bl[5] == null ? -1 : o.bl[5] | 0; BALL.own = o.bl[6] >= 0 ? fighters[o.bl[6] | 0] || null : null; BALL.st = performance.now(); } else BALL.on = false;
   HZ.on = Array.isArray(o.h) && o.h.length === 4; if (HZ.on) { HZ.own = clamp(o.h[0] | 0, -2, 3); HZ.x = +o.h[1] || 0; HZ.y = +o.h[2] || 0; HZ.r = Math.max(0, +o.h[3] || 0); }
   if (Array.isArray(o.f) && o.f.length === 2) { if (FLAGS.length !== 2) flagsReset(); o.f.forEach((v, t) => { if (!Array.isArray(v)) return; const g = FLAGS[t]; g.x = +v[0] || 0; g.y = +v[1] || 0; g.by = v[2] | 0; g.home = !!v[3]; g.back = +v[4] || 0; }); } else FLAGS = [];
   if (SZ.on) { SZ.x = +o.z[0] || 0; SZ.y = +o.z[1] || 0; SZ.r = Math.max(0, +o.z[2] || 0); RD.win = o.w | 0; RD.out = Array.isArray(o.o) ? o.o.slice(0, 8).map(v => v | 0) : []; }
@@ -651,6 +651,7 @@ function basic0(f, ang) {
   for (let i = 0; i < (h.burst || 1); i++) f.queue.push({ t: i * (h.bdelay || 0), ang, o: null, src: SRC });
 }
 function fire(f, ang) {
+  if (BALL.own === f) return ballFire(f, ang);      // 볼 배틀: carrying the ball, the attack is a shot
   if (f.fireCd > 0 || !canAtk(f) || f.boomOut) return false;
   f.aim = ang; f.lastFire = time; unbuff(f, 'stealth'); unbuff(f, 'ally');
   f.fireCd = cdOf(f);
@@ -661,6 +662,7 @@ function fire(f, ang) {
 function useSkill(f, i) {
   const def = f.sk[i];
   if (!def || f.scd[i] > 0 || !canAct(f) || B(f, 'charm') || f.noSkill) return false;
+  if (BALL.own === f) return false;      // 볼 배틀: no skills while carrying
   const r = withSrc((i + 1) + '스킬: ' + skName(def, f), () => def.f(f, f.aim, i));
   if (r === false) return false;
   unbuff(f, 'ally'); if (def.k !== 'buff' && def.k !== 'move') unbuff(f, 'stealth');
@@ -674,6 +676,7 @@ function skillCd(f, i) { const def = f.sk[i]; let cd = i === 0 ? (def.cd1 || CD1
 function useUlt(f) {
   const u = f.h.ult;
   if (f.ucd > 0 || !canAct(f) || B(f, 'charm') || f.noSkill) return false;
+  if (BALL.own === f) { ballShoot(f, f.aim, 1); f.ucd = ULT_CD * (f.h.cdMul ? f.h.cdMul(f) : 1); return true; }      // 볼 배틀: the ultimate while carrying = a super shot
   const r = withSrc('궁극기: ' + u.name, () => u.f(f, f.aim));
   if (r === false) return false;
   unbuff(f, 'ally'); if (!u.quiet) unbuff(f, 'stealth');
@@ -730,7 +733,7 @@ function respawn(f) {
 }
 
 /* ---------- AI ---------- */
-function ai(f, dt) { const mv = ai0(f, dt), fl = envFlee(f) || zoneFlee(f) || ballBot(f) || flagGoal(f) || hotGoal(f, mv) || duoGoal(f); return fl || mv; }
+function ai(f, dt) { BALL.inAi = 1; const mv = ai0(f, dt); BALL.inAi = 0; const fl = envFlee(f) || zoneFlee(f) || ballBot(f) || flagGoal(f) || hotGoal(f, mv) || duoGoal(f); return fl || mv; }
 /* ranged bots kite: when an enemy gets close they back off along the safest open direction (away from every nearby enemy, not into walls or
    corners) while still shooting, and dash away from a melee enemy that is about to land a hit */
 let AI_KITE = true;

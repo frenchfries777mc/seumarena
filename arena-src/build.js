@@ -5,7 +5,7 @@ let art=[fs.readFileSync(S+'art/chars.js','utf8').replace('const COSMETICS={};',
 // music: by default the page points at arena-src/art/music/*.mp3 (downloaded after the page is up); EMBED_MUSIC=1 puts the songs inside the file (standalone copy)
 const mus=n=>{if(!process.env.EMBED_MUSIC) return 'arena-src/art/music/'+n+'.mp3'; try{return fs.readFileSync(S+'art/music/'+n+'.mp3').toString('base64')}catch(e){return ''}};
 art+='\n'+fs.readFileSync(S+'art/emoji.js','utf8');
-art+='\n'+fs.readFileSync(S+'art/music.js','utf8').replace('@@LOBBY@@',()=>mus('lobby')).replace('@@BATTLE@@',()=>mus('battle')).replace('@@RESULT@@',()=>mus('result'));
+art+='\n'+fs.readFileSync(S+'art/music.js','utf8').replace('@@LOBBY@@',()=>mus('lobby')).replace('@@BATTLE@@',()=>mus('battle')).replace('@@RESULT@@',()=>mus('result')).replace('@@WIN@@',()=>mus('win'));
 const menucss=fs.readFileSync(S+'art/menu.css','utf8');
 let head=fs.readFileSync(S+'head.html','utf8').replace('/*@@CHARS@@*/',()=>art).replace('/*@@MENUCSS@@*/',()=>menucss);
 // news: the list in ../news/news.json at build time is baked in (shown offline / where the live list cannot be read)
