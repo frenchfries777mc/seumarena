@@ -531,7 +531,7 @@ body.touchUi canvas{touch-action:none}
 @keyframes rwBump{30%{scale:1.22;filter:brightness(1.6)}}
 #goldGain:not([hidden])>span{animation:rwPrize .45s cubic-bezier(.2,1.6,.4,1) backwards}
 #goldGain>span:nth-child(2){animation-delay:.1s}#goldGain>span:nth-child(3){animation-delay:.2s}#goldGain>span:nth-child(4){animation-delay:.3s}
-@media (max-height:420px){.rwBox{width:110px;height:110px}.rwBox .rwIc{font-size:86px}.rwBox canvas{width:110px;height:110px}.rwTxt{font-size:30px}.rwRays{width:min(90vmin,320px)}}
+@media (max-height:420px){.rwBox{width:110px;height:110px}.rwBox .rwIc{font-size:86px}.rwBox canvas{width:110px;height:110px}.rwTxt{font-size:30px}.rwRays{width:min(90vmin,320px);margin:-100px}#rwFx{gap:8px}}      /* short landscape: the rays spill over the text instead of pushing it off the screen */
 @media (prefers-reduced-motion: reduce){.rwRays{animation:none}#rwFx.shake .rwBox,#rwFx.open .rwBox,#rwFx.open .rwSpk i{animation-duration:.01s}}
 /* ---------- attendance strip, today's shop, character record, titles, the profile card, the MVP moment, box tiers ---------- */
 .attRow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}

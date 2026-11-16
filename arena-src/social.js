@@ -310,7 +310,7 @@ function rewardFx(got, step) {
   const ic = fx.querySelector('.rwIc'), cvs = fx.querySelector('canvas'), txt = fx.querySelector('.rwTxt'), spk = fx.querySelector('.rwSpk');
   const setIcon = kind => { cvs.hidden = true; ic.hidden = false; ic.textContent = ''; ic.className = 'rwIc ' + (kind === 'k' ? '' : kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[kind]); if (kind === 'k') ic.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>'; };
   const note = (f, at) => setTimeout(() => { try { sfx(f, .16, 'triangle', .07); } catch (e) { quietErr(e); } }, at);
-  const close = () => { clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.classList.add('out'); rwTimer = setTimeout(() => { fx.hidden = true; fx.classList.remove('out', 'open', 'shake'); if (k + 1 < L.length) rewardFx(L[0], k + 1); else if (rwQ.length) rewardFx(rwQ.shift()); }, 220); for (const el of document.querySelectorAll('.goldPill, #karma, #acctIcon')) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } };
+  const close = () => { clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.classList.add('out'); rwTimer = setTimeout(() => { fx.hidden = true; fx.classList.remove('out', 'open', 'shake', 'shut'); if (k + 1 < L.length) rewardFx(L[0], k + 1); else if (rwQ.length) rewardFx(rwQ.shift()); }, 220); for (const el of document.querySelectorAll('.goldPill, #karma, #acctIcon')) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } };
   const open = () => {
     fx.classList.remove('shake'); void fx.offsetWidth; fx.classList.add('open');
     if (got.kind === 'su') { setIcon('su'); const s = HEROES[got.hero].skills.find(x => x.n === got.sk); txt.textContent = HEROES[got.hero].name + ' · ' + (s ? nameOf(s) : '') + ' 해금'; }
@@ -323,12 +323,13 @@ function rewardFx(got, step) {
     spk.textContent = ''; const cols = tier === 2 ? ['#ffe07a', '#fff', '#ffb020', '#ff7ad9', '#7fe0ff'] : tier === 1 ? ['#d9a8ff', '#a45cff', '#fff', '#7fb4ff'] : got.kind === 'k' ? ['#e3c4ff', '#a45cff', '#fff'] : ['#ffe07a', '#fff3b0', '#ff9a3d', '#7fe0a0'], np = [22, 34, 56][tier];
     for (let i = 0; i < np; i++) { const p = document.createElement('i'), a = Math.PI * 2 * i / np + Math.random() * .3, r = (110 + Math.random() * 120) * (1 + tier * .25); p.style.setProperty('--x', Math.round(Math.cos(a) * r) + 'px'); p.style.setProperty('--y', Math.round(Math.sin(a) * r) + 'px'); p.style.setProperty('--c', cols[i % cols.length]); p.style.setProperty('--d', (Math.random() * .12).toFixed(2) + 's'); spk.append(p); }
     note(660, 0); note(880, 90); note(1320, 180); if (got.skin || got.box === 'ebox' || tier) note(1760, 300); if (tier === 2) { note(2090, 420); note(2640, 560); }
-    rwTimer = setTimeout(close, got.skin || tier === 2 ? 2800 : L.length > 1 ? 1500 : 1900);
+    if (L.length < 2) rwTimer = setTimeout(close, got.skin || tier === 2 ? 2800 : 1900);      // epic box rewards wait for a tap
   };
-  clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.hidden = false; fx.classList.remove('out', 'open', 'shake', 't1', 't2'); txt.textContent = ''; spk.textContent = '';
+  clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.hidden = false; fx.classList.remove('out', 'open', 'shake', 'shut', 't1', 't2'); txt.textContent = ''; spk.textContent = '';
   const tier = got.box ? got.tier | 0 : 0, tg = fx.querySelector('.rwTier'); if (tier) fx.classList.add('t' + tier); if (tg) tg.textContent = (got.box ? ['', '희귀', '전설'][tier] : '') + (L.length > 1 ? (tier ? ' · ' : '') + (k + 1) + '/' + L.length : '');
-  fx.onclick = () => { if (fx.classList.contains('shake')) { clearTimeout(rwTimer); open(); } else close(); };
-  if (got.box) { setIcon(got.box); void fx.offsetWidth; fx.classList.add('shake'); const sh = k ? [480, 700, 1100][tier] : [720, 1000, 1500][tier]; fx.style.setProperty('--sh', sh + 'ms'); for (let i = 0; i < sh / 130 - 1; i++) note(300 + i * (40 + tier * 15), 150 + i * 120); rwTimer = setTimeout(open, sh); }
+  fx.onclick = () => { if (fx.classList.contains('shut')) { clearTimeout(rwTimer); fx.classList.remove('shut'); open(); } else close(); };      // a box stays shut until it is tapped (user 2026-11-16)
+  if (got.box && got.box !== 'ebox') { setIcon(got.box); void fx.offsetWidth; fx.classList.add('shake', 'shut'); const sh = k ? [480, 700, 1100][tier] : [720, 1000, 1500][tier]; fx.style.setProperty('--sh', sh + 'ms'); for (let i = 0; i < sh / 130 - 1; i++) note(300 + i * (40 + tier * 15), 150 + i * 120); }
+  else if (got.box === 'ebox' && !k) { setIcon('ebox'); fx.classList.add('shut'); }      // epic box: shut once, then the three rewards follow tap by tap
   else open();
 }
 /* ---------- daily quests: three a day (one easy, one middling, one hard), picked by the date on this device. COS.dq = { d: day, p: progress x3, c: taken x3 } ---------- */
@@ -825,7 +826,7 @@ function winScreen(won, draw) {
       const f = g.f, wid = f.h0.id, sk = skinOf(f.cos, wid), tint = sk ? COSMETICS[sk].tint : undefined, col = bodyColor(f.cos, TC(f.team));
       c.save(); c.translate(g.x, Hc - 34); c.scale(g.sc, g.sc);
       c.shadowColor = col; c.shadowBlur = 10; c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 5; c.lineCap = 'round'; c.lineJoin = 'round';
-      try { if (g.win) drawWinPose(c, (f.cos && f.cos.pose) || 'pose_cheer', t, wid, tint); else drawLosePose(c, t, wid, tint); } catch (e) { quietErr(e); }
+      try { if (g.win) drawWinPose(c, (f.cos && f.cos.pose) || 'pose_cheer', t, wid, tint, conceptOfSkin(sk)); else drawLosePose(c, t, wid, tint, conceptOfSkin(sk)); } catch (e) { quietErr(e); }
       c.restore();
       c.save(); c.font = '700 13px "IBM Plex Sans KR", sans-serif'; c.textAlign = 'center'; c.fillStyle = f === player ? '#ffd34d' : (f.nick ? nameColorFor(f.cos && f.cos.name) : '#8890a4');
       c.fillText(f.nick || f.h0.name, g.x, Hc - 12); c.restore();

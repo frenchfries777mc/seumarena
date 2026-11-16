@@ -336,7 +336,7 @@ function updateHud() {
   else { $('sb').textContent = mine; $('sr').textContent = theirs; $('sbL').textContent = curMode === 'ko3' ? '우리' : curMode === 'star' ? '내 별' : solo ? '킬' : '블루'; $('srL').textContent = curMode === 'ko3' ? '상대' : curMode === 'star' ? '1위' : solo ? '생존' : '레드'; }
   $('timer').textContent = ot ? '연장전' : Math.floor(tl / 60) + ':' + String(tl % 60).padStart(2, '0');
   if (modeNow().fog) { const a = Math.floor(timeLeft); $('timer').textContent = Math.floor(a / 60) + ':' + String(a % 60).padStart(2, '0'); }
-  $('timer').classList.toggle('hot', ot || (tl <= 15 && !modeNow().fog) || (modeNow().fog && SZ.on && SZ.r < SZ.r0 - 1));
+  $('timer').classList.toggle('hot', !!(ot || (tl <= 15 && !modeNow().fog) || (modeNow().fog && SZ.on && SZ.r < SZ.r0 - 1)));      // !!: modeNow().fog is undefined in most modes, and toggle(x, undefined) flips the class every update
   ultBtn.style.setProperty('--p', up); ultBtn.classList.toggle('ready', up >= 100);
   $('ultName').textContent = c.un; $('ultHint').textContent = up >= 100 ? (touchUi() ? '궁극기' : 'R') : Math.ceil(c.u) + '초';
   dashBtn.style.setProperty('--p', dp); dashBtn.classList.toggle('ready', dp >= 100); $('dashHint').textContent = touchUi() ? '' : 'Q';
@@ -884,7 +884,7 @@ function mvpFx(win, draw) {
     if (run !== mvpRun) return;
     c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cvs.width, cvs.height); c.translate(cvs.width / 2, cvs.height - 40); c.scale(2.7, 2.7);
     c.shadowColor = col; c.shadowBlur = 10; c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 5; c.lineCap = 'round'; c.lineJoin = 'round';
-    try { drawWinPose(c, (f.cos && f.cos.pose) || 'pose_cheer', now / 1000, wid, tint); } catch (e) { quietErr(e); }
+    try { drawWinPose(c, (f.cos && f.cos.pose) || 'pose_cheer', now / 1000, wid, tint, conceptOfSkin(sk)); } catch (e) { quietErr(e); }
     requestAnimationFrame(fr);
   })(performance.now());
 }
