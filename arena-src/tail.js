@@ -400,6 +400,7 @@ $('setVol').addEventListener('input', e => { SET.vol = +e.target.value; $('setVo
 $('setVol').addEventListener('change', setBeep);
 $('setAim').addEventListener('input', e => { SET.aim = +e.target.value; $('setAimV').textContent = (SET.aim / 100).toFixed(1) + '×'; saveSet(); });
 $('setFx').addEventListener('change', e => { SET.fx = e.target.checked; saveSet(); });
+$('setCred').addEventListener('click', () => { const bx = $('setCredBox'), on = bx.hidden; if (on && window.SeumMusic && SeumMusic.fillCredits) SeumMusic.fillCredits(bx); bx.hidden = !on; $('setCred').setAttribute('aria-expanded', String(on)); if (on) bx.scrollIntoView({ block: 'nearest' }); });
 $('setReset').addEventListener('click', () => { SET.vol = 100; SET.aim = 100; SET.fx = false; SET.bat = false; SET.bsz = 100; SET.bpos = {}; if (typeof mobSetApply === 'function') mobSetApply(); setFill(); saveSet(); setMusicVol(); });
 $('setClose').addEventListener('click', () => setOpen(false));
 setEl.addEventListener('pointerdown', e => { e.stopPropagation(); if (e.target === setEl) setOpen(false); });
@@ -940,6 +941,7 @@ function endGame(keepRunning) {
   rt.textContent = draw ? '무승부' : win ? (first ? '승리' : oc.place + '등') : kept ? '2등' : '패배';      // 원 레프트 / 리워드 헌터 2-3등: the place instead of 승리
   document.querySelector('#overScreen .final').classList.toggle('solo', solo);
   rt.className = draw ? 'draw' : win || kept ? 'win' : 'lose';
+  rt.dataset.won = win ? '1' : '';      // the result song: "Pixel Peeker Polka" after a win (art/music.js)
   $('fb').textContent = solo ? oc.place + '등' : mine; $('fr').textContent = theirs;
   { const q4 = curMode === 'hot4', fq = $('fq'); document.querySelector('#overScreen .final').classList.toggle('q4', q4); fq.textContent = '';
     if (q4) [0, 1, 2, 3].sort((a, b) => (score[b] | 0) - (score[a] | 0)).forEach(t => { const b = document.createElement('b'); b.textContent = (score[t] | 0) + '%'; b.style.color = TC(t); if (t === VIEW) b.className = 'me'; fq.append(b); }); }

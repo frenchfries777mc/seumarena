@@ -804,6 +804,9 @@ body.touchUi canvas{touch-action:none}
 .setBtns{display:flex;gap:8px;margin-top:12px}
 .setBtns button{flex:1;min-height:44px}
 .setBtns #setClose{flex:1.6}
+#setCredBox{margin:4px 0 2px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:500 11.5px/1.5 'IBM Plex Sans KR',system-ui,sans-serif;color:var(--text-dim);overflow-wrap:anywhere}
+#setCredBox div+div{margin-top:2px}
+#setCredBox a{color:#9fd8ff}
 .setLic{margin:12px 0 0;text-align:center;font:500 11px 'IBM Plex Sans KR',sans-serif;color:var(--text-dim)}
 .setLic a{color:inherit}
 /* result screen: per-fighter table */
@@ -1312,6 +1315,8 @@ canvas.rwI{background:none}
     <div class="setRow mobOnly" id="setBposRow"><span>버튼 위치</span><button class="btn-plain" id="setBpos" type="button">옮기기</button><span></span></div>
     <div class="setRow" id="setDev"><span>기기</span><span class="devSeg"><button type="button" data-dev="mobile">모바일</button><button type="button" data-dev="pc">컴퓨터</button></span></div>
     <div class="setRow" id="setPcq"><span>화질</span><span class="devSeg"><button type="button" data-pcq="auto">자동</button><button type="button" data-pcq="high">높음</button><button type="button" data-pcq="low">낮음</button></span></div>
+    <div class="setRow" id="setCredRow"><span>크레딧</span><button class="btn-plain" id="setCred" type="button" aria-expanded="false">보기</button><span></span></div>
+    <div id="setCredBox" hidden></div>
     <div class="setBtns"><button class="btn-plain" id="setReset" type="button">기본값</button><button class="btn-primary" id="setClose" type="button">닫기</button></div>
     <p class="setLic">© Frenchfries777 · <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="license noopener">CC BY-NC-ND 4.0</a></p>
   </div>

@@ -6,14 +6,15 @@
    It follows the game by itself (state 'menu' -> lobby song, 'play' -> match song, 'over' -> match song, quieter), obeys the
    "소리 켬/끔" button (muted) and has its own volume: window.SeumMusic.setVolume(0..1) / getVolume(), kept in localStorage 'seumArenaMusicVol'. */
 const SeumMusic = (() => {
-  const DATA = { lobby: '@@LOBBY@@', battle: '@@BATTLE@@', result: '@@RESULT@@' };
+  const DATA = { lobby: '@@LOBBY@@', battle: '@@BATTLE@@', result: '@@RESULT@@', win: '@@WIN@@' };
   const CREDIT = {
     lobby: { title: 'Pixelland' },
     battle: { title: 'Just Nasty' },
-    result: { title: 'Run Amok' }
+    result: { title: 'Cruising for Goblins' },
+    win: { title: 'Pixel Peeker Polka - faster' }
   };
   const LIC = 'Licensed under Creative Commons: By Attribution 4.0 License', LIC_URL = 'http://creativecommons.org/licenses/by/4.0/';
-  const KEY = 'seumArenaMusicVol', GAIN = { lobby: .85, battle: .8, result: .8 };   /* result: "Run Amok", only while the match result screen is up */   // (both songs were levelled to about the same loudness; this is the headroom under the sound effects)
+  const KEY = 'seumArenaMusicVol', GAIN = { lobby: .85, battle: .8, result: .8, win: .8 };   /* win: "Pixel Peeker Polka - faster", the result screen after a win */   /* result: "Cruising for Goblins" (not a win), only while the match result screen is up */   // (both songs were levelled to about the same loudness; this is the headroom under the sound effects)
   let vol = .5, ac = null, started = false, tracks = {}, want = null, lastWant = null, credEl = null, credHide = 0, matchCredAt = 0;
   try { const v = parseFloat(localStorage.getItem(KEY)); if (v >= 0 && v <= 1) vol = v; } catch (e) { }
 
@@ -36,7 +37,7 @@ const SeumMusic = (() => {
     const go = () => setTimeout(fetchAll, 1500);
     if (document.readyState === 'complete') go(); else addEventListener('load', go, { once: true });
   }
-  const NAMES = ['lobby', 'battle', 'result'];
+  const NAMES = ['lobby', 'battle', 'result', 'win'];
   function make(name) {
     if (!DATA[name]) return null;
     let url;
@@ -120,12 +121,14 @@ const SeumMusic = (() => {
     const d = document.createElement('div'); d.textContent = LIC; el.append(d);
     const u = document.createElement('div'), a = document.createElement('a'); a.href = LIC_URL; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = LIC_URL; u.append(a); el.append(u);
   }
+  const CRED_SONGS = ['Pixelland', 'Just Nasty', 'Pixel Peeker Polka - faster', 'Cruising for Goblins'];
+  function fillCredits(el) { el.textContent = ''; el.append(...CRED_SONGS.map(credLine)); licLines(el); }
   function setCred(mode) {                               // 'lobby' (both songs, stays) | 'match' (the match song, a few seconds) | null
     const el = ensureCred();
     if (el.dataset.mode === String(mode)) return;
     el.dataset.mode = String(mode); el.textContent = '';
     el.classList.toggle('match', mode === 'match');
-    if (mode === 'lobby') { el.append(credLine('Just Nasty'), credLine('Pixelland'), credLine('Run Amok')); licLines(el); }
+    if (mode === 'lobby') { el.append(...CRED_SONGS.map(credLine)); licLines(el); }
     else if (mode === 'match') { el.append(credLine('Just Nasty')); licLines(el); }
     el.classList.toggle('show', !!mode);
   }
@@ -136,8 +139,9 @@ const SeumMusic = (() => {
     const lobbyMain = st === 'menu' && (!brand || brand.classList.contains('show'));
     const ov = document.getElementById('overScreen'), lb = document.getElementById('lobby');
     const result = !!(ov && ov.classList.contains('active') && (!lb || !lb.hidden) && st !== 'menu');      // the result screen is showing (also a knocked-out player's own result while the match goes on; not while watching)
-    want = st === 'menu' ? 'lobby' : result && tracks.result ? 'result' : 'battle';
-    if (want === 'result' && lastWant !== 'result' && tracks.result) { try { tracks.result.a.currentTime = 0; } catch (e) { } }      // from the start every time
+    const rtEl = document.getElementById('resultText'), won = !!(rtEl && rtEl.dataset.won === '1');      // a win by the game's own rule (1st, or 원 레프트/리워드 헌터 2-3등)
+    want = st === 'menu' ? 'lobby' : result && won && tracks.win ? 'win' : result && tracks.result ? 'result' : 'battle';
+    if ((want === 'result' || want === 'win') && lastWant !== want && tracks[want]) { try { tracks[want].a.currentTime = 0; } catch (e) { } }      // from the start every time
     if (started) {
       for (const n of NAMES) {
         const t = tracks[n]; if (!t) continue;
@@ -147,8 +151,7 @@ const SeumMusic = (() => {
       }
     }
     // credit text
-    if (lobbyMain) { setCred('lobby'); matchCredAt = 0; }
-    else setCred(null);      // no credit text during a match (it stays on the lobby screen)
+    setCred(null); matchCredAt = 0;      // credits live in 설정 > 크레딧 now (user 2026-11-16), none on the lobby
     lastWant = want;
   }
   arm();
@@ -159,6 +162,7 @@ const SeumMusic = (() => {
   document.addEventListener('visibilitychange', () => { wake(); if (!document.hidden && inited && ac && ac.state !== 'running') arm(); tick(); });
   addEventListener('pageshow', wake); addEventListener('focus', wake);
   return {
+    fillCredits,
     getVolume: () => vol,
     setVolume(v) { v = +v; if (!(v >= 0)) v = 0; vol = Math.min(1, v); try { localStorage.setItem(KEY, String(vol)); } catch (e) { } tick(); },
     get playing() { return want; }, get started() { return started; }, get tracks() { return tracks; }
