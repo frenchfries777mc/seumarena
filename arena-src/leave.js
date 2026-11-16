@@ -3,15 +3,16 @@
    A mark still there on the next load is that lost match: the win streak ends and it counts as a game played and not won; nothing is paid and
    quests do not move. A mark another open tab is still refreshing is left alone. */
 const LEAVE_K = 'seumArenaLive', TAB_ID = (() => { try { let t = sessionStorage.getItem('seumTab'); if (!t) { t = Math.random().toString(36).slice(2); sessionStorage.setItem('seumTab', t); } return t; } catch (e) { return 'x'; } })();
-let leaveOn = false;
+let leaveOn = false, leaveWant = false;      // leaveWant: a match was entered; an online guest has no player until the first snapshot, so the mark waits for it
 function leaveMark(on) {
+  leaveWant = !!on && !DED;
   try {
     if (on && player && !DED) { leaveOn = true; localStorage.setItem(LEAVE_K, JSON.stringify({ tab: TAB_ID, t: Date.now(), mode: curMode, hero: player.h0.id, k: player.kos | 0, d: player.deaths | 0 })); }
     else if (leaveOn) { leaveOn = false; const m = JSON.parse(localStorage.getItem(LEAVE_K) || 'null'); if (!m || m.tab === TAB_ID) localStorage.removeItem(LEAVE_K); }
   } catch (e) { quietErr(e); }
   document.documentElement.classList.toggle('inMatch', leaveOn);
 }
-setInterval(() => { if (leaveOn && state === 'play') leaveMark(true); }, 2000);
+setInterval(() => { if ((leaveOn || leaveWant) && state === 'play') leaveMark(true); }, 2000);
 function leaveCheck() {
   let m = null; try { m = JSON.parse(localStorage.getItem(LEAVE_K) || 'null'); } catch (e) { quietErr(e); }
   if (!m || (m.tab !== TAB_ID && Date.now() - m.t < 6000)) return;
