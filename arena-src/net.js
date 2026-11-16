@@ -12,7 +12,7 @@ const NET_PREFIX = 'seumarena-v3-', NET_ROOMS = 8, WAIT_SEC = 15, WAIT_FEW = 3, 
 const PEER_SERVER = null;
 /* waiting (user 2026-11-15 "로비에 아무도 없으면 3초"): a room waits WAIT_SEC s, or only WAIT_FEW s while nobody is waiting in any other room.
    The server (sa-host.js) counts the people in its other waiting rooms and tells each waiting room through __sad.setWait(sec). A full room starts at once. */
-let waitSec = WAIT_SEC;
+let waitSec = /[?&]dedicated=1(&|$)/.test(location.search) ? WAIT_FEW : WAIT_SEC;      // a server room starts at 3 s, so the rule holds even on a server whose sa-host.js predates setWait; sa-host raises it to 15 s while someone waits elsewhere
 /* Own TURN server (coturn on the Oracle server): no password in this file. Short-lived TURN logins are fetched from TURN_CRED_URL (a Cloudflare
    Worker that signs them with coturn's static-auth-secret) and added to the ICE list below; if that fails the game still runs on STUN + the public relays. */
 const TURN_CRED_URL = 'https://frenchfries777.com/seumarena/turn';

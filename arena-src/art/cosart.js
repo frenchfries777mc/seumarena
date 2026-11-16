@@ -99,10 +99,10 @@ const WIN_POSES={
 };
 for(const id in WIN_POSES){ const q=WIN_POSES[id]; COSMETICS[id]={cat:'pose', name:q.name, price:q.price, icon:q.icon, free:!!q.free, seasonOnly:!!q.season}; }
 // draws the figure with its feet at (0,0), y going up negative; stroke/fill colours are set by the caller. t = seconds.
-function drawWinPose(c, poseId, t, wid, tint){
+function drawWinPose(c, poseId, t, wid, tint, cp){
   const HEADR=9, ln=(pts)=>{ c.beginPath(); c.moveTo(pts[0][0],pts[0][1]); for(let i=1;i<pts.length;i++) c.lineTo(pts[i][0],pts[i][1]); c.stroke(); };
   const head=(x,y)=>{ c.beginPath(); c.arc(x,y,HEADR,0,7); c.fill(); };
-  const persona=(x,y,shy)=>{ if(wid && WEAPON_PERSONA_NAME[wid]){ const sb0=c.shadowBlur; c.shadowBlur=0; try{ drawWeaponPersona(c,wid,x,y,HEADR,shy,tint); }catch(e){} c.shadowBlur=sb0; } };
+  const persona=(x,y,shy)=>{ if(wid && WEAPON_PERSONA_NAME[wid]){ const sb0=c.shadowBlur; c.shadowBlur=0; try{ drawWeaponPersona(c,wid,x,y,HEADR,shy,tint,cp); }catch(e){} c.shadowBlur=sb0; } };
   const id=WIN_POSES[poseId] ? poseId : 'pose_cheer';
   if(id==='pose_cheer' && wid==='shade'){      // 셰이드: the winner holds the neon greatsword up, glowing
     const bob=Math.abs(Math.sin(t*5))*4, sw=Math.sin(t*3)*0.14; c.translate(0,-bob);
@@ -217,7 +217,7 @@ function drawWinPose(c, poseId, t, wid, tint){
     c.shadowBlur=sb;
   }
 }
-function drawLosePose(c, t, wid, tint){
+function drawLosePose(c, t, wid, tint, cp){
   const HEADR=9, ln=(pts)=>{ c.beginPath(); c.moveTo(pts[0][0],pts[0][1]); for(let i=1;i<pts.length;i++) c.lineTo(pts[i][0],pts[i][1]); c.stroke(); };
   const sw=Math.sin(t*1.6)*2.5, sg=Math.max(0,Math.sin(t*0.9))*2;            // a slow sway and now and then a sigh
   ln([[-7,0],[2,-20],[9,0]]);                                                        // legs
@@ -225,7 +225,7 @@ function drawLosePose(c, t, wid, tint){
   ln([[11+sw*0.3,-35],[8+sw,-20],[10+sw*1.4,-8]]); ln([[11+sw*0.3,-35],[15-sw,-21],[14-sw*1.2,-9]]);   // arms hang down
   const hx=16+sw*0.3, hy=-42+sg;
   c.beginPath(); c.arc(hx,hy,HEADR,0,7); c.fill();
-  if(wid && WEAPON_PERSONA_NAME[wid]){ const sb0=c.shadowBlur; c.shadowBlur=0; try{ drawWeaponPersona(c,wid,hx,hy,HEADR,hy+10,tint); }catch(e){} c.shadowBlur=sb0; }
+  if(wid && WEAPON_PERSONA_NAME[wid]){ const sb0=c.shadowBlur; c.shadowBlur=0; try{ drawWeaponPersona(c,wid,hx,hy,HEADR,hy+10,tint,cp); }catch(e){} c.shadowBlur=sb0; }
   const dr=(t*1.2)%1; c.save(); c.globalAlpha=0.7*(1-dr); c.fillStyle='#8fd3ff'; c.beginPath(); c.arc(hx+8,hy+4+dr*16,2,0,7); c.fill(); c.restore();    // a tear
 }
 function spawnKillEffect(e, x, y, addP, burst, shakeFrom){

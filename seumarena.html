@@ -550,7 +550,7 @@ body.touchUi canvas{touch-action:none}
 @keyframes rwBump{30%{scale:1.22;filter:brightness(1.6)}}
 #goldGain:not([hidden])>span{animation:rwPrize .45s cubic-bezier(.2,1.6,.4,1) backwards}
 #goldGain>span:nth-child(2){animation-delay:.1s}#goldGain>span:nth-child(3){animation-delay:.2s}#goldGain>span:nth-child(4){animation-delay:.3s}
-@media (max-height:420px){.rwBox{width:110px;height:110px}.rwBox .rwIc{font-size:86px}.rwBox canvas{width:110px;height:110px}.rwTxt{font-size:30px}.rwRays{width:min(90vmin,320px)}}
+@media (max-height:420px){.rwBox{width:110px;height:110px}.rwBox .rwIc{font-size:86px}.rwBox canvas{width:110px;height:110px}.rwTxt{font-size:30px}.rwRays{width:min(90vmin,320px);margin:-100px}#rwFx{gap:8px}}      /* short landscape: the rays spill over the text instead of pushing it off the screen */
 @media (prefers-reduced-motion: reduce){.rwRays{animation:none}#rwFx.shake .rwBox,#rwFx.open .rwBox,#rwFx.open .rwSpk i{animation-duration:.01s}}
 /* ---------- attendance strip, today's shop, character record, titles, the profile card, the MVP moment, box tiers ---------- */
 .attRow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
@@ -2941,10 +2941,10 @@ const WIN_POSES={
 };
 for(const id in WIN_POSES){ const q=WIN_POSES[id]; COSMETICS[id]={cat:'pose', name:q.name, price:q.price, icon:q.icon, free:!!q.free, seasonOnly:!!q.season}; }
 // draws the figure with its feet at (0,0), y going up negative; stroke/fill colours are set by the caller. t = seconds.
-function drawWinPose(c, poseId, t, wid, tint){
+function drawWinPose(c, poseId, t, wid, tint, cp){
   const HEADR=9, ln=(pts)=>{ c.beginPath(); c.moveTo(pts[0][0],pts[0][1]); for(let i=1;i<pts.length;i++) c.lineTo(pts[i][0],pts[i][1]); c.stroke(); };
   const head=(x,y)=>{ c.beginPath(); c.arc(x,y,HEADR,0,7); c.fill(); };
-  const persona=(x,y,shy)=>{ if(wid && WEAPON_PERSONA_NAME[wid]){ const sb0=c.shadowBlur; c.shadowBlur=0; try{ drawWeaponPersona(c,wid,x,y,HEADR,shy,tint); }catch(e){} c.shadowBlur=sb0; } };
+  const persona=(x,y,shy)=>{ if(wid && WEAPON_PERSONA_NAME[wid]){ const sb0=c.shadowBlur; c.shadowBlur=0; try{ drawWeaponPersona(c,wid,x,y,HEADR,shy,tint,cp); }catch(e){} c.shadowBlur=sb0; } };
   const id=WIN_POSES[poseId] ? poseId : 'pose_cheer';
   if(id==='pose_cheer' && wid==='shade'){      // 셰이드: the winner holds the neon greatsword up, glowing
     const bob=Math.abs(Math.sin(t*5))*4, sw=Math.sin(t*3)*0.14; c.translate(0,-bob);
@@ -3059,7 +3059,7 @@ function drawWinPose(c, poseId, t, wid, tint){
     c.shadowBlur=sb;
   }
 }
-function drawLosePose(c, t, wid, tint){
+function drawLosePose(c, t, wid, tint, cp){
   const HEADR=9, ln=(pts)=>{ c.beginPath(); c.moveTo(pts[0][0],pts[0][1]); for(let i=1;i<pts.length;i++) c.lineTo(pts[i][0],pts[i][1]); c.stroke(); };
   const sw=Math.sin(t*1.6)*2.5, sg=Math.max(0,Math.sin(t*0.9))*2;            // a slow sway and now and then a sigh
   ln([[-7,0],[2,-20],[9,0]]);                                                        // legs
@@ -3067,7 +3067,7 @@ function drawLosePose(c, t, wid, tint){
   ln([[11+sw*0.3,-35],[8+sw,-20],[10+sw*1.4,-8]]); ln([[11+sw*0.3,-35],[15-sw,-21],[14-sw*1.2,-9]]);   // arms hang down
   const hx=16+sw*0.3, hy=-42+sg;
   c.beginPath(); c.arc(hx,hy,HEADR,0,7); c.fill();
-  if(wid && WEAPON_PERSONA_NAME[wid]){ const sb0=c.shadowBlur; c.shadowBlur=0; try{ drawWeaponPersona(c,wid,hx,hy,HEADR,hy+10,tint); }catch(e){} c.shadowBlur=sb0; }
+  if(wid && WEAPON_PERSONA_NAME[wid]){ const sb0=c.shadowBlur; c.shadowBlur=0; try{ drawWeaponPersona(c,wid,hx,hy,HEADR,hy+10,tint,cp); }catch(e){} c.shadowBlur=sb0; }
   const dr=(t*1.2)%1; c.save(); c.globalAlpha=0.7*(1-dr); c.fillStyle='#8fd3ff'; c.beginPath(); c.arc(hx+8,hy+4+dr*16,2,0,7); c.fill(); c.restore();    // a tear
 }
 function spawnKillEffect(e, x, y, addP, burst, shakeFrom){
@@ -6086,10 +6086,12 @@ function ballReset() { Object.assign(BALL, { sci: -1, x: WW / 2, y: WH / 2, vx: 
 const ballSpawn = (team, slot) => freeNear((team === 0 ? 4.5 : COLS - 4.5) * T, (ROWS / 2 + ((slot | 0) - 1) * 2.6) * T);
 const ballGoalOf = t => ({ x: (t === 0 ? 1.2 : COLS - 1.2) * T, y: (BALL.gy0 + BALL.gy1) / 2 });      // the goal team t defends
 /* every kick: the ball's speed along (nx, ny) becomes at least p (kicks do not stack into a rocket); by = who touched it last */
-function ballKick(by, nx, ny, p) {
+function ballKick(by, nx, ny, p, aim) {
   if (!BALL.on || RD.pause > 0 || !(p > 0)) return;
   const d = Math.hypot(nx, ny); if (d < 1e-4) return; nx /= d; ny /= d;
-  const vn = BALL.vx * nx + BALL.vy * ny; if (vn < p) { BALL.vx += nx * (p - vn); BALL.vy += ny * (p - vn); }
+  // aim: a real kick (shot, clean swing, dash) sends the ball exactly where it was aimed, not mixed with how it was already rolling (2026-11-16)
+  if (aim) { const v = Math.max(p, Math.hypot(BALL.vx, BALL.vy) * .6); BALL.vx = nx * v; BALL.vy = ny * v; }
+  else { const vn = BALL.vx * nx + BALL.vy * ny; if (vn < p) { BALL.vx += nx * (p - vn); BALL.vy += ny * (p - vn); } }
   const s = Math.hypot(BALL.vx, BALL.vy); if (s > BALL_MAX) { BALL.vx *= BALL_MAX / s; BALL.vy *= BALL_MAX / s; }
   const ow = by && (by.minion ? by.by : by); if (ow && ow.h) BALL.last = ow;
 }
@@ -6099,7 +6101,7 @@ function ballArc(f, ang, range, half, kb, hits) {
   let da = Math.atan2(dy, dx) - ang; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) > half + .25 && d > 30) return;
   if (!los(f.x, f.y, BALL.x, BALL.y)) return;
   // 2026-11-15 (user: too many goals nobody meant): a swing that only met the ball is a real kick; one that was hitting a fighter just nudges it
-  ballKick(f, Math.cos(ang), Math.sin(ang), hits ? 360 : clamp(820 + (kb || 0) * .4, 820, 950));
+  ballKick(f, Math.cos(ang), Math.sin(ang), hits ? 360 : clamp(820 + (kb || 0) * .4, 820, 950), !hits);
 }
 function ballCirc(by, x, y, r, dmg, o) {
   if (!(dmg > 0) && !o.kb) return;
@@ -6111,12 +6113,12 @@ function ballCirc(by, x, y, r, dmg, o) {
 function ballPath(f, x0, y0, x1, y1, w) {
   const dx = x1 - x0, dy = y1 - y0, l2 = dx * dx + dy * dy || 1, t = clamp(((BALL.x - x0) * dx + (BALL.y - y0) * dy) / l2, 0, 1);
   if (Math.hypot(BALL.x - (x0 + dx * t), BALL.y - (y0 + dy * t)) > w + BALL_R) return;
-  ballKick(f, dx, dy, 520);
+  ballKick(f, dx, dy, 520, 1);
 }
 /* a shot touching the ball: true = the shot stops there */
 function ballShot(b) {
   if (b.hitBall || Math.hypot(BALL.x - b.x, BALL.y + BODY - b.y) >= BALL_R + (b.r || 5) + 6) return false;
-  b.hitBall = 1; ballKick(b.owner, b.vx, b.vy, clamp(420 + (b.dmg || 0) * 3, 420, 720));
+  b.hitBall = 1; ballKick(b.owner, b.vx, b.vy, clamp(420 + (b.dmg || 0) * 3, 420, 720), 1);
   if (fxInView(b.x, b.y)) burst(BALL.x, BALL.y + BODY, '#ffffff', 5, 160);
   return !b.boom && !(b.pierce > 0);
 }
@@ -6143,7 +6145,7 @@ function ballBodies(dt) {
     const nx = d > 1e-3 ? dx / d : Math.cos(f.aim || 0), ny = d > 1e-3 ? dy / d : Math.sin(f.aim || 0);
     if (!solidAt(f.x + nx * md, f.y + ny * md)) { BALL.x = f.x + nx * md; BALL.y = f.y + ny * md; }
     const fv = Math.min(700, fvx * nx + fvy * ny);
-    ballKick(f, nx, ny, f.dash ? 780 : Math.max(60, fv * 1.3 + 40));
+    ballKick(f, nx, ny, f.dash ? 780 : Math.max(60, fv * 1.3 + 40), !!f.dash);
   }
 }
 /* true while a goal is being celebrated (step() skips its own end checks then) */
@@ -7164,7 +7166,7 @@ function rewardFx(got, step) {
   const ic = fx.querySelector('.rwIc'), cvs = fx.querySelector('canvas'), txt = fx.querySelector('.rwTxt'), spk = fx.querySelector('.rwSpk');
   const setIcon = kind => { cvs.hidden = true; ic.hidden = false; ic.textContent = ''; ic.className = 'rwIc ' + (kind === 'k' ? '' : kind === 'g' ? 'coin' : 'rwI ' + RW_ICON[kind]); if (kind === 'k') ic.innerHTML = '<svg aria-hidden="true"><use href="#mi-karma"/></svg>'; };
   const note = (f, at) => setTimeout(() => { try { sfx(f, .16, 'triangle', .07); } catch (e) { quietErr(e); } }, at);
-  const close = () => { clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.classList.add('out'); rwTimer = setTimeout(() => { fx.hidden = true; fx.classList.remove('out', 'open', 'shake'); if (k + 1 < L.length) rewardFx(L[0], k + 1); else if (rwQ.length) rewardFx(rwQ.shift()); }, 220); for (const el of document.querySelectorAll('.goldPill, #karma, #acctIcon')) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } };
+  const close = () => { clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.classList.add('out'); rwTimer = setTimeout(() => { fx.hidden = true; fx.classList.remove('out', 'open', 'shake', 'shut'); if (k + 1 < L.length) rewardFx(L[0], k + 1); else if (rwQ.length) rewardFx(rwQ.shift()); }, 220); for (const el of document.querySelectorAll('.goldPill, #karma, #acctIcon')) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } };
   const open = () => {
     fx.classList.remove('shake'); void fx.offsetWidth; fx.classList.add('open');
     if (got.kind === 'su') { setIcon('su'); const s = HEROES[got.hero].skills.find(x => x.n === got.sk); txt.textContent = HEROES[got.hero].name + ' · ' + (s ? nameOf(s) : '') + ' 해금'; }
@@ -7177,12 +7179,13 @@ function rewardFx(got, step) {
     spk.textContent = ''; const cols = tier === 2 ? ['#ffe07a', '#fff', '#ffb020', '#ff7ad9', '#7fe0ff'] : tier === 1 ? ['#d9a8ff', '#a45cff', '#fff', '#7fb4ff'] : got.kind === 'k' ? ['#e3c4ff', '#a45cff', '#fff'] : ['#ffe07a', '#fff3b0', '#ff9a3d', '#7fe0a0'], np = [22, 34, 56][tier];
     for (let i = 0; i < np; i++) { const p = document.createElement('i'), a = Math.PI * 2 * i / np + Math.random() * .3, r = (110 + Math.random() * 120) * (1 + tier * .25); p.style.setProperty('--x', Math.round(Math.cos(a) * r) + 'px'); p.style.setProperty('--y', Math.round(Math.sin(a) * r) + 'px'); p.style.setProperty('--c', cols[i % cols.length]); p.style.setProperty('--d', (Math.random() * .12).toFixed(2) + 's'); spk.append(p); }
     note(660, 0); note(880, 90); note(1320, 180); if (got.skin || got.box === 'ebox' || tier) note(1760, 300); if (tier === 2) { note(2090, 420); note(2640, 560); }
-    rwTimer = setTimeout(close, got.skin || tier === 2 ? 2800 : L.length > 1 ? 1500 : 1900);
+    if (L.length < 2) rwTimer = setTimeout(close, got.skin || tier === 2 ? 2800 : 1900);      // epic box rewards wait for a tap
   };
-  clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.hidden = false; fx.classList.remove('out', 'open', 'shake', 't1', 't2'); txt.textContent = ''; spk.textContent = '';
+  clearTimeout(rwTimer); cancelAnimationFrame(rwRaf); fx.hidden = false; fx.classList.remove('out', 'open', 'shake', 'shut', 't1', 't2'); txt.textContent = ''; spk.textContent = '';
   const tier = got.box ? got.tier | 0 : 0, tg = fx.querySelector('.rwTier'); if (tier) fx.classList.add('t' + tier); if (tg) tg.textContent = (got.box ? ['', '희귀', '전설'][tier] : '') + (L.length > 1 ? (tier ? ' · ' : '') + (k + 1) + '/' + L.length : '');
-  fx.onclick = () => { if (fx.classList.contains('shake')) { clearTimeout(rwTimer); open(); } else close(); };
-  if (got.box) { setIcon(got.box); void fx.offsetWidth; fx.classList.add('shake'); const sh = k ? [480, 700, 1100][tier] : [720, 1000, 1500][tier]; fx.style.setProperty('--sh', sh + 'ms'); for (let i = 0; i < sh / 130 - 1; i++) note(300 + i * (40 + tier * 15), 150 + i * 120); rwTimer = setTimeout(open, sh); }
+  fx.onclick = () => { if (fx.classList.contains('shut')) { clearTimeout(rwTimer); fx.classList.remove('shut'); open(); } else close(); };      // a box stays shut until it is tapped (user 2026-11-16)
+  if (got.box && got.box !== 'ebox') { setIcon(got.box); void fx.offsetWidth; fx.classList.add('shake', 'shut'); const sh = k ? [480, 700, 1100][tier] : [720, 1000, 1500][tier]; fx.style.setProperty('--sh', sh + 'ms'); for (let i = 0; i < sh / 130 - 1; i++) note(300 + i * (40 + tier * 15), 150 + i * 120); }
+  else if (got.box === 'ebox' && !k) { setIcon('ebox'); fx.classList.add('shut'); }      // epic box: shut once, then the three rewards follow tap by tap
   else open();
 }
 /* ---------- daily quests: three a day (one easy, one middling, one hard), picked by the date on this device. COS.dq = { d: day, p: progress x3, c: taken x3 } ---------- */
@@ -7679,7 +7682,7 @@ function winScreen(won, draw) {
       const f = g.f, wid = f.h0.id, sk = skinOf(f.cos, wid), tint = sk ? COSMETICS[sk].tint : undefined, col = bodyColor(f.cos, TC(f.team));
       c.save(); c.translate(g.x, Hc - 34); c.scale(g.sc, g.sc);
       c.shadowColor = col; c.shadowBlur = 10; c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 5; c.lineCap = 'round'; c.lineJoin = 'round';
-      try { if (g.win) drawWinPose(c, (f.cos && f.cos.pose) || 'pose_cheer', t, wid, tint); else drawLosePose(c, t, wid, tint); } catch (e) { quietErr(e); }
+      try { if (g.win) drawWinPose(c, (f.cos && f.cos.pose) || 'pose_cheer', t, wid, tint, conceptOfSkin(sk)); else drawLosePose(c, t, wid, tint, conceptOfSkin(sk)); } catch (e) { quietErr(e); }
       c.restore();
       c.save(); c.font = '700 13px "IBM Plex Sans KR", sans-serif'; c.textAlign = 'center'; c.fillStyle = f === player ? '#ffd34d' : (f.nick ? nameColorFor(f.cos && f.cos.name) : '#8890a4');
       c.fillText(f.nick || f.h0.name, g.x, Hc - 12); c.restore();
@@ -9908,7 +9911,7 @@ const NET_PREFIX = 'seumarena-v3-', NET_ROOMS = 8, WAIT_SEC = 15, WAIT_FEW = 3, 
 const PEER_SERVER = null;
 /* waiting (user 2026-11-15 "로비에 아무도 없으면 3초"): a room waits WAIT_SEC s, or only WAIT_FEW s while nobody is waiting in any other room.
    The server (sa-host.js) counts the people in its other waiting rooms and tells each waiting room through __sad.setWait(sec). A full room starts at once. */
-let waitSec = WAIT_SEC;
+let waitSec = /[?&]dedicated=1(&|$)/.test(location.search) ? WAIT_FEW : WAIT_SEC;      // a server room starts at 3 s, so the rule holds even on a server whose sa-host.js predates setWait; sa-host raises it to 15 s while someone waits elsewhere
 /* Own TURN server (coturn on the Oracle server): no password in this file. Short-lived TURN logins are fetched from TURN_CRED_URL (a Cloudflare
    Worker that signs them with coturn's static-auth-secret) and added to the ICE list below; if that fails the game still runs on STUN + the public relays. */
 const TURN_CRED_URL = 'https://frenchfries777.com/seumarena/turn';
@@ -11723,7 +11726,7 @@ function updateHud() {
   else { $('sb').textContent = mine; $('sr').textContent = theirs; $('sbL').textContent = curMode === 'ko3' ? '우리' : curMode === 'star' ? '내 별' : solo ? '킬' : '블루'; $('srL').textContent = curMode === 'ko3' ? '상대' : curMode === 'star' ? '1위' : solo ? '생존' : '레드'; }
   $('timer').textContent = ot ? '연장전' : Math.floor(tl / 60) + ':' + String(tl % 60).padStart(2, '0');
   if (modeNow().fog) { const a = Math.floor(timeLeft); $('timer').textContent = Math.floor(a / 60) + ':' + String(a % 60).padStart(2, '0'); }
-  $('timer').classList.toggle('hot', ot || (tl <= 15 && !modeNow().fog) || (modeNow().fog && SZ.on && SZ.r < SZ.r0 - 1));
+  $('timer').classList.toggle('hot', !!(ot || (tl <= 15 && !modeNow().fog) || (modeNow().fog && SZ.on && SZ.r < SZ.r0 - 1)));      // !!: modeNow().fog is undefined in most modes, and toggle(x, undefined) flips the class every update
   ultBtn.style.setProperty('--p', up); ultBtn.classList.toggle('ready', up >= 100);
   $('ultName').textContent = c.un; $('ultHint').textContent = up >= 100 ? (touchUi() ? '궁극기' : 'R') : Math.ceil(c.u) + '초';
   dashBtn.style.setProperty('--p', dp); dashBtn.classList.toggle('ready', dp >= 100); $('dashHint').textContent = touchUi() ? '' : 'Q';
@@ -12271,7 +12274,7 @@ function mvpFx(win, draw) {
     if (run !== mvpRun) return;
     c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cvs.width, cvs.height); c.translate(cvs.width / 2, cvs.height - 40); c.scale(2.7, 2.7);
     c.shadowColor = col; c.shadowBlur = 10; c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 5; c.lineCap = 'round'; c.lineJoin = 'round';
-    try { drawWinPose(c, (f.cos && f.cos.pose) || 'pose_cheer', now / 1000, wid, tint); } catch (e) { quietErr(e); }
+    try { drawWinPose(c, (f.cos && f.cos.pose) || 'pose_cheer', now / 1000, wid, tint, conceptOfSkin(sk)); } catch (e) { quietErr(e); }
     requestAnimationFrame(fr);
   })(performance.now());
 }

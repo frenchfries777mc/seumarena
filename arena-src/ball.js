@@ -15,10 +15,12 @@ function ballReset() { Object.assign(BALL, { sci: -1, x: WW / 2, y: WH / 2, vx: 
 const ballSpawn = (team, slot) => freeNear((team === 0 ? 4.5 : COLS - 4.5) * T, (ROWS / 2 + ((slot | 0) - 1) * 2.6) * T);
 const ballGoalOf = t => ({ x: (t === 0 ? 1.2 : COLS - 1.2) * T, y: (BALL.gy0 + BALL.gy1) / 2 });      // the goal team t defends
 /* every kick: the ball's speed along (nx, ny) becomes at least p (kicks do not stack into a rocket); by = who touched it last */
-function ballKick(by, nx, ny, p) {
+function ballKick(by, nx, ny, p, aim) {
   if (!BALL.on || RD.pause > 0 || !(p > 0)) return;
   const d = Math.hypot(nx, ny); if (d < 1e-4) return; nx /= d; ny /= d;
-  const vn = BALL.vx * nx + BALL.vy * ny; if (vn < p) { BALL.vx += nx * (p - vn); BALL.vy += ny * (p - vn); }
+  // aim: a real kick (shot, clean swing, dash) sends the ball exactly where it was aimed, not mixed with how it was already rolling (2026-11-16)
+  if (aim) { const v = Math.max(p, Math.hypot(BALL.vx, BALL.vy) * .6); BALL.vx = nx * v; BALL.vy = ny * v; }
+  else { const vn = BALL.vx * nx + BALL.vy * ny; if (vn < p) { BALL.vx += nx * (p - vn); BALL.vy += ny * (p - vn); } }
   const s = Math.hypot(BALL.vx, BALL.vy); if (s > BALL_MAX) { BALL.vx *= BALL_MAX / s; BALL.vy *= BALL_MAX / s; }
   const ow = by && (by.minion ? by.by : by); if (ow && ow.h) BALL.last = ow;
 }
@@ -28,7 +30,7 @@ function ballArc(f, ang, range, half, kb, hits) {
   let da = Math.atan2(dy, dx) - ang; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) > half + .25 && d > 30) return;
   if (!los(f.x, f.y, BALL.x, BALL.y)) return;
   // 2026-11-15 (user: too many goals nobody meant): a swing that only met the ball is a real kick; one that was hitting a fighter just nudges it
-  ballKick(f, Math.cos(ang), Math.sin(ang), hits ? 360 : clamp(820 + (kb || 0) * .4, 820, 950));
+  ballKick(f, Math.cos(ang), Math.sin(ang), hits ? 360 : clamp(820 + (kb || 0) * .4, 820, 950), !hits);
 }
 function ballCirc(by, x, y, r, dmg, o) {
   if (!(dmg > 0) && !o.kb) return;
@@ -40,12 +42,12 @@ function ballCirc(by, x, y, r, dmg, o) {
 function ballPath(f, x0, y0, x1, y1, w) {
   const dx = x1 - x0, dy = y1 - y0, l2 = dx * dx + dy * dy || 1, t = clamp(((BALL.x - x0) * dx + (BALL.y - y0) * dy) / l2, 0, 1);
   if (Math.hypot(BALL.x - (x0 + dx * t), BALL.y - (y0 + dy * t)) > w + BALL_R) return;
-  ballKick(f, dx, dy, 520);
+  ballKick(f, dx, dy, 520, 1);
 }
 /* a shot touching the ball: true = the shot stops there */
 function ballShot(b) {
   if (b.hitBall || Math.hypot(BALL.x - b.x, BALL.y + BODY - b.y) >= BALL_R + (b.r || 5) + 6) return false;
-  b.hitBall = 1; ballKick(b.owner, b.vx, b.vy, clamp(420 + (b.dmg || 0) * 3, 420, 720));
+  b.hitBall = 1; ballKick(b.owner, b.vx, b.vy, clamp(420 + (b.dmg || 0) * 3, 420, 720), 1);
   if (fxInView(b.x, b.y)) burst(BALL.x, BALL.y + BODY, '#ffffff', 5, 160);
   return !b.boom && !(b.pierce > 0);
 }
@@ -72,7 +74,7 @@ function ballBodies(dt) {
     const nx = d > 1e-3 ? dx / d : Math.cos(f.aim || 0), ny = d > 1e-3 ? dy / d : Math.sin(f.aim || 0);
     if (!solidAt(f.x + nx * md, f.y + ny * md)) { BALL.x = f.x + nx * md; BALL.y = f.y + ny * md; }
     const fv = Math.min(700, fvx * nx + fvy * ny);
-    ballKick(f, nx, ny, f.dash ? 780 : Math.max(60, fv * 1.3 + 40));
+    ballKick(f, nx, ny, f.dash ? 780 : Math.max(60, fv * 1.3 + 40), !!f.dash);
   }
 }
 /* true while a goal is being celebrated (step() skips its own end checks then) */
