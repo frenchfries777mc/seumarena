@@ -350,7 +350,7 @@ body.touchUi canvas{touch-action:none}
 #karma svg{width:24px;height:24px;display:block}
 #karmaGain{display:inline-flex;align-items:center;gap:4px;color:#d9b8ff;margin-right:12px}
 #karmaGain svg{width:18px;height:18px}
-#karmaGain[hidden]{display:none}
+#karmaGain[hidden],#crGain[hidden]{display:none}#crGain{color:#7ff0dc}
 #goldGain>#streakGain[hidden]{display:none}#streakGain{color:#ffb070;font-weight:800}#streakGain.lost{color:#9aa3b2}
 @media (max-width:520px){
   #acct{max-width:calc(100vw - 132px);gap:6px}
@@ -1457,7 +1457,7 @@ canvas.rwI{background:none}
     <canvas id="winCanvas" width="520" height="190"></canvas>
     <div class="final"><span class="b" id="fb">0</span><span>:</span><span class="r" id="fr">0</span><span id="fq"></span></div>
     <p id="mine"></p>
-    <p id="goldGain" hidden><span id="karmaGain"><svg aria-hidden="true"><use href="#mi-karma"/></svg><b id="karmaGainN"></b></span><span><i class="coin"></i><b id="goldGainN"></b></span><span id="mpGain"><i class="rwI ic-xpC"></i><b id="mpGainN"></b></span><span id="xpGain"><i class="rwI ic-xpP"></i><b id="xpGainN"></b></span><span id="streakGain" hidden></span></p>
+    <p id="goldGain" hidden><span id="karmaGain"><svg aria-hidden="true"><use href="#mi-karma"/></svg><b id="karmaGainN"></b></span><span><i class="coin"></i><b id="goldGainN"></b></span><span id="crGain" hidden><i class="ic-cr"></i><b>+3</b></span><span id="mpGain"><i class="rwI ic-xpC"></i><b id="mpGainN"></b></span><span id="xpGain"><i class="rwI ic-xpP"></i><b id="xpGainN"></b></span><span id="streakGain" hidden></span></p>
     <div id="mpCard" hidden><canvas id="mpLogo" width="128" height="128"></canvas><div class="mpI"><small id="mpHero"></small><b id="mpRank"></b><div class="mpBar"><i id="mpOld"></i><i id="mpNew"></i></div></div><b id="mpCardN"></b><p id="mpUp" hidden></p></div>
     <div id="overStats"></div>
     <button class="btn-primary btn-full" id="againBtn" type="button">다시 하기</button>

@@ -387,7 +387,6 @@ COSMETICS.skin_flamethrower_br={cat:'skin', char:'flamethrower', name:'입냄새
 Object.assign(COSMETICS.skin_pistol_new, {name:'바나나 제임스', price:1500, tint:'#ffe14d', fx:'sparkle', concept:'banana'});
 /* 별빛 사과 skins (owner 11-02, an apology gift for one account): never sold, only given as a gift (gifts row). Drawn from a few cached little pictures, so it costs far less than the 그랜드 마스터 show. */
 const STAR_TINT='#ff9ad5';
-COSMETICS.skin_pistol_apology={cat:'skin', char:'pistol', name:'(한정판) 별빛 사과 제임스', price:0, tint:STAR_TINT, fx:'sparkle', lux:3, exclusive:true, concept:'starlight'};
 /* filling the skin list of the characters that had few (2026-11-13): every playable character now has at least six */
 for(const [id,ch,nm,price,tint,fx,x] of [
   ['skin_gardener','gardener','해바라기 밀짚모자',800,'#f2b81f'], ['skin_gardener_c','gardener','새싹 밀짚모자',300,'#7cc96a'],

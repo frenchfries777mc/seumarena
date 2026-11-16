@@ -79,8 +79,8 @@ const themeCol = id => (ULT_THEMES[id] || ULT_THEMES._).c[0];
 /* melee swings: the original weapon arcs (drawProjectileBase with a swing angle), drawn where the arm swings */
 function addSwing(f, ang) {
   const life = Math.min(.28, Math.max(.12, f.h.cd || .3));
-  const s = { x: f.x + Math.cos(ang) * 26, y: f.y + BODY + Math.sin(ang) * 26, wid: f.h.id, swingAngle: ang, life, life0: life, color: TC(f.team), vx: 0, vy: 0, dmgless: true };
-  swings.push(s); evt(['w', Math.round(s.x), Math.round(s.y), s.wid, +ang.toFixed(2), +life.toFixed(2), f.team]);
+  const sk = skinOf(f.cos, f.h.id), s = { x: f.x + Math.cos(ang) * 26, y: f.y + BODY + Math.sin(ang) * 26, wid: f.h.id, swingAngle: ang, life, life0: life, color: CONCEPT_COLOR[conceptOfSkin(sk)] || TC(f.team), vx: 0, vy: 0, dmgless: true, sk: sk || undefined };
+  swings.push(s); evt(['w', Math.round(s.x), Math.round(s.y), s.wid, +ang.toFixed(2), +life.toFixed(2), f.team, fighters.indexOf(f)]);
 }
 const SHAPE_WID = {}; for (const id in WEAPONS) { const sh = WEAPONS[id].shape; if (sh && !SHAPE_WID[sh] && WEAPONS[id].kind !== 'melee') SHAPE_WID[sh] = id; }
 SHAPE_WID.bullet = 'pistol'; SHAPE_WID.fireball = 'wizard'; SHAPE_WID.bomb = 'grenade'; SHAPE_WID.rocket = 'bazooka'; SHAPE_WID.arrow = 'bow';
@@ -232,6 +232,12 @@ function hatPops() {                       // the moment he steps out of the hat
     }
   }
 }
+/* the skin of whoever fired a basic shot (Stickseum's b.sk): the host knows the owner, a guest gets the owner's place in fighters */
+function shotSkin(b) {
+  if (b.sk !== undefined) return b.sk;
+  const o = b.owner && typeof b.owner === 'object' ? b.owner : (b.oi != null ? fighters[b.oi] : null);
+  return b.sk = (o && b.wid && skinOf(o.cos, b.wid)) || null;
+}
 function drawShot(b) {          // a projectile in the original art, turned along its flight
   if (b.shape === 'syringe') return drawSyringe(b);
   const red = b.shape === 'redshot', wid = red ? 'pistol' : b.wid || SHAPE_WID[b.shape];      // 제임스 강한 탄: Stickseum's big red pistol bullet
@@ -243,8 +249,10 @@ function drawShot(b) {          // a projectile in the original art, turned alon
     ctx.save(); ctx.globalAlpha = .28 + .2 * s; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(b.x, b.y + 30, 11 * s, 4.5 * s, 0, 0, 7); ctx.fill(); ctx.restore();
     y = b.y - A.h; vy -= A.dh * sp;                             // (the bomb turns along the arc: nose up, then down)
   }
+  const sk = red ? null : shotSkin(b), cp = sk ? conceptOfSkin(sk) : '';
+  const o = { x: b.x, y, vx: vx || Math.cos(b.ang), vy: vy || Math.sin(b.ang), wid, life: 1, life0: 1, color: red ? '#e8222b' : (CONCEPT_COLOR[cp] || TC(b.team)), big: red, ult: b.r > 8, scale: b.r > 8 ? b.r / 6 : 1, owner: 'x', sk: sk || undefined, sx: Math.round((b.ang || 0) * 100), sy: 0 };
   ctx.save();
-  try { drawProjectileBase({ x: b.x, y, vx: vx || Math.cos(b.ang), vy: vy || Math.sin(b.ang), wid, life: 1, life0: 1, color: red ? '#e8222b' : TC(b.team), big: red, ult: b.r > 8, scale: b.r > 8 ? b.r / 6 : 1, owner: 'x' }); } catch (e) { ctx.restore(); return false; }
+  try { if (!(cp && drawConceptProjectile(o, cp))) { drawProjectileBase(o); if (sk) { ctx.restore(); ctx.save(); drawBulletSkinFx(o); } } } catch (e) { ctx.restore(); return false; }
   ctx.restore();
   return true;
 }
@@ -253,7 +261,7 @@ function drawSwings(dt) {
   try { drawSkillArt(); } catch (e) { quietErr(e); }
   for (let i = swings.length - 1; i >= 0; i--) {
     const s = swings[i]; s.life -= dt; if (s.life <= 0) { swings.splice(i, 1); continue; }
-    ctx.save(); try { drawProjectileBase(s); } catch (e) { quietErr(e); } ctx.restore();
+    ctx.save(); try { const cp = s.sk ? conceptOfSkin(s.sk) : ''; if (!(cp && drawConceptProjectile(s, cp))) drawProjectileBase(s); if (s.sk) { ctx.restore(); ctx.save(); drawBulletSkinFx(s); } } catch (e) { quietErr(e); } ctx.restore();
   }
 }
 
@@ -326,7 +334,7 @@ const SKILL_FX = {
   'kan:2': f => fxAt(f, 'smellburst'),
   'plague:5': f => { fxAt(f, 'smellburst'); fxAt(f, 'skillring', { color: '#9be06a' }); },
   'puppeteer:2': f => fxAt(f, 'magiccircle'),
-  'dragonslayer:1': f => { fx('flamepuff', f.x + Math.cos(f.aim) * 20, f.y + BODY + Math.sin(f.aim) * 20, { ang: +f.aim.toFixed(2) }); fxAt(f, 'skillring', { color: '#ff8a3d' }); },
+  'dragonslayer:1': f => { fx('flamepuff', f.x + Math.cos(f.aim) * 20, f.y + BODY + Math.sin(f.aim) * 20, { ang: +f.aim.toFixed(2) }); fxAt(f, 'skillring', { color: conceptOfSkin(skinOf(f.cos, 'dragonslayer')) === 'manga' ? '#2c2f6b' : '#ff8a3d' }); },
   'magiccard:2': f => fxAt(f, 'blink', { color: '#ffffff' }),
   'magiccard:3': f => fxAt(f, 'blink', { color: '#ff9ad0' })
 };
@@ -448,6 +456,13 @@ function drawWizCircle(z) {      // calm version (2026-11-13): soft floor, one c
   if (!low) for (let i = 0; i < 6; i++) {
     const ph = (now * .4 + i * .618) % 1, a = i * 2.399 + Math.floor(now * .4 + i * .618) * 1.7, rr = R * (.3 + .6 * ((i * .37) % 1));
     ctx.globalAlpha = op * Math.sin(ph * Math.PI) * .6; ctx.fillStyle = '#efe4ff'; ctx.beginPath(); ctx.arc(Math.cos(a) * rr, Math.sin(a) * rr - ph * 30, 2, 0, 7); ctx.fill();
+  }
+  if (z.dr) {      // 청룡의 마법사 (Stickseum's 청룡 ×2): a blue rim, and two blue dragons run round it, one each way, so they meet and pass face to face
+    const ms = now * 1000; ctx.globalAlpha = op; ctx.strokeStyle = 'rgba(52,201,255,0.85)'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.arc(0, 0, R * 1.03, 0, 7); ctx.stroke();
+    for (let k = 0; k < (low ? 1 : 2); k++) {
+      const dir = k ? -1 : 1, th = k ? Math.PI - ms * .0013 : ms * .0013, hd = Math.atan2(Math.cos(th) * dir, -Math.sin(th) * dir);
+      ctx.save(); ctx.translate(Math.cos(th) * R, Math.sin(th) * R); ctx.rotate(hd); if (Math.cos(hd) < 0) ctx.scale(1, -1); drawDragon(ctx, 110, ms, k * 2.4); ctx.restore();
+    }
   }
   ctx.restore(); ctx.globalAlpha = 1;
 }

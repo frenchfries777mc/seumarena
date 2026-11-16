@@ -249,6 +249,7 @@ function karmaTake(r) {
 }
 const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin', cr: 'ic-cr', su: 'ic-su' };
 /* crystals: a road or pass step can carry some on top of its own reward (r[4]); they show after it */
+const WIN_CR = 3;      // crystals per win
 function crExtra(got, n) { if (!got || !(n > 0)) return got; const c = giveReward('cr', n); got.list = (got.list || [got]).concat([c]); return got; }
 function crBadge(box, n) { if (!(n > 0)) return; const s = document.createElement('span'); s.className = 'kCr'; s.innerHTML = '<i class="ic-cr"></i>'; s.append('+' + n); box.append(s); }
 /* skills: the first two of a character are open; the rest are unlocked with crystals or from a box */

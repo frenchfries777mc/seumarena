@@ -955,10 +955,11 @@ function endGame(keepRunning) {
     const sk = pay ? streakStep(first, draw, oc.place >= 2 && oc.place <= (curMode === 'solo' || curMode === 'star' ? 3 : curMode === 'duo' || curMode === 'hot4' ? 2 : 0)) : null;      // 원 레프트 2-3등, 투 레프트 / 4팀 핫존 2등 keep the win streak
     if (sk) { pay.karma += sk.karma; pay.gold = Math.round(pay.gold * sk.gm); }
     { const e = $('streakGain'); e.hidden = !(sk && sk.st); if (sk && sk.st) { e.className = sk.st; e.textContent = sk.st === 'up' ? '🔥 ' + sk.ws + '연승' : sk.st === 'keep' ? '🔥 ' + sk.ws + '연승 유지' : '연승 끊김'; } }
-    $('goldGain').hidden = !pay; $('mpCard').hidden = true;
+    $('goldGain').hidden = !pay; $('crGain').hidden = true; $('mpCard').hidden = true;
     if (pay) {
-      const m0 = masteryOf(hid); COS.gold += pay.gold; COS.karma += pay.karma; COS.xp += pay.xp; addMp(hid, pay.mp); dqMatch({ mode: curMode, win, kills: player.kos || 0, place: solo ? oc.place : 0, hero: hid, dealt: player.dealt || 0 }); achMatch({ mode: curMode, win, first, kills: player.kos || 0, deaths: player.deaths || 0, hero: hid, n: fighters.length, mvp: matchMvp(first, draw) === player }); saveCos(); goldUi();
-      $('goldGainN').textContent = '+' + pay.gold; $('karmaGain').hidden = !pay.karma; $('karmaGainN').textContent = '+' + pay.karma; $('mpGainN').textContent = '+' + pay.mp; $('xpGainN').textContent = '+' + pay.xp;
+      const m0 = masteryOf(hid); COS.gold += pay.gold; if (win && !draw) COS.cr = (COS.cr | 0) + WIN_CR;      // 승리마다 크리스탈 +3 (user 2026-11-16)
+       COS.karma += pay.karma; COS.xp += pay.xp; addMp(hid, pay.mp); dqMatch({ mode: curMode, win, kills: player.kos || 0, place: solo ? oc.place : 0, hero: hid, dealt: player.dealt || 0 }); achMatch({ mode: curMode, win, first, kills: player.kos || 0, deaths: player.deaths || 0, hero: hid, n: fighters.length, mvp: matchMvp(first, draw) === player }); saveCos(); goldUi();
+      $('goldGainN').textContent = '+' + pay.gold; $('crGain').hidden = !(win && !draw); $('karmaGain').hidden = !pay.karma; $('karmaGainN').textContent = '+' + pay.karma; $('mpGainN').textContent = '+' + pay.mp; $('xpGainN').textContent = '+' + pay.xp;
       $('mpGain').style.color = masteryOf(hid).col;
       { /* mastery card: logo, rank, bar (old part solid, this match lighter), rank-up line */
         const m1 = masteryOf(hid), up = m1.i > m0.i, c = m1.col; drawMasteryLogo($('mpLogo'), m1.i);
