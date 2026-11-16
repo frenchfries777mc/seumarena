@@ -144,7 +144,7 @@ const MODES = [
   { id: 'duel', name: '듀얼 배틀', size: '1v1', teams: 2, per: 1, respawn: false, win: DUEL_N, time: 0, rounds: DUEL_N, fog: 1, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true },      // 듀얼 배틀 and 팀 아웃 share one map list (user 2026-11-13): keep the two lists the same
   { id: 'ball', name: '볼 배틀', size: '3v3', teams: 2, per: 3, respawn: true, win: 3, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.ball ? i : -1).filter(i => i >= 0), ready: true },      // 2026-11-14 (user): 축구, ball.js
   { id: 'star', name: '리워드 헌터', size: '8명', teams: 8, per: 1, respawn: true, win: 0, time: 150, rounds: 0, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },      // 2026-11-15 (user): bounty, 8 players each alone. A kill takes the victim's stars (2..7)
-  { id: 'ko3', name: '라스트 팀', size: '3팀', teams: 3, per: 4, respawn: false, win: 2, time: 90, rounds: 3, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },      // 2026-11-15 (user): knockout 4v4v4, no respawn inside a round, the last team standing takes it, first to 2 rounds
+  { id: 'ko3', name: '라스트 팀', size: '3팀', teams: 3, per: 4, respawn: false, win: 1, time: 0, rounds: 1, fog: 1, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },      // 2026-11-15 (user): knockout 4v4v4, no respawn inside a round, the last team standing takes it; one round only (user 2026-11-15)
   { id: 'hot4', name: '배틀 존', size: '4팀', teams: 4, per: 3, respawn: true, win: 100, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.hot ? i : -1).filter(i => i >= 0), ready: true }
 ];
 for (const m of MODES) m.max = m.teams * m.per;
@@ -186,6 +186,7 @@ let modeChoice = 'team', curMode = 'team', RD = { n: 1, pause: 0, win: -1, out: 
 let FLAGS = [];
 const FLAG_BACK = 8, FLAG_R = 38;
 const DUEL_FOG = { wait: 12, close: 45 };      // 듀얼 배틀 (user 2026-11-15): no clock; each round the fog starts closing after `wait` s and covers the whole map `close` s later (placeholder values)
+const MODE_FOG = { ko3: { wait: 20, close: 60 } };      // 라스트 팀 (user 2026-11-15): same closing fog instead of a clock; bigger maps, so a little slower (placeholder values)
 const SZ = { on: false, x: 0, y: 0, r: 0, r0: 0, gx: 0, gy: 0, acc: 0 }, SZ_WAIT = 12, SZ_MIN = 2.2 * T; const SOLO_GUARD = 2.5;
 /* 4팀 핫존: one circle in the middle of the map. The team with the most fighters in it fills its bar (HZ.p, 0..100; score[t] = the whole percent); two or more teams in it = nobody fills.
    own: -1 empty, -2 contested, else the team filling. n: fighters of each team inside. SP: three spawn spots per corner (team 0 top left, 1 top right, 2 bottom left, 3 bottom right) */
@@ -219,8 +220,8 @@ function modeOutcome() {
     return { a, b, win: a > b, draw: a === b, place: 1 + o.filter(v => v > a).length };
   }
   if (curMode === 'star') {      // a = my stars, b = the best other score, place = 1 + players ahead of me (1-3 count as wins, like 원 레프트)
-    const a = score[VIEW] | 0, o = score.filter((v, t) => t !== VIEW).map(v => v | 0), b = o.length ? Math.max(...o) : 0, place = 1 + o.filter(v => v > a).length;
-    return { a, b, win: a > b, draw: false, place };
+    const a = score[VIEW] | 0, o = score.filter((v, t) => t !== VIEW).map(v => v | 0), b = Math.max(a, ...o), place = 1 + o.filter(v => v > a).length;      // b = the top score including mine; a tie at the top is 1st (a win) for everyone tied (user 2026-11-15)
+    return { a, b, win: place === 1, draw: false, place };
   }
   if (curMode === 'hot4') {      // b = the best other team; place = 1 + teams ahead of mine; a tie at the top is a draw for the tied teams
     const a = score[VIEW] | 0, o = score.filter((v, t) => t !== VIEW).map(v => v | 0), b = o.length ? Math.max(...o) : 0, place = 1 + o.filter(v => v > a).length;
@@ -1131,7 +1132,7 @@ function modeStart() {
 function fogReset() { const g = freeNear(WW / 2, WH / 2), r0 = Math.hypot(WW, WH) / 2; Object.assign(SZ, { on: true, x: WW / 2, y: WH / 2, r0, r: r0, gx: g.x, gy: g.y, acc: 0 }); timeLeft = 0; }
 function fogStep(dt) {      // 듀얼 배틀: timeLeft counts UP (the round's age); the ring shrinks the same way as 원 레프트's and hurts the same way
   timeLeft += dt;
-  const k = clamp((timeLeft - DUEL_FOG.wait) / DUEL_FOG.close, 0, 1);
+  const FG = MODE_FOG[curMode] || DUEL_FOG, k = clamp((timeLeft - FG.wait) / FG.close, 0, 1);
   SZ.r = k < .8 ? SZ.r0 + (SZ_MIN - SZ.r0) * (k / .8) : SZ_MIN * (1 - (k - .8) / .2);
   SZ.acc += dt;
   if (SZ.acc >= .5) { SZ.acc -= .5; for (const f of fighters) if (!f.dead && Math.hypot(f.x - SZ.x, f.y - SZ.y) > SZ.r) withSrc('안개', () => damage(f, f.mhp * (.05 + .13 * k) * .5, null, { px: 1 })); }

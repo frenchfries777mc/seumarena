@@ -227,7 +227,7 @@ function render() {
     cam.s = Math.min(W, H) / (10.5 * T) * (H > W * 1.15 && W <= 600 ? 1.2 : 1);   // upright phone: zoom in a little so the fighters are bigger
     const hw = W / 2 / cam.s, hh = H / 2 / cam.s;
     let ft = me;      // no respawn (solo): once I am out the camera follows somebody who is still alive
-    if (isLeft(curMode) && player.dead && state === 'play') {
+    if ((isLeft(curMode) || (curMode === 'ko3' && !(RD.pause > 0))) && player.dead && state === 'play') {      // 라스트 팀: watch a teammate until the round ends
       if (!specT || specT.dead || !fighters.includes(specT)) specT = fighters.find(f => !f.dead && !f.minion && f.team === player.team) || fighters.filter(f => !f.dead).sort((a, b) => Math.hypot(a.x - cam.x, a.y - cam.y) - Math.hypot(b.x - cam.x, b.y - cam.y))[0] || null;
       if (specT) ft = specT;
     } else specT = null;
@@ -344,7 +344,8 @@ function updateHud() {
   notice.hidden = !dead && !ovtBanner; notice.textContent = '';
   if (dead) {
     const mdN = typeof modeNow === 'function' ? modeNow() : null;      // no countdown once a no-respawn match (duel) is decided
-    if (!(mdN && mdN.respawn === false && score.some(v => v >= mdN.win))) notice.append(dead + '초 뒤에 다시 나갑니다');
+    if (mdN && mdN.respawn === false && mdN.rounds && !(RD.pause > 0) && !score.some(v => v >= mdN.win)) notice.append(mdN.win > 1 ? '관전 중 · 라운드가 끝나면 다시 나갑니다' : '관전 중');      // no respawn inside a round: the 3 s count would sit frozen
+    else if (!(mdN && mdN.respawn === false && score.some(v => v >= mdN.win))) notice.append(dead + '초 뒤에 다시 나갑니다');
     if (di && (di.by || di.src)) {
       const kb = document.createElement('span'), sm = document.createElement('small'); kb.className = 'kb';
       if (di.by) { const b = document.createElement('b'); b.className = di.by.team === VIEW ? 'b' : 'r'; b.textContent = di.by.nick || di.by.h0.name; kb.append('처치 ', b); sm.textContent = [di.by.nick ? di.by.h0.name : '', di.src].filter(Boolean).map(s => ' · ' + s).join(''); }
@@ -698,7 +699,7 @@ const mmss = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart
 function modeRules(m) {
   const r = [], solo = m.id === 'solo' || m.id === 'last';
   if (solo) r.push(['crown', '최후 1인']);
-  else if (m.id === 'duo') r.push(['crown', '최후 1팀']);
+  else if (m.id === 'duo' || (m.id === 'ko3' && m.win <= 1)) r.push(['crown', '최후 1팀']);
   else if (isFlagMode(m.id) && m.win) r.push(['flag', '깃발 ' + m.win + '점']);
   else if ((m.id === 'duel' || m.id === 'ko3') && m.win) r.push(['rounds', m.win + '선승']);
   else if (m.id === 'star') r.push(['crown', '별 1위']);
@@ -935,9 +936,10 @@ function endGame(keepRunning) {
   showPlayUi(false);
   const oc = modeOutcome(), solo = isLeft(curMode) || curMode === 'star', mine = oc.a, theirs = oc.b;
   const draw = oc.draw, first = oc.win, win = first || ((curMode === 'solo' || curMode === 'star') && !draw && oc.place >= 2 && oc.place <= 3), rt = $('resultText');      // 원 레프트: 1-3등 are wins (user 2026-11-15); first = really the last one standing
-  rt.textContent = draw ? '무승부' : win ? '승리' : '패배';
+  const kept = !draw && !win && oc.place === 2 && (curMode === 'duo' || curMode === 'hot4');      // 투 레프트 / 4팀 핫존 2등: the streak is kept, so the place instead of 패배
+  rt.textContent = draw ? '무승부' : win ? (first ? '승리' : oc.place + '등') : kept ? '2등' : '패배';      // 원 레프트 / 리워드 헌터 2-3등: the place instead of 승리
   document.querySelector('#overScreen .final').classList.toggle('solo', solo);
-  rt.className = draw ? 'draw' : win ? 'win' : 'lose';
+  rt.className = draw ? 'draw' : win || kept ? 'win' : 'lose';
   $('fb').textContent = solo ? oc.place + '등' : mine; $('fr').textContent = theirs;
   { const q4 = curMode === 'hot4', fq = $('fq'); document.querySelector('#overScreen .final').classList.toggle('q4', q4); fq.textContent = '';
     if (q4) [0, 1, 2, 3].sort((a, b) => (score[b] | 0) - (score[a] | 0)).forEach(t => { const b = document.createElement('b'); b.textContent = (score[t] | 0) + '%'; b.style.color = TC(t); if (t === VIEW) b.className = 'me'; fq.append(b); }); }

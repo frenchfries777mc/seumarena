@@ -426,7 +426,7 @@ function guestFighter(i, s) {
     f = { team: s.tm, slot: i % 3, x: s.x, y: s.y, nx: s.x, ny: s.y, na: s.a, vx: 0, vy: 0, kx: 0, ky: 0, aim: s.a, b: {}, st: {}, dots: [], recent: [], mv: [0, 0], bob: Math.random() * 6,
       inv: 0, tapT: 0, hold: false, scd: [0, 0], sk: [null, null], queue: [], minion: false, isPlayer: i === NET.me, lastFire: -9, lastHit: -9, swing: 0, spin: 0, shield: 0, hp: s.hp, mhp: s.mh };
     fighters[i] = f;
-    if (i === NET.me) player = f;
+    if (i === NET.me) { player = f; if (typeof leaveWant !== 'undefined' && leaveWant && !leaveOn && state === 'play') setTimeout(() => { if (leaveWant && !leaveOn && state === 'play' && player) leaveMark(true); }, 0); }      // (the guest's mark starts with its first snapshot, once the fighter is filled in)
     const r = (NET.roster || [])[i] || {}; f.nick = r.nm ? cleanName(r.nm) : null; f.cos = cleanCos(r.cos, s.h0);
   }
   return f;

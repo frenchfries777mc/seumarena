@@ -118,7 +118,7 @@ const KARMA_ROAD = (() => {      // paced like a trophy road (user 2026-11-12): 
     const gap = n - prev, kind = ['g', 'rx', 'g', 'box', 'cx'][i % 5]; prev = n;
     if (big[n]) { out.push([n, big[n][0], big[n][1], 1]); continue; }      // a big step does not use up a turn of the cycle
     i++;
-    out.push(kind === 'box' ? [n, gap >= 500 ? 'ebox' : 'box', 0, 0, gap <= 20 ? 20 : gap <= 50 ? 30 : gap <= 100 ? 40 : 50] : [n, kind, kind === 'g' ? amt(gap, [50, 150, 300, 500, 800, 1200]) : amt(gap, [100, 200, 300, 500, 700, 1000])]);
+    out.push(kind === 'box' ? [n, gap >= 500 ? 'ebox' : 'box', 0, 0] : [n, kind, kind === 'g' ? amt(gap, [50, 150, 300, 500, 800, 1200]) : amt(gap, [100, 200, 300, 500, 700, 1000])]);
   }
   return out;
 })();
@@ -588,7 +588,7 @@ const PASS = (() => { const sk = SEASONS[GAME_VER].skins, out = [];
   for (let i = 1; i <= PASS_N; i++) {
     if (i === 15 && sk[0]) out.push([i, 'ps', sk[0], 1]); else if (i === PASS_N && sk[1]) out.push([i, 'ps', sk[1], 1]);
     else if (i % 10 === 0) out.push([i, 'ebox', 0, 1]);
-    else out.push([i, ...[['g', 100 + 20 * i], ['box', 0, 0, 20 + Math.round(i * 6 / 26) * 5], ['px', 100 + 10 * i], ['g', 150 + 20 * i], ['cx', 150 + 10 * i]][i % 5]]);
+    else out.push([i, ...[['g', 100 + 20 * i], ['box', 0, 0], ['px', 100 + 10 * i], ['g', 150 + 20 * i], ['cx', 150 + 10 * i]][i % 5]]);
   }
   return out; })();
 const passXp = () => Math.max(0, Math.floor(+((COS.sx || {})[GAME_VER]) || 0));
