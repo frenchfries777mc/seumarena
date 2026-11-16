@@ -331,8 +331,8 @@ function snapFighter(f) {
 }
 function hostSnap() {
   const s = { t: 's', tl: r1(timeLeft), sc: score, f: fighters.map(snapFighter),
-    b: bullets.map(b => [Math.round(b.x), Math.round(b.y), Math.round(b.svx || 0), Math.round(b.svy || 0), r2(b.ang), b.shape, b.team, r1(b.r), b.wid || 0]),
-    z: zones.map(z => [Math.round(z.x), Math.round(z.y), Math.round(z.r), r1(Math.min(z.t, 99)), z.col, z.op || 0, z.kind || 0, z.key ? 1 : 0, z.team, z.hidden ? 1 : 0]),
+    b: bullets.map(b => [Math.round(b.x), Math.round(b.y), Math.round(b.svx || 0), Math.round(b.svy || 0), r2(b.ang), b.shape, b.team, r1(b.r), b.wid || 0, b.wid && b.owner && typeof b.owner === 'object' ? fighters.indexOf(b.owner) : -1]),
+    z: zones.map(z => [Math.round(z.x), Math.round(z.y), Math.round(z.r), r1(Math.min(z.t, 99)), z.col, z.op || 0, z.kind || 0, z.key ? 1 : 0, z.team, z.hidden ? 1 : 0, z.dr ? 1 : 0]),
     m: minions.map(m => [m.kind, Math.round(m.x), Math.round(m.y), m.team, Math.ceil(m.hp), m.max, m.hit ? 1 : 0, r2(m.aim || m.a || 0), m.sw ? r2(time - m.sw) : 9, m.side || 0]),
     k: strikes.map(k => [Math.round(k.x), Math.round(k.y), Math.round(k.r), r2(k.t), r2(k.max), k.col]),
     w: [...tempWalls].filter(e => e[1] > time).map(e => [e[0], r1(e[1] - time)]), e: NET.evs };
@@ -459,9 +459,9 @@ function applySnap(s) {
   });
   fighters.length = s.f.length;
   for (const f of fighters) { f.st.thread = f.st.th >= 0 ? fighters[f.st.th] : null; f.st.mark = f.st.mk >= 0 ? fighters[f.st.mk] : null; }
-  bullets = s.b.map(b => ({ x: b[0], y: b[1], vx: b[2], vy: b[3], ang: b[4], shape: b[5], team: b[6], r: b[7], wid: b[8] || null }));
+  bullets = s.b.map(b => ({ x: b[0], y: b[1], vx: b[2], vy: b[3], ang: b[4], shape: b[5], team: b[6], r: b[7], wid: b[8] || null, oi: b[9] >= 0 ? b[9] : null }));
   { const old = zones;      // keep each zone's own start time (t0) across snapshots, so drawings that grow in (마법진) don't restart every packet
-    zones = s.z.map(z => { const n = { x: z[0], y: z[1], r: z[2], t: z[3], col: z[4], op: z[5], kind: z[6] || null, key: z[7] ? 'k' : null, team: z[8], hidden: !!z[9] };
+    zones = s.z.map(z => { const n = { x: z[0], y: z[1], r: z[2], t: z[3], col: z[4], op: z[5], kind: z[6] || null, key: z[7] ? 'k' : null, team: z[8], hidden: !!z[9], dr: z[10] ? 1 : 0 };
       const o = old.find(q => q.t0 !== undefined && q.kind === n.kind && q.col === n.col && Math.abs(q.x - n.x) < 2 && Math.abs(q.y - n.y) < 2 && q.r === n.r);
       if (o) n.t0 = o.t0; return n; }); }
   minions = s.m.map(m => ({ minion: true, kind: m[0], x: m[1], y: m[2], team: m[3], hp: m[4], max: m[5], hit: !!m[6], aim: m[7], a: m[7], sw: time - m[8], side: m[9], b: {}, dead: false, bob: time * 8 }));
@@ -477,7 +477,7 @@ function replayEvents(es) {
       case 't': texts.push({ x: e[1], y: e[2], txt: e[3], color: e[4], small: !!e[5], life: e[6] }); break;
       case 'p': parts.push({ x: e[1], y: e[2], vx: e[3], vy: e[4], life: e[5], max: e[5], color: e[6], r: e[7] }); break;
       case 'c': showChat(fighters[e[1]], e[2]); break;
-      case 'w': swings.push({ x: e[1], y: e[2], wid: e[3], swingAngle: e[4], life: e[5], life0: e[5], color: TC(e[6]), vx: 0, vy: 0, dmgless: true }); break;
+      case 'w': { const o = e[7] >= 0 ? fighters[e[7]] : null, sk = o ? skinOf(o.cos, e[3]) : null; swings.push({ x: e[1], y: e[2], wid: e[3], swingAngle: e[4], life: e[5], life0: e[5], color: CONCEPT_COLOR[conceptOfSkin(sk)] || TC(e[6]), vx: 0, vy: 0, dmgless: true, sk: sk || undefined }); break; }
       case 'x': if (FXF[e[1]]) FXF[e[1]](...e.slice(2)); break;
       case 'f': { const o = e[1] >= 0 ? fighters[e[1]] : null, v = fighters[e[2]]; if (v) { addFeed(o, v); if (v === player || o === player) sfx(v === player ? 200 : 600, .3, 'triangle', .07, v === player ? .3 : 1.8); } break; }
     }

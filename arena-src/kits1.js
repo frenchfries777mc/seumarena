@@ -24,7 +24,7 @@ const taken3 = f => f.recent.reduce((s, r) => s + r[1], 0);
 
 hero('sword', { p: ['기사도', '상대에게 피해를 줄 때마다 5% 확률로 120 추가 피해'],
   onDeal(f, e, d, o) { if (!o.extra && Math.random() < .05) damage(e, 10, f, { extra: 1, raw: 1 }); },
-  ult: ['천검', '가장 가까운 상대(없으면 조준한 곳) 머리 위에서 대형 검이 떨어져 범위 안의 적에게 960 피해', [0, 9 * T], f => { const p = nearest(f, 9 * T, null, 0, false) || aimPt(f, 6 * T); fx('swordfall', p.x, p.y, { dur: .6, gold: skinOf(f.cos, 'sword') === 'skin_sword_p' }); strike(f, p.x, p.y, 80, .6, s => { fx('swordhit', s.x, s.y, { gold: skinOf(f.cos, 'sword') === 'skin_sword_p' }); circ(f, s.x, s.y, 80, 80, { kb: 160 }); }, '#dfe6f0'); }],
+  ult: ['천검', '가장 가까운 상대(없으면 조준한 곳) 머리 위에서 대형 검이 떨어져 범위 안의 적에게 960 피해', [0, 9 * T], f => { const p = nearest(f, 9 * T, null, 0, false) || aimPt(f, 6 * T); const cp = conceptOfSkin(skinOf(f.cos, 'sword')); fx('swordfall', p.x, p.y, { dur: .6, gold: cp === 'gold', thor: cp === 'thor' }); strike(f, p.x, p.y, 80, .6, s => { fx('swordhit', s.x, s.y, { gold: cp === 'gold' }); circ(f, s.x, s.y, 80, 80, { kb: 160 }); }, '#dfe6f0'); }],
   skills: [
     [1, '돌진 베기', 'move', '앞으로 돌진하며(돌진하는 동안 피해를 받지 않음) 칼을 빙글빙글 휘둘러, 처음 닿은 적에게 540 피해를 주고 그 자리에서 멈춤', [60, 7 * T], (f, a) => { f.spin = .6; lunge(f, a, 7 * T, .6, { inv: 1, onHit: e => { damage(e, 45, f); return 'stop'; } }); }],
     [2, '강타', 'move', '앞으로 도약해(벽도 뛰어넘음) 떨어지며 검을 찍음 · 맞은 상대 0.5초 기절 + 피해 540', [60, 4 * T], (f, a) => { lunge(f, a, 4 * T, .34, { fly: 2, end: g => boom(g, g.x, g.y, 70, 45, { stun: .5, col: '#dfe6f0', kb: 0 }) }); }],
@@ -176,7 +176,7 @@ hero('dracula', { p: ['흡혈귀', '공격이 적중할 때마다 체력 50 흡�
 
 hero('wizard', { p: ['마법진의 파동', '마법진 안에서는 스킬 밀쳐내는 힘 2배 · 일반 공격과 스킬 탄은 상대와 벽을 관통'], pierce: 99, wallPass: 1,
   tick(f, dt) { const o = f.st.orb; if (o && o.n > 0) { o.t -= dt; if (o.t <= 0) { o.n = 0; return; } for (let i = 0; i < o.n; i++) { const a = time * 3 + i * 6.283 / 5, x = f.x + Math.cos(a) * 54, y = f.y + Math.sin(a) * 54; const e = foes(f).find(e => Math.hypot(e.x - x, e.y - y) < 30); if (e) { withSrc(o.src, () => damage(e, 14, f)); o.n--; break; } } } },
-  ult: ['마법진', '자신의 위치에 거대한 마법진 소환(10초): 나와 아군은 공격력 30% 증가 + 초당 120 회복, 안에 들어온 적은 초당 135 피해', [0, 6 * T], f => (fx('magiccircle', f.x, f.y), zone)({ by: f, x: f.x, y: f.y, r: px(330), t: 10, col: '#b98cff', kind: 'circle', fn: (z, dt) => { z.acc += dt; const tk = z.acc >= .5; if (tk) z.acc -= .5; for (const a of allies(f)) if (inZone(z, a)) { buff(a, 'dmg', .2, 1.3); if (tk) heal(a, 6); } if (tk) circ(f, z.x, z.y, z.r, 4.5, { quiet: 1 }); } })],
+  ult: ['마법진', '자신의 위치에 거대한 마법진 소환(10초): 나와 아군은 공격력 30% 증가 + 초당 120 회복, 안에 들어온 적은 초당 135 피해', [0, 6 * T], f => (fx('magiccircle', f.x, f.y), zone)({ by: f, x: f.x, y: f.y, r: px(330), t: 10, col: '#b98cff', kind: 'circle', dr: conceptOfSkin(skinOf(f.cos, 'wizard')) === 'dragon' ? 1 : 0, fn: (z, dt) => { z.acc += dt; const tk = z.acc >= .5; if (tk) z.acc -= .5; for (const a of allies(f)) if (inZone(z, a)) { buff(a, 'dmg', .2, 1.3); if (tk) heal(a, 6); } if (tk) circ(f, z.x, z.y, z.r, 4.5, { quiet: 1 }); } })],
   skills: [
     [1, '충격파', 'hit', '주변 상대를 아주 크게 밀쳐내는 충격파 (150 피해)', [0, 120], f => { const inC = zones.some(z => z.kind === 'circle' && z.by === f && inZone(z, f)); ring(f.x, f.y, 130, '#b98cff'); circ(f, f.x, f.y, 130, 10, { kb: inC ? 1800 : 900 }); }],
     [2, '마력 압축', 'hit', '기존 탄환보다 2배 큰 탄환을 발사 · 무한정 관통 · 관통과 상관없이 피해 300', [100, 8 * T], (f, a) => emit(f, a, { skill: 1, dmg: 20, r: 10, pierce: 99 })],
@@ -249,7 +249,7 @@ hero('flamethrower', { p: ['불길 위의 춤', '내가 남긴 불길 위에서�
   fireHeld(f, dt) { if (f.st.over > 0) return; f.st.heat = (f.st.heat || 0) + dt; f.lastFire = time; unbuff(f, 'stealth');
     if (f.st.heat >= 9 * (B(f, 'gas') ? 1.1 : 1)) { f.st.heat = 0; f.st.over = 2; say(f, '과열', '#ff5d5d'); return; }
     arc(f, f.aim, f.h.range, f.h.half, 31 * dt, { quiet: 1, el: 1 });
-    if ((f.st.fpT = (f.st.fpT || 0) - dt) <= 0) { f.st.fpT = .09; fx('flamepuff', f.x + Math.cos(f.aim) * 24, f.y + BODY + Math.sin(f.aim) * 24, { ang: +f.aim.toFixed(2), len: 230 }); } },
+    if ((f.st.fpT = (f.st.fpT || 0) - dt) <= 0) { f.st.fpT = .09; fx('flamepuff', f.x + Math.cos(f.aim) * 24, f.y + BODY + Math.sin(f.aim) * 24, { ang: +f.aim.toFixed(2), len: 230, br: conceptOfSkin(skinOf(f.cos, 'flamethrower')) === 'breath' ? 1 : 0 }); } },
   ult: ['화염 방패', '내 앞에 최대 600 피해를 막는 방패를 설치 (6초 지속, 항상 바라보는 방향 앞에 위치, 그만큼 막으면 소멸) · 앞에서 날아오는 투사체를 막음', [0, 9 * T], f => { const s = { hp: 60 }; f.st.fsh = s; fxAt(f, 'shieldup'); later(6, () => { if (f.st.fsh === s) f.st.fsh = null; }); }],
   skills: [
     [1, '화염 돌진', 'move', '바라보는 방향으로 순식간에 돌진 · 지나가는 길의 적에게 200 피해와 화상 · 지나온 자리는 3초 동안 불길이 남아 적을 태움', [60, 5 * T], (f, a) => { let d = 0; const sx = f.x, sy = f.y; lunge(f, a, 4.2 * T, .22, { dmg: 20, burn: [4, 3], el: 1, col: '#ff7a1a', trail: g => { if (++d % 3 === 0) fire3(g, g.x, g.y, 34, 3, 8); }, end: g => fxLine('firedash', sx, sy + BODY, g.x, g.y + BODY) }); }],

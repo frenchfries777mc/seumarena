@@ -43,7 +43,7 @@ hero('harald', { p: ['강인한 맷집', '방패와 도끼로 앞에서 버티�
 
 hero('horemheb', { p: ['사막의 장군', '모래바람에 맞은 상대를 3초 안에 공격하면 피해 1.5배'],
   onDeal(f, e, d, o) { if (B(e, 'sandmark') && o.basic && !o.extra) damage(e, d * .5, f, { extra: 1, raw: 1, px: 1 }); },
-  ult: ['모래바람', '앞쪽 멀리까지 거센 모래바람을 일으켜 범위 안의 상대에게 360 피해를 주고 아주 강하게 밀치며 1.5초 동안 기절시키고, 3.5초 동안 이동속도를 크게(70%) 줄임', [0, 8 * T], (f, a) => { const p = fwd(f, 9 * T, a); fx('sandstorm', f.x, f.y + BODY, { dir: 1, len: Math.round(9 * T), h: 150, rot: +a.toFixed(2), gy: f.y + 16 });
+  ult: ['모래바람', '앞쪽 멀리까지 거센 모래바람을 일으켜 범위 안의 상대에게 360 피해를 주고 아주 강하게 밀치며 1.5초 동안 기절시키고, 3.5초 동안 이동속도를 크게(70%) 줄임', [0, 8 * T], (f, a) => { const p = fwd(f, 9 * T, a); fx('sandstorm', f.x, f.y + BODY, { dir: 1, len: Math.round(9 * T), h: 150, sea: conceptOfSkin(skinOf(f.cos, 'horemheb')) === 'poseidon' ? 1 : 0, rot: +a.toFixed(2), gy: f.y + 16 });
     pathHit(f, f.x, f.y, p.x, p.y, 60, 36, { stun: 1.5, fn: e => { if (!los(f.x, f.y, e.x, e.y)) return; knock(e, f.x, f.y, 1000); buff(e, 'slow', 3.5, .3); buff(e, 'sandmark', 3); } }); }],
   skills: [
     [1, '쇠스랑 투척', 'hit', '쇠스랑을 빙글빙글 돌려 던져 맞은 상대에게 320 피해', [100, 8 * T], (f, a) => emit(f, a, { skill: 1, dmg: 32, spd: 720, range: 8 * T, r: 9, shape: 'star' })],
@@ -121,9 +121,9 @@ hero('dragonslayer', { p: ['강인한 정신력', '화염, 독, 전기 피해를
 hero('shade', { p: ['네온 강타', '공격은 범위 안의 적 모두에게 피해 · 기본 공격을 2번 연속으로 하면 다음 공격은 강타: 추가 피해 +43, 상대 0.4초 기절'],
   cdf: f => .95 * (B(f, 'rage') ? .67 : 1),
   mo(f) { f.st.n = (f.st.n || 0) + 1; return f.st.n % 3 === 0 ? { stun: .4, fn: e => damage(e, 5, f, { raw: 1, extra: 1 }) } : null; },
-  ult: ['네온 점멸', '조준 방향으로 길게 점멸하며, 점멸 경로에 있던 모든 상대를 내 앞으로 끌어오고 1.2초 동안 기절시킴', [100, px(620)], (f, a) => { const r = blink(f, a, px(620)); fxLine('shblink', r.x0, r.y0 + BODY, f.x, f.y + BODY, { wid: 'shade', cos: f.cos, gy: f.y + 16 }); const p = fwd(f, 50, a); pathHit(f, r.x0, r.y0, f.x, f.y, 44, 0, { stun: 1.2, fn: e => { if (!e.minion) blinkTo(e, p.x + rnd(-14, 14), p.y + rnd(-14, 14)); } }); }],
+  ult: ['네온 점멸', '조준 방향으로 길게 점멸하며, 점멸 경로에 있던 모든 상대를 내 앞으로 끌어오고 1.2초 동안 기절시킴', [100, px(620)], (f, a) => { const r = blink(f, a, px(620)); fxLine('shblink', r.x0, r.y0 + BODY, f.x, f.y + BODY, { wid: 'shade', cos: f.cos, gy: f.y + 16, col: CONCEPT_COLOR[conceptOfSkin(skinOf(f.cos, 'shade'))] }); const p = fwd(f, 50, a); pathHit(f, r.x0, r.y0, f.x, f.y, 44, 0, { stun: 1.2, fn: e => { if (!e.minion) blinkTo(e, p.x + rnd(-14, 14), p.y + rnd(-14, 14)); } }); }],
   skills: [
-    [1, '대검 돌진', 'hit', '네온 대검을 조준 방향으로 던짐 (중장거리) · 맞히면 상대에게 꽂히고 사슬로 빠르게 돌진해 대검을 다시 잡음 · 상대 128 피해 + 0.5초 기절', [100, 7 * T], (f, a) => emit(f, a, { skill: 1, dmg: 15, stun: .5, spd: 1040, range: 7 * T, r: 10, shape: 'arrow', onHit: e => { fx('shchain', f.x, f.y + BODY, { x2: Math.round(e.x), y2: Math.round(e.y + BODY), hit: true }); lunge(f, angTo(f, e), Math.max(10, dist(f, e) - 40), .18, { fly: 1 }); } })],
+    [1, '대검 돌진', 'hit', '네온 대검을 조준 방향으로 던짐 (중장거리) · 맞히면 상대에게 꽂히고 사슬로 빠르게 돌진해 대검을 다시 잡음 · 상대 128 피해 + 0.5초 기절', [100, 7 * T], (f, a) => emit(f, a, { skill: 1, dmg: 15, stun: .5, spd: 1040, range: 7 * T, r: 10, shape: 'arrow', onHit: e => { fx('shchain', f.x, f.y + BODY, { x2: Math.round(e.x), y2: Math.round(e.y + BODY), hit: true, col: CONCEPT_COLOR[conceptOfSkin(skinOf(f.cos, 'shade'))] }); lunge(f, angTo(f, e), Math.max(10, dist(f, e) - 40), .18, { fly: 1 }); } })],
     [2, '네온 돌진', 'move', '조준 방향으로 빠르게 돌진 · 처음 닿은 상대에게 170 피해 + 0.3초 기절하고 그 자리에서 멈춤', [60, 4 * T], (f, a) => lunge(f, a, 4 * T, .3, { onHit: e => { damage(e, 20, f); buff(e, 'stun', .3); return 'stop'; } })],
     [3, '분노', 'buff', '3초 동안 일반 공격 쿨타임 33% 감소', [0, 150], f => buff(f, 'rage', 3)],
     [4, '찌르기', 'hit', '앞의 가까운 상대를 찔러 213 피해 + 0.9초 기절 (맞힐 상대가 없으면 쓰이지 않음)', [0, 130], (f, a) => { const e = nearest(f, 140, a, .8); if (!e) return false; f.swing = .22; damage(e, 25, f); buff(e, 'stun', .9); }],
