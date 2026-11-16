@@ -775,9 +775,10 @@ body.touchUi canvas{touch-action:none}
 #setLobbyBtn{border:0;border-radius:50%;width:26px;height:26px;padding:0;background:var(--panel-2);color:var(--text);font-size:15px;line-height:1;cursor:pointer}
 #setLobbyBtn:hover{background:var(--line)}
 #setBtn{top:calc(env(safe-area-inset-top,0px) + 142px)}
-#settings{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(6,8,12,.62);
+#settings,#credWin{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(6,8,12,.62);
   padding:calc(env(safe-area-inset-top,0px) + 12px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(16px, env(safe-area-inset-left, 0px));overflow-y:auto}
-#settings[hidden]{display:none}
+#settings[hidden],#credWin[hidden]{display:none}
+#credWin{z-index:31}
 .setCard{max-height:calc(100dvh - 24px);overflow-y:auto;width:min(400px,100%);margin:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px 18px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
 .setCard h2{margin:0 0 10px;font-size:22px}
 .setRow{display:grid;grid-template-columns:92px minmax(0,1fr) 52px;align-items:center;gap:10px;min-height:50px;font:600 15px 'IBM Plex Sans KR',sans-serif}
@@ -1304,6 +1305,13 @@ canvas.rwI{background:none}
 <div id="chatBar" hidden><input id="chatInput" type="text" maxlength="60" autocomplete="off" placeholder="메시지 (Enter로 보내기, Esc로 닫기)"><button id="chatSend" type="button">보내기</button></div>
 <div id="emoteWheel" hidden></div>
 <div id="bposBar" hidden><button class="btn-plain" id="bposReset" type="button">초기화</button><button class="btn-primary" id="bposDone" type="button">완료</button></div>
+<div id="credWin" hidden>
+  <div class="setCard" role="dialog" aria-modal="true" aria-labelledby="credTitle">
+    <h2 id="credTitle">크레딧</h2>
+    <div id="setCredBox"></div>
+    <div class="setBtns"><button class="btn-primary" id="credClose" type="button">닫기</button></div>
+  </div>
+</div>
 <div id="settings" hidden>
   <div class="setCard" role="dialog" aria-modal="true" aria-labelledby="setTitle">
     <h2 id="setTitle">설정</h2>
@@ -1315,8 +1323,7 @@ canvas.rwI{background:none}
     <div class="setRow mobOnly" id="setBposRow"><span>버튼 위치</span><button class="btn-plain" id="setBpos" type="button">옮기기</button><span></span></div>
     <div class="setRow" id="setDev"><span>기기</span><span class="devSeg"><button type="button" data-dev="mobile">모바일</button><button type="button" data-dev="pc">컴퓨터</button></span></div>
     <div class="setRow" id="setPcq"><span>화질</span><span class="devSeg"><button type="button" data-pcq="auto">자동</button><button type="button" data-pcq="high">높음</button><button type="button" data-pcq="low">낮음</button></span></div>
-    <div class="setRow" id="setCredRow"><span>크레딧</span><button class="btn-plain" id="setCred" type="button" aria-expanded="false">보기</button><span></span></div>
-    <div id="setCredBox" hidden></div>
+    <div class="setRow" id="setCredRow"><span>크레딧</span><button class="btn-plain" id="setCred" type="button">보기</button><span></span></div>
     <div class="setBtns"><button class="btn-plain" id="setReset" type="button">기본값</button><button class="btn-primary" id="setClose" type="button">닫기</button></div>
     <p class="setLic">© Frenchfries777 · <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="license noopener">CC BY-NC-ND 4.0</a></p>
   </div>
