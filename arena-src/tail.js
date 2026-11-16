@@ -378,6 +378,7 @@ function setFill() {
 }
 function setOpen(on) {
   if (on === undefined) on = setEl.hidden;
+  if (!on) $('credWin').hidden = true;
   if (on) {
     setFill(); $('setAimRow').hidden = !(touchMode || navigator.maxTouchPoints > 0 || matchMedia('(pointer:coarse)').matches);
     for (const k in keys) keys[k] = false; mouse.down = false; emoteWheel(false); chatOpen(false); pvCancelAll();
@@ -400,13 +401,15 @@ $('setVol').addEventListener('input', e => { SET.vol = +e.target.value; $('setVo
 $('setVol').addEventListener('change', setBeep);
 $('setAim').addEventListener('input', e => { SET.aim = +e.target.value; $('setAimV').textContent = (SET.aim / 100).toFixed(1) + '×'; saveSet(); });
 $('setFx').addEventListener('change', e => { SET.fx = e.target.checked; saveSet(); });
-$('setCred').addEventListener('click', () => { const bx = $('setCredBox'), on = bx.hidden; if (on && window.SeumMusic && SeumMusic.fillCredits) SeumMusic.fillCredits(bx); bx.hidden = !on; $('setCred').setAttribute('aria-expanded', String(on)); if (on) bx.scrollIntoView({ block: 'nearest' }); });
+$('setCred').addEventListener('click', () => { if (window.SeumMusic && SeumMusic.fillCredits) SeumMusic.fillCredits($('setCredBox')); $('credWin').hidden = false; });
+$('credClose').addEventListener('click', () => { $('credWin').hidden = true; });
+$('credWin').addEventListener('click', e => { if (e.target === $('credWin')) $('credWin').hidden = true; });
 $('setReset').addEventListener('click', () => { SET.vol = 100; SET.aim = 100; SET.fx = false; SET.bat = false; SET.bsz = 100; SET.bpos = {}; if (typeof mobSetApply === 'function') mobSetApply(); setFill(); saveSet(); setMusicVol(); });
 $('setClose').addEventListener('click', () => setOpen(false));
 setEl.addEventListener('pointerdown', e => { e.stopPropagation(); if (e.target === setEl) setOpen(false); });
 $('setLobbyBtn').addEventListener('click', () => setOpen(true));
 tapBtnUi($('setBtn'), () => setOpen(true));
-addEventListener('keydown', e => { if (setEl.hidden) return; if (e.code === 'Escape') setOpen(false); e.stopPropagation(); }, true);   // the game does not see keys while the window is open
+addEventListener('keydown', e => { if (setEl.hidden) return; if (e.code === 'Escape') { if (!$('credWin').hidden) $('credWin').hidden = true; else setOpen(false); } e.stopPropagation(); }, true);   // the game does not see keys while the window is open
 
 /* ---------- device (모바일 / 컴퓨터): picked once on the first start, changed in the settings (engine.js DEVICE; net.js reads the same key) ---------- */
 function devFill() { const cur = DEVICE || deviceGuess(); for (const b of document.querySelectorAll('[data-dev]')) { const on = b.dataset.dev === cur; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); } document.body.classList.toggle('mob', cur === 'mobile'); if (typeof pcqFill === 'function') pcqFill(); }
