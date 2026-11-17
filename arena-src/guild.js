@@ -250,6 +250,7 @@ Promise.resolve().then(() => {
 #guild b{font-size:11px;letter-spacing:.02em}#guild .gIco{display:flex}
 #guildDot{position:absolute;top:-5px;right:-5px;width:12px;height:12px;border-radius:50%;background:#ff4d4d;box-shadow:0 0 0 2px #10141f}
 body.mob #guild{order:99}
+body.mob #topRight #streak{order:100;position:static}@media (orientation:portrait){body.mob #topRight #streak{display:none}}
 body.mob #topRight:not([hidden]){position:fixed!important;top:auto!important;right:auto!important;left:50%!important;bottom:max(10px,env(safe-area-inset-bottom,0px))!important;transform:translateX(-50%);display:flex!important;flex-wrap:nowrap!important;gap:8px!important;z-index:6}
 .gLogo.gold{filter:drop-shadow(0 0 0 #ffd34d) drop-shadow(0 0 3px #ffd34d)}
 #guildScreen.active{position:fixed;inset:0;z-index:40;width:auto;max-width:none;margin:0;border-radius:0;border:0;box-shadow:none;display:grid;grid-template-rows:auto 1fr;box-sizing:border-box;overflow:hidden;color:#eef2ff;font-family:'IBM Plex Sans KR',sans-serif;padding:env(safe-area-inset-top,0px) max(14px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(14px,env(safe-area-inset-left,0px));background:radial-gradient(90% 70% at 25% 40%,#1e4a44 0,transparent 60%),repeating-linear-gradient(45deg,#ffffff06 0 14px,transparent 14px 28px),#10141f}
