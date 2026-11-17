@@ -145,8 +145,11 @@ const MODES = [
   { id: 'ball', name: '볼 배틀', size: '3v3', teams: 2, per: 3, respawn: true, win: 3, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.ball ? i : -1).filter(i => i >= 0), ready: true },      // 2026-11-14 (user): 축구, ball.js
   { id: 'star', name: '리워드 헌터', size: '8명', teams: 8, per: 1, respawn: true, win: 0, time: 150, rounds: 0, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },      // 2026-11-15 (user): bounty, 8 players each alone. A kill takes the victim's stars (2..7)
   { id: 'ko3', name: '라스트 팀', size: '3팀', teams: 3, per: 4, respawn: false, win: 1, time: 0, rounds: 1, fog: 1, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },      // 2026-11-15 (user): knockout 4v4v4, no respawn inside a round, the last team standing takes it; one round only (user 2026-11-15)
-  { id: 'hot4', name: '배틀 존', size: '4팀', teams: 4, per: 3, respawn: true, win: 100, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.hot ? i : -1).filter(i => i >= 0), ready: true }
+  { id: 'hot4', name: '배틀 존', size: '4팀', teams: 4, per: 3, respawn: true, win: 100, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.hot ? i : -1).filter(i => i >= 0), ready: true },
+  { id: 'rank', name: '랭크전', size: '1v1', teams: 2, per: 1, respawn: false, win: DUEL_N, time: 0, rounds: DUEL_N, fog: 1, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true, online: 1 },      // 2026-11-17 (user): ranked = 듀얼 배틀 rules, online only, no bots (rank.js)
+  { id: 'gw', name: '길드 대항전', size: '3v3', teams: 2, per: 3, respawn: true, win: WIN_SCORE, time: MATCH_TIME, rounds: 0, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true, online: 1 }      // 2026-11-17 (user): guild war = 팀 아웃 rules, Fri-Sun only (guild.js)
 ];
+const isDuelMode = id => id === 'duel' || id === 'rank';      // 랭크전 plays exactly like 듀얼 배틀
 for (const m of MODES) m.max = m.teams * m.per;
 /* 오늘의 모드 (user 2026-11-15, the same way Stickseum does it): similar modes are put in one group, `n` of each group are drawn every day and only those can be
    played. The draw comes from the GMT clock, so everyone gets the same list with no server, and it changes every 3 hours from 0:00 GMT (user 2026-11-15:
@@ -606,7 +609,7 @@ function setup(withPlayer, humans) {
   loadMap(mapChoice < 0 || !MODE.maps.includes(mapChoice) ? pick(MODE.maps) : mapChoice);
   fighters = []; bullets = []; parts = []; texts = []; rings = []; zones = []; minions = []; timers = []; strikes = []; score = new Array(MODE.teams).fill(0); timeLeft = MODE.time; overtime = false; otT = 0; player = null; VIEW = 0;
   humans = humans || (withPlayer ? [{ hero: chosen, lo: loadoutOf(chosen), local: true, cos: myCos(chosen), name: PROF.name, line: myDuelLine() }] : []);
-  if (curMode === 'duel') for (const h of humans) { const e = duelEntries(h)[0]; Object.assign(h, { hero: e.hero, lo: e.lo, cos: e.cos }); }
+  if (isDuelMode(curMode)) for (const h of humans) { const e = duelEntries(h)[0]; Object.assign(h, { hero: e.hero, lo: e.lo, cos: e.cos }); }
   const per = MODE.per, nt = MODE.teams, grid = Array.from({ length: nt }, () => new Array(per).fill(null)), ORDER = per === 3 ? [1, 0, 2] : [...Array(per).keys()];
   if (humans.length && humans.every(h => Number.isInteger(h.tm) && h.tm >= 0 && h.tm < nt)) { const k = new Array(nt).fill(0); humans.forEach(h => { if (k[h.tm] < per) grid[h.tm][ORDER[k[h.tm]++]] = h; }); }      // the host already chose sides (friends together)
   else humans.forEach((h, i) => { grid[i % nt][ORDER[Math.floor(i / nt)]] = h; });
@@ -618,7 +621,7 @@ function setup(withPlayer, humans) {
     fighters.push(f);
   }
   DUEL.line = null; DUEL.li = [0, 0]; DUEL.ent = null;
-  if (curMode === 'duel') { DUEL.ent = fighters.map(f => duelEntries(grid[f.team][0], f)); DUEL.line = DUEL.ent.map(l => l.map(e => e.hero)); }
+  if (isDuelMode(curMode)) { DUEL.ent = fighters.map(f => duelEntries(grid[f.team][0], f)); DUEL.line = DUEL.ent.map(l => l.map(e => e.hero)); }
   modeStart();
 }
 /* a side's DUEL_N picks: a human's own list (h.line = [{ hero, lo, cos }]) checked and topped up, a bot's random distinct heroes; f (when given) is already out as pick 1 */
@@ -1114,7 +1117,7 @@ function roundStep(dt) {
   sfx(520, .3, 'triangle', .07, 1.5);
 }
 function newRound() {
-  RD.n++; if (curMode === 'duel' && RD.lost >= 0) duelNext(RD.lost); RD.lost = -1; bullets = []; zones = []; minions = []; strikes = []; timers = []; tempWalls.clear(); NET.mapVer++; timeLeft = modeNow().time; if (modeNow().fog) fogReset();
+  RD.n++; if (isDuelMode(curMode) && RD.lost >= 0) duelNext(RD.lost); RD.lost = -1; bullets = []; zones = []; minions = []; strikes = []; timers = []; tempWalls.clear(); NET.mapVer++; timeLeft = modeNow().time; if (modeNow().fog) fogReset();
   for (const f of fighters) { f.queue = []; f.dash = null; if (f.h !== f.h0) { f.h = f.h0; f.sk = f.sk0; } respawn(f); f.scd = [0, 0]; f.dcd = 0; f.ucd = 6; say(f, RD.n + '라운드', '#ffffff'); }
 }
 

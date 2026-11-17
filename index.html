@@ -1289,6 +1289,13 @@ canvas.rwI{background:none}
 @media (max-height:440px) and (pointer:coarse){
   body #chatBar{right:calc(max(16px, env(safe-area-inset-right, 0px)) + 160px)}
 }
+/* phone held upright: ask to turn it sideways (2026-11-17); goes away by itself once turned */
+#rotHint{display:none}
+@media (orientation:portrait) and (pointer:coarse) and (max-width:900px){
+  #rotHint{display:flex;position:fixed;inset:0;z-index:100000;background:#0d1420;color:#fff;flex-direction:column;align-items:center;justify-content:center;gap:18px;font:700 20px/1.4 system-ui,sans-serif;text-align:center;touch-action:none}
+  #rotHint i{width:54px;height:92px;border:5px solid #ffd54a;border-radius:12px;animation:rotHintSp 1.8s ease-in-out infinite}
+}
+@keyframes rotHintSp{0%,25%{transform:rotate(0)}60%,100%{transform:rotate(90deg)}}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -1361,6 +1368,7 @@ canvas.rwI{background:none}
     <p class="setLic">© Frenchfries777 · <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="license noopener">CC BY-NC-ND 4.0</a></p>
   </div>
 </div>
+<div id="rotHint"><i></i>휴대폰을 가로로 돌려 주세요</div>
 <div id="devPick" hidden><div class="devCard" role="dialog" aria-modal="true" aria-labelledby="devTitle"><h2 id="devTitle">기기 선택</h2><div class="devOpts">
   <button type="button" data-dev="mobile"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/></svg>모바일</button>
   <button type="button" data-dev="pc"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4" width="19" height="12.5" rx="1.5"/><path d="M8.5 20.5h7M12 16.5v4"/></svg>컴퓨터</button>
@@ -5033,8 +5041,11 @@ const MODES = [
   { id: 'ball', name: '볼 배틀', size: '3v3', teams: 2, per: 3, respawn: true, win: 3, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.ball ? i : -1).filter(i => i >= 0), ready: true },      // 2026-11-14 (user): 축구, ball.js
   { id: 'star', name: '리워드 헌터', size: '8명', teams: 8, per: 1, respawn: true, win: 0, time: 150, rounds: 0, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },      // 2026-11-15 (user): bounty, 8 players each alone. A kill takes the victim's stars (2..7)
   { id: 'ko3', name: '라스트 팀', size: '3팀', teams: 3, per: 4, respawn: false, win: 1, time: 0, rounds: 1, fog: 1, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },      // 2026-11-15 (user): knockout 4v4v4, no respawn inside a round, the last team standing takes it; one round only (user 2026-11-15)
-  { id: 'hot4', name: '배틀 존', size: '4팀', teams: 4, per: 3, respawn: true, win: 100, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.hot ? i : -1).filter(i => i >= 0), ready: true }
+  { id: 'hot4', name: '배틀 존', size: '4팀', teams: 4, per: 3, respawn: true, win: 100, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.hot ? i : -1).filter(i => i >= 0), ready: true },
+  { id: 'rank', name: '랭크전', size: '1v1', teams: 2, per: 1, respawn: false, win: DUEL_N, time: 0, rounds: DUEL_N, fog: 1, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true, online: 1 },      // 2026-11-17 (user): ranked = 듀얼 배틀 rules, online only, no bots (rank.js)
+  { id: 'gw', name: '길드 대항전', size: '3v3', teams: 2, per: 3, respawn: true, win: WIN_SCORE, time: MATCH_TIME, rounds: 0, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true, online: 1 }      // 2026-11-17 (user): guild war = 팀 아웃 rules, Fri-Sun only (guild.js)
 ];
+const isDuelMode = id => id === 'duel' || id === 'rank';      // 랭크전 plays exactly like 듀얼 배틀
 for (const m of MODES) m.max = m.teams * m.per;
 /* 오늘의 모드 (user 2026-11-15, the same way Stickseum does it): similar modes are put in one group, `n` of each group are drawn every day and only those can be
    played. The draw comes from the GMT clock, so everyone gets the same list with no server, and it changes every 3 hours from 0:00 GMT (user 2026-11-15:
@@ -5494,7 +5505,7 @@ function setup(withPlayer, humans) {
   loadMap(mapChoice < 0 || !MODE.maps.includes(mapChoice) ? pick(MODE.maps) : mapChoice);
   fighters = []; bullets = []; parts = []; texts = []; rings = []; zones = []; minions = []; timers = []; strikes = []; score = new Array(MODE.teams).fill(0); timeLeft = MODE.time; overtime = false; otT = 0; player = null; VIEW = 0;
   humans = humans || (withPlayer ? [{ hero: chosen, lo: loadoutOf(chosen), local: true, cos: myCos(chosen), name: PROF.name, line: myDuelLine() }] : []);
-  if (curMode === 'duel') for (const h of humans) { const e = duelEntries(h)[0]; Object.assign(h, { hero: e.hero, lo: e.lo, cos: e.cos }); }
+  if (isDuelMode(curMode)) for (const h of humans) { const e = duelEntries(h)[0]; Object.assign(h, { hero: e.hero, lo: e.lo, cos: e.cos }); }
   const per = MODE.per, nt = MODE.teams, grid = Array.from({ length: nt }, () => new Array(per).fill(null)), ORDER = per === 3 ? [1, 0, 2] : [...Array(per).keys()];
   if (humans.length && humans.every(h => Number.isInteger(h.tm) && h.tm >= 0 && h.tm < nt)) { const k = new Array(nt).fill(0); humans.forEach(h => { if (k[h.tm] < per) grid[h.tm][ORDER[k[h.tm]++]] = h; }); }      // the host already chose sides (friends together)
   else humans.forEach((h, i) => { grid[i % nt][ORDER[Math.floor(i / nt)]] = h; });
@@ -5506,7 +5517,7 @@ function setup(withPlayer, humans) {
     fighters.push(f);
   }
   DUEL.line = null; DUEL.li = [0, 0]; DUEL.ent = null;
-  if (curMode === 'duel') { DUEL.ent = fighters.map(f => duelEntries(grid[f.team][0], f)); DUEL.line = DUEL.ent.map(l => l.map(e => e.hero)); }
+  if (isDuelMode(curMode)) { DUEL.ent = fighters.map(f => duelEntries(grid[f.team][0], f)); DUEL.line = DUEL.ent.map(l => l.map(e => e.hero)); }
   modeStart();
 }
 /* a side's DUEL_N picks: a human's own list (h.line = [{ hero, lo, cos }]) checked and topped up, a bot's random distinct heroes; f (when given) is already out as pick 1 */
@@ -6002,7 +6013,7 @@ function roundStep(dt) {
   sfx(520, .3, 'triangle', .07, 1.5);
 }
 function newRound() {
-  RD.n++; if (curMode === 'duel' && RD.lost >= 0) duelNext(RD.lost); RD.lost = -1; bullets = []; zones = []; minions = []; strikes = []; timers = []; tempWalls.clear(); NET.mapVer++; timeLeft = modeNow().time; if (modeNow().fog) fogReset();
+  RD.n++; if (isDuelMode(curMode) && RD.lost >= 0) duelNext(RD.lost); RD.lost = -1; bullets = []; zones = []; minions = []; strikes = []; timers = []; tempWalls.clear(); NET.mapVer++; timeLeft = modeNow().time; if (modeNow().fog) fogReset();
   for (const f of fighters) { f.queue = []; f.dash = null; if (f.h !== f.h0) { f.h = f.h0; f.sk = f.sk0; } respawn(f); f.scd = [0, 0]; f.dcd = 0; f.ucd = 6; say(f, RD.n + '라운드', '#ffffff'); }
 }
 
@@ -7188,7 +7199,7 @@ function guestName() {
   return n;
 }
 PROF.name = guestName();
-const cleanName = s => String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 16);
+const cleanName = s => String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 23);      // 16 + a guild tag '[TAG] '
 function syncAccount() {
   const A = window.FFAuth, u = A && A.user && A.user();
   if (u) { PROF.guest = false; PROF.uid = u.id; PROF.name = cleanName(A.nickname && A.nickname()) || PROF.name; }
@@ -7353,13 +7364,13 @@ const KARMA_TABLE = {
   star: { place: [9, 7, 5, 3, 2, 1, 0, 0], kill: 1, killMax: 3 },  // 리워드 헌터, 8 players
   ko3:  { res: [6, 2, 1], kill: 1, killMax: 3 }               // 라스트 팀 4v4v4
 };
-function modeKarma(o) { const t = KARMA_TABLE[o.mode] || KARMA_TABLE.team, k = Math.min(t.killMax, Math.max(0, o.kills | 0)) * t.kill;
+function modeKarma(o) { const t = KARMA_TABLE[o.mode === 'rank' ? 'duel' : o.mode] || KARMA_TABLE.team, k = Math.min(t.killMax, Math.max(0, o.kills | 0)) * t.kill;
   if (t.place) return k + (t.place[(o.place | 0) - 1] || 0);
   return k + t.res[o.win ? 0 : o.draw ? 1 : 2]; }
 function matchPay(o) {      // o: { mode, win, draw, kills, place }
   if (o.mode === 'flag5') o = Object.assign({}, o, { mode: 'flag' });      // capture the flag pays the same whatever the team size
   const pm = MODE_PAY[o.mode] || MODE_PAY.team, solo = o.mode === 'solo' || o.mode === 'star', k = Math.max(0, o.kills | 0), good = o.win ? 2 : o.draw || (solo && o.place <= 3) || (o.mode === 'hot4' && o.place === 2) || (o.mode === 'duo' && o.place === 2) ? 1 : 0;      // 4팀 핫존: 2nd of 4 pays like a draw
-  return { gold: Math.round(([30, 40, 60][good] + 5 * Math.min(10, k)) * (o.mode === 'duel' ? .6 : 1)), karma: modeKarma(o),
+  return { gold: Math.round(([30, 40, 60][good] + 5 * Math.min(10, k)) * (isDuelMode(o.mode) ? .6 : 1)), karma: modeKarma(o),
     mp: Math.round(([30, 42, 55][good] + 3 * Math.min(10, k)) * pm.mm * 1.75),      // user 2026-11-15: mastery x1.75
     xp: [40, 55, 70][good] + 4 * Math.min(10, k) };
 }
@@ -10262,7 +10273,7 @@ function netModeOf(v) {      // the mode actually played: unknown or not-ready i
 }
 const lobbyMode = () => netModeOf(typeof modeChoice === 'string' ? modeChoice : 'team');
 function modeMax(id) { const e = modeEntry(id), n = e ? (e.max | 0) || (e.teams | 0) * (e.per | 0) : 0;      // room size: the entry's max, else every seat of every team (5v5 = 10)
-  return n >= 2 && n <= 12 ? n : id === 'duel' ? 2 : MAX_PLAYERS; }
+  return n >= 2 && n <= 12 ? n : isDuelMode(id) ? 2 : MAX_PLAYERS; }
 function useMode(id) { try { if (typeof setMode === 'function') setMode(id); else if (typeof curMode !== 'undefined') curMode = id; } catch (e) { quietErr(e); } }
 function startMatchIn(id, humans) {      // setup() takes the lobby's modeChoice: make sure it is the room's mode while the match is made
   let keep; try { if (typeof modeChoice !== 'undefined') { keep = modeChoice; modeChoice = id; } } catch (e) { quietErr(e); }
@@ -10294,7 +10305,7 @@ function netReset() {
   const shut = () => { for (const c of cs) try { c.close(); } catch (e) { quietErr(e); } if (pr) try { pr.destroy(); } catch (e) { quietErr(e); } };
   if (linger) setTimeout(shut, 600); else shut();      // give the last message time to leave before the connections go
   if (NET.hostConn) try { NET.hostConn.close(); } catch (e) { quietErr(e); }
-  Object.assign(NET, { role: null, peer: null, conns: [], hostConn: null, members: [], phase: 'idle', rec: false, evs: [], room: -1, me: -1, waitEnd: 0, onRoomGone: null, heard: 0, ps: null, rtt: 0, tOff: null, jit: .02, delay: .1, tok: null, rc: null, gone: [] }); netBadge(false);
+  Object.assign(NET, { role: null, peer: null, conns: [], hostConn: null, members: [], phase: 'idle', rec: false, evs: [], room: -1, me: -1, waitEnd: 0, onRoomGone: null, heard: 0, ps: null, rtt: 0, tOff: null, jit: .02, delay: .1, tok: null, rc: null, gone: [], res: null, draft: null, rkDrop: null }); netBadge(false);
   netOut = null; netSq = 0; inHist = [];
 }
 const newPeer = id => new Peer(id, Object.assign({ debug: 0 }, PEER_SERVER, PEERJS_ICE_CONFIG));
@@ -10311,11 +10322,11 @@ function roomUi(title, status, n, left) {
    to the room; the host puts friends who meet in a room on the same side. Guests (no account) and the claude.ai preview send nothing. */
 const FR_API = 'https://kebsbuvuutilitwlvxzv.supabase.co/rest/v1/friendships?select=requester_id,addressee_id&status=eq.accepted&limit=500';
 const isUid = v => typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v);
-const MYFR = { uid: '', fr: [] };
+const MYFR = { uid: '', fr: [], tok: '' };
 async function netFriends() {
   try {
-    const A = window.FFAuth, u = A && A.user && A.user(), sb = A && A.client && A.client(); if (!u || !isUid(u.id) || !sb || !sb.auth) { MYFR.uid = ''; MYFR.fr = []; return; }
-    const r = await sb.auth.getSession(), t = r && r.data && r.data.session && r.data.session.access_token; if (!t) return;
+    const A = window.FFAuth, u = A && A.user && A.user(), sb = A && A.client && A.client(); if (!u || !isUid(u.id) || !sb || !sb.auth) { MYFR.uid = ''; MYFR.fr = []; MYFR.tok = ''; return; }
+    const r = await sb.auth.getSession(), t = r && r.data && r.data.session && r.data.session.access_token; if (!t) return; MYFR.tok = t;
     const res = await fetch(FR_API, { cache: 'no-store', headers: { apikey: typeof ACH_KEY === 'string' ? ACH_KEY : '', Authorization: 'Bearer ' + t } }); if (!res.ok) return;
     const rows = await res.json(); MYFR.uid = u.id;
     MYFR.fr = (Array.isArray(rows) ? rows : []).map(x => x && (x.requester_id === u.id ? x.addressee_id : x.requester_id)).filter(isUid);
@@ -10337,14 +10348,30 @@ function friendTeams(humans, nt, per) {
   return tm;
 }
 function startOnline() {
-  netFriends();
+  const fp = netFriends();
   if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { quietErr(e); } }
   if (ac && ac.state === 'suspended') ac.resume();
   netReset(); netClaimTries = 0; netBad = new Set(); NET.searchUntil = 0;
   try { if (typeof modeFixDay === 'function') modeFixDay(); } catch (e) { quietErr(e); }      // only today's modes are searched (오늘의 모드, engine.js MODE_GROUPS)
   NET.mode = lobbyMode(); NET.max = modeMax(NET.mode); useMode(NET.mode);      // also what a fallback bot match plays
   showScreen('roomScreen');
+  if (netRanked()) {      // 랭크전 / 길드 대항전: the server needs to know who is playing (signed-in account token), checked before the search
+    const tok = netToken; NET.t0 = performance.now(); roomUi('방 찾는 중', '계정을 확인하고 있어요');
+    const go = async () => {
+      if (tok !== netToken) return;
+      try { if (NET.mode === 'rank' && !RK.ok) await rankLoad(); if (NET.mode === 'gw') await guildLoad(); } catch (e) { quietErr(e); }      // fresh points / tickets before the search
+      if (tok !== netToken) return;
+      const why = typeof onlineModeBlock === 'function' ? onlineModeBlock(NET.mode) : ''; if (!MYFR.tok || why) return netGiveUp(why || '로그인이 필요해요.'); netSearch(); };
+    Promise.race([fp, new Promise(r => setTimeout(r, 6000))]).then(go, go); return;
+  }
   netSearch();
+}
+/* 랭크전 and 길드 대항전 are online only (a server room keeps the score): no bot match instead, the player goes back to the lobby */
+const netRanked = (id = NET.mode) => id === 'rank' || id === 'gw';
+function netGiveUp(why) {
+  netReset(); NET.phase = 'fallback'; const tok = netToken;
+  roomUi(modeNow().name, why + ' 로비로 돌아가요.');
+  setTimeout(() => { if (tok === netToken && NET.phase === 'fallback') { NET.phase = 'idle'; showScreen('menuScreen'); } }, 2600);
 }
 function netSearch(again) {
   const tok = netToken;
@@ -10374,9 +10401,10 @@ function netProbeAll(tok) {
   const status = () => roomUi('방 찾는 중', '방을 확인하고 있어요 (' + R.filter(r => r.s !== 'pend').length + ' / ' + NET_ROOMS + ')');
   const join = () => {
     let best = -1; R.forEach((r, k) => { if (r.s === 'avail' && (best < 0 || r.n > R[best].n)) best = k; });      // the fullest waiting room
+    if (netRanked()) { const p = netRankPick(R); if (p === -2) { finish(() => { closeAll(-1); netRetry(true); }); return true; } best = p; }      // ranked: the room whose player is close in points (or wait for one)
     if (best < 0) return false;
     joining = best; const r = R[best];
-    try { r.c.send({ t: 'hello', lite: NET_LITE ? 1 : 0, mode: NET.mode, hero: chosen, lo: loadoutOf(chosen), name: PROF.name, cos: myCos(chosen), line: myDuelLine(), uid: MYFR.uid || undefined, fr: MYFR.uid ? MYFR.fr.slice(0, 500) : undefined }); } catch (e) { r.s = 'busy'; joining = -1; return false; }
+    try { r.c.send(Object.assign({ t: 'hello', lite: NET_LITE ? 1 : 0, mode: NET.mode, hero: chosen, lo: loadoutOf(chosen), name: netName(), cos: myCos(chosen), line: myDuelLine(), uid: MYFR.uid || undefined, fr: MYFR.uid ? MYFR.fr.concat(typeof guildMates === 'function' ? guildMates() : []).slice(0, 560) : undefined }, netRanked() ? netRankHello() : null)); } catch (e) { r.s = 'busy'; joining = -1; return false; }
     r.jt = setTimeout(() => { if (alive() && joining === best) { r.s = 'busy'; joining = -1; decide(); } }, 4500);
     return true;
   };
@@ -10386,6 +10414,7 @@ function netProbeAll(tok) {
     const free = R.findIndex((r, k) => r.s === 'free' && !netBad.has(k));
     if (R.some(r => r.s === 'pend') && !hard && !(soft && free >= 0)) return;
     const k = free >= 0 ? free : R.findIndex((r, k) => r.s === 'pend' && hard && !netBad.has(k));      // no answer at all by the deadline: try to take it, the server decides
+    if (netRanked() && R.every(r => r.s === 'free')) return finish(() => { closeAll(-1); netGiveUp('랭크 서버 점검 중이에요.'); });      // no server room at all
     finish(() => { closeAll(-1); netRetry(); });      // players never host: every online match runs in a server room (sa-host); none free yet -> look again
   }
   const ts = setTimeout(() => { soft = true; decide(); }, SOFT), th = setTimeout(() => { hard = true; decide(); }, HARD);
@@ -10398,7 +10427,7 @@ function netProbeAll(tok) {
       if (tok !== netToken || !m) return;
       if (NET.hostConn === c) return guestMsg(m);
       if (decided) return;
-      if (m.t === 'info') { r.s = m.ok && (m.mode == null || m.mode === NET.mode) ? 'avail' : 'busy'; r.n = m.n | 0; status(); decide(); }
+      if (m.t === 'info') { r.s = m.ok && (m.mode == null || m.mode === NET.mode) ? 'avail' : 'busy'; r.n = m.n | 0; r.rp = m.rp; r.rw = m.rw; r.gs = m.gs; status(); decide(); }
       else if (m.t === 'busy') { clearTimeout(r.jt); r.s = 'busy'; if (joining === k) joining = -1; decide(); }
       else if (m.t === 'welcome' && joining === k) finish(() => { closeAll(k); becomeGuest(c, k, m); });
     });
@@ -10411,11 +10440,12 @@ function netProbeAll(tok) {
   if (!R.some(r => r.c)) finish(() => netFallback('온라인에 연결할 수 없어요.'));
 }
 /* no free server room right now: the server opens a new one within seconds after a room starts, so look again for up to 15 s */
-function netRetry() {
+function netRetry(near) {
   const now = performance.now(); if (!NET.searchUntil) NET.searchUntil = now + 15000;
+  if (netRanked()) NET.searchUntil = now + 15000;      // ranked waits as long as the player likes (취소 button); no bots
   if (now > NET.searchUntil) { NET.searchUntil = 0; return netFallback('서버 방이 모두 차 있어요.'); }
   const tok = netToken; try { NET.peer && NET.peer.destroy(); } catch (e) { quietErr(e); } NET.peer = null; NET.phase = 'search';
-  roomUi('방 찾는 중', '서버 방이 열리기를 기다리고 있어요');
+  roomUi('방 찾는 중', netRanked() ? netWaitText(near) : '서버 방이 열리기를 기다리고 있어요');
   setTimeout(() => { if (tok === netToken && NET.phase === 'search') { netToken++; netSearch(); } }, 1500);
 }
 function netFallback(why) {
@@ -10440,29 +10470,32 @@ function hostAccept(c, tok) {
   c.on('data', m => {
     if (tok !== netToken || !m || typeof m !== 'object') return;
     if (m.t === 'peek') {      // a searching screen asks whether this room has a free seat; it is not a member yet
-      try { c.send({ t: 'info', ok: NET.phase === 'wait' && hostN() < NET.max, n: hostN(), max: NET.max, mode: NET.mode }); } catch (e) { quietErr(e); }
+      try { c.send(Object.assign({ t: 'info', ok: NET.phase === 'wait' && hostN() < NET.max, n: hostN(), max: NET.max, mode: NET.mode }, netRanked() ? netRankInfo() : null)); } catch (e) { quietErr(e); }
     } else if (m.t === 'hello') {
       if (NET.members.some(x => x.conn === c)) return;
       if (NET.phase !== 'wait' || hostN() >= NET.max || m.mode !== NET.mode || typeof m.hero !== 'string' || !Object.prototype.hasOwnProperty.call(HEROES, m.hero)) { try { c.send({ t: 'busy' }); } catch (e) { quietErr(e); } setTimeout(() => { try { c.close(); } catch (e) { quietErr(e); } }, 500); return; }
       const mem = { conn: c, hero: m.hero, lo: Array.isArray(m.lo) ? m.lo : null, name: cleanName(m.name) || '게스트', cos: cleanCos(m.cos, m.hero), f: null, fi: -1, heard: performance.now(), inAt: 0, sq: 0, sqAt: 0, lite: !!m.lite, evq: [], mv: -1, line: Array.isArray(m.line) ? m.line.slice(0, DUEL_N).map(e => e && typeof e.hero === 'string' && Object.prototype.hasOwnProperty.call(HEROES, e.hero) ? { hero: e.hero, lo: Array.isArray(e.lo) ? e.lo.slice(0, 2) : null, cos: cleanCos(e.cos, e.hero) } : null).filter(Boolean) : null,
-        uid: isUid(m.uid) ? m.uid : '', fr: Array.isArray(m.fr) ? m.fr.slice(0, 500).filter(isUid) : [] };
+        uid: isUid(m.uid) ? m.uid : '', fr: Array.isArray(m.fr) ? m.fr.slice(0, 560).filter(isUid) : [],
+        tok: typeof m.tok === 'string' && m.tok.length < 4000 ? m.tok : '', rp: numIn(m.rp, 0, 1e6, 0), g: numIn(m.g, 0, 1e15, 0), grp: numIn(m.grp, -1, 1e6, -1), at: performance.now() };
+      mem.line0 = mem.line;
+      if (netRanked() && !mem.tok) { try { c.send({ t: 'busy' }); } catch (e) { quietErr(e); } setTimeout(() => { try { c.close(); } catch (e) { quietErr(e); } }, 500); return; }      // ranked: signed-in players only
       NET.members.push(mem); NET.conns.push(c);
       { const now = performance.now(), g = Math.min(5, waitSec) * 1000; if (NET.waitEnd - now < g) NET.waitEnd = now + g; }      // someone just arrived: leave time for the next one to find the room too
-      mem.tok = Math.random().toString(36).slice(2, 12); c.send({ t: 'welcome', room: NET.room, tok: mem.tok });
+      mem.rtok = Math.random().toString(36).slice(2, 12); c.send({ t: 'welcome', room: NET.room, tok: mem.rtok });
       hostLobby();
-      if (hostN() >= NET.max) hostStart();
+      if (hostN() >= NET.max) { if (NET.mode === 'rank') rankDraftStart(); else hostStart(); }
     } else if (m.t === 'rejoin') {      // a guest whose connection broke comes back to its own fighter
       const now = performance.now();
-      const old = typeof m.tok === 'string' && NET.members.find(x => x.tok === m.tok); if (old) hostDrop(old.conn, tok);      // the old link may still look open on this side
+      const old = typeof m.tok === 'string' && NET.members.find(x => x.rtok === m.tok); if (old) hostDrop(old.conn, tok);      // the old link may still look open on this side
       NET.gone = (NET.gone || []).filter(g => now - g.at < 60000);
-      const g = NET.phase === 'play' && state === 'play' && typeof m.tok === 'string' ? NET.gone.find(x => x.mem.tok === m.tok) : null;
+      const g = NET.phase === 'play' && state === 'play' && typeof m.tok === 'string' ? NET.gone.find(x => x.mem.rtok === m.tok) : null;
       if (!g || !g.mem.f || !fighters.includes(g.mem.f)) { try { c.send({ t: 'busy' }); } catch (e) { quietErr(e); } setTimeout(() => { try { c.close(); } catch (e) { quietErr(e); } }, 500); return; }
       NET.gone = NET.gone.filter(x => x !== g);
       const mem = Object.assign(g.mem, { conn: c, heard: now, inAt: 0, sq: 0, sqAt: 0, evq: [], mv: -1, lite: !!m.lite });
       mem.f.remote = mem; mem.f.human = true; mem.f.netIn = null; mem.fi = fighters.indexOf(mem.f);
       NET.members.push(mem); NET.conns.push(c); NET.rec = true; NET.rejoins = (NET.rejoins || 0) + 1;
       const roster = fighters.map(f => ({ nm: f.nick, cos: f.cos, hu: f.human ? 1 : 0 }));
-      try { c.send({ t: 'start', re: 1, you: mem.fi, team: mem.f.team, map: curMap, mode: NET.mode, roster, tok: mem.tok }); } catch (e) { quietErr(e); }
+      try { c.send({ t: 'start', re: 1, you: mem.fi, team: mem.f.team, map: curMap, mode: NET.mode, roster, tok: mem.rtok }); } catch (e) { quietErr(e); }
     } else if (m.t === 'in' || m.t === 'ping') {
       const mem = NET.members.find(x => x.conn === c); if (!mem) return;
       const now = performance.now(); mem.heard = now;
@@ -10472,6 +10505,8 @@ function hostAccept(c, tok) {
       if (o) { n.pf = n.pf || o.pf; n.ult = n.ult || o.ult; n.dash = n.dash || o.dash; n.sk = [n.sk[0] || o.sk[0], n.sk[1] || o.sk[1]]; n.manual = n.manual || o.manual; }
       mem.f.netIn = n; mem.inAt = now;
       if (Number.isInteger(m.sq) && m.sq > mem.sq) { mem.sq = m.sq; mem.sqAt = now; }
+    } else if (m.t === 'ban' || m.t === 'pick') {
+      const mem = NET.members.find(x => x.conn === c); if (mem) rankDraftIn(mem, m);
     } else if (m.t === 'emo' || m.t === 'chat') {
       const mem = NET.members.find(x => x.conn === c); if (!mem || !mem.f || NET.phase !== 'play') return;
       if (m.t === 'emo') doEmote(mem.f, m.i | 0); else hostChat(mem.f, m.x);
@@ -10482,14 +10517,16 @@ function hostAccept(c, tok) {
 function hostDrop(c, tok) {
     if (tok !== netToken) return;
     const i = NET.members.findIndex(x => x.conn === c); if (i < 0) return;
-    try { c.close(); } catch (e) { quietErr(e); }
     const mem = NET.members[i]; NET.members.splice(i, 1); NET.conns = NET.conns.filter(x => x !== c);
+    try { c.close(); } catch (e) { quietErr(e); }      // after taking it out: closing can call this again at once (its close event)
     if (mem.f) { mem.f.remote = null; mem.f.human = false; mem.f.netIn = null; }      // a player who left mid-match: a bot takes over the fighter
-    if (mem.f && mem.tok && NET.phase === 'play') (NET.gone || (NET.gone = [])).push({ mem, at: performance.now() });      // ...until the same player comes back (rejoin) within a minute
+    if (mem.f && mem.rtok && NET.phase === 'play') (NET.gone || (NET.gone = [])).push({ mem, at: performance.now() });      // ...until the same player comes back (rejoin) within a minute
+    if (NET.mode === 'rank') rankDropped(mem);      // ranked: back in 20 s or the match is lost; in the pick screen the other one waits for a new opponent
     if (NET.phase === 'wait') hostLobby();
     NET.rec = NET.members.length > 0 && state === 'play';
 }
 function hostLobby() {
+  if (NET.mode === 'rank') { const n = hostN(); for (const m of NET.members) try { m.conn.send({ t: 'lobby', n, left: -1, max: NET.max, rk: 1 }); } catch (e) { quietErr(e); } return; }      // ranked: no countdown, it starts when two are in
   const left = Math.max(0, Math.ceil((NET.waitEnd - performance.now()) / 1000)), n = hostN();
   roomUi('방 대기 중', n + ' / ' + NET.max + '명 · ' + left + '초 뒤에 시작해요. 빈자리는 봇이 채워요.', n, left);
   for (const m of NET.members) try { m.conn.send({ t: 'lobby', n, left, max: NET.max }); } catch (e) { quietErr(e); }
@@ -10565,6 +10602,7 @@ function hostEnd() {
   if (NET.role !== 'host') return;
   /* end-of-match stats: the result screen's author defines matchStats() (a JSON-safe value, e.g. an array indexed like `fighters`); it rides along in 'over' and lands in NET.stats on guests */
   let st; try { if (typeof matchStats === 'function') st = matchStats(); } catch (e) { quietErr(e); }
+  if (netRanked()) try { NET.res = rankResult(); } catch (e) { quietErr(e); }      // 랭크전 / 길드 대항전: who won, for the server to record (rank.js)
   for (const m of NET.members) try { m.conn.send({ t: 'over', sc: score, e: NET.evs, st }); } catch (e) { quietErr(e); }
   NET.rec = false; const tok = netToken;
   setTimeout(() => { if (tok === netToken) netReset(); }, 1500);
@@ -10577,7 +10615,9 @@ function becomeGuest(c, k, m) {
 }
 function guestMsg(m) {
   NET.heard = performance.now();
-  if (m.t === 'lobby' && NET.phase === 'joined') { if (m.max >= 2 && m.max <= 12) NET.max = m.max | 0; roomUi('방에 들어왔어요', m.n + ' / ' + NET.max + '명 · ' + m.left + '초 뒤에 시작해요. 빈자리는 봇이 채워요.', m.n, m.left); }
+  if (m.t === 'lobby' && NET.phase === 'joined' && m.rk) { roomUi('상대를 찾는 중', netWaitText(), m.n, null); }
+  else if (m.t === 'draft' && NET.phase === 'joined') rankDraftUi(m);
+  else if (m.t === 'lobby' && NET.phase === 'joined') { if (m.max >= 2 && m.max <= 12) NET.max = m.max | 0; roomUi('방에 들어왔어요', m.n + ' / ' + NET.max + '명 · ' + m.left + '초 뒤에 시작해요. 빈자리는 봇이 채워요.', m.n, m.left); }
   else if (m.t === 'pong') { if (typeof m.ts === 'number') { const r = performance.now() - m.ts; NET.rtt = NET.rtt ? NET.rtt * .7 + r * .3 : r; } }
   else if (m.t === 'start') guestStart(m);
   else if (m.t === 's' && state === 'play' && NET.phase === 'play') applySnap(m);
@@ -10626,6 +10666,7 @@ function hostLost() {
   else if (was === 'joined') { netSearch(); }
 }
 function guestStart(m) {
+  rankDraftHide();
   NET.mode = netModeOf(m.mode); useMode(NET.mode);
   NET.phase = 'play'; NET.me = m.you; VIEW = m.team; NET.roster = Array.isArray(m.roster) ? m.roster : [];
   loadMap(Number.isInteger(m.map) && MAPS[m.map] ? m.map : 0);
@@ -10778,10 +10819,12 @@ function netTick(dt) {
   }
   if (NET.role === 'host' && NET.phase === 'wait') {
     if (DED && !NET.members.length) NET.waitEnd = performance.now() + waitSec * 1000;      // an empty server room waits as long as it takes
+    if (NET.mode === 'rank') { NET.waitEnd = performance.now() + 60000; if ((netTick.rk = (netTick.rk || 0) + dt) > 1) { netTick.rk = 0; hostLobby(); } rankDraftTick(); }      // ranked: no bots, so no countdown; the pick screen has its own clock
     const left = (NET.waitEnd - performance.now()) / 1000;
     if (Math.ceil(left) !== netTick.last) { netTick.last = Math.ceil(left); hostLobby(); }
     if (left <= 0) hostStart();
   }
+  if (NET.role === 'host' && NET.phase === 'play' && NET.mode === 'rank') rankPlayTick();      // a ranked player who left: 20 s to come back
   if (NET.role === 'host' && NET.phase === 'play' && state === 'play' && NET.members.length) {
     snapAcc += dt;
     if (snapAcc >= SNAP_DT) { snapAcc = 0; hostSnap(); }
@@ -10791,7 +10834,7 @@ function netTick(dt) {
 if (DED) {
   const ded = { err: null, started: false, ended: false };
   window.__sad = {
-    modes: () => (typeof MODES !== 'undefined' && Array.isArray(MODES) ? MODES.filter(m => m && m.ready !== false).map(m => m.id) : ['team']),
+    modes: () => (typeof MODES !== 'undefined' && Array.isArray(MODES) ? MODES.filter(m => m && m.ready !== false && (typeof modeOpen !== 'function' || modeOpen(m.id)) && (m.id !== 'gw' || (typeof gwDayNow === 'function' && gwDayNow()))).map(m => m.id) : ['team']),      // only modes open right now (오늘의 모드; 길드 대항전 Fri-Sun), 랭크전 always
     open(mode, k) {
       netReset(); Object.assign(ded, { err: null, started: false, ended: false });
       NET.mode = netModeOf(mode); NET.max = modeMax(NET.mode); useMode(NET.mode);
@@ -10809,7 +10852,8 @@ if (DED) {
     status() {
       if (NET.phase === 'play' && state === 'play') ded.started = true;
       if (ded.started && (state !== 'play' || NET.role !== 'host')) ded.ended = true;
-      return { live: NET.role === 'host', mode: NET.mode, room: NET.room, phase: NET.phase, humans: NET.members.length, started: ded.started, ended: ded.ended, err: ded.err };
+      return { live: NET.role === 'host', mode: NET.mode, room: NET.room, phase: NET.phase, humans: NET.members.length, started: ded.started, ended: ded.ended, err: ded.err,
+        toks: netRanked() ? NET.members.map(m => m.tok).filter(Boolean) : undefined, res: ded.ended ? NET.res || null : undefined };      // ranked: the server checks the accounts and writes the result (sa-host.js)
     }
   };
 }
@@ -11141,7 +11185,7 @@ const CL_RULE = {
   gold: 'add', karma: 'add', xp: 'add', mp: 'add', cr: 'add', su: 'union',
   'st.k': 'add', 'st.w': 'add', 'st.g': 'add', 'st.nd': 'add', 'st.sa': 'add', 'st.mw': 'add', 'st.mg': 'add', 'st.hg': 'add', 'st.hk': 'add', 'st.hn': 'add', 'st.d': 'add', 'st.dk': 'add', 'st.mv': 'add', kb: 'max',
   'st.mk': 'max', 'st.hb': 'max', 'st.hw': 'max', ach: 'max', v: 'max',
-  own: 'union', kr: 'union', sk: 'union', sx: 'add', cd: 'union', dq: 'day', wq: 'day', sq: 'day', sd: 'day', sw: 'day', att: 'att'
+  own: 'union', kr: 'union', rkr: 'union', sk: 'union', sx: 'add', cd: 'union', dq: 'day', wq: 'day', sq: 'day', sd: 'day', sw: 'day', att: 'att'
 };
 const clObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
 const clNum = v => (typeof v === 'number' && isFinite(v) ? v : 0);
@@ -11704,6 +11748,589 @@ addEventListener('keydown', e => {
 }, true);
 setTimeout(leaveCheck, 0);
 
+/* ---------- 랭크전 (user 2026-11-17): 1대1 듀얼 배틀 규칙, 로그인 + 레벨 10, 봇 없음, 오라클 서버 방에서만 (점수는 서버가 Supabase에 기록).
+   Tiers use the mastery names without 아메시스트 (user's list): 브론즈 · 실버 · 골드 · 플래티넘 · 다이아 I-III, 마스터 · 그랜드마스터 I-V, 챔피언. 100 points a step.
+   Before the match each player bans one character for the other, then picks three (draft screen below). Points: supabase/seumarena-guild-rank.sql.
+   Placeholders (user may change): rewards per tier (RK_REWARD), ban 15 s / pick 25 s, matching range 150 points + 100 every 15 s. ---------- */
+const SB_URL = 'https://kebsbuvuutilitwlvxzv.supabase.co', SB_KEY = 'sb_publishable_4Egu0zm3p6cxWGvP_-GlIw_mlCpO1Nf';
+async function sbTok() {
+  try { const A = window.FFAuth, sb = A && A.client && A.client(); if (!sb || !sb.auth) return ''; const r = await sb.auth.getSession(); return (r && r.data && r.data.session && r.data.session.access_token) || ''; } catch (e) { return ''; }
+}
+/* a database function call; anon = without the account (public lists). Resolves to the JSON it returns, or null when it could not be reached */
+async function sbRpc(fn, args, anon) {
+  try {
+    const t = anon ? '' : await sbTok(); if (!anon && !t) return null;
+    let ctl = null; try { ctl = new AbortController(); setTimeout(() => ctl.abort(), 10000); } catch (e) { quietErr(e); }
+    const r = await fetch(SB_URL + '/rest/v1/rpc/' + fn, { method: 'POST', cache: 'no-store', signal: ctl ? ctl.signal : undefined, body: JSON.stringify(args || {}),
+      headers: { apikey: SB_KEY, Authorization: 'Bearer ' + (t || SB_KEY), 'Content-Type': 'application/json' } });
+    if (!r.ok) return null; return await r.json();
+  } catch (e) { return null; }
+}
+const signedIn = () => { try { const A = window.FFAuth, u = A && A.user && A.user(); return !!(u && u.id); } catch (e) { return false; } };
+
+/* tiers */
+const RK_TIERS = MS_TIERS.filter(t => t[0] !== '아메시스트'), RK_SLOTS = [];
+RK_TIERS.forEach(([nm, n, col], g) => { for (let i = 0; i < n; i++) RK_SLOTS.push({ name: n > 1 ? nm + ' ' + ['I', 'II', 'III', 'IV', 'V'][i] : nm, col, g }); });
+const RK_STEP = 100, RK_TOP = RK_SLOTS.length - 1;      // 25 = 챔피언 (no ceiling; the board ranks it)
+function rankOf(rp) { rp = Math.max(0, rp | 0); const i = Math.min(RK_TOP, Math.floor(rp / RK_STEP)), top = i === RK_TOP; return Object.assign({ i, rp, into: top ? rp - RK_TOP * RK_STEP : rp - i * RK_STEP, top }, RK_SLOTS[i]); }
+const rkMsIndex = i => { let k = 0; for (const t of MS_TIERS) { if (t[0] === '아메시스트') { if (i >= k) i += t[1]; } k += t[1]; } return i; };      // the mastery shield of the same name
+function drawRankLogo(cv, i) { drawMasteryLogo(cv, rkMsIndex(Math.max(0, Math.min(RK_TOP, i | 0)))); }
+/* first reach of a tier group this season (placeholder amounts): 실버 .. 챔피언 */
+const RK_REWARD = { 1: [['g', 300]], 2: [['g', 500], ['cr', 30]], 3: [['g', 800], ['cr', 50]], 4: [['ebox', 1], ['cr', 80]], 5: [['ebox', 1], ['g', 1000], ['cr', 150]], 6: [['ebox', 2], ['cr', 200]], 7: [['ebox', 3], ['g', 2000], ['cr', 300]] };
+
+const RK = { ok: false, rp: 0, peak: 0, pos: 0, ban: 0, banAt: 0, games: 0, wins: 0, last: null, lastPeak: null, busy: false, at: 0 };
+async function rankLoad() {
+  if (!signedIn() || RK.busy) return RK;
+  RK.busy = true;
+  try {
+    const r = await sbRpc('seumarena_rank_me', { p_season: GAME_VER, p_nick: PROF.name || '' });
+    if (r && r.r === 'ok') { Object.assign(RK, { ok: true, rp: r.rp | 0, peak: r.peak | 0, pos: r.pos | 0, ban: r.ban | 0, banAt: performance.now(), games: r.games | 0, wins: r.wins | 0, last: r.last_season || null, lastPeak: r.last_peak, at: Date.now() }); rankRewards(); }
+  } finally { RK.busy = false; }
+  if (state === 'menu') try { updatePick(); } catch (e) { quietErr(e); }
+  return RK;
+}
+function rankRewards() {
+  const g = rankOf(RK.peak).g; if (!Array.isArray(COS.rkr)) COS.rkr = [];
+  let gave = false;
+  for (let k = 1; k <= g; k++) { const key = GAME_VER + ':' + k; if (COS.rkr.includes(key) || !RK_REWARD[k]) continue; COS.rkr.push(key); gave = true; for (const [kind, n] of RK_REWARD[k]) { const got = giveReward(kind, n); got.why = RK_TIERS[k][0] + ' 달성'; rewardFx(got); } }
+  if (gave) { saveCos(); goldUi(); }
+}
+const rankBanLeft = () => Math.max(0, RK.ban - (performance.now() - RK.banAt) / 1000);
+function rankBlock() {
+  if (!signedIn()) return '로그인 필요';
+  if (levelOf().lv < 10) return 'LV 10부터';
+  if (!RK.ok) return '불러오는 중';
+  const b = rankBanLeft(); if (b > 0) return Math.ceil(b / 60) + '분 금지';
+  return '';
+}
+/* tail.js hooks: which online-only modes can be played, and why not */
+/* still finding out (the account script or the points have not answered yet): count as open, so a saved 랭크전 choice is not lost on reload; the start button checks again */
+const rankPending = () => (!window.FFAuth && performance.now() < 15000) || (signedIn() && levelOf().lv >= 10 && !RK.ok && !rankBanLeft());
+function modeExtraOk(m) { return m.id === 'rank' ? !rankBlock() || rankPending() : m.id === 'gw' ? !gwBlock() || gwPending() : true; }
+function modeLockText(m) { return m.id === 'rank' ? rankBlock() : m.id === 'gw' ? (gwDayNow() ? gwBlock() : '') : ''; }      // '' = not shown (길드 대항전 on other days)
+function onlineModeBlock(id) { return id === 'rank' ? rankBlock() : id === 'gw' ? gwBlock() : ''; }
+function modeChipExtra(m) {
+  if (m.id === 'rank') { const t = rankOf(RK.rp); $('modeChipMeta').textContent = RK.ok ? t.name + ' · ' + (t.top ? RK.rp + '점' : t.into + '/' + RK_STEP) : '불러오는 중'; $('modeChipMeta').style.color = RK.ok ? t.col : ''; }
+  else if (m.id === 'gw') { $('modeChipMeta').textContent = '표 ' + Math.max(0, GW.left | 0) + '/4 · 우리 길드 ' + gwMyPts() + '점'; $('modeChipMeta').style.color = ''; }
+  else $('modeChipMeta').style.color = '';
+}
+
+/* match making (net.js): what a ranked player tells the room, what a room tells a searcher, which room to take */
+function netRankHello() {
+  if (NET.mode === 'rank') return { tok: MYFR.tok, rp: RK.rp | 0 };
+  return { tok: MYFR.tok, g: GUILD.g ? GUILD.g.id : 0, grp: GW.gnum == null ? -1 : GW.gnum };
+}
+function netRankInfo() {
+  const now = performance.now();
+  if (NET.mode === 'rank') { const m = NET.members[0]; return m ? { rp: m.rp, rw: Math.round((now - m.at) / 1000) } : {}; }
+  return { gs: NET.members.map(m => [m.g, m.grp]) };
+}
+const rkRange = sec => 150 + 100 * Math.floor(sec / 15);
+/* -2 = nobody near enough yet (look again), -1 = no preference, else the room */
+function netRankPick(R) {
+  const waited = (performance.now() - (NET.t0 || performance.now())) / 1000, av = R.map((r, k) => [r, k]).filter(([r]) => r.s === 'avail');
+  if (!av.length) return -1;
+  if (NET.mode === 'rank') {
+    const full = av.filter(([r]) => r.n >= 1), near = full.filter(([r]) => Math.abs((r.rp | 0) - RK.rp) <= rkRange(Math.max(waited, r.rw | 0))).sort((a, b) => Math.abs(a[0].rp - RK.rp) - Math.abs(b[0].rp - RK.rp));
+    if (near.length) return near[0][1];
+    if (full.length) return -2;      // someone waits but is far in points: wait until the range opens instead of sitting alone in another room
+    return av[0][1];
+  }
+  if (waited >= 20) return -1;      // 길드 대항전: after 20 s anyone
+  const g = GUILD.g ? GUILD.g.id : 0, sc = r => (r.gs || []).some(x => x[1] === GW.gnum && x[0] !== g) ? 2 : (r.gs || []).some(x => x[1] === GW.gnum) ? 1 : 0;
+  const best = av.slice().sort((a, b) => sc(b[0]) - sc(a[0]) || b[0].n - a[0].n)[0];
+  if (sc(best[0]) > 0) return best[1];
+  const empty = av.find(([r]) => !r.n); return empty ? empty[1] : -1;
+}
+function netWaitText() {
+  const s = Math.max(0, Math.floor((performance.now() - (NET.t0 || performance.now())) / 1000)), t = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  return NET.mode === 'rank' ? '비슷한 점수의 상대를 찾고 있어요 · ' + t + ' (봇 없음)' : '같은 조 길드원을 먼저 찾고 있어요 · ' + t;
+}
+
+/* ---------- draft (host side, in the server room): ban 15 s, then pick 25 s ---------- */
+const RK_BAN_S = 15, RK_PICK_S = 25;
+function rankDraftStart() {
+  if (NET.members.length < 2 || NET.draft) return;
+  NET.draft = { step: 'ban', until: performance.now() + RK_BAN_S * 1000 };
+  for (const m of NET.members) { m.ban = null; m.picked = false; }
+  rankDraftSend();
+}
+function rankDraftSend() {
+  const d = NET.draft; if (!d) return;
+  const left = Math.max(0, Math.round((d.until - performance.now()) / 1000));
+  for (const m of NET.members) {
+    const o = NET.members.find(x => x !== m);
+    try { m.conn.send({ t: 'draft', step: d.step, left, opp: o ? { name: o.name, rp: o.rp | 0 } : null, ban: d.step === 'pick' && o ? o.ban : null, mine: m.ban }); } catch (e) { quietErr(e); }
+  }
+}
+function rankDraftIn(mem, m) {
+  const d = NET.draft; if (!d) return;
+  if (m.t === 'ban' && d.step === 'ban' && typeof m.hero === 'string' && HEROES[m.hero]) { mem.ban = m.hero; if (NET.members.every(x => x.ban)) rankToPick(); }
+  else if (m.t === 'pick' && d.step === 'pick' && Array.isArray(m.line)) {
+    const o = NET.members.find(x => x !== mem), no = o && o.ban, seen = new Set();
+    mem.line = m.line.slice(0, DUEL_N).map(e => e && typeof e.hero === 'string' && HEROES[e.hero] && e.hero !== no && !seen.has(e.hero) && seen.add(e.hero) ? { hero: e.hero, lo: Array.isArray(e.lo) ? e.lo.slice(0, 2) : null, cos: cleanCos(e.cos, e.hero) } : null).filter(Boolean);
+    mem.picked = true; if (NET.members.every(x => x.picked)) rankDraftEnd();
+  }
+}
+function rankToPick() { NET.draft = { step: 'pick', until: performance.now() + RK_PICK_S * 1000 }; rankDraftSend(); }
+function rankDraftEnd() {
+  for (const m of NET.members) {      // anything missing is filled: the player's own lobby line first, then random characters
+    const o = NET.members.find(x => x !== m), no = o && o.ban, seen = new Set(), ok = id => HEROES[id] && id !== no && !seen.has(id) && seen.add(id);
+    const line = (m.line || []).filter(e => e && ok(e.hero));
+    for (const e of [{ hero: m.hero, lo: m.lo, cos: m.cos }].concat(m.line0 || [])) if (line.length < DUEL_N && e && ok(e.hero)) line.push(e);
+    const rest = Object.keys(HEROES).filter(id => !seen.has(id) && id !== no);
+    while (line.length < DUEL_N && rest.length) { const id = rest.splice(Math.floor(Math.random() * rest.length), 1)[0]; seen.add(id); line.push({ hero: id, lo: null, cos: cleanCos(null, id) }); }
+    m.line = line; m.hero = line[0].hero; m.lo = line[0].lo; m.cos = line[0].cos;
+  }
+  NET.draft = null; hostStart();
+}
+function rankDraftTick() {
+  const d = NET.draft; if (!d) return;
+  if (NET.members.length < 2) { NET.draft = null; return; }
+  if (performance.now() > d.until) { if (d.step === 'ban') rankToPick(); else rankDraftEnd(); return; }
+  const left = Math.ceil((d.until - performance.now()) / 1000); if (left !== d.sent) { d.sent = left; rankDraftSend(); }
+}
+/* someone left: before the match the other one waits for a new opponent; in the match 20 s to come back, else the match is lost */
+function rankDropped(mem) {
+  if (NET.draft || NET.phase === 'wait') { NET.draft = null; for (const m of NET.members) { try { m.conn.send({ t: 'draft', step: 'cancel' }); } catch (e) { quietErr(e); } m.ban = null; m.picked = false; m.line = m.line0 || m.line; } return; }
+  if (NET.phase === 'play' && state === 'play') NET.rkDrop = { mem, at: performance.now() };
+}
+function rankPlayTick() {
+  const d = NET.rkDrop; if (!d || state !== 'play') return;
+  if (NET.members.includes(d.mem)) { NET.rkDrop = null; return; }      // came back
+  if (performance.now() - d.at < 20000 || !d.mem.f) return;
+  NET.rkDrop = null; NET.rkLeaver = d.mem;
+  const w = 1 - d.mem.f.team; score[w] = Math.max(score[w] | 0, modeNow().win);
+  for (const f of fighters) if (!f.dead && f.team === w) say(f, '상대가 나갔어요 · 승리!', '#ffd34d');
+  endGame();
+}
+/* what the server records (net.js hostEnd -> __sad.status().res -> sa-host.js) */
+function rankResult() {
+  const all = NET.members.concat((NET.gone || []).map(g => g.mem)).filter((m, i, a) => m && m.tok && m.f && a.indexOf(m) === i);
+  const win = score[0] > score[1] ? 0 : score[1] > score[0] ? 1 : -1;
+  return { mode: NET.mode, season: GAME_VER, win, players: all.map(m => ({ tok: m.tok, team: m.f.team, nick: cleanName(m.name).replace(/^\[[^\]]*\]\s*/, ''), left: m === NET.rkLeaver || !NET.members.includes(m) ? 1 : 0 })) };
+}
+
+/* ---------- draft screen (player side) ---------- */
+let RKD = null;
+function rankDraftHide() { const o = $('rkDraft'); if (o) o.hidden = true; clearInterval(RKD && RKD.iv); RKD = null; }
+function rankDraftUi(m) {
+  if (m.step === 'cancel') { rankDraftHide(); roomUi('상대를 찾는 중', '상대가 나갔어요. 새 상대를 찾고 있어요.'); return; }
+  let o = $('rkDraft');
+  if (!o) { o = document.createElement('div'); o.id = 'rkDraft'; document.body.append(o); }
+  const same = RKD && RKD.step === m.step;
+  if (same) { RKD.until = performance.now() + (m.left | 0) * 1000; return; }
+  clearInterval(RKD && RKD.iv);
+  RKD = { step: m.step, until: performance.now() + (m.left | 0) * 1000, sel: m.step === 'pick' ? duelIds().filter(id => id && HEROES[id] && id !== m.ban).slice(0, DUEL_N) : [], ban: m.ban, sent: false, iv: 0 };
+  o.hidden = false; o.textContent = '';
+  const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+  const head = el('div', 'rkdHead'), opp = m.opp ? rankOf(m.opp.rp) : null;
+  head.append(el('b', 'rkdT', m.step === 'ban' ? '상대가 못 쓸 캐릭터 1명' : '내 캐릭터 3명 (1번부터 나가요)'), el('span', 'rkdTime', ''));
+  const vs = el('div', 'rkdVs'); if (m.opp) { const n = el('b', '', m.opp.name || '상대'), t = el('small', '', opp.name); t.style.color = opp.col; vs.append('상대 ', n, t); }
+  if (m.step === 'pick' && m.ban) vs.append(el('span', 'rkdBan', '못 씀: ' + HEROES[m.ban].name));
+  const grid = el('div', 'rkdGrid'), btn = el('button', 'btn-primary rkdGo', m.step === 'ban' ? '금지하기' : '확정'); btn.type = 'button';
+  const cards = {};
+  for (const id of ROSTER) {
+    const b = el('button', 'rkdCard'), cv = el('canvas'); b.type = 'button'; drawIcon(cv, id); b.append(cv, el('span', '', HEROES[id].name), el('i', 'rkdNo'));
+    if (m.step === 'pick' && id === m.ban) { b.disabled = true; b.classList.add('out'); }
+    b.addEventListener('click', () => {
+      if (RKD.sent) return;
+      if (RKD.step === 'ban') RKD.sel = [id];
+      else { const k = RKD.sel.indexOf(id); if (k >= 0) RKD.sel.splice(k, 1); else if (RKD.sel.length < DUEL_N) RKD.sel.push(id); }
+      mark();
+    });
+    cards[id] = b; grid.append(b);
+  }
+  function mark() {
+    for (const id in cards) { const k = RKD.sel.indexOf(id); cards[id].classList.toggle('on', k >= 0); cards[id].querySelector('.rkdNo').textContent = k >= 0 ? (RKD.step === 'ban' ? '✕' : k + 1) : ''; }
+    btn.disabled = RKD.sent || (RKD.step === 'ban' ? RKD.sel.length !== 1 : !RKD.sel.length);
+    btn.textContent = RKD.sent ? '상대를 기다리는 중' : RKD.step === 'ban' ? '금지하기' : '확정 (' + RKD.sel.length + '/' + DUEL_N + ')';
+  }
+  btn.addEventListener('click', () => {
+    if (RKD.sent || !NET.hostConn) return; RKD.sent = true;
+    try { NET.hostConn.send(RKD.step === 'ban' ? { t: 'ban', hero: RKD.sel[0] } : { t: 'pick', line: RKD.sel.map(id => ({ hero: id, lo: loadoutOf(id), cos: myCos(id) })) }); } catch (e) { quietErr(e); }
+    mark();
+  });
+  o.append(head, vs, grid, btn); mark();
+  const tick = () => { if (!RKD) return; const s = Math.max(0, Math.ceil((RKD.until - performance.now()) / 1000)); o.querySelector('.rkdTime').textContent = s + '초'; };
+  tick(); RKD.iv = setInterval(tick, 250);
+}
+
+/* ---------- after a ranked / guild war match: the new points from the server ---------- */
+function rankAfter() {
+  const box = $('rkGain'); if (!box) return;
+  if (curMode !== 'rank' && curMode !== 'gw') { box.hidden = true; return; }
+  if (NET.role !== 'guest') { box.hidden = true; return; }      // an online match (players are always guests of a server room)
+  box.hidden = false; box.textContent = curMode === 'rank' ? '랭크 점수 계산 중…' : '대항전 점수 계산 중…';
+  const g0 = RK.games, rp0 = RK.rp, t0 = rankOf(rp0), pts0 = gwMyPts(), left0 = GW.left; let n = 0;
+  const poll = async () => {
+    n++;
+    if (curMode === 'rank') {
+      await rankLoad();
+      if (RK.games !== g0) {
+        const d = RK.rp - rp0, t1 = rankOf(RK.rp); box.textContent = '';
+        const cv = document.createElement('canvas'); drawRankLogo(cv, t1.i); const tx = document.createElement('span'), b = document.createElement('b');
+        b.textContent = (d >= 0 ? '+' : '') + d; b.style.color = d >= 0 ? '#7dffb0' : '#ff8a8a'; tx.append('랭크 ', b, ' · ' + t1.name + (t1.top ? ' · ' + RK.rp + '점' : ' · ' + t1.into + '/' + RK_STEP));
+        if (t1.i !== t0.i) { const up = document.createElement('em'); up.textContent = t1.i > t0.i ? ' ▲ 승급!' : ' ▼ 강등'; up.style.color = t1.i > t0.i ? t1.col : '#ff8a8a'; tx.append(up); }
+        box.append(cv, tx); return;
+      }
+    } else {
+      await gwLoad();
+      if (GW.left !== left0 || gwMyPts() !== pts0) { const d = gwMyPts() - pts0; box.textContent = '대항전 +' + Math.max(0, d) + '점 · 오늘 남은 표 ' + Math.max(0, GW.left) + '장'; return; }
+    }
+    if (n < 10) setTimeout(poll, 2000); else box.textContent = '점수가 아직 안 들어왔어요 (서버 확인 중)';
+  };
+  setTimeout(poll, 1500);
+}
+
+/* ---------- page setup (after tail.js has run) ---------- */
+Promise.resolve().then(() => {
+  const css = document.createElement('style');
+  css.textContent = `
+#rkDraft{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;gap:10px;padding:max(12px,env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px));box-sizing:border-box;background:radial-gradient(80% 60% at 50% 30%,#4a3a10 0,transparent 60%),#10141f;color:#eef2ff;font-family:'IBM Plex Sans KR',sans-serif}
+#rkDraft[hidden]{display:none}
+#rkDraft .rkdHead{display:flex;align-items:center;gap:12px}
+#rkDraft .rkdT{font:400 24px 'Black Han Sans','IBM Plex Sans KR',sans-serif;text-shadow:0 3px 0 #000;flex:1}
+#rkDraft .rkdTime{font:900 22px 'IBM Plex Sans KR',sans-serif;color:#ffcc33;min-width:56px;text-align:right}
+#rkDraft .rkdVs{display:flex;align-items:center;gap:8px;font-size:14px;color:#c8cfe4;flex-wrap:wrap}
+#rkDraft .rkdVs b{color:#fff}#rkDraft .rkdVs small{font-weight:700}
+#rkDraft .rkdBan{margin-left:auto;padding:2px 10px;border-radius:10px;background:#5a1520;color:#ffb3b3;font-weight:700}
+#rkDraft .rkdGrid{flex:1;min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:8px;align-content:start}
+#rkDraft .rkdCard{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;border-radius:12px;border:2px solid #2c3656;background:#1a2136;color:#eef2ff;font:700 12px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
+#rkDraft .rkdCard canvas{width:52px;height:52px}
+#rkDraft .rkdCard.on{border-color:#ffcc33;background:#3a2e0e}
+#rkDraft .rkdCard.out{opacity:.3;cursor:not-allowed}
+#rkDraft .rkdNo{position:absolute;top:4px;right:6px;font:900 16px 'IBM Plex Sans KR',sans-serif;font-style:normal;color:#ffcc33}
+#rkDraft .rkdGo{align-self:center;min-width:240px;margin:0}
+#rkGain{display:flex;align-items:center;justify-content:center;gap:8px;margin:4px 0;font:700 15px 'IBM Plex Sans KR',sans-serif;color:#eef2ff}
+#rkGain[hidden]{display:none}#rkGain canvas{width:30px;height:30px}#rkGain em{font-style:normal;font-weight:900}
+@media (max-height:520px){#rkDraft .rkdGrid{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px}#rkDraft .rkdCard canvas{width:40px;height:40px}#rkDraft .rkdT{font-size:19px}}`;
+  document.head.append(css);
+  { const g = $('goldGain'); if (g && !$('rkGain')) { const b = document.createElement('div'); b.id = 'rkGain'; b.hidden = true; g.parentNode.insertBefore(b, g); } }
+  { const base = endGame; endGame = function (keep) { const r = base.apply(this, arguments); try { if (keep !== true) rankAfter(); } catch (e) { quietErr(e); } return r; }; }      // the ranked line on the result screen
+  { const sa = syncAccount; syncAccount = function () { const r = sa.apply(this, arguments); setTimeout(() => { rankLoad(); if (typeof guildLoad === 'function') guildLoad(); }, 400); return r; }; }      // signed in / name changed: points and guild
+  setInterval(() => { if (state === 'menu' && signedIn() && Date.now() - RK.at > 60000) rankLoad(); }, 15000);
+});
+
+/* ---------- 길드 (user 2026-11-17): 최대 50명, 채팅, [태그], 길드 순위, 길드 대항전. Lobby button: PC = end of the top row (B), phone = every top button in one bottom row (C).
+   Everything lives in Supabase (supabase/seumarena-guild-rank.sql), only through its functions. Signed-in players only.
+   Placeholders (user may change): cost 1,000 gold, level 8, war rewards (GW_REWARD). ---------- */
+const GUILD = { g: null, role: 0, members: [], reqs: [], myReqs: [], loaded: false, busy: false, lastChat: 0, seen: 0, unread: 0 };
+const GW = { left: 0, gnum: null, grp: null, day: false, league: 0, off: false, claim: null, week: 0 };
+const G_COST = 1000, G_LV = 8, G_MAX = 50;
+const G_COLS = ['#ff5d5d', '#ff9a3d', '#ffd34d', '#5fd36a', '#3ddbb4', '#4d9dff', '#b48cff', '#ff7ab8'];
+const G_LEAGUES = [['브론즈', '#c8803a'], ['실버', '#c0c8d4'], ['골드', '#ffd34d'], ['다이아', '#6fb8ff'], ['챔피언', '#fff3b0']];
+const G_JOIN = ['누구나', '승인 후', '초대만'];
+const G_ROLE = ['멤버', '부길드장', '길드장'];
+/* war rewards by place in the group (placeholder): crystals grow with the league, 1st also gets an epic box */
+const GW_REWARD = (place, league) => { const r = [['cr', [40, 30, 20, 10, 10][Math.max(0, Math.min(4, place - 1))] + 20 * league]]; if (place === 1) r.push(['ebox', 1]); else if (place === 2 && league >= 2) r.push(['box', 2]); return r; };
+/* 12 logo shapes (24x24), filled with the guild colour */
+const G_SHAPES = [
+  'M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z', 'M12 2l9 4-2 10-7 6-7-6-2-10z', 'M4 3h16v9c0 5-4 8-8 10-4-2-8-5-8-10z', 'M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z',
+  'M12 2a10 10 0 1 0 .01 0z', 'M12 2l10 10-10 10L2 12z', 'M5 2h14l3 6-10 14L2 8z', 'M12 3c4 0 8 2 8 6 0 6-8 12-8 12S4 15 4 9c0-4 4-6 8-6z',
+  'M3 4l4 3 5-5 5 5 4-3-2 14H5z', 'M12 2l9 5v10l-9 5-9-5V7z', 'M12 2c2 4 6 5 9 5-1 8-4 12-9 15-5-3-8-7-9-15 3 0 7-1 9-5z', 'M2 6l10-4 10 4-3 12-7 4-7-4z'];
+function guildLogo(logo, color, size, border) {
+  const NS = 'http://www.w3.org/2000/svg', s = document.createElementNS(NS, 'svg'), c = G_COLS[color | 0] || G_COLS[0];
+  s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('width', size); s.setAttribute('height', size); s.setAttribute('class', 'gLogo' + (border ? ' gold' : ''));
+  s.innerHTML = '<path d="' + (G_SHAPES[logo | 0] || G_SHAPES[0]) + '" fill="' + c + '"/><path d="' + (G_SHAPES[logo | 0] || G_SHAPES[0]) + '" fill="#000" opacity=".22" transform="translate(12 12) scale(.62) translate(-12 -12)"/>'
+    + '<circle cx="12" cy="12" r="2.6" fill="#fff" opacity=".92"/>';
+  return s;
+}
+const gwDayNow = () => { const d = new Date().getUTCDay(); return d === 5 || d === 6 || d === 0; };      // 금·토·일 (GMT)
+function gwBlock() {
+  if (!signedIn()) return '로그인 필요';
+  if (!GUILD.g) return '길드 가입 필요';
+  if (!gwDayNow()) return '금·토·일에 열려요';
+  if (GW.off) return '참가 신청 필요';
+  if (GW.grp == null) return '상대 길드 부족';
+  if ((GW.left | 0) <= 0) return '오늘 표를 다 썼어요';
+  return '';
+}
+const gwPending = () => gwDayNow() && ((!window.FFAuth && performance.now() < 15000) || (signedIn() && !GUILD.loaded));
+const gwMyPts = () => { const m = (GW.grp || []).find(x => x.me); return m ? m.pts | 0 : 0; };
+function guildMates() { if (NET.mode !== 'gw' || !GUILD.g) return []; return GUILD.members.map(m => m.u).filter(u => isUid(u) && u !== MYFR.uid); }      // guild war: guild mates play on one side
+function netName() { const n = PROF.name || '게스트'; return GUILD.g ? '[' + GUILD.g.tag + '] ' + n : n; }
+
+async function guildLoad() {
+  if (!signedIn()) { GUILD.g = null; GUILD.loaded = false; guildTile(); return; }
+  if (GUILD.busy) return; GUILD.busy = true;
+  try {
+    const r = await sbRpc('seumarena_guild_mine', {});
+    if (r && r.r === 'ok') { GUILD.g = r.g; GUILD.role = r.role | 0; GUILD.members = r.members || []; GUILD.reqs = r.reqs || []; GUILD.loaded = true; await gwLoad(); }
+    else if (r && r.r === 'none') { GUILD.g = null; GUILD.role = 0; GUILD.members = []; GUILD.reqs = []; GUILD.myReqs = r.reqs || []; GUILD.loaded = true; }
+  } finally { GUILD.busy = false; }
+  guildTile(); if (state === 'menu') try { updatePick(); } catch (e) { quietErr(e); }
+  if ($('guildScreen') && $('guildScreen').classList.contains('active')) guildRender();
+}
+async function gwLoad() {
+  const r = await sbRpc('seumarena_gw_me', {});
+  if (r && r.r === 'ok') Object.assign(GW, { left: r.left | 0, gnum: r.gnum == null ? null : r.gnum | 0, grp: r.grp || null, day: !!r.day, league: r.league | 0, off: !!r.off, claim: r.claim || null, week: r.week | 0 });
+  return GW;
+}
+async function guildUnread() {
+  if (!GUILD.g || state !== 'menu') return;
+  const r = await sbRpc('seumarena_guild_chat_since', { p_id: GUILD.seen || 0 });
+  if (Array.isArray(r)) { GUILD.unread = r.filter(m => !m.me).length; if (!GUILD.seen && r.length) { GUILD.seen = r[r.length - 1].id; GUILD.unread = 0; } }
+  guildTile();
+}
+
+/* the lobby button */
+function guildTile() {
+  const b = $('guild'); if (!b) return;
+  const lg = b.querySelector('.gIco'); lg.textContent = '';
+  lg.append(GUILD.g ? guildLogo(GUILD.g.logo, GUILD.g.color, 28, GUILD.g.border) : guildLogo(0, 4, 28));
+  b.querySelector('b').textContent = GUILD.g ? GUILD.g.tag : '길드';
+  $('guildDot').hidden = !(GUILD.g && (GUILD.unread > 0 || (GUILD.role >= 1 && GUILD.reqs.length) || GW.claim));
+}
+
+/* ---------- the guild screen ---------- */
+let GTAB = '', gChatT = 0, gTop = 'g';
+const gEl = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+const gBtn = (txt, cls, fn) => { const b = gEl('button', cls || 'gBtn', txt); b.type = 'button'; b.addEventListener('click', fn); return b; };
+function gToast(t) { const e = $('gToast'); e.textContent = t; e.hidden = false; clearTimeout(gToast.t); gToast.t = setTimeout(() => { e.hidden = true; }, 2600); }
+const G_ERR = { login: '로그인이 필요해요', already: '이미 길드에 있어요', name: '이름은 2~12자, 나쁜 말은 안 돼요', tag: '태그는 2~4자 (영어 대문자·숫자·한글)', name_taken: '같은 이름의 길드가 있어요', tag_taken: '같은 태그의 길드가 있어요',
+  gone: '길드를 찾을 수 없어요', full: '길드가 꽉 찼어요 (50명)', karma: '카르마가 모자라요', code: '초대 코드가 틀렸어요', role: '권한이 없어요', slow: '조금 천천히 보내 주세요', none: '길드가 없어요', bad: '할 수 없어요' };
+const gErr = r => r ? (G_ERR[r.r] || '실패했어요') + (r.r === 'karma' && r.min ? ' (' + r.min + ' 필요)' : '') : '서버에 연결할 수 없어요';
+function guildOpen() { showScreen('guildScreen'); GTAB = GTAB || (GUILD.g ? 'chat' : 'find'); guildRender(); guildLoad(); }
+function guildRender() {
+  const body = $('gBody'); body.textContent = ''; clearInterval(gChatT); gChatT = 0;
+  if (!signedIn()) {
+    const box = gEl('div', 'gEmpty'); box.append(gEl('b', '', '길드는 로그인한 계정만 쓸 수 있어요'), gEl('span', '', '로그인하면 길드에 들어가거나 만들 수 있어요.'));
+    if (window.FFAuth && FFAuth.openLogin) box.append(gBtn('로그인', 'btn-primary gBig', () => FFAuth.openLogin()));
+    body.append(box); return;
+  }
+  if (!GUILD.loaded) { body.append(gEl('div', 'gEmpty', '불러오는 중…')); return; }
+  const tabs = GUILD.g ? [['chat', '채팅'], ['mem', '멤버' + (GUILD.role >= 1 && GUILD.reqs.length ? ' •' : '')], ['war', '대항전' + (GW.claim ? ' •' : '')], ['top', '순위']].concat(GUILD.role >= 1 ? [['set', '설정']] : [])
+    : [['find', '찾기'], ['make', '만들기'], ['code', '초대 코드'], ['top', '순위']];
+  if (!tabs.some(t => t[0] === GTAB)) GTAB = tabs[0][0];
+  const wrap = gEl('div', GUILD.g ? 'gWrap' : 'gWrap one'), side = gEl('aside', 'gSide'), main = gEl('section', 'gMain'), tb = gEl('div', 'gTabs'), pane = gEl('div', 'gPane');
+  for (const [k, t] of tabs) { const b = gBtn(t, 'gTab' + (k === GTAB ? ' on' : ''), () => { GTAB = k; guildRender(); }); tb.append(b); }
+  if (GUILD.g) {
+    const g = GUILD.g, lg = G_LEAGUES[g.league] || G_LEAGUES[0];
+    side.append(guildLogo(g.logo, g.color, 72, g.border), gEl('b', 'gName', g.name), gEl('span', 'gTag', '[' + g.tag + ']'));
+    const st = gEl('div', 'gStats'), lgE = gEl('span', '', '대항전 ' + lg[0] + ' 리그'); lgE.style.color = lg[1];
+    st.append(lgE, gEl('span', '', '멤버 ' + GUILD.members.length + '/' + G_MAX), gEl('span', '', G_JOIN[g.join] + (g.min ? ' · 카르마 ' + g.min + '+' : '')));
+    side.append(st); if (g.intro) side.append(gEl('p', 'gIntro', g.intro));
+    side.append(gBtn('길드 나가기', 'gBtn gWarn', async () => { if (!confirmIn(side, GUILD.role === 2 && GUILD.members.length > 1 ? '나가면 길드장이 다른 사람에게 넘어가요. 나갈까요?' : '정말 나갈까요?')) return; const r = await sbRpc('seumarena_guild_leave', {}); if (r && r.r === 'ok') { gToast('길드에서 나왔어요'); GTAB = 'find'; await guildLoad(); } else gToast(gErr(r)); }));
+    wrap.append(side);
+  }
+  main.append(tb, pane); wrap.append(main); body.append(wrap);
+  ({ chat: gChat, mem: gMembers, war: gWar, top: gRank, set: gSettings, find: gFind, make: gMake, code: gCode })[GTAB](pane);
+}
+/* a confirm step inside the page (no browser dialogs): the first tap arms the button, the second within 3 s does it */
+function confirmIn(host, txt) { const now = Date.now(); if (confirmIn.at && now - confirmIn.at < 3000 && confirmIn.txt === txt) { confirmIn.at = 0; return true; } confirmIn.at = now; confirmIn.txt = txt; gToast(txt + ' (한 번 더 누르면 돼요)'); return false; }
+
+function gChat(p) {
+  const list = gEl('div', 'gChat'), form = gEl('form', 'gSay'), inp = gEl('input'); inp.maxLength = 120; inp.placeholder = '길드에 한마디'; inp.autocomplete = 'off';
+  form.append(inp, gBtn('보내기', 'btn-primary gSend', () => form.requestSubmit())); p.append(list, form);
+  let last = 0; const add = rows => { for (const m of rows) { if (m.id <= last) continue; last = m.id; const row = gEl('div', 'gMsg' + (m.k ? ' sys' : m.me ? ' me' : '')); if (!m.k) row.append(gEl('b', '', m.n)); row.append(gEl('span', '', m.t)); list.append(row); } list.scrollTop = list.scrollHeight; if (last) { GUILD.seen = last; GUILD.unread = 0; guildTile(); } if (rows.some(m => m.k && m.id > (GUILD.newsAt || 0))) { const fresh = GUILD.newsAt; GUILD.newsAt = last; if (fresh) guildLoad(); } };      // someone joined / left: the member list again
+  const pull = async () => { const r = await sbRpc('seumarena_guild_chat_since', { p_id: last }); if (Array.isArray(r)) add(r); };
+  form.addEventListener('submit', async e => { e.preventDefault(); const t = inp.value.trim(); if (!t) return; inp.value = ''; const r = await sbRpc('seumarena_guild_say', { p_txt: t, p_nick: PROF.name }); if (!r || r.r !== 'ok') gToast(gErr(r)); pull(); });
+  pull(); gChatT = setInterval(() => { if ($('guildScreen').classList.contains('active') && GTAB === 'chat') pull(); else { clearInterval(gChatT); gChatT = 0; } }, 3000);
+}
+function gMembers(p) {
+  if (GUILD.role >= 1 && GUILD.reqs.length) {
+    p.append(gEl('h3', '', '가입 신청 ' + GUILD.reqs.length));
+    for (const q of GUILD.reqs) { const row = gEl('div', 'gRow'); row.append(gEl('b', '', q.n), gEl('span', 'gDim', '카르마 ' + q.k), gBtn('받기', 'gBtn gOk', () => gAct('seumarena_guild_answer', { p_uid: q.u, p_ok: true })), gBtn('거절', 'gBtn', () => gAct('seumarena_guild_answer', { p_uid: q.u, p_ok: false }))); p.append(row); }
+    p.append(gEl('h3', '', '멤버 ' + GUILD.members.length + '/' + G_MAX));
+  }
+  const list = gEl('div', 'gList');
+  for (const m of GUILD.members) {
+    const row = gEl('div', 'gRow'), t = rankOf(m.rp), cv = gEl('canvas', 'gRk'); drawRankLogo(cv, t.i);
+    const nm = gEl('b', '', m.n || '이름 없음'), rl = gEl('span', 'gRole r' + m.role, G_ROLE[m.role]), tr = gEl('span', 'gDim', t.name); tr.style.color = t.col;
+    row.append(cv, nm, rl, tr);
+    if (m.u !== MYFR.uid && GUILD.role >= 1 && m.role < GUILD.role) {
+      const acts = gEl('span', 'gActs');
+      if (GUILD.role === 2) acts.append(m.role === 0 ? gBtn('부길드장', 'gBtn', () => gAct('seumarena_guild_member', { p_uid: m.u, p_act: 'up' })) : gBtn('멤버로', 'gBtn', () => gAct('seumarena_guild_member', { p_uid: m.u, p_act: 'down' })),
+        gBtn('길드장 넘기기', 'gBtn', () => { if (confirmIn(row, m.n + ' 님에게 길드장을 넘길까요?')) gAct('seumarena_guild_member', { p_uid: m.u, p_act: 'lead' }); }));
+      acts.append(gBtn('내보내기', 'gBtn gWarn', () => { if (confirmIn(row, m.n + ' 님을 내보낼까요?')) gAct('seumarena_guild_member', { p_uid: m.u, p_act: 'kick' }); }));
+      row.append(acts);
+    }
+    list.append(row);
+  }
+  p.append(list);
+}
+async function gAct(fn, args) { const r = await sbRpc(fn, args); if (!r || r.r !== 'ok') gToast(gErr(r)); await guildLoad(); }
+function gWar(p) {
+  const lg = G_LEAGUES[GW.league] || G_LEAGUES[0], head = gEl('div', 'gWarHead'), lgE = gEl('b', '', lg[0] + ' 리그'); lgE.style.color = lg[1];
+  const d = new Date().getUTCDay(), toFri = (5 - d + 7) % 7;
+  head.append(lgE, gEl('span', '', gwDayNow() ? '전투일 · 오늘 남은 표 ' + Math.max(0, GW.left) + '/4' : '금·토·일에 열려요' + (toFri ? ' (' + toFri + '일 뒤)' : '')));
+  p.append(head);
+  if (GW.claim) {
+    const c = GW.claim, box = gEl('div', 'gClaim'), rw = GW_REWARD(c.place | 0, c.league | 0);
+    box.append(gEl('b', '', '지난 주 결과: 조 ' + c.place + '등 / ' + c.n + '길드'), gBtn('보상 받기', 'btn-primary gBig', async () => {
+      const r = await sbRpc('seumarena_gw_claim', { p_week: c.week });
+      if (r && r.r === 'ok') { for (const [k, n] of GW_REWARD(r.place | 0, r.league | 0)) { const got = giveReward(k, n); got.why = '길드 대항전'; rewardFx(got); } saveCos(); goldUi(); GW.claim = null; await gwLoad(); guildTile(); guildRender(); }
+      else gToast(r && r.r === 'taken' ? '이미 받았어요' : gErr(r));
+    }));
+    box.append(gEl('span', 'gDim', rw.map(([k, n]) => (k === 'cr' ? '크리스탈 ' : k === 'ebox' ? '에픽상자 ' : k === 'box' ? '랜덤상자 ' : '') + n).join(' · ')));
+    p.append(box);
+  }
+  if (GW.off) {
+    const box = gEl('div', 'gClaim'); box.append(gEl('b', '', '2주 연속 0점이라 조 짜기에서 빠졌어요'));
+    if (GUILD.role >= 1) box.append(gBtn('다시 참가하기', 'btn-primary gBig', () => gAct('seumarena_gw_rejoin', {}).then(() => gToast('다음 월요일 조 짜기에 들어가요'))));
+    p.append(box);
+  }
+  if (GW.grp) {
+    const t = gEl('div', 'gList');
+    GW.grp.forEach((x, i) => { const row = gEl('div', 'gRow' + (x.me ? ' me' : '')); row.append(gEl('b', 'gPlace', String(i + 1)), guildLogo(x.logo, x.color, 26), gEl('b', '', x.name), gEl('span', 'gDim', '[' + x.tag + ']'), gEl('span', 'gPts', x.pts + '점')); t.append(row); });
+    p.append(gEl('h3', '', '이번 주 우리 조'), t);
+  } else p.append(gEl('p', 'gDim', '이번 주에는 조가 없어요. 상대 길드가 모자라거나, 월요일 조 짜기 뒤에 만든 길드예요.'));
+  const rules = gEl('p', 'gDim gRules', '승리 4점 · 패배 1점 · 같은 조 다른 길드를 만나면 2배 · 우리 길드원과 같은 팀이면 +1 · 하루 4판까지. 조 1등은 위 리그로, 꼴찌는 아래 리그로.');
+  p.append(rules);
+  if (!gwBlock()) p.append(gBtn('대항전 하러 가기', 'btn-primary gBig', () => { modeView = 'gw'; modePick(); }));
+}
+async function gRank(p) {
+  const sw = gEl('div', 'gSwitch'); sw.append(gBtn('길드 순위', 'gBtn' + (gTop === 'g' ? ' on' : ''), () => { gTop = 'g'; guildRender(); }), gBtn('개인 랭크', 'gBtn' + (gTop === 'r' ? ' on' : ''), () => { gTop = 'r'; guildRender(); }));
+  const list = gEl('div', 'gList', '불러오는 중…'); p.append(sw, list);
+  const r = await sbRpc(gTop === 'g' ? 'seumarena_guild_top' : 'seumarena_rank_top', { p_season: GAME_VER }, true);
+  list.textContent = ''; if (!Array.isArray(r)) { list.textContent = '서버에 연결할 수 없어요'; return; }
+  if (!r.length) { list.textContent = gTop === 'g' ? '아직 길드가 없어요' : '아직 이번 시즌 랭크전 기록이 없어요'; return; }
+  r.forEach((x, i) => {
+    const row = gEl('div', 'gRow' + (GUILD.g && x.id === GUILD.g.id ? ' me' : '')); row.append(gEl('b', 'gPlace', String(i + 1)));
+    if (gTop === 'g') row.append(guildLogo(x.logo, x.color, 26), gEl('b', '', x.name), gEl('span', 'gDim', '[' + x.tag + '] · ' + x.cnt + '명'), gEl('span', 'gPts', x.rp.toLocaleString('en-US')));
+    else { const t = rankOf(x.rp), cv = gEl('canvas', 'gRk'); drawRankLogo(cv, t.i); const tr = gEl('span', 'gDim', t.name); tr.style.color = t.col; row.append(cv, gEl('b', '', (x.g ? '[' + x.g + '] ' : '') + x.n), tr, gEl('span', 'gPts', x.rp + '점')); }
+    list.append(row);
+  });
+}
+/* logo + colour + intro + join form (create and settings share it) */
+function gForm(p, g, make) {
+  const f = { logo: g ? g.logo : 0, color: g ? g.color : 4 }, pv = gEl('div', 'gPv');
+  const redraw = () => { pv.textContent = ''; pv.append(guildLogo(f.logo, f.color, 64)); for (const b of p.querySelectorAll('.gPick button')) b.classList.toggle('on', +b.dataset.v === f[b.dataset.k]); };
+  const field = (lbl, el) => { const w = gEl('label', 'gField'); w.append(gEl('span', '', lbl), el); return w; };
+  const name = gEl('input'); name.maxLength = 12; name.placeholder = '2~12자';
+  const tag = gEl('input'); tag.maxLength = 4; tag.placeholder = 'FF'; tag.addEventListener('input', () => { tag.value = tag.value.toUpperCase(); });
+  const intro = gEl('textarea'); intro.maxLength = 100; intro.rows = 2; intro.value = g ? g.intro : '';
+  const join = gEl('select'); G_JOIN.forEach((t, i) => { const o = gEl('option', '', t); o.value = i; join.append(o); }); join.value = g ? g.join : 0;
+  const min = gEl('input'); min.type = 'number'; min.min = 0; min.max = 100000; min.step = 50; min.value = g ? g.min : 0;
+  const pick = (k, n, draw) => { const w = gEl('div', 'gPick'); for (let i = 0; i < n; i++) { const b = gEl('button'); b.type = 'button'; b.dataset.k = k; b.dataset.v = i; b.append(draw(i)); b.addEventListener('click', () => { f[k] = i; redraw(); }); w.append(b); } return w; };
+  const top = gEl('div', 'gFormTop'); top.append(pv);
+  const col = gEl('div', 'gFormCol'); if (make) col.append(field('길드 이름', name), field('태그', tag)); col.append(field('소개', intro)); top.append(col);
+  p.append(top, gEl('h3', '', '로고'), pick('logo', 12, i => guildLogo(i, f.color, 30)), gEl('h3', '', '색'), pick('color', 8, i => { const s = gEl('i', 'gSw'); s.style.background = G_COLS[i]; return s; }));
+  const row = gEl('div', 'gFormRow'); row.append(field('가입 방식', join), field('최소 카르마', min)); p.append(row);
+  redraw();
+  return () => ({ name: name.value.trim(), tag: tag.value.trim().toUpperCase(), intro: intro.value.trim(), logo: f.logo, color: f.color, join: +join.value, min: Math.max(0, +min.value | 0) });
+}
+function gMake(p) {
+  const lv = levelOf().lv, read = gForm(p, null, true), note = gEl('p', 'gDim', '만들기: 골드 ' + G_COST.toLocaleString('en-US') + ' · 레벨 ' + G_LV + ' 이상 (지금 레벨 ' + lv + ', 골드 ' + COS.gold.toLocaleString('en-US') + ')');
+  p.append(note, gBtn('길드 만들기 (' + G_COST.toLocaleString('en-US') + ' 골드)', 'btn-primary gBig', async () => {
+    if (levelOf().lv < G_LV) return gToast('레벨 ' + G_LV + '부터 만들 수 있어요');
+    if (COS.gold < G_COST) return gToast('골드가 모자라요');
+    const v = read(); if (v.name.length < 2) return gToast(G_ERR.name); if (!/^[0-9A-Z가-힣]{2,4}$/.test(v.tag)) return gToast(G_ERR.tag);
+    const r = await sbRpc('seumarena_guild_create', { p_name: v.name, p_tag: v.tag, p_logo: v.logo, p_color: v.color, p_intro: v.intro, p_join: v.join, p_min: v.min, p_nick: PROF.name });
+    if (r && r.r === 'ok') { COS.gold -= G_COST; saveCos(); goldUi(); gToast('길드를 만들었어요!'); GTAB = 'chat'; await guildLoad(); } else gToast(gErr(r));
+  }));
+}
+function gSettings(p) {
+  const g = GUILD.g, read = gForm(p, g, false);
+  p.append(gBtn('저장', 'btn-primary gBig', async () => { const v = read(); const r = await sbRpc('seumarena_guild_update', { p_intro: v.intro, p_logo: v.logo, p_color: v.color, p_join: v.join, p_min: v.min, p_newcode: false }); if (r && r.r === 'ok') { gToast('저장했어요'); await guildLoad(); } else gToast(gErr(r)); }));
+  const code = gEl('div', 'gCode'); code.append(gEl('span', '', '초대 코드'), gEl('b', '', g.code || '------'), gBtn('새 코드', 'gBtn', async () => { const r = await sbRpc('seumarena_guild_update', { p_intro: null, p_logo: null, p_color: null, p_join: null, p_min: null, p_newcode: true }); if (r && r.r === 'ok') await guildLoad(); else gToast(gErr(r)); }));
+  p.append(code, gEl('p', 'gDim', '초대 코드를 아는 사람은 가입 방식과 상관없이 바로 들어올 수 있어요.'));
+}
+function gFind(p) {
+  const form = gEl('form', 'gSay'), q = gEl('input'); q.placeholder = '길드 이름이나 태그'; q.maxLength = 12;
+  form.append(q, gBtn('찾기', 'btn-primary gSend', () => form.requestSubmit()));
+  const list = gEl('div', 'gList'); p.append(form, list);
+  const go = async () => {
+    list.textContent = '불러오는 중…'; const r = await sbRpc('seumarena_guild_search', { p_q: q.value.trim() }); list.textContent = '';
+    if (!Array.isArray(r)) { list.textContent = '서버에 연결할 수 없어요'; return; } if (!r.length) { list.textContent = '길드가 없어요. 먼저 만들어 보세요!'; return; }
+    for (const g of r) {
+      const row = gEl('div', 'gRow gFindRow'), info = gEl('div', 'gInfo'), lg = G_LEAGUES[g.league] || G_LEAGUES[0];
+      info.append(gEl('b', '', g.name + ' [' + g.tag + ']'), gEl('span', 'gDim', g.cnt + '/' + G_MAX + '명 · ' + G_JOIN[g.join] + (g.min ? ' · 카르마 ' + g.min + '+' : '') + ' · ' + lg[0] + ' 리그'));
+      if (g.intro) info.append(gEl('span', 'gDim', g.intro));
+      const asked = GUILD.myReqs.includes(g.id), btn = gBtn(g.join === 2 ? '초대만' : asked ? '신청함' : g.join === 1 ? '신청' : '들어가기', 'gBtn gOk', async () => {
+        const r2 = await sbRpc('seumarena_guild_join', { p_gid: g.id, p_code: null, p_nick: PROF.name });
+        if (r2 && r2.r === 'ok') { gToast(g.name + ' 길드에 들어왔어요!'); GTAB = 'chat'; await guildLoad(); } else if (r2 && r2.r === 'asked') { gToast('가입 신청을 보냈어요'); GUILD.myReqs.push(g.id); btn.textContent = '신청함'; } else gToast(gErr(r2));
+      });
+      btn.disabled = g.join === 2 || g.cnt >= G_MAX; row.append(guildLogo(g.logo, g.color, 40), info, btn); list.append(row);
+    }
+  };
+  form.addEventListener('submit', e => { e.preventDefault(); go(); }); go();
+}
+function gCode(p) {
+  const form = gEl('form', 'gSay'), q = gEl('input'); q.placeholder = '초대 코드 6자리'; q.maxLength = 6; q.addEventListener('input', () => { q.value = q.value.toUpperCase(); });
+  form.append(q, gBtn('들어가기', 'btn-primary gSend', () => form.requestSubmit())); p.append(gEl('p', 'gDim', '길드장·부길드장에게 받은 초대 코드를 넣으면 바로 들어가요.'), form);
+  form.addEventListener('submit', async e => { e.preventDefault(); const r = await sbRpc('seumarena_guild_join', { p_gid: null, p_code: q.value.trim(), p_nick: PROF.name }); if (r && r.r === 'ok') { gToast('길드에 들어왔어요!'); GTAB = 'chat'; await guildLoad(); } else gToast(gErr(r)); });
+}
+
+/* ---------- page setup (after tail.js has run) ---------- */
+Promise.resolve().then(() => {
+  const defs = $('mi-m-lock') && $('mi-m-lock').parentNode;
+  if (defs) defs.insertAdjacentHTML('beforeend', '<symbol id="mi-m-rank" viewBox="0 0 24 24"><path d="M12 2l3 6 6.5 1-4.7 4.6 1.1 6.4L12 17l-5.9 3 1.1-6.4L2.5 9 9 8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>'
+    + '<symbol id="mi-m-gw" viewBox="0 0 24 24"><path d="M8 3l5 2v4c0 3.5-2.3 6-5 7-2.7-1-5-3.5-5-7V5z M16 8l5 2v4c0 3.5-2.3 6-5 7-2.7-1-5-3.5-5-7v-4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>');
+  const css = document.createElement('style');
+  css.textContent = `
+#guild{pointer-events:auto;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:0;border-radius:12px;border:2px solid #2a9d8f;background:linear-gradient(#1e3a36,#14211f);color:#eef2ff;box-shadow:0 4px 0 rgba(0,0,0,.45);cursor:pointer;font:800 11px/1 'IBM Plex Sans KR',sans-serif}
+#guild b{font-size:11px;letter-spacing:.02em}#guild .gIco{display:flex}
+#guildDot{position:absolute;top:-5px;right:-5px;width:12px;height:12px;border-radius:50%;background:#ff4d4d;box-shadow:0 0 0 2px #10141f}
+body.mob #guild{order:99}
+body.mob #topRight:not([hidden]){position:fixed!important;top:auto!important;right:auto!important;left:50%!important;bottom:max(10px,env(safe-area-inset-bottom,0px))!important;transform:translateX(-50%);display:flex!important;flex-wrap:nowrap!important;gap:8px!important;z-index:6}
+.gLogo.gold{filter:drop-shadow(0 0 0 #ffd34d) drop-shadow(0 0 3px #ffd34d)}
+#guildScreen.active{position:fixed;inset:0;z-index:40;width:auto;max-width:none;margin:0;border-radius:0;border:0;box-shadow:none;display:grid;grid-template-rows:auto 1fr;box-sizing:border-box;overflow:hidden;color:#eef2ff;font-family:'IBM Plex Sans KR',sans-serif;padding:env(safe-area-inset-top,0px) max(14px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(14px,env(safe-area-inset-left,0px));background:radial-gradient(90% 70% at 25% 40%,#1e4a44 0,transparent 60%),repeating-linear-gradient(45deg,#ffffff06 0 14px,transparent 14px 28px),#10141f}
+#guildScreen .gHead{display:flex;align-items:center;gap:12px;padding:10px 0}
+#guildScreen .gBack{width:44px;height:44px;margin:0;border-radius:10px;border:2px solid #0a0f1c;background:linear-gradient(#3b4b78,#26324f);color:#eef2ff;font:900 26px/1 'IBM Plex Sans KR',sans-serif;box-shadow:0 4px 0 #0a0f1c;cursor:pointer}
+#guildScreen h2{font:400 26px 'Black Han Sans','IBM Plex Sans KR',sans-serif;margin:0;letter-spacing:1px;text-shadow:0 3px 0 #000}
+#guildScreen .gPill{margin-left:auto;display:flex;align-items:center;gap:6px;background:#0b1020cc;border:2px solid #3a4670;border-radius:20px;padding:4px 12px 4px 6px;font:700 15px 'IBM Plex Sans KR',sans-serif}
+#guildScreen .gPill .coin{width:20px;height:20px}
+#gBody{min-height:0;padding-bottom:12px;display:flex}
+.gWrap{flex:1;min-height:0;display:grid;grid-template-columns:minmax(200px,26%) 1fr;gap:14px}.gWrap.one{grid-template-columns:1fr}
+.gSide{display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 12px;border-radius:16px;background:linear-gradient(180deg,#1f3b3a,#141c26);border:2px solid #2b4d4a;overflow:auto;text-align:center}
+.gName{font:400 22px 'Black Han Sans','IBM Plex Sans KR',sans-serif}.gTag{color:#9fe7dc;font-weight:800}
+.gStats{display:flex;flex-direction:column;gap:2px;font-size:13px;color:#c8cfe4;font-weight:700}.gIntro{margin:4px 0;font-size:13px;color:#dfe5f5;white-space:pre-wrap;word-break:break-word}
+.gMain{display:flex;flex-direction:column;min-height:0;min-width:0;border-radius:16px;background:#141a2bcc;border:2px solid #2c3656;overflow:hidden}
+.gTabs{display:flex;gap:4px;padding:6px;background:#0d1220}
+.gTab{flex:1;margin:0;padding:8px 6px;border-radius:10px;border:0;background:transparent;color:#aab3cf;font:800 14px 'IBM Plex Sans KR',sans-serif;cursor:pointer}.gTab.on{background:#2a9d8f;color:#fff}
+.gPane{flex:1;min-height:0;overflow:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.gPane h3{margin:6px 0 0;font-size:14px;color:#9fe7dc}
+.gBtn{margin:0;padding:6px 10px;border-radius:9px;border:2px solid #34416a;background:#202a45;color:#eef2ff;font:700 13px 'IBM Plex Sans KR',sans-serif;cursor:pointer;white-space:nowrap}.gBtn.on{border-color:#2a9d8f;background:#1e3a36}
+.gBtn.gOk{border-color:#2a9d8f}.gBtn.gWarn{border-color:#7a2a35;color:#ffb3b3}.gBtn:disabled{opacity:.45;cursor:default}
+.gBig{margin:6px auto 0;min-width:200px}
+.gEmpty{margin:auto;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;color:#c8cfe4}.gEmpty b{font-size:18px;color:#fff}
+.gList{display:flex;flex-direction:column;gap:6px}
+.gRow{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;background:#1a2136;min-width:0}.gRow.me{background:#1e3a36;outline:2px solid #2a9d8f}
+.gRow>b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gRk{width:26px;height:26px;flex:none}.gDim{color:#9aa3bf;font-size:12.5px}.gPts{margin-left:auto;font-weight:900;color:#ffd34d}.gPlace{width:22px;text-align:center;color:#ffd34d}
+.gRole{font-size:11.5px;font-weight:800;padding:1px 7px;border-radius:8px;background:#2a3350}.gRole.r2{background:#6a5208;color:#ffe58a}.gRole.r1{background:#1e3a36;color:#9fe7dc}
+.gActs{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.gChat{flex:1;min-height:120px;overflow:auto;display:flex;flex-direction:column;gap:5px;padding-right:4px}
+.gMsg{max-width:85%;padding:6px 10px;border-radius:12px;background:#222b45;font-size:14px;word-break:break-word}.gMsg b{display:block;font-size:12px;color:#9fe7dc}
+.gMsg.me{align-self:flex-end;background:#1e4a44}.gMsg.sys{align-self:center;background:transparent;color:#9aa3bf;font-size:12.5px}
+.gSay{display:flex;gap:6px}.gSay input{flex:1;min-width:0;padding:9px 12px;border-radius:10px;border:2px solid #34416a;background:#0d1220;color:#fff;font:600 15px 'IBM Plex Sans KR',sans-serif}.gSend{margin:0;padding:0 16px}
+.gWarHead{display:flex;align-items:center;gap:12px;font-weight:700}.gWarHead b{font-size:18px}
+.gClaim{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px;border-radius:12px;background:#2a2410;border:2px solid #6a5208}
+.gRules{margin:4px 0 0}
+.gSwitch{display:flex;gap:6px}
+.gFindRow{align-items:flex-start}.gInfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}.gInfo .gDim{overflow:hidden;text-overflow:ellipsis}
+.gFormTop{display:flex;gap:12px;align-items:flex-start}.gPv{flex:none;width:72px;height:72px;display:grid;place-items:center;border-radius:14px;background:#0d1220}
+.gFormCol{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}.gFormRow{display:flex;gap:10px;flex-wrap:wrap}
+.gField{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:#9aa3bf;font-weight:700;min-width:0}
+.gField input,.gField textarea,.gField select{padding:8px 10px;border-radius:9px;border:2px solid #34416a;background:#0d1220;color:#fff;font:600 14px 'IBM Plex Sans KR',sans-serif;resize:none}
+.gPick{display:flex;flex-wrap:wrap;gap:6px}.gPick button{margin:0;padding:4px;border-radius:9px;border:2px solid transparent;background:#1a2136;cursor:pointer;display:grid;place-items:center}.gPick button.on{border-color:#ffd34d}
+.gSw{display:block;width:26px;height:26px;border-radius:50%}
+.gCode{display:flex;align-items:center;gap:10px}.gCode b{font:900 20px 'IBM Plex Sans KR',monospace;letter-spacing:.15em;color:#ffd34d}
+#gToast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:80;padding:8px 16px;border-radius:12px;background:#0b1020ee;border:2px solid #2a9d8f;color:#fff;font:700 14px 'IBM Plex Sans KR',sans-serif;pointer-events:none;max-width:90vw;text-align:center}
+#gToast[hidden]{display:none}
+@media (max-height:520px){#guildScreen .gHead{padding:6px 0}#guildScreen .gBack{width:38px;height:38px}#guildScreen h2{font-size:21px}.gWrap{grid-template-columns:minmax(150px,24%) 1fr;gap:8px}.gSide{padding:8px}.gSide .gLogo{width:44px;height:44px}.gName{font-size:17px}.gPane{padding:6px 8px}.gTab{padding:6px 4px;font-size:13px}}
+@media (max-width:640px) and (orientation:portrait){.gWrap{grid-template-columns:1fr;grid-template-rows:auto 1fr}.gSide{flex-direction:row;flex-wrap:wrap;justify-content:center;padding:8px}}`;
+  document.head.append(css);
+  // lobby button: last in the top row (PC = layout B); on phones body.mob turns the whole row into one bottom row (layout C)
+  const tr = $('topRight'), b = document.createElement('button'); b.id = 'guild'; b.type = 'button'; b.setAttribute('aria-label', '길드');
+  b.innerHTML = '<span class="gIco"></span><b>길드</b><i id="guildDot" hidden></i>';
+  { const q = $('quest'); if (q) { const r = q.getBoundingClientRect(); if (r.width) { b.style.width = r.width + 'px'; b.style.height = r.height + 'px'; } } }
+  if (tr) tr.prepend(b);      // row-reverse: first in the code = right end
+  const fit = () => { const q = $('quest'); if (!q) return; const r = q.getBoundingClientRect(); if (r.width) { b.style.width = r.width + 'px'; b.style.height = r.height + 'px'; } };
+  addEventListener('resize', () => setTimeout(fit, 50)); setTimeout(fit, 300);
+  b.addEventListener('click', guildOpen);
+  // the screen
+  const scr = document.createElement('div'); scr.className = 'card'; scr.id = 'guildScreen';
+  scr.innerHTML = '<header class="gHead"><button class="gBack" id="guildBackBtn" type="button" aria-label="뒤로">&lsaquo;</button><h2>길드</h2><span class="gPill"><i class="coin"></i><b class="goldN">0</b></span></header><div id="gBody"></div>';
+  const prof = $('profScreen'); prof.parentNode.insertBefore(scr, prof.nextSibling);
+  const t = document.createElement('div'); t.id = 'gToast'; t.hidden = true; document.body.append(t);
+  $('guildBackBtn').addEventListener('click', () => { clearInterval(gChatT); showScreen('menuScreen'); });
+  goldUi(); guildTile();
+  let gN = 0; setInterval(() => { if (state === 'menu' && signedIn()) { if (!GUILD.loaded || ++gN % 4 === 0) guildLoad(); else guildUnread(); } }, 30000);      // chat dot every 30 s, the whole guild every 2 minutes
+});
+
 /* ---------- drawing ---------- */
 function drawStick(c, id, col, ang, walk, swing, t, cos) {
   const h = HEROES[id], HIP = -22, SH = -42, HEADCY = -52, HEADR = 9, face = Math.cos(ang) >= 0 ? 1 : -1;
@@ -12142,9 +12769,9 @@ if (!DEVICE && $('devPick')) {
 /* game modes: the engine's MODES registry ({id,name,size,maps,ready}) when it exists; until then the same four, with only the current rules playable */
 const MODE_FALLBACK = [{ id: 'team', name: '팀 아웃', size: '3v3' }, { id: 'solo', name: '원 레프트', size: '8명', ready: false }, { id: 'flag', name: '캡쳐 플래그', size: '3v3', ready: false }, { id: 'duel', name: '듀얼 배틀', size: '1v1', ready: false }];
 const MODE_LIST = typeof MODES !== 'undefined' && Array.isArray(MODES) && MODES.length ? MODES : MODE_FALLBACK;
-const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'], hot4: ['mi-m-hot', '#ff8a3d'], ball: ['mi-m-ball', '#5fd36a'], duo: ['mi-m-last', '#c77dff'], star: ['mi-star', '#ffd34d'], ko3: ['mi-m-team', '#ff6b8a'] };
+const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'], rank: ['mi-m-rank', '#ffcc33'], gw: ['mi-m-gw', '#3ddbb4'], hot4: ['mi-m-hot', '#ff8a3d'], ball: ['mi-m-ball', '#5fd36a'], duo: ['mi-m-last', '#c77dff'], star: ['mi-star', '#ffd34d'], ko3: ['mi-m-team', '#ff6b8a'] };
 let modeSel = typeof modeChoice === 'string' ? modeChoice : MODE_LIST[0].id, modeView = modeSel;
-const modeOk = m => !!m && m.ready !== false && (typeof modeOpen !== 'function' || modeOpen(m.id));      // ready, and drawn for today (engine.js MODE_GROUPS)
+const modeOk = m => !!m && m.ready !== false && (typeof modeOpen !== 'function' || modeOpen(m.id)) && (typeof modeExtraOk !== 'function' || modeExtraOk(m));      // + 랭크전 / 길드 대항전 conditions (rank.js, guild.js)      // ready, and drawn for today (engine.js MODE_GROUPS)
 const modeCur = () => MODE_LIST.find(m => m.id === modeSel && modeOk(m)) || MODE_LIST.find(modeOk) || MODE_LIST[0];
 const modeMapsOf = m => { const a = (m.maps || []).filter(i => Number.isInteger(i) && MAPS[i]); return a.length ? a : MAPS.map((x, i) => i); };
 const modeMaps = () => modeMapsOf(modeCur());
@@ -12176,7 +12803,7 @@ function duelPut(k, id) {      // a hero already in another slot swaps places wi
   chosen = ids[0]; duelMore = [ids[1] || null, ids[2] || null];
 }
 function renderDuelLine() {
-  const box = $('duelLine'), on = modeSel === 'duel'; box.hidden = !on; if (!on) return; box.textContent = '';
+  const box = $('duelLine'), on = isDuelMode(modeSel); box.hidden = !on; if (!on) return; box.textContent = '';
   duelIds().forEach((id, k) => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 's' + (k === DSLOT ? ' on' : '') + (id ? '' : ' add');
     if (id) { const c = document.createElement('canvas'); c.width = c.height = 128; b.append(c); drawPortrait(c, id); } else b.textContent = '+';
@@ -12246,7 +12873,7 @@ function lobbyCharPlace() {
 /* 듀얼 배틀 on a wide screen (user 2026-11-15): picks 2 and 3 stand to the right of the big figure on the same floor; an empty pick is a '+' that opens the character list */
 function renderLobbyDuel() {
   const box = $('lobbyDuel'); box.textContent = '';
-  if (modeSel !== 'duel') { box.hidden = true; return; }
+  if (!isDuelMode(modeSel)) { box.hidden = true; return; }
   duelMore.forEach((id, j) => {
     const k = j + 1, b = document.createElement('button'), n = document.createElement('div'), no = document.createElement('b');
     b.type = 'button'; b.className = 'ldS' + (id ? '' : ' add'); b.setAttribute('aria-label', k + '번 캐릭터' + (id ? ' ' + HEROES[id].name : ' 고르기'));
@@ -12258,7 +12885,7 @@ function renderLobbyDuel() {
   });
 }
 function lobbyDuelPlace(cr, floor, right) {
-  const box = $('lobbyDuel'); if (modeSel !== 'duel' || !box.children.length) { box.hidden = true; document.body.classList.remove('ldOn'); return; }
+  const box = $('lobbyDuel'); if (!isDuelMode(modeSel) || !box.children.length) { box.hidden = true; document.body.classList.remove('ldOn'); return; }
   const w = Math.round(cr.width * .72), off = Math.round(cr.width * .66), step = Math.round(cr.width * .5), cx = cr.left + cr.width / 2;
   const fits = cx + off + step + w * .45 <= right - 16 && innerHeight >= 560; document.body.classList.toggle('ldOn', fits);
   if (!fits) { box.hidden = true; return; }      // not enough room left of the menu: only the big figure, as before
@@ -12277,7 +12904,8 @@ function updatePick() {
   el.append('캐릭터 ', b2, ' · 스킬 ', b3);
   modeIcon($('modeChipIco'), m); $('modeChipName').textContent = m.name;
   $('modeChipMeta').textContent = (m.size ? m.size + ' · ' : '') + (mapChoice < 0 ? '무작위 맵' : MAPS[mapChoice].name);
-  { const m = masteryOf(chosen), nm = $('lobbyCharName'), rk = document.createElement('small'); nm.textContent = h.name; if (modeSel === 'duel') { const no = document.createElement('b'); no.className = 'ldNo'; no.textContent = '1'; nm.prepend(no); } rk.textContent = m.name; rk.style.color = m.col; nm.append(rk); }
+  if (typeof modeChipExtra === 'function') modeChipExtra(m);      // 랭크전: tier and points instead of the map (rank.js)
+  { const m = masteryOf(chosen), nm = $('lobbyCharName'), rk = document.createElement('small'); nm.textContent = h.name; if (isDuelMode(modeSel)) { const no = document.createElement('b'); no.className = 'ldNo'; no.textContent = '1'; nm.prepend(no); } rk.textContent = m.name; rk.style.color = m.col; nm.append(rk); }
 }
 function drawPortrait(canvas, id, breathe) {
   const c = canvas.getContext('2d'), k = canvas.width / 200;
@@ -12355,7 +12983,7 @@ function openDetail(id) {
   }
   renderLoadout(id);
   renderDuelLine();
-  $('weaponLockBtn').textContent = id === (modeSel === 'duel' ? duelIds()[DSLOT] : chosen) ? '확인' : '이 캐릭터로 정하기'; $('weaponLockBtn').disabled = false;
+  $('weaponLockBtn').textContent = id === (isDuelMode(modeSel) ? duelIds()[DSLOT] : chosen) ? '확인' : '이 캐릭터로 정하기'; $('weaponLockBtn').disabled = false;
   $('weaponScreen').scrollTop = 0;
 }
 function closeDetail() { viewing = null; $('weaponScreen').classList.remove('wDetail'); }
@@ -12364,7 +12992,7 @@ $('weaponSearch').addEventListener('input', e => {
   for (const el of $('weaponGrid').children) { const h = HEROES[el.dataset.wid]; el.style.display = (!q || (h.name + ' ' + h.wname + ' ' + h.id).toLowerCase().includes(q)) ? '' : 'none'; }
 });
 $('weaponLockBtn').addEventListener('click', () => {
-  if (modeSel === 'duel') { duelPut(DSLOT, viewing); savePrefs(); markSel(); const k = duelIds().indexOf(null); if (k >= 0) { DSLOT = k; closeDetail(); renderDuelLine(); return; } }
+  if (isDuelMode(modeSel)) { duelPut(DSLOT, viewing); savePrefs(); markSel(); const k = duelIds().indexOf(null); if (k >= 0) { DSLOT = k; closeDetail(); renderDuelLine(); return; } }
   else chosen = viewing;
   savePrefs(); markSel(); closeDetail(); showScreen('menuScreen'); });
 $('weaponBackListBtn').addEventListener('click', closeDetail);
@@ -12393,8 +13021,9 @@ $('mapPickBtn').addEventListener('click', () => { mapChoice = mapList[mapIdx]; s
 
 /* mode picker. PC: a row of event cards, tap one to look at it, the button below (or a double click) confirms.
    touch or small screens: big posters, a tap picks the mode right away. Each card: mode art, headcount, two rules, the mode's current map */
-const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a', hot4: '#7a3510', ball: '#1f5a26', duo: '#55207a', star: '#6a5208', ko3: '#6e1c33' };
-const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1, hot4: MAPS.findIndex(m => m.hot), ball: MAPS.findIndex(m => m.ball), duo: 8, star: 9, ko3: 11 };      // map drawn behind the figures while the mode's map is random
+const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a', rank: '#5a4210', gw: '#0f4a44', hot4: '#7a3510', ball: '#1f5a26', duo: '#55207a', star: '#6a5208', ko3: '#6e1c33' };
+const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1, rank: 1, gw: 0, hot4: MAPS.findIndex(m => m.hot), ball: MAPS.findIndex(m => m.ball), duo: 8, star: 9, ko3: 11 };      // map drawn behind the figures while the mode's map is random
+const MODE_TOP = { rank: 2, gw: 1 };
 const MODE_FFA = ['#4d9dff', '#ff5d5d', '#ffd34d', '#3ddbb4', '#b48cff', '#ff9a3d'];
 const RULE_ICO = {
   kill: '<circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>',
@@ -12411,7 +13040,7 @@ function modeRules(m) {
   if (solo) r.push(['crown', '최후 1인']);
   else if (m.id === 'duo' || (m.id === 'ko3' && m.win <= 1)) r.push(['crown', '최후 1팀']);
   else if (isFlagMode(m.id) && m.win) r.push(['flag', '깃발 ' + m.win + '점']);
-  else if ((m.id === 'duel' || m.id === 'ko3') && m.win) r.push(['rounds', m.win + '선승']);
+  else if ((isDuelMode(m.id) || m.id === 'ko3') && m.win) r.push(['rounds', m.win + '선승']);
   else if (m.id === 'star') r.push(['crown', '별 1위']);
   else if (m.id === 'hot4') r.push(['zone', (m.win || 100) + '%']);
   else if (m.id === 'ball') r.push(['ball', m.win + '골']);
@@ -12476,12 +13105,13 @@ function modeScene(cv, m, mi, cx) {
     ['sword', 'pistol', 'magiccard', 'bow', 'rifle', 'shade'].forEach((id, n) => { const x = x0 + (n - 2.5) * 46 * s, y = base - (n % 2) * 22 * s, sz = n === 2 ? 1.6 : 1; fig(id, MODE_FFA[n], x, y, s * .92, x < x0 ? 1 : -1, .3); starIcon(g, x, y - 68 * s, 9 * s * sz); });
   } else if (m.id === 'ko3') {      // three teams of four
     [['sword', 'bow', 'wizard', 'harald'], ['shotgun', 'shuriken', 'magiccard', 'pistol'], ['rifle', 'shade', 'bow', 'sword']].forEach((ids, t) => ids.forEach((id, j) => { const x = x0 + (t - 1) * 120 * s + ((j % 2) - .5) * 30 * s, y = base - (j >> 1) * 22 * s; fig(id, TEAM[t], x, y, s * .72, t === 2 ? -1 : t === 0 ? 1 : (j % 2 ? -1 : 1), .4); }));
-  } else if (m.id === 'duel') {
+  } else if (isDuelMode(m.id)) {
     fig('sword', B, x0 - 62 * s, base, s * 1.25, 1, .6); fig('magiccard', R, x0 + 62 * s, base, s * 1.25, -1, .6);
     g.save(); g.translate(x0, base - 44 * s); g.globalCompositeOperation = 'lighter';
     const rg = g.createRadialGradient(0, 0, 0, 0, 0, 30 * s); rg.addColorStop(0, 'rgba(255,240,200,.95)'); rg.addColorStop(1, 'rgba(180,140,255,0)'); g.fillStyle = rg; g.beginPath(); g.arc(0, 0, 30 * s, 0, 7); g.fill();
     g.strokeStyle = '#fff'; g.lineWidth = 2 * k; for (let n = 0; n < 8; n++) { const a = n * Math.PI / 4 + .2, l = (n % 2 ? 18 : 26) * s; g.beginPath(); g.moveTo(Math.cos(a) * 8 * s, Math.sin(a) * 8 * s); g.lineTo(Math.cos(a) * l, Math.sin(a) * l); g.stroke(); }
     g.restore();
+    if (m.id === 'rank') starIcon(g, x0, base - 96 * s, 16 * s);      // 랭크전: a gold star over the clash
   } else {
     [['bow', -1.55, -18], ['wizard', -.5, -26], ['sword', -1, 0]].forEach(([id, dx, dy]) => fig(id, B, x0 + dx * 60 * s, base + dy * s, s, 1, .4));
     [['shotgun', 1.55, -18], ['shuriken', .5, -26], ['harald', 1, 0]].forEach(([id, dx, dy]) => fig(id, R, x0 + dx * 60 * s, base + dy * s, s, -1, .4));
@@ -12506,7 +13136,7 @@ function modePick() {
 }
 function showModes() {
   const scr = $('modeScreen'), g = $('modeGrid'), ph = modeTouchLayout(), NS = 'http://www.w3.org/2000/svg';
-  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = ''; const shown = MODE_LIST.filter(modeOk); g.classList.toggle('n5', shown.length === 5);      // modes not drawn today are not shown at all (user 2026-11-15)
+  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = ''; const shown = MODE_LIST.filter(m => modeOk(m) || (typeof modeLockText === 'function' && modeLockText(m))).sort((a, b) => (MODE_TOP[b.id] | 0) - (MODE_TOP[a.id] | 0));      // 랭크전 and 길드 대항전 first; they show locked with the reason g.classList.toggle('n5', shown.length === 5);      // modes not drawn today are not shown at all (user 2026-11-15)
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   const icon = (d, cls) => { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); if (cls) s.setAttribute('class', cls); s.innerHTML = d; return s; };
   const arts = [];
@@ -12528,7 +13158,7 @@ function showModes() {
     const mark = icon('<use href="#' + lk[0] + '"/>', 'mMark'), tick = el('span', 'mTick'); tick.append(icon('<path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>'));
     inn.append(art, el('span', 'mTint'), mark, top, sz, rl, mp); b.append(inn, tick);
     b.setAttribute('aria-label', [m.name, m.size, ...modeRules(m).map(r => r[1]), mi < 0 ? '무작위 맵' : MAPS[mi].name].filter(Boolean).join(', '));
-    if (!ok) { b.disabled = true; b.setAttribute('aria-label', m.name + ' (오늘은 쉬어요)'); const l = icon('<use href="#mi-m-lock"/>', 'mLock'); b.append(l, el('span', 'mOff', '오늘은 쉬어요')); }
+    if (!ok) { const why = (typeof modeLockText === 'function' && modeLockText(m)) || '오늘은 쉬어요'; b.disabled = true; b.setAttribute('aria-label', m.name + ' (' + why + ')'); const l = icon('<use href="#mi-m-lock"/>', 'mLock'); b.append(l, el('span', 'mOff', why)); }
     b.addEventListener('click', () => { if (!modeOk(m)) return; modeView = m.id; if ($('modeScreen').classList.contains('ph')) modePick(); else modeMark(); });
     b.addEventListener('dblclick', () => { if (modeOk(m) && !$('modeScreen').classList.contains('ph')) { modeView = m.id; modePick(); } });
     g.append(b); arts.push([art, m, mi]);
@@ -12820,7 +13450,7 @@ for (let i = 0; i < 90; i++) step(.033);
 requestAnimationFrame(frame);
 /* 듀얼 배틀: both sides' picks beside the clock (mine on the left), in place of the two score boxes */
 function duelHud() {
-  const on = !!(DUEL.line && curMode === 'duel'); $('dqL').hidden = $('dqR').hidden = !on; $('sb').parentNode.hidden = $('sr').parentNode.hidden = on; if (!on) return;
+  const on = !!(DUEL.line && isDuelMode(curMode)); $('dqL').hidden = $('dqR').hidden = !on; $('sb').parentNode.hidden = $('sr').parentNode.hidden = on; if (!on) return;
   [[$('dqL'), VIEW === 1 ? 1 : 0], [$('dqR'), VIEW === 1 ? 0 : 1]].forEach(([box, t]) => {
     box.textContent = ''; box.style.setProperty('--c', TC(t));
     (DUEL.line[t] || []).forEach((id, k) => {
@@ -12881,6 +13511,19 @@ for (const t of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'to
     mobSetApply(); bposDrag = null;
   }
 }, { capture: true, passive: false });
+
+/* phones: on the first tap try fullscreen + landscape lock (Android Chrome etc.; iOS and embedded pages refuse, then #rotHint covers portrait) */
+(function () {
+  const phone = () => matchMedia('(pointer:coarse)').matches && Math.min(screen.width, screen.height) <= 900;
+  function tryLock() {
+    if (!phone()) return;
+    const o = screen.orientation, lock = () => { try { o && o.lock && o.lock('landscape').catch(() => {}); } catch (e) {} };
+    const el = document.documentElement, fs = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (!document.fullscreenElement && fs) { try { const r = fs.call(el, { navigationUI: 'hide' }); r && r.then ? r.then(lock, lock) : lock(); } catch (e) { lock(); } } else lock();
+  }
+  addEventListener('pointerup', tryLock, { capture: true });
+  document.addEventListener('fullscreenchange', () => { if (document.fullscreenElement) tryLock(); });
+})();
 
 })();
 </script>

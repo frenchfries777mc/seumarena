@@ -436,9 +436,9 @@ if (!DEVICE && $('devPick')) {
 /* game modes: the engine's MODES registry ({id,name,size,maps,ready}) when it exists; until then the same four, with only the current rules playable */
 const MODE_FALLBACK = [{ id: 'team', name: '팀 아웃', size: '3v3' }, { id: 'solo', name: '원 레프트', size: '8명', ready: false }, { id: 'flag', name: '캡쳐 플래그', size: '3v3', ready: false }, { id: 'duel', name: '듀얼 배틀', size: '1v1', ready: false }];
 const MODE_LIST = typeof MODES !== 'undefined' && Array.isArray(MODES) && MODES.length ? MODES : MODE_FALLBACK;
-const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'], hot4: ['mi-m-hot', '#ff8a3d'], ball: ['mi-m-ball', '#5fd36a'], duo: ['mi-m-last', '#c77dff'], star: ['mi-star', '#ffd34d'], ko3: ['mi-m-team', '#ff6b8a'] };
+const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'], rank: ['mi-m-rank', '#ffcc33'], gw: ['mi-m-gw', '#3ddbb4'], hot4: ['mi-m-hot', '#ff8a3d'], ball: ['mi-m-ball', '#5fd36a'], duo: ['mi-m-last', '#c77dff'], star: ['mi-star', '#ffd34d'], ko3: ['mi-m-team', '#ff6b8a'] };
 let modeSel = typeof modeChoice === 'string' ? modeChoice : MODE_LIST[0].id, modeView = modeSel;
-const modeOk = m => !!m && m.ready !== false && (typeof modeOpen !== 'function' || modeOpen(m.id));      // ready, and drawn for today (engine.js MODE_GROUPS)
+const modeOk = m => !!m && m.ready !== false && (typeof modeOpen !== 'function' || modeOpen(m.id)) && (typeof modeExtraOk !== 'function' || modeExtraOk(m));      // + 랭크전 / 길드 대항전 conditions (rank.js, guild.js)      // ready, and drawn for today (engine.js MODE_GROUPS)
 const modeCur = () => MODE_LIST.find(m => m.id === modeSel && modeOk(m)) || MODE_LIST.find(modeOk) || MODE_LIST[0];
 const modeMapsOf = m => { const a = (m.maps || []).filter(i => Number.isInteger(i) && MAPS[i]); return a.length ? a : MAPS.map((x, i) => i); };
 const modeMaps = () => modeMapsOf(modeCur());
@@ -470,7 +470,7 @@ function duelPut(k, id) {      // a hero already in another slot swaps places wi
   chosen = ids[0]; duelMore = [ids[1] || null, ids[2] || null];
 }
 function renderDuelLine() {
-  const box = $('duelLine'), on = modeSel === 'duel'; box.hidden = !on; if (!on) return; box.textContent = '';
+  const box = $('duelLine'), on = isDuelMode(modeSel); box.hidden = !on; if (!on) return; box.textContent = '';
   duelIds().forEach((id, k) => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 's' + (k === DSLOT ? ' on' : '') + (id ? '' : ' add');
     if (id) { const c = document.createElement('canvas'); c.width = c.height = 128; b.append(c); drawPortrait(c, id); } else b.textContent = '+';
@@ -540,7 +540,7 @@ function lobbyCharPlace() {
 /* 듀얼 배틀 on a wide screen (user 2026-11-15): picks 2 and 3 stand to the right of the big figure on the same floor; an empty pick is a '+' that opens the character list */
 function renderLobbyDuel() {
   const box = $('lobbyDuel'); box.textContent = '';
-  if (modeSel !== 'duel') { box.hidden = true; return; }
+  if (!isDuelMode(modeSel)) { box.hidden = true; return; }
   duelMore.forEach((id, j) => {
     const k = j + 1, b = document.createElement('button'), n = document.createElement('div'), no = document.createElement('b');
     b.type = 'button'; b.className = 'ldS' + (id ? '' : ' add'); b.setAttribute('aria-label', k + '번 캐릭터' + (id ? ' ' + HEROES[id].name : ' 고르기'));
@@ -552,7 +552,7 @@ function renderLobbyDuel() {
   });
 }
 function lobbyDuelPlace(cr, floor, right) {
-  const box = $('lobbyDuel'); if (modeSel !== 'duel' || !box.children.length) { box.hidden = true; document.body.classList.remove('ldOn'); return; }
+  const box = $('lobbyDuel'); if (!isDuelMode(modeSel) || !box.children.length) { box.hidden = true; document.body.classList.remove('ldOn'); return; }
   const w = Math.round(cr.width * .72), off = Math.round(cr.width * .66), step = Math.round(cr.width * .5), cx = cr.left + cr.width / 2;
   const fits = cx + off + step + w * .45 <= right - 16 && innerHeight >= 560; document.body.classList.toggle('ldOn', fits);
   if (!fits) { box.hidden = true; return; }      // not enough room left of the menu: only the big figure, as before
@@ -571,7 +571,8 @@ function updatePick() {
   el.append('캐릭터 ', b2, ' · 스킬 ', b3);
   modeIcon($('modeChipIco'), m); $('modeChipName').textContent = m.name;
   $('modeChipMeta').textContent = (m.size ? m.size + ' · ' : '') + (mapChoice < 0 ? '무작위 맵' : MAPS[mapChoice].name);
-  { const m = masteryOf(chosen), nm = $('lobbyCharName'), rk = document.createElement('small'); nm.textContent = h.name; if (modeSel === 'duel') { const no = document.createElement('b'); no.className = 'ldNo'; no.textContent = '1'; nm.prepend(no); } rk.textContent = m.name; rk.style.color = m.col; nm.append(rk); }
+  if (typeof modeChipExtra === 'function') modeChipExtra(m);      // 랭크전: tier and points instead of the map (rank.js)
+  { const m = masteryOf(chosen), nm = $('lobbyCharName'), rk = document.createElement('small'); nm.textContent = h.name; if (isDuelMode(modeSel)) { const no = document.createElement('b'); no.className = 'ldNo'; no.textContent = '1'; nm.prepend(no); } rk.textContent = m.name; rk.style.color = m.col; nm.append(rk); }
 }
 function drawPortrait(canvas, id, breathe) {
   const c = canvas.getContext('2d'), k = canvas.width / 200;
@@ -649,7 +650,7 @@ function openDetail(id) {
   }
   renderLoadout(id);
   renderDuelLine();
-  $('weaponLockBtn').textContent = id === (modeSel === 'duel' ? duelIds()[DSLOT] : chosen) ? '확인' : '이 캐릭터로 정하기'; $('weaponLockBtn').disabled = false;
+  $('weaponLockBtn').textContent = id === (isDuelMode(modeSel) ? duelIds()[DSLOT] : chosen) ? '확인' : '이 캐릭터로 정하기'; $('weaponLockBtn').disabled = false;
   $('weaponScreen').scrollTop = 0;
 }
 function closeDetail() { viewing = null; $('weaponScreen').classList.remove('wDetail'); }
@@ -658,7 +659,7 @@ $('weaponSearch').addEventListener('input', e => {
   for (const el of $('weaponGrid').children) { const h = HEROES[el.dataset.wid]; el.style.display = (!q || (h.name + ' ' + h.wname + ' ' + h.id).toLowerCase().includes(q)) ? '' : 'none'; }
 });
 $('weaponLockBtn').addEventListener('click', () => {
-  if (modeSel === 'duel') { duelPut(DSLOT, viewing); savePrefs(); markSel(); const k = duelIds().indexOf(null); if (k >= 0) { DSLOT = k; closeDetail(); renderDuelLine(); return; } }
+  if (isDuelMode(modeSel)) { duelPut(DSLOT, viewing); savePrefs(); markSel(); const k = duelIds().indexOf(null); if (k >= 0) { DSLOT = k; closeDetail(); renderDuelLine(); return; } }
   else chosen = viewing;
   savePrefs(); markSel(); closeDetail(); showScreen('menuScreen'); });
 $('weaponBackListBtn').addEventListener('click', closeDetail);
@@ -687,8 +688,9 @@ $('mapPickBtn').addEventListener('click', () => { mapChoice = mapList[mapIdx]; s
 
 /* mode picker. PC: a row of event cards, tap one to look at it, the button below (or a double click) confirms.
    touch or small screens: big posters, a tap picks the mode right away. Each card: mode art, headcount, two rules, the mode's current map */
-const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a', hot4: '#7a3510', ball: '#1f5a26', duo: '#55207a', star: '#6a5208', ko3: '#6e1c33' };
-const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1, hot4: MAPS.findIndex(m => m.hot), ball: MAPS.findIndex(m => m.ball), duo: 8, star: 9, ko3: 11 };      // map drawn behind the figures while the mode's map is random
+const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a', rank: '#5a4210', gw: '#0f4a44', hot4: '#7a3510', ball: '#1f5a26', duo: '#55207a', star: '#6a5208', ko3: '#6e1c33' };
+const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1, rank: 1, gw: 0, hot4: MAPS.findIndex(m => m.hot), ball: MAPS.findIndex(m => m.ball), duo: 8, star: 9, ko3: 11 };      // map drawn behind the figures while the mode's map is random
+const MODE_TOP = { rank: 2, gw: 1 };
 const MODE_FFA = ['#4d9dff', '#ff5d5d', '#ffd34d', '#3ddbb4', '#b48cff', '#ff9a3d'];
 const RULE_ICO = {
   kill: '<circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>',
@@ -705,7 +707,7 @@ function modeRules(m) {
   if (solo) r.push(['crown', '최후 1인']);
   else if (m.id === 'duo' || (m.id === 'ko3' && m.win <= 1)) r.push(['crown', '최후 1팀']);
   else if (isFlagMode(m.id) && m.win) r.push(['flag', '깃발 ' + m.win + '점']);
-  else if ((m.id === 'duel' || m.id === 'ko3') && m.win) r.push(['rounds', m.win + '선승']);
+  else if ((isDuelMode(m.id) || m.id === 'ko3') && m.win) r.push(['rounds', m.win + '선승']);
   else if (m.id === 'star') r.push(['crown', '별 1위']);
   else if (m.id === 'hot4') r.push(['zone', (m.win || 100) + '%']);
   else if (m.id === 'ball') r.push(['ball', m.win + '골']);
@@ -770,12 +772,13 @@ function modeScene(cv, m, mi, cx) {
     ['sword', 'pistol', 'magiccard', 'bow', 'rifle', 'shade'].forEach((id, n) => { const x = x0 + (n - 2.5) * 46 * s, y = base - (n % 2) * 22 * s, sz = n === 2 ? 1.6 : 1; fig(id, MODE_FFA[n], x, y, s * .92, x < x0 ? 1 : -1, .3); starIcon(g, x, y - 68 * s, 9 * s * sz); });
   } else if (m.id === 'ko3') {      // three teams of four
     [['sword', 'bow', 'wizard', 'harald'], ['shotgun', 'shuriken', 'magiccard', 'pistol'], ['rifle', 'shade', 'bow', 'sword']].forEach((ids, t) => ids.forEach((id, j) => { const x = x0 + (t - 1) * 120 * s + ((j % 2) - .5) * 30 * s, y = base - (j >> 1) * 22 * s; fig(id, TEAM[t], x, y, s * .72, t === 2 ? -1 : t === 0 ? 1 : (j % 2 ? -1 : 1), .4); }));
-  } else if (m.id === 'duel') {
+  } else if (isDuelMode(m.id)) {
     fig('sword', B, x0 - 62 * s, base, s * 1.25, 1, .6); fig('magiccard', R, x0 + 62 * s, base, s * 1.25, -1, .6);
     g.save(); g.translate(x0, base - 44 * s); g.globalCompositeOperation = 'lighter';
     const rg = g.createRadialGradient(0, 0, 0, 0, 0, 30 * s); rg.addColorStop(0, 'rgba(255,240,200,.95)'); rg.addColorStop(1, 'rgba(180,140,255,0)'); g.fillStyle = rg; g.beginPath(); g.arc(0, 0, 30 * s, 0, 7); g.fill();
     g.strokeStyle = '#fff'; g.lineWidth = 2 * k; for (let n = 0; n < 8; n++) { const a = n * Math.PI / 4 + .2, l = (n % 2 ? 18 : 26) * s; g.beginPath(); g.moveTo(Math.cos(a) * 8 * s, Math.sin(a) * 8 * s); g.lineTo(Math.cos(a) * l, Math.sin(a) * l); g.stroke(); }
     g.restore();
+    if (m.id === 'rank') starIcon(g, x0, base - 96 * s, 16 * s);      // 랭크전: a gold star over the clash
   } else {
     [['bow', -1.55, -18], ['wizard', -.5, -26], ['sword', -1, 0]].forEach(([id, dx, dy]) => fig(id, B, x0 + dx * 60 * s, base + dy * s, s, 1, .4));
     [['shotgun', 1.55, -18], ['shuriken', .5, -26], ['harald', 1, 0]].forEach(([id, dx, dy]) => fig(id, R, x0 + dx * 60 * s, base + dy * s, s, -1, .4));
@@ -800,7 +803,7 @@ function modePick() {
 }
 function showModes() {
   const scr = $('modeScreen'), g = $('modeGrid'), ph = modeTouchLayout(), NS = 'http://www.w3.org/2000/svg';
-  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = ''; const shown = MODE_LIST.filter(modeOk); g.classList.toggle('n5', shown.length === 5);      // modes not drawn today are not shown at all (user 2026-11-15)
+  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = ''; const shown = MODE_LIST.filter(m => modeOk(m) || (typeof modeLockText === 'function' && modeLockText(m))).sort((a, b) => (MODE_TOP[b.id] | 0) - (MODE_TOP[a.id] | 0));      // 랭크전 and 길드 대항전 first; they show locked with the reason g.classList.toggle('n5', shown.length === 5);      // modes not drawn today are not shown at all (user 2026-11-15)
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   const icon = (d, cls) => { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); if (cls) s.setAttribute('class', cls); s.innerHTML = d; return s; };
   const arts = [];
@@ -822,7 +825,7 @@ function showModes() {
     const mark = icon('<use href="#' + lk[0] + '"/>', 'mMark'), tick = el('span', 'mTick'); tick.append(icon('<path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>'));
     inn.append(art, el('span', 'mTint'), mark, top, sz, rl, mp); b.append(inn, tick);
     b.setAttribute('aria-label', [m.name, m.size, ...modeRules(m).map(r => r[1]), mi < 0 ? '무작위 맵' : MAPS[mi].name].filter(Boolean).join(', '));
-    if (!ok) { b.disabled = true; b.setAttribute('aria-label', m.name + ' (오늘은 쉬어요)'); const l = icon('<use href="#mi-m-lock"/>', 'mLock'); b.append(l, el('span', 'mOff', '오늘은 쉬어요')); }
+    if (!ok) { const why = (typeof modeLockText === 'function' && modeLockText(m)) || '오늘은 쉬어요'; b.disabled = true; b.setAttribute('aria-label', m.name + ' (' + why + ')'); const l = icon('<use href="#mi-m-lock"/>', 'mLock'); b.append(l, el('span', 'mOff', why)); }
     b.addEventListener('click', () => { if (!modeOk(m)) return; modeView = m.id; if ($('modeScreen').classList.contains('ph')) modePick(); else modeMark(); });
     b.addEventListener('dblclick', () => { if (modeOk(m) && !$('modeScreen').classList.contains('ph')) { modeView = m.id; modePick(); } });
     g.append(b); arts.push([art, m, mi]);
@@ -1114,7 +1117,7 @@ for (let i = 0; i < 90; i++) step(.033);
 requestAnimationFrame(frame);
 /* 듀얼 배틀: both sides' picks beside the clock (mine on the left), in place of the two score boxes */
 function duelHud() {
-  const on = !!(DUEL.line && curMode === 'duel'); $('dqL').hidden = $('dqR').hidden = !on; $('sb').parentNode.hidden = $('sr').parentNode.hidden = on; if (!on) return;
+  const on = !!(DUEL.line && isDuelMode(curMode)); $('dqL').hidden = $('dqR').hidden = !on; $('sb').parentNode.hidden = $('sr').parentNode.hidden = on; if (!on) return;
   [[$('dqL'), VIEW === 1 ? 1 : 0], [$('dqR'), VIEW === 1 ? 0 : 1]].forEach(([box, t]) => {
     box.textContent = ''; box.style.setProperty('--c', TC(t));
     (DUEL.line[t] || []).forEach((id, k) => {
