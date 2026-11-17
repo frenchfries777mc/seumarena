@@ -534,7 +534,7 @@ function lobbyCharPlace() {
   box.style.bottom = 'auto';
   box.style.top = Math.round(r.bottom - feet) + 'px';
   box.style.left = Math.round(Math.max(80, Math.min(150, innerWidth * .1 + 40)) - dw / 2) + 'px';      // the figure stands near the left edge of the screen (the empty sides of the canvas may run off-screen)
-  $('lobbyCharName').style.marginTop = Math.round(-(dh * .3) + 8) + 'px';
+  $('lobbyCharName').style.marginTop = Math.round(-(dh * .3) + (isDuelMode(modeSel) ? dh * .1 : 0) + 8) + 'px';
   lobbyDuelPlace(cr, r.bottom, Math.min(...rs.map(q => q.left)));
 }
 /* 듀얼 배틀 on a wide screen (user 2026-11-15): picks 2 and 3 stand to the right of the big figure on the same floor; an empty pick is a '+' that opens the character list */
@@ -553,13 +553,13 @@ function renderLobbyDuel() {
 }
 function lobbyDuelPlace(cr, floor, right) {
   const box = $('lobbyDuel'); if (!isDuelMode(modeSel) || !box.children.length) { box.hidden = true; document.body.classList.remove('ldOn'); return; }
-  const w = Math.round(cr.width * .72), off = Math.round(cr.width * .66), step = Math.round(cr.width * .5), cx = cr.left + cr.width / 2;
+  const w = Math.round(cr.width * .48), off = Math.round(cr.width * .56), step = Math.round(cr.width * .4), cx = cr.left + cr.width / 2;
   const fits = cx + off + step + w * .45 <= right - 16 && innerHeight >= 560; document.body.classList.toggle('ldOn', fits);
   if (!fits) { box.hidden = true; return; }      // not enough room left of the menu: only the big figure, as before
   box.hidden = false; box.style.columnGap = (step - w) + 'px';
   const h = Math.round(w * 414 / 360);
   for (const b of box.children) { const c = b.querySelector('canvas,.ldC'); c.style.width = w + 'px'; c.style.height = h + 'px'; }
-  box.style.setProperty('--nm', Math.round(-(h * .3) + 6) + 'px');
+  box.style.setProperty('--nm', Math.round(-(h * .3) + h * .1 + 6) + 'px');      // names sit below the floor ring
   box.style.left = Math.round(cx + off - w / 2) + 'px'; box.style.top = Math.round(floor - h * .7) + 'px';
 }
 addEventListener('resize', () => lobbyCharPlace());
