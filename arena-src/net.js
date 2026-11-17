@@ -49,7 +49,7 @@ function netModeOf(v) {      // the mode actually played: unknown or not-ready i
 }
 const lobbyMode = () => netModeOf(typeof modeChoice === 'string' ? modeChoice : 'team');
 function modeMax(id) { const e = modeEntry(id), n = e ? (e.max | 0) || (e.teams | 0) * (e.per | 0) : 0;      // room size: the entry's max, else every seat of every team (5v5 = 10)
-  return n >= 2 && n <= 12 ? n : id === 'duel' ? 2 : MAX_PLAYERS; }
+  return n >= 2 && n <= 12 ? n : isDuelMode(id) ? 2 : MAX_PLAYERS; }
 function useMode(id) { try { if (typeof setMode === 'function') setMode(id); else if (typeof curMode !== 'undefined') curMode = id; } catch (e) { quietErr(e); } }
 function startMatchIn(id, humans) {      // setup() takes the lobby's modeChoice: make sure it is the room's mode while the match is made
   let keep; try { if (typeof modeChoice !== 'undefined') { keep = modeChoice; modeChoice = id; } } catch (e) { quietErr(e); }
@@ -81,7 +81,7 @@ function netReset() {
   const shut = () => { for (const c of cs) try { c.close(); } catch (e) { quietErr(e); } if (pr) try { pr.destroy(); } catch (e) { quietErr(e); } };
   if (linger) setTimeout(shut, 600); else shut();      // give the last message time to leave before the connections go
   if (NET.hostConn) try { NET.hostConn.close(); } catch (e) { quietErr(e); }
-  Object.assign(NET, { role: null, peer: null, conns: [], hostConn: null, members: [], phase: 'idle', rec: false, evs: [], room: -1, me: -1, waitEnd: 0, onRoomGone: null, heard: 0, ps: null, rtt: 0, tOff: null, jit: .02, delay: .1, tok: null, rc: null, gone: [] }); netBadge(false);
+  Object.assign(NET, { role: null, peer: null, conns: [], hostConn: null, members: [], phase: 'idle', rec: false, evs: [], room: -1, me: -1, waitEnd: 0, onRoomGone: null, heard: 0, ps: null, rtt: 0, tOff: null, jit: .02, delay: .1, tok: null, rc: null, gone: [], res: null, draft: null, rkDrop: null }); netBadge(false);
   netOut = null; netSq = 0; inHist = [];
 }
 const newPeer = id => new Peer(id, Object.assign({ debug: 0 }, PEER_SERVER, PEERJS_ICE_CONFIG));
@@ -98,11 +98,11 @@ function roomUi(title, status, n, left) {
    to the room; the host puts friends who meet in a room on the same side. Guests (no account) and the claude.ai preview send nothing. */
 const FR_API = 'https://kebsbuvuutilitwlvxzv.supabase.co/rest/v1/friendships?select=requester_id,addressee_id&status=eq.accepted&limit=500';
 const isUid = v => typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v);
-const MYFR = { uid: '', fr: [] };
+const MYFR = { uid: '', fr: [], tok: '' };
 async function netFriends() {
   try {
-    const A = window.FFAuth, u = A && A.user && A.user(), sb = A && A.client && A.client(); if (!u || !isUid(u.id) || !sb || !sb.auth) { MYFR.uid = ''; MYFR.fr = []; return; }
-    const r = await sb.auth.getSession(), t = r && r.data && r.data.session && r.data.session.access_token; if (!t) return;
+    const A = window.FFAuth, u = A && A.user && A.user(), sb = A && A.client && A.client(); if (!u || !isUid(u.id) || !sb || !sb.auth) { MYFR.uid = ''; MYFR.fr = []; MYFR.tok = ''; return; }
+    const r = await sb.auth.getSession(), t = r && r.data && r.data.session && r.data.session.access_token; if (!t) return; MYFR.tok = t;
     const res = await fetch(FR_API, { cache: 'no-store', headers: { apikey: typeof ACH_KEY === 'string' ? ACH_KEY : '', Authorization: 'Bearer ' + t } }); if (!res.ok) return;
     const rows = await res.json(); MYFR.uid = u.id;
     MYFR.fr = (Array.isArray(rows) ? rows : []).map(x => x && (x.requester_id === u.id ? x.addressee_id : x.requester_id)).filter(isUid);
@@ -124,14 +124,30 @@ function friendTeams(humans, nt, per) {
   return tm;
 }
 function startOnline() {
-  netFriends();
+  const fp = netFriends();
   if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { quietErr(e); } }
   if (ac && ac.state === 'suspended') ac.resume();
   netReset(); netClaimTries = 0; netBad = new Set(); NET.searchUntil = 0;
   try { if (typeof modeFixDay === 'function') modeFixDay(); } catch (e) { quietErr(e); }      // only today's modes are searched (오늘의 모드, engine.js MODE_GROUPS)
   NET.mode = lobbyMode(); NET.max = modeMax(NET.mode); useMode(NET.mode);      // also what a fallback bot match plays
   showScreen('roomScreen');
+  if (netRanked()) {      // 랭크전 / 길드 대항전: the server needs to know who is playing (signed-in account token), checked before the search
+    const tok = netToken; NET.t0 = performance.now(); roomUi('방 찾는 중', '계정을 확인하고 있어요');
+    const go = async () => {
+      if (tok !== netToken) return;
+      try { if (NET.mode === 'rank' && !RK.ok) await rankLoad(); if (NET.mode === 'gw') await guildLoad(); } catch (e) { quietErr(e); }      // fresh points / tickets before the search
+      if (tok !== netToken) return;
+      const why = typeof onlineModeBlock === 'function' ? onlineModeBlock(NET.mode) : ''; if (!MYFR.tok || why) return netGiveUp(why || '로그인이 필요해요.'); netSearch(); };
+    Promise.race([fp, new Promise(r => setTimeout(r, 6000))]).then(go, go); return;
+  }
   netSearch();
+}
+/* 랭크전 and 길드 대항전 are online only (a server room keeps the score): no bot match instead, the player goes back to the lobby */
+const netRanked = (id = NET.mode) => id === 'rank' || id === 'gw';
+function netGiveUp(why) {
+  netReset(); NET.phase = 'fallback'; const tok = netToken;
+  roomUi(modeNow().name, why + ' 로비로 돌아가요.');
+  setTimeout(() => { if (tok === netToken && NET.phase === 'fallback') { NET.phase = 'idle'; showScreen('menuScreen'); } }, 2600);
 }
 function netSearch(again) {
   const tok = netToken;
@@ -161,9 +177,10 @@ function netProbeAll(tok) {
   const status = () => roomUi('방 찾는 중', '방을 확인하고 있어요 (' + R.filter(r => r.s !== 'pend').length + ' / ' + NET_ROOMS + ')');
   const join = () => {
     let best = -1; R.forEach((r, k) => { if (r.s === 'avail' && (best < 0 || r.n > R[best].n)) best = k; });      // the fullest waiting room
+    if (netRanked()) { const p = netRankPick(R); if (p === -2) { finish(() => { closeAll(-1); netRetry(true); }); return true; } best = p; }      // ranked: the room whose player is close in points (or wait for one)
     if (best < 0) return false;
     joining = best; const r = R[best];
-    try { r.c.send({ t: 'hello', lite: NET_LITE ? 1 : 0, mode: NET.mode, hero: chosen, lo: loadoutOf(chosen), name: PROF.name, cos: myCos(chosen), line: myDuelLine(), uid: MYFR.uid || undefined, fr: MYFR.uid ? MYFR.fr.slice(0, 500) : undefined }); } catch (e) { r.s = 'busy'; joining = -1; return false; }
+    try { r.c.send(Object.assign({ t: 'hello', lite: NET_LITE ? 1 : 0, mode: NET.mode, hero: chosen, lo: loadoutOf(chosen), name: netName(), cos: myCos(chosen), line: myDuelLine(), uid: MYFR.uid || undefined, fr: MYFR.uid ? MYFR.fr.concat(typeof guildMates === 'function' ? guildMates() : []).slice(0, 560) : undefined }, netRanked() ? netRankHello() : null)); } catch (e) { r.s = 'busy'; joining = -1; return false; }
     r.jt = setTimeout(() => { if (alive() && joining === best) { r.s = 'busy'; joining = -1; decide(); } }, 4500);
     return true;
   };
@@ -173,6 +190,7 @@ function netProbeAll(tok) {
     const free = R.findIndex((r, k) => r.s === 'free' && !netBad.has(k));
     if (R.some(r => r.s === 'pend') && !hard && !(soft && free >= 0)) return;
     const k = free >= 0 ? free : R.findIndex((r, k) => r.s === 'pend' && hard && !netBad.has(k));      // no answer at all by the deadline: try to take it, the server decides
+    if (netRanked() && R.every(r => r.s === 'free')) return finish(() => { closeAll(-1); netGiveUp('랭크 서버 점검 중이에요.'); });      // no server room at all
     finish(() => { closeAll(-1); netRetry(); });      // players never host: every online match runs in a server room (sa-host); none free yet -> look again
   }
   const ts = setTimeout(() => { soft = true; decide(); }, SOFT), th = setTimeout(() => { hard = true; decide(); }, HARD);
@@ -185,7 +203,7 @@ function netProbeAll(tok) {
       if (tok !== netToken || !m) return;
       if (NET.hostConn === c) return guestMsg(m);
       if (decided) return;
-      if (m.t === 'info') { r.s = m.ok && (m.mode == null || m.mode === NET.mode) ? 'avail' : 'busy'; r.n = m.n | 0; status(); decide(); }
+      if (m.t === 'info') { r.s = m.ok && (m.mode == null || m.mode === NET.mode) ? 'avail' : 'busy'; r.n = m.n | 0; r.rp = m.rp; r.rw = m.rw; r.gs = m.gs; status(); decide(); }
       else if (m.t === 'busy') { clearTimeout(r.jt); r.s = 'busy'; if (joining === k) joining = -1; decide(); }
       else if (m.t === 'welcome' && joining === k) finish(() => { closeAll(k); becomeGuest(c, k, m); });
     });
@@ -198,11 +216,12 @@ function netProbeAll(tok) {
   if (!R.some(r => r.c)) finish(() => netFallback('온라인에 연결할 수 없어요.'));
 }
 /* no free server room right now: the server opens a new one within seconds after a room starts, so look again for up to 15 s */
-function netRetry() {
+function netRetry(near) {
   const now = performance.now(); if (!NET.searchUntil) NET.searchUntil = now + 15000;
+  if (netRanked()) NET.searchUntil = now + 15000;      // ranked waits as long as the player likes (취소 button); no bots
   if (now > NET.searchUntil) { NET.searchUntil = 0; return netFallback('서버 방이 모두 차 있어요.'); }
   const tok = netToken; try { NET.peer && NET.peer.destroy(); } catch (e) { quietErr(e); } NET.peer = null; NET.phase = 'search';
-  roomUi('방 찾는 중', '서버 방이 열리기를 기다리고 있어요');
+  roomUi('방 찾는 중', netRanked() ? netWaitText(near) : '서버 방이 열리기를 기다리고 있어요');
   setTimeout(() => { if (tok === netToken && NET.phase === 'search') { netToken++; netSearch(); } }, 1500);
 }
 function netFallback(why) {
@@ -227,29 +246,32 @@ function hostAccept(c, tok) {
   c.on('data', m => {
     if (tok !== netToken || !m || typeof m !== 'object') return;
     if (m.t === 'peek') {      // a searching screen asks whether this room has a free seat; it is not a member yet
-      try { c.send({ t: 'info', ok: NET.phase === 'wait' && hostN() < NET.max, n: hostN(), max: NET.max, mode: NET.mode }); } catch (e) { quietErr(e); }
+      try { c.send(Object.assign({ t: 'info', ok: NET.phase === 'wait' && hostN() < NET.max, n: hostN(), max: NET.max, mode: NET.mode }, netRanked() ? netRankInfo() : null)); } catch (e) { quietErr(e); }
     } else if (m.t === 'hello') {
       if (NET.members.some(x => x.conn === c)) return;
       if (NET.phase !== 'wait' || hostN() >= NET.max || m.mode !== NET.mode || typeof m.hero !== 'string' || !Object.prototype.hasOwnProperty.call(HEROES, m.hero)) { try { c.send({ t: 'busy' }); } catch (e) { quietErr(e); } setTimeout(() => { try { c.close(); } catch (e) { quietErr(e); } }, 500); return; }
       const mem = { conn: c, hero: m.hero, lo: Array.isArray(m.lo) ? m.lo : null, name: cleanName(m.name) || '게스트', cos: cleanCos(m.cos, m.hero), f: null, fi: -1, heard: performance.now(), inAt: 0, sq: 0, sqAt: 0, lite: !!m.lite, evq: [], mv: -1, line: Array.isArray(m.line) ? m.line.slice(0, DUEL_N).map(e => e && typeof e.hero === 'string' && Object.prototype.hasOwnProperty.call(HEROES, e.hero) ? { hero: e.hero, lo: Array.isArray(e.lo) ? e.lo.slice(0, 2) : null, cos: cleanCos(e.cos, e.hero) } : null).filter(Boolean) : null,
-        uid: isUid(m.uid) ? m.uid : '', fr: Array.isArray(m.fr) ? m.fr.slice(0, 500).filter(isUid) : [] };
+        uid: isUid(m.uid) ? m.uid : '', fr: Array.isArray(m.fr) ? m.fr.slice(0, 560).filter(isUid) : [],
+        tok: typeof m.tok === 'string' && m.tok.length < 4000 ? m.tok : '', rp: numIn(m.rp, 0, 1e6, 0), g: numIn(m.g, 0, 1e15, 0), grp: numIn(m.grp, -1, 1e6, -1), at: performance.now() };
+      mem.line0 = mem.line;
+      if (netRanked() && !mem.tok) { try { c.send({ t: 'busy' }); } catch (e) { quietErr(e); } setTimeout(() => { try { c.close(); } catch (e) { quietErr(e); } }, 500); return; }      // ranked: signed-in players only
       NET.members.push(mem); NET.conns.push(c);
       { const now = performance.now(), g = Math.min(5, waitSec) * 1000; if (NET.waitEnd - now < g) NET.waitEnd = now + g; }      // someone just arrived: leave time for the next one to find the room too
-      mem.tok = Math.random().toString(36).slice(2, 12); c.send({ t: 'welcome', room: NET.room, tok: mem.tok });
+      mem.rtok = Math.random().toString(36).slice(2, 12); c.send({ t: 'welcome', room: NET.room, tok: mem.rtok });
       hostLobby();
-      if (hostN() >= NET.max) hostStart();
+      if (hostN() >= NET.max) { if (NET.mode === 'rank') rankDraftStart(); else hostStart(); }
     } else if (m.t === 'rejoin') {      // a guest whose connection broke comes back to its own fighter
       const now = performance.now();
-      const old = typeof m.tok === 'string' && NET.members.find(x => x.tok === m.tok); if (old) hostDrop(old.conn, tok);      // the old link may still look open on this side
+      const old = typeof m.tok === 'string' && NET.members.find(x => x.rtok === m.tok); if (old) hostDrop(old.conn, tok);      // the old link may still look open on this side
       NET.gone = (NET.gone || []).filter(g => now - g.at < 60000);
-      const g = NET.phase === 'play' && state === 'play' && typeof m.tok === 'string' ? NET.gone.find(x => x.mem.tok === m.tok) : null;
+      const g = NET.phase === 'play' && state === 'play' && typeof m.tok === 'string' ? NET.gone.find(x => x.mem.rtok === m.tok) : null;
       if (!g || !g.mem.f || !fighters.includes(g.mem.f)) { try { c.send({ t: 'busy' }); } catch (e) { quietErr(e); } setTimeout(() => { try { c.close(); } catch (e) { quietErr(e); } }, 500); return; }
       NET.gone = NET.gone.filter(x => x !== g);
       const mem = Object.assign(g.mem, { conn: c, heard: now, inAt: 0, sq: 0, sqAt: 0, evq: [], mv: -1, lite: !!m.lite });
       mem.f.remote = mem; mem.f.human = true; mem.f.netIn = null; mem.fi = fighters.indexOf(mem.f);
       NET.members.push(mem); NET.conns.push(c); NET.rec = true; NET.rejoins = (NET.rejoins || 0) + 1;
       const roster = fighters.map(f => ({ nm: f.nick, cos: f.cos, hu: f.human ? 1 : 0 }));
-      try { c.send({ t: 'start', re: 1, you: mem.fi, team: mem.f.team, map: curMap, mode: NET.mode, roster, tok: mem.tok }); } catch (e) { quietErr(e); }
+      try { c.send({ t: 'start', re: 1, you: mem.fi, team: mem.f.team, map: curMap, mode: NET.mode, roster, tok: mem.rtok }); } catch (e) { quietErr(e); }
     } else if (m.t === 'in' || m.t === 'ping') {
       const mem = NET.members.find(x => x.conn === c); if (!mem) return;
       const now = performance.now(); mem.heard = now;
@@ -259,6 +281,8 @@ function hostAccept(c, tok) {
       if (o) { n.pf = n.pf || o.pf; n.ult = n.ult || o.ult; n.dash = n.dash || o.dash; n.sk = [n.sk[0] || o.sk[0], n.sk[1] || o.sk[1]]; n.manual = n.manual || o.manual; }
       mem.f.netIn = n; mem.inAt = now;
       if (Number.isInteger(m.sq) && m.sq > mem.sq) { mem.sq = m.sq; mem.sqAt = now; }
+    } else if (m.t === 'ban' || m.t === 'pick') {
+      const mem = NET.members.find(x => x.conn === c); if (mem) rankDraftIn(mem, m);
     } else if (m.t === 'emo' || m.t === 'chat') {
       const mem = NET.members.find(x => x.conn === c); if (!mem || !mem.f || NET.phase !== 'play') return;
       if (m.t === 'emo') doEmote(mem.f, m.i | 0); else hostChat(mem.f, m.x);
@@ -269,14 +293,16 @@ function hostAccept(c, tok) {
 function hostDrop(c, tok) {
     if (tok !== netToken) return;
     const i = NET.members.findIndex(x => x.conn === c); if (i < 0) return;
-    try { c.close(); } catch (e) { quietErr(e); }
     const mem = NET.members[i]; NET.members.splice(i, 1); NET.conns = NET.conns.filter(x => x !== c);
+    try { c.close(); } catch (e) { quietErr(e); }      // after taking it out: closing can call this again at once (its close event)
     if (mem.f) { mem.f.remote = null; mem.f.human = false; mem.f.netIn = null; }      // a player who left mid-match: a bot takes over the fighter
-    if (mem.f && mem.tok && NET.phase === 'play') (NET.gone || (NET.gone = [])).push({ mem, at: performance.now() });      // ...until the same player comes back (rejoin) within a minute
+    if (mem.f && mem.rtok && NET.phase === 'play') (NET.gone || (NET.gone = [])).push({ mem, at: performance.now() });      // ...until the same player comes back (rejoin) within a minute
+    if (NET.mode === 'rank') rankDropped(mem);      // ranked: back in 20 s or the match is lost; in the pick screen the other one waits for a new opponent
     if (NET.phase === 'wait') hostLobby();
     NET.rec = NET.members.length > 0 && state === 'play';
 }
 function hostLobby() {
+  if (NET.mode === 'rank') { const n = hostN(); for (const m of NET.members) try { m.conn.send({ t: 'lobby', n, left: -1, max: NET.max, rk: 1 }); } catch (e) { quietErr(e); } return; }      // ranked: no countdown, it starts when two are in
   const left = Math.max(0, Math.ceil((NET.waitEnd - performance.now()) / 1000)), n = hostN();
   roomUi('방 대기 중', n + ' / ' + NET.max + '명 · ' + left + '초 뒤에 시작해요. 빈자리는 봇이 채워요.', n, left);
   for (const m of NET.members) try { m.conn.send({ t: 'lobby', n, left, max: NET.max }); } catch (e) { quietErr(e); }
@@ -352,6 +378,7 @@ function hostEnd() {
   if (NET.role !== 'host') return;
   /* end-of-match stats: the result screen's author defines matchStats() (a JSON-safe value, e.g. an array indexed like `fighters`); it rides along in 'over' and lands in NET.stats on guests */
   let st; try { if (typeof matchStats === 'function') st = matchStats(); } catch (e) { quietErr(e); }
+  if (netRanked()) try { NET.res = rankResult(); } catch (e) { quietErr(e); }      // 랭크전 / 길드 대항전: who won, for the server to record (rank.js)
   for (const m of NET.members) try { m.conn.send({ t: 'over', sc: score, e: NET.evs, st }); } catch (e) { quietErr(e); }
   NET.rec = false; const tok = netToken;
   setTimeout(() => { if (tok === netToken) netReset(); }, 1500);
@@ -364,7 +391,9 @@ function becomeGuest(c, k, m) {
 }
 function guestMsg(m) {
   NET.heard = performance.now();
-  if (m.t === 'lobby' && NET.phase === 'joined') { if (m.max >= 2 && m.max <= 12) NET.max = m.max | 0; roomUi('방에 들어왔어요', m.n + ' / ' + NET.max + '명 · ' + m.left + '초 뒤에 시작해요. 빈자리는 봇이 채워요.', m.n, m.left); }
+  if (m.t === 'lobby' && NET.phase === 'joined' && m.rk) { roomUi('상대를 찾는 중', netWaitText(), m.n, null); }
+  else if (m.t === 'draft' && NET.phase === 'joined') rankDraftUi(m);
+  else if (m.t === 'lobby' && NET.phase === 'joined') { if (m.max >= 2 && m.max <= 12) NET.max = m.max | 0; roomUi('방에 들어왔어요', m.n + ' / ' + NET.max + '명 · ' + m.left + '초 뒤에 시작해요. 빈자리는 봇이 채워요.', m.n, m.left); }
   else if (m.t === 'pong') { if (typeof m.ts === 'number') { const r = performance.now() - m.ts; NET.rtt = NET.rtt ? NET.rtt * .7 + r * .3 : r; } }
   else if (m.t === 'start') guestStart(m);
   else if (m.t === 's' && state === 'play' && NET.phase === 'play') applySnap(m);
@@ -413,6 +442,7 @@ function hostLost() {
   else if (was === 'joined') { netSearch(); }
 }
 function guestStart(m) {
+  rankDraftHide();
   NET.mode = netModeOf(m.mode); useMode(NET.mode);
   NET.phase = 'play'; NET.me = m.you; VIEW = m.team; NET.roster = Array.isArray(m.roster) ? m.roster : [];
   loadMap(Number.isInteger(m.map) && MAPS[m.map] ? m.map : 0);
@@ -565,10 +595,12 @@ function netTick(dt) {
   }
   if (NET.role === 'host' && NET.phase === 'wait') {
     if (DED && !NET.members.length) NET.waitEnd = performance.now() + waitSec * 1000;      // an empty server room waits as long as it takes
+    if (NET.mode === 'rank') { NET.waitEnd = performance.now() + 60000; if ((netTick.rk = (netTick.rk || 0) + dt) > 1) { netTick.rk = 0; hostLobby(); } rankDraftTick(); }      // ranked: no bots, so no countdown; the pick screen has its own clock
     const left = (NET.waitEnd - performance.now()) / 1000;
     if (Math.ceil(left) !== netTick.last) { netTick.last = Math.ceil(left); hostLobby(); }
     if (left <= 0) hostStart();
   }
+  if (NET.role === 'host' && NET.phase === 'play' && NET.mode === 'rank') rankPlayTick();      // a ranked player who left: 20 s to come back
   if (NET.role === 'host' && NET.phase === 'play' && state === 'play' && NET.members.length) {
     snapAcc += dt;
     if (snapAcc >= SNAP_DT) { snapAcc = 0; hostSnap(); }
@@ -578,7 +610,7 @@ function netTick(dt) {
 if (DED) {
   const ded = { err: null, started: false, ended: false };
   window.__sad = {
-    modes: () => (typeof MODES !== 'undefined' && Array.isArray(MODES) ? MODES.filter(m => m && m.ready !== false).map(m => m.id) : ['team']),
+    modes: () => (typeof MODES !== 'undefined' && Array.isArray(MODES) ? MODES.filter(m => m && m.ready !== false && (typeof modeOpen !== 'function' || modeOpen(m.id)) && (m.id !== 'gw' || (typeof gwDayNow === 'function' && gwDayNow()))).map(m => m.id) : ['team']),      // only modes open right now (오늘의 모드; 길드 대항전 Fri-Sun), 랭크전 always
     open(mode, k) {
       netReset(); Object.assign(ded, { err: null, started: false, ended: false });
       NET.mode = netModeOf(mode); NET.max = modeMax(NET.mode); useMode(NET.mode);
@@ -596,7 +628,8 @@ if (DED) {
     status() {
       if (NET.phase === 'play' && state === 'play') ded.started = true;
       if (ded.started && (state !== 'play' || NET.role !== 'host')) ded.ended = true;
-      return { live: NET.role === 'host', mode: NET.mode, room: NET.room, phase: NET.phase, humans: NET.members.length, started: ded.started, ended: ded.ended, err: ded.err };
+      return { live: NET.role === 'host', mode: NET.mode, room: NET.room, phase: NET.phase, humans: NET.members.length, started: ded.started, ended: ded.ended, err: ded.err,
+        toks: netRanked() ? NET.members.map(m => m.tok).filter(Boolean) : undefined, res: ded.ended ? NET.res || null : undefined };      // ranked: the server checks the accounts and writes the result (sa-host.js)
     }
   };
 }

@@ -47,3 +47,16 @@ for (const t of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'to
     mobSetApply(); bposDrag = null;
   }
 }, { capture: true, passive: false });
+
+/* phones: on the first tap try fullscreen + landscape lock (Android Chrome etc.; iOS and embedded pages refuse, then #rotHint covers portrait) */
+(function () {
+  const phone = () => matchMedia('(pointer:coarse)').matches && Math.min(screen.width, screen.height) <= 900;
+  function tryLock() {
+    if (!phone()) return;
+    const o = screen.orientation, lock = () => { try { o && o.lock && o.lock('landscape').catch(() => {}); } catch (e) {} };
+    const el = document.documentElement, fs = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (!document.fullscreenElement && fs) { try { const r = fs.call(el, { navigationUI: 'hide' }); r && r.then ? r.then(lock, lock) : lock(); } catch (e) { lock(); } } else lock();
+  }
+  addEventListener('pointerup', tryLock, { capture: true });
+  document.addEventListener('fullscreenchange', () => { if (document.fullscreenElement) tryLock(); });
+})();

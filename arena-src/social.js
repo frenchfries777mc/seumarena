@@ -34,7 +34,7 @@ function guestName() {
   return n;
 }
 PROF.name = guestName();
-const cleanName = s => String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 16);
+const cleanName = s => String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 23);      // 16 + a guild tag '[TAG] '
 function syncAccount() {
   const A = window.FFAuth, u = A && A.user && A.user();
   if (u) { PROF.guest = false; PROF.uid = u.id; PROF.name = cleanName(A.nickname && A.nickname()) || PROF.name; }
@@ -199,13 +199,13 @@ const KARMA_TABLE = {
   star: { place: [9, 7, 5, 3, 2, 1, 0, 0], kill: 1, killMax: 3 },  // 리워드 헌터, 8 players
   ko3:  { res: [6, 2, 1], kill: 1, killMax: 3 }               // 라스트 팀 4v4v4
 };
-function modeKarma(o) { const t = KARMA_TABLE[o.mode] || KARMA_TABLE.team, k = Math.min(t.killMax, Math.max(0, o.kills | 0)) * t.kill;
+function modeKarma(o) { const t = KARMA_TABLE[o.mode === 'rank' ? 'duel' : o.mode] || KARMA_TABLE.team, k = Math.min(t.killMax, Math.max(0, o.kills | 0)) * t.kill;
   if (t.place) return k + (t.place[(o.place | 0) - 1] || 0);
   return k + t.res[o.win ? 0 : o.draw ? 1 : 2]; }
 function matchPay(o) {      // o: { mode, win, draw, kills, place }
   if (o.mode === 'flag5') o = Object.assign({}, o, { mode: 'flag' });      // capture the flag pays the same whatever the team size
   const pm = MODE_PAY[o.mode] || MODE_PAY.team, solo = o.mode === 'solo' || o.mode === 'star', k = Math.max(0, o.kills | 0), good = o.win ? 2 : o.draw || (solo && o.place <= 3) || (o.mode === 'hot4' && o.place === 2) || (o.mode === 'duo' && o.place === 2) ? 1 : 0;      // 4팀 핫존: 2nd of 4 pays like a draw
-  return { gold: Math.round(([30, 40, 60][good] + 5 * Math.min(10, k)) * (o.mode === 'duel' ? .6 : 1)), karma: modeKarma(o),
+  return { gold: Math.round(([30, 40, 60][good] + 5 * Math.min(10, k)) * (isDuelMode(o.mode) ? .6 : 1)), karma: modeKarma(o),
     mp: Math.round(([30, 42, 55][good] + 3 * Math.min(10, k)) * pm.mm * 1.75),      // user 2026-11-15: mastery x1.75
     xp: [40, 55, 70][good] + 4 * Math.min(10, k) };
 }
