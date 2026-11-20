@@ -14,7 +14,7 @@ const SeumMusic = (() => {
     win: { title: 'Pixel Peeker Polka - faster' }
   };
   const LIC = 'Licensed under Creative Commons: By Attribution 4.0 License', LIC_URL = 'http://creativecommons.org/licenses/by/4.0/';
-  const KEY = 'seumArenaMusicVol', GAIN = { lobby: .85, battle: .8, result: .8, win: .8 };   /* win: "Pixel Peeker Polka - faster", the result screen after a win */   /* result: "Cruising for Goblins" (not a win), only while the match result screen is up */   // (both songs were levelled to about the same loudness; this is the headroom under the sound effects)
+  const KEY = 'seumArenaMusicVol', GAIN = { lobby: .85, battle: .8, result: 1.42, win: 1.42 };   /* win: "Pixel Peeker Polka - faster", the result screen after a win */   /* result: "Cruising for Goblins" (not a win), only while the match result screen is up */   // (both songs were levelled to about the same loudness; this is the headroom under the sound effects)
   let vol = .5, ac = null, started = false, tracks = {}, want = null, lastWant = null, credEl = null, credHide = 0, matchCredAt = 0;
   try { const v = parseFloat(localStorage.getItem(KEY)); if (v >= 0 && v <= 1) vol = v; } catch (e) { }
 
@@ -26,7 +26,9 @@ const SeumMusic = (() => {
   /* songs given as a file path: fetched whole (so the app's offline cache keeps them), one at a time, a little after the page is up */
   const blobs = {}, waiting = {};
   const isPath = d => typeof d === 'string' && /\.mp3$/.test(d);
+  const FILE = location.protocol === 'file:';      // page opened straight from the disk: fetch() is blocked there, so the <audio> loads the path itself (no WebAudio: it would play silence for a file:// song)
   function fetchSong(name, tries) {
+    if (FILE) { blobs[name] = DATA[name]; if (waiting[name]) { waiting[name] = 0; if (inited) { tracks[name] = make(name); tick(); arm(); } } return Promise.resolve(); }
     return fetch(DATA[name]).then(r => { if (!r.ok) throw 0; return r.blob(); })
       .then(b => { blobs[name] = URL.createObjectURL(b); if (waiting[name]) { waiting[name] = 0; if (inited) { tracks[name] = make(name); tick(); arm(); } } })
       .catch(() => new Promise(r => setTimeout(r, 8000 * (tries + 1))).then(() => tries < 4 && fetchSong(name, tries + 1)));
@@ -45,7 +47,7 @@ const SeumMusic = (() => {
     else url = b64Url(DATA[name]);
     const a = new Audio(url); a.loop = true; a.preload = 'auto';
     const t = { name, a, g: null, on: false, off: 0 };
-    try { const src = ac.createMediaElementSource(a); t.g = ac.createGain(); t.g.gain.value = 0; src.connect(t.g); t.g.connect(ac.destination); }
+    try { if (FILE && isPath(DATA[name])) throw 0; const src = ac.createMediaElementSource(a); t.g = ac.createGain(); t.g.gain.value = 0; src.connect(t.g); t.g.connect(ac.destination); }
     catch (e) { t.g = null; a.volume = 0; }            // (no WebAudio: the element's own volume does the job)
     DATA[name] = null; return t;
   }

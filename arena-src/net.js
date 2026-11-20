@@ -38,7 +38,7 @@ const PEERJS_ICE_CONFIG = { config: { iceServers: [
     }).catch(() => { clearTimeout(to); if (++fails <= 3) setTimeout(get, 30000 * fails); }); };
   get();
 })();
-const NET_BUFFS = ['ally', 'block', 'reflect', 'sand', 'inv', 'counter', 'guard', 'stealth', 'stun', 'charm', 'root', 'mute', 'blind', 'slow', 'infect', 'reveal', 'fly', 'taunt'];
+const NET_BUFFS = ['ally', 'block', 'reflect', 'sand', 'inv', 'counter', 'guard', 'stealth', 'stun', 'charm', 'root', 'mute', 'blind', 'slow', 'infect', 'reveal', 'fly', 'taunt', 'akimbo'];
 /* game modes: the registry (MODES, setMode / curMode, modeSnap / applyModeSnap) lives with the rules in engine.js; everything here is guarded so a build
    without it plays the plain team match. The mode id goes into the room id, so it must stay a short lowercase word (digits allowed, e.g. flag5). */
 function modeEntry(id) { try { if (typeof MODES === 'undefined' || !MODES) return null; return Array.isArray(MODES) ? MODES.find(m => m && m.id === id) || null : MODES[id] || null; } catch (e) { return null; } }
@@ -489,7 +489,10 @@ function applySnap(s) {
   });
   fighters.length = s.f.length;
   for (const f of fighters) { f.st.thread = f.st.th >= 0 ? fighters[f.st.th] : null; f.st.mark = f.st.mk >= 0 ? fighters[f.st.mk] : null; }
+  const ob = bullets;
   bullets = s.b.map(b => ({ x: b[0], y: b[1], vx: b[2], vy: b[3], ang: b[4], shape: b[5], team: b[6], r: b[7], wid: b[8] || null, oi: b[9] >= 0 ? b[9] : null }));
+  /* the same shot seen a moment ago keeps most of where it was drawn: a late or early snapshot no longer makes it jump back and forth */
+  for (const n of bullets) { let best = null, bd = 40 * 40; for (const o of ob) { if (o._u || o.shape !== n.shape || o.team !== n.team) continue; const d = (o.x - n.x) ** 2 + (o.y - n.y) ** 2; if (d < bd) { bd = d; best = o; } } if (best) { best._u = 1; n.x += (best.x - n.x) * .6; n.y += (best.y - n.y) * .6; } }
   { const old = zones;      // keep each zone's own start time (t0) across snapshots, so drawings that grow in (마법진) don't restart every packet
     zones = s.z.map(z => { const n = { x: z[0], y: z[1], r: z[2], t: z[3], col: z[4], op: z[5], kind: z[6] || null, key: z[7] ? 'k' : null, team: z[8], hidden: !!z[9], dr: z[10] ? 1 : 0 };
       const o = old.find(q => q.t0 !== undefined && q.kind === n.kind && q.col === n.col && Math.abs(q.x - n.x) < 2 && Math.abs(q.y - n.y) < 2 && q.r === n.r);
