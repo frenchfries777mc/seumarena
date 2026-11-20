@@ -954,10 +954,25 @@ function drawHeldWeapon(c, weaponId, ax, ay, hx, hy, swingProg, concept){
         c.fillStyle='#5a3b12'; c.beginPath(); c.arc(27,2.4,2,0,7); c.fill(); c.beginPath(); c.arc(2,3.4,1.6,0,7); c.fill();
         break;
       }
-      const len = weaponId==='rifle' ? 26 : weaponId==='smg' ? 18 : 16;
-      c.strokeStyle='#cfd3dc'; c.lineWidth = weaponId==='rifle'?4:3;
+      if(weaponId==='pistol'||weaponId==='rifle'||weaponId==='smg'){ drawGunShape(c, weaponId, ax<0); break; }
+      const len = 16;
+      c.strokeStyle='#cfd3dc'; c.lineWidth = 3;
       c.beginPath(); c.moveTo(0,0); c.lineTo(len,0); c.stroke();
     }
+  }
+  c.restore();
+}
+function drawGunShape(c, id, flip){      // 2026-11-15: 제임스 / 군인 / 특수요원 each get their own gun (the hand is at 0,0, the muzzle points along +x)
+  c.save(); if(flip) c.scale(1,-1); const R=(x,y,w,h,col)=>{ c.fillStyle=col; c.fillRect(x,y,w,h); };
+  if(id==='pistol'){      // 제임스: a slim black pistol with a long silencer
+    R(-1,0,4.5,7,'#2a2b30'); R(-3,-3.4,13,4.4,'#3a3c43'); R(-3,-3.4,13,1.4,'#55585f'); R(10,-2.6,10,2.8,'#1c1d21'); R(18.6,-2.6,1.4,2.8,'#33353b');
+  } else if(id==='rifle'){      // 군인: an olive assault rifle, wooden stock and a curved magazine
+    R(-12,-2.2,9,4.6,'#9a6a3c'); R(-12,-2.2,9,1.4,'#b88452'); R(-3,-3.2,17,5.2,'#6f7f4c'); R(-3,-3.2,17,1.4,'#8a9a62'); R(0,2,3.2,5,'#4a5536');
+    c.fillStyle='#4a5536'; c.beginPath(); c.moveTo(6,2); c.lineTo(10,2); c.quadraticCurveTo(10,7,13,10); c.lineTo(9.5,11); c.quadraticCurveTo(6.5,7,6,2); c.closePath(); c.fill();
+    R(14,-2.4,6,3.6,'#9a6a3c'); R(20,-1.4,10,1.8,'#2c3024'); R(3,-5,6,1.8,'#2c3024');
+  } else {      // 특수요원: a short black SMG with a red-dot sight, a front grip and a straight magazine
+    R(-7,-1.8,5,3,'#1c1d21'); R(-2,-3.6,15,6,'#2a2c32'); R(-2,-3.6,15,1.5,'#454850'); R(0,2.4,3,4.5,'#1c1d21'); R(5,2.4,3,7.5,'#1c1d21');
+    R(10,2.4,2.6,4,'#1c1d21'); R(13,-2.2,5,3.2,'#2a2c32'); R(17,-1.6,2.4,2,'#111214'); R(2,-7.2,6,3.6,'#1c1d21'); R(6.6,-6.4,1.6,2,'#ff3b3b');
   }
   c.restore();
 }

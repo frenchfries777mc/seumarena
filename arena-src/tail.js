@@ -1,4 +1,5 @@
 /* ---------- drawing ---------- */
+let pistolDual = false;      // 제임스 '양손 권총' 동안 반대 손에도 권총 (set in drawFighter0)
 function drawStick(c, id, col, ang, walk, swing, t, cos) {
   const h = HEROES[id], HIP = -22, SH = -42, HEADCY = -52, HEADR = 9, face = Math.cos(ang) >= 0 ? 1 : -1;
   const sid = skinOf(cos, id), it = sid ? COSMETICS[sid] : null, tint = it ? it.tint : undefined, cp = sid ? conceptOfSkin(sid) : '', now = performance.now();
@@ -28,6 +29,9 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   if (id === 'samurai') { c.save(); try {      // 쌍검 사무라이 (2026-11-15): the off hand holds a second katana and sweeps the other way
     const b = swing > 0 && samHand !== 1 ? ang - (swing - .5) * 2.4 * face : ang + 1.05 * face, ox = -face * 3, bx = ox + Math.cos(b) * (reach - 3), by = SH + 7 + Math.sin(b) * (reach - 3);
     body(); c.globalAlpha *= .82; c.beginPath(); c.moveTo(ox, SH + 7); c.lineTo(bx, by); c.stroke(); c.globalAlpha /= .82;      /* left arm a little behind the body (darker, shoulder offset) so the two hands read apart */ drawHeldWeapon(c, id, Math.cos(b), Math.sin(b), bx, by, swing, cp); } catch (e) { quietErr(e); } c.restore(); }
+  if (id === 'pistol' && pistolDual) { c.save(); try {      // 양손 권총: the off hand holds the same gun, a little below and behind, aimed the same way
+    const b = ang + .38 * face, ox = -face * 3, bx = ox + Math.cos(b) * (reach - 4), by = SH + 7 + Math.sin(b) * (reach - 4);
+    body(); c.globalAlpha *= .82; c.beginPath(); c.moveTo(ox, SH + 7); c.lineTo(bx, by); c.stroke(); c.globalAlpha /= .82; drawHeldWeapon(c, id, ax, ay, bx, by, swing, cp); } catch (e) { quietErr(e); } c.restore(); }
   c.save(); try { if (id === 'herbal' && typeof drawHerbal === 'function') drawHerbal(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'shieldman' && typeof drawShieldman === 'function') drawShieldman(c, { face, ax, ay, hx, hy, swing, t: now / 1000, HEADCY, HEADR, SH, HIP, tint, raise: 0 }); else if (id === 'gardener' && typeof drawGardener === 'function') drawGardener(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) { quietErr(e); } c.restore();      // (정원사's hat, slingshot and pouch: gardener.js)
   if (it && it.fx) { c.save(); try { drawSkinFx(c, lux >= 4 ? 'sparkle' : it.fx, lux >= 4 ? auroraHex(now / 1000 * .9, 1) : tint, 0, HEADCY, HEADR * 1.3, now); } catch (e) { quietErr(e); } c.restore(); }
   if (cos && cos.col && COSMETICS[cos.col] && COSMETICS[cos.col].shine) { c.save(); try { drawShineGlints(c, now, 0); } catch (e) { quietErr(e); } c.restore(); }
@@ -79,8 +83,10 @@ function drawFighter0(f, alpha) {
   }
   ctx.save(); ctx.scale(1.15, 1.15);
   if (typeof haraldCtx === 'function') haraldCtx(f);
+  pistolDual = f.h.id === 'pistol' && B(f, 'akimbo');
   samHand = f.h.id === 'samurai' && f.st ? (f.st.hand != null ? f.st.hand : 1) : 1;
   drawStick(ctx, f.h.id, col, f.aim, f.bob, f.swing > 0 ? 1 - f.swing / .22 : 0, time, f.cos);
+  pistolDual = false;
   ctx.restore(); ctx.globalAlpha = alpha;
   if (f.h.id === 'pel') for (let i = 0; i < st.dr; i++) { const an = time * 2 + i * 6.283 / st.dr, x = Math.cos(an) * 34, y = Math.sin(an) * 22 - 56; ctx.fillStyle = '#2b3140'; ctx.strokeStyle = '#7df0ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, 9, 5, 0, 0, 6.3); ctx.fill(); ctx.stroke(); }
   if (st.orb && st.orb.n > 0) for (let i = 0; i < st.orb.n; i++) { const a = time * 3 + i * 6.283 / 5; ctx.fillStyle = '#ff8a2a'; ctx.beginPath(); ctx.arc(Math.cos(a) * 54, Math.sin(a) * 54 - 16, 7, 0, 6.3); ctx.fill(); }
@@ -218,13 +224,13 @@ function renderMapPreview(i, canvas) {
 }
 let specT = null;
 function render() {
-  fitCanvas(); if (ctx.canvas !== cv) ctx = cv.getContext('2d');      // (window size changed without a resize event / a borrowed drawing target left behind)
+  if (!(render.n = (render.n | 0) + 1 & 15)) fitCanvas(); if (ctx.canvas !== cv) ctx = cv.getContext('2d');      // (window size changed without a resize event / a borrowed drawing target left behind)
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.fillStyle = '#0c0e13'; ctx.fillRect(0, 0, W, H);
   const menu = state === 'menu', me = driven();
   if (menu || !player) { cam.s = Math.max(W / WW, H / WH); cam.x = WW / 2; cam.y = WH / 2; }
   else {
-    cam.s = Math.min(W, H) / (10.5 * T) * (H > W * 1.15 && W <= 600 ? 1.2 : 1);   // upright phone: zoom in a little so the fighters are bigger
+    cam.s = Math.min(W, H) / (10.5 * T) * ((H > W * 1.15 && W <= 600) || (W > H && H <= 520 && touchUi()) ? 1.2 : 1);   // phones (upright or sideways): zoom in a little so the fighters are bigger
     const hw = W / 2 / cam.s, hh = H / 2 / cam.s;
     let ft = me;      // no respawn (solo): once I am out the camera follows somebody who is still alive
     if ((isLeft(curMode) || (curMode === 'ko3' && !(RD.pause > 0))) && player.dead && state === 'play') {      // 라스트 팀: watch a teammate until the round ends
@@ -298,7 +304,8 @@ function render() {
       const s = atk ? stickA : stickM, hm = stickHome(atk), ox = s ? s.ox : hm.x, oy = s ? s.oy : hm.y, on = !!s;
       ctx.fillStyle = on ? 'rgba(232,234,240,.16)' : 'rgba(232,234,240,.09)'; ctx.beginPath(); ctx.arc(ox, oy, STICK_R, 0, 6.3); ctx.fill();
       ctx.lineWidth = 2; ctx.strokeStyle = atk ? 'rgba(255,211,77,' + (on ? .7 : .4) + ')' : 'rgba(232,234,240,' + (on ? .5 : .28) + ')'; ctx.beginPath(); ctx.arc(ox, oy, STICK_R, 0, 6.3); ctx.stroke();
-      ctx.fillStyle = atk ? 'rgba(255,211,77,' + (on ? .8 : .5) + ')' : 'rgba(232,234,240,' + (on ? .6 : .36) + ')'; ctx.beginPath(); ctx.arc(ox + (s ? s.dx : 0) * 48, oy + (s ? s.dy : 0) * 48, 25, 0, 6.3); ctx.fill();
+      const cx = atk && s && s.moved && Math.hypot(s.dx, s.dy) <= .3;      // aimed and brought back: letting go now cancels
+      ctx.fillStyle = cx ? 'rgba(255,93,93,.9)' : atk ? 'rgba(255,211,77,' + (on ? .8 : .5) + ')' : 'rgba(232,234,240,' + (on ? .6 : .36) + ')'; ctx.beginPath(); ctx.arc(ox + (s ? (s.kx ?? s.dx) : 0) * 48, oy + (s ? (s.ky ?? s.dy) : 0) * 48, 25, 0, 6.3); ctx.fill();
     }
   }
 }
@@ -322,7 +329,7 @@ function updateHud() {
   soloOutCheck(); if (soloOutShown) return;
   const tl = Math.max(0, Math.ceil(timeLeft)), c = cdInfo(p), pc = (v, m) => Math.round(clamp(1 - v / (m || 1), 0, 1) * 100);
   const up = pc(c.u, c.uM), dp = pc(c.d, c.dM), sp = [0, 1].map(i => pc(c.s[i], c.sM[i])), sn = c.sn;
-  const oc = modeOutcome(), solo = isLeft(curMode), dead = p.dead ? Math.ceil(p.respawnT) : 0, mine = oc.a, theirs = oc.b;      // solo: my kills and how many are left
+  const oc = modeOutcome(), solo = isLeft(curMode), dead = p.dead ? Math.ceil(p.respawnT) : 0, ko = curMode === 'ko3', mine = ko ? p.kos | 0 : oc.a, theirs = ko ? fighters.filter(f => !f.minion && !f.dead && f.team === p.team).length : oc.b;      // solo: my kills and how many are left
   const ot = inOvertime();
   if (ot && !ovtSeen) ovtUntil = performance.now() + 2600; ovtSeen = ot;
   const ovtBanner = ot && !dead && performance.now() < ovtUntil, kl = dead ? p.killer : null, di = dead ? (kl ? { by: kl.i >= 0 ? fighters[kl.i] || null : null, src: kl.src || '' } : deathInfo) : null;
@@ -333,7 +340,7 @@ function updateHud() {
   duelHud();
   $('hud').classList.toggle('q4', !!hq); $('sg').parentNode.hidden = $('sy').parentNode.hidden = !hq;
   if (hq) ['sb', 'sr', 'sg', 'sy'].forEach((id, i) => { const t = hq.ord[i], b = $(id).parentNode; $(id).textContent = hq.v[i] + '%'; b.style.setProperty('--p', hq.v[i] + '%'); b.style.setProperty('--c', TC(t)); b.classList.toggle('on', hq.own === t); });      // 4팀 핫존: four bars, mine first
-  else { $('sb').textContent = mine; $('sr').textContent = theirs; $('sbL').textContent = curMode === 'ko3' ? '우리' : curMode === 'star' ? '내 별' : solo ? '킬' : '블루'; $('srL').textContent = curMode === 'ko3' ? '상대' : curMode === 'star' ? '1위' : solo ? '생존' : '레드'; }
+  else { $('sb').textContent = mine; $('sr').textContent = theirs; $('sbL').textContent = curMode === 'ko3' ? '내 킬' : curMode === 'star' ? '내 별' : solo ? '킬' : '블루'; $('srL').textContent = curMode === 'ko3' ? '남은 팀원' : curMode === 'star' ? '1위' : solo ? '생존' : '레드'; }
   $('timer').textContent = ot ? '연장전' : Math.floor(tl / 60) + ':' + String(tl % 60).padStart(2, '0');
   if (modeNow().fog) { const a = Math.floor(timeLeft); $('timer').textContent = Math.floor(a / 60) + ':' + String(a % 60).padStart(2, '0'); }
   $('timer').classList.toggle('hot', !!(ot || (tl <= 15 && !modeNow().fog) || (modeNow().fog && SZ.on && SZ.r < SZ.r0 - 1)));      // !!: modeNow().fog is undefined in most modes, and toggle(x, undefined) flips the class every update
@@ -415,7 +422,7 @@ addEventListener('keydown', e => { if (setEl.hidden) return; if (e.code === 'Esc
 function devFill() { const cur = DEVICE || deviceGuess(); for (const b of document.querySelectorAll('[data-dev]')) { const on = b.dataset.dev === cur; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); } document.body.classList.toggle('mob', cur === 'mobile'); if (typeof pcqFill === 'function') pcqFill(); }
 function setDevice(v) {
   DEVICE = v; try { localStorage.setItem('seum_device', v); } catch (e) { quietErr(e); }
-  RSCALE = RS_STEPS[0]; resize(); touchUiSync(); devFill(); lastHud = '';
+  RSCALE = rsStart(); resize(); touchUiSync(); devFill(); lastHud = '';
   try { if (typeof window.netDeviceChanged === 'function') window.netDeviceChanged(); } catch (e) { quietErr(e); }
 }
 for (const b of document.querySelectorAll('#setDev [data-dev]')) b.addEventListener('click', () => setDevice(b.dataset.dev));
@@ -532,7 +539,8 @@ function lobbyCharPlace() {
   const cr = cvs.getBoundingClientRect(); if (!r.height || !cr.height) return;
   const dw = cr.width, dh = cr.height, feet = dh * .7;
   box.style.bottom = 'auto';
-  box.style.top = Math.round(r.bottom - feet) + 'px';
+  const tr = $('topRight'), rowTop = document.body.classList.contains('mob') && innerHeight <= 520 && tr && !tr.hidden ? tr.getBoundingClientRect().top : 0;
+  box.style.top = Math.round((rowTop ? Math.min(r.bottom, rowTop - 40) : r.bottom) - feet) + 'px';      // phones held sideways: the name stays above the bottom row of buttons
   box.style.left = Math.round(Math.max(80, Math.min(150, innerWidth * .1 + 40)) - dw / 2) + 'px';      // the figure stands near the left edge of the screen (the empty sides of the canvas may run off-screen)
   $('lobbyCharName').style.marginTop = Math.round(-(dh * .3) + (isDuelMode(modeSel) ? dh * .1 : 0) + 8) + 'px';
   lobbyDuelPlace(cr, r.bottom, Math.min(...rs.map(q => q.left)));
@@ -563,6 +571,10 @@ function lobbyDuelPlace(cr, floor, right) {
   box.style.left = Math.round(cx + off - w / 2) + 'px'; box.style.top = Math.round(floor - h * .7) + 'px';
 }
 addEventListener('resize', () => lobbyCharPlace());
+/* browser bars (address bar, tab bar) come and go on phones: the page follows the height that is really visible; older browsers without dvh get it from here */
+(() => { const fit = () => dispatchEvent(new Event('resize'));
+  let t = 0; if (window.visualViewport) visualViewport.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => { if (Math.abs(visualViewport.height - innerHeight) < 2 || !CSS.supports('height', '100dvh')) fit(); }, 120); });
+  const setVh = () => { if (!CSS.supports('height', '100dvh')) document.documentElement.style.setProperty('--vh', innerHeight + 'px'); }; setVh(); addEventListener('resize', setVh); })();
 function updatePick() {
   renderLobbyDuel();
   const el = $('lobbyPick'), h = HEROES[chosen], lo = loadoutOf(chosen); el.textContent = '';
@@ -803,7 +815,7 @@ function modePick() {
 }
 function showModes() {
   const scr = $('modeScreen'), g = $('modeGrid'), ph = modeTouchLayout(), NS = 'http://www.w3.org/2000/svg';
-  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = ''; const shown = MODE_LIST.filter(m => modeOk(m) || (typeof modeLockText === 'function' && modeLockText(m))).sort((a, b) => (MODE_TOP[b.id] | 0) - (MODE_TOP[a.id] | 0));      // 랭크전 and 길드 대항전 first; they show locked with the reason g.classList.toggle('n5', shown.length === 5);      // modes not drawn today are not shown at all (user 2026-11-15)
+  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = ''; const shown = MODE_LIST.filter(m => m.id !== 'gw').filter(m => modeOk(m) || (typeof modeLockText === 'function' && modeLockText(m))).sort((a, b) => (MODE_TOP[b.id] | 0) - (MODE_TOP[a.id] | 0));      // 랭크전 and 길드 대항전 first; they show locked with the reason g.classList.toggle('n5', shown.length === 5);      // modes not drawn today are not shown at all (user 2026-11-15)
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   const icon = (d, cls) => { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); if (cls) s.setAttribute('class', cls); s.innerHTML = d; return s; };
   const arts = [];
@@ -1013,7 +1025,16 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => { keys[e.code] = false; pvKeyUp(e.code); });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouse.down = false; pvCancelAll(); for (const c in PV.codes) pvKeyUp(c); });
 cv.addEventListener('contextmenu', e => e.preventDefault());
-function setStick(s, e) { const k = s === stickA ? SET.aim / 100 : 1; let dx = (e.clientX - s.ox) * k / 48, dy = (e.clientY - s.oy) * k / 48; const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; } s.dx = dx; s.dy = dy; }
+function setStick(s, e) {
+  const k = s === stickA ? SET.aim / 100 : 1; let dx = (e.clientX - s.ox) * k / 48, dy = (e.clientY - s.oy) * k / 48; const l = Math.hypot(dx, dy);
+  if (s === stickM) {      // move stick (as in Brawl Stars): any push past a small dead zone is full speed, and the base slides after a thumb that runs past the rim
+    const kl = Math.min(l, 1) / (l || 1); s.kx = dx * kl; s.ky = dy * kl;      // where the knob is drawn (under the thumb)
+    if (l > 1.25) { s.ox = e.clientX - dx / l * 60; s.oy = e.clientY - dy / l * 60; }
+    if (l < .18) { s.dx = s.dy = 0; return; }
+    s.dx = dx / l; s.dy = dy / l; return;
+  }
+  if (l > 1) { dx /= l; dy /= l; } s.dx = dx; s.dy = dy;
+}
 cv.addEventListener('pointerdown', e => {
   if (state !== 'play') return;
   try { cv.setPointerCapture(e.pointerId); } catch (err) {}
@@ -1040,7 +1061,7 @@ function pointerEnd(e) {
     else if (stickA && stickA.id === e.pointerId) {
       const l = Math.hypot(stickA.dx, stickA.dy);
       const tap = Math.hypot(e.clientX - stickA.sx, e.clientY - stickA.sy) < 12 && performance.now() - stickA.t0 < 300;      // a quick tap anywhere on the stick, even off its centre, is still the auto-aim shot
-      if (state === 'play' && e.type === 'pointerup') pendingFire = l > .3 && !tap ? { ang: Math.atan2(stickA.dy, stickA.dx), len: l } : { auto: true };      // len: how far a bomb goes (engine readLocal)
+      if (state === 'play' && e.type === 'pointerup') pendingFire = l > .3 && !tap ? { ang: Math.atan2(stickA.dy, stickA.dx), len: l } : stickA.moved && !tap ? null : { auto: true };      // aimed, then brought back to the middle: cancelled (Brawl Stars)      // len: how far a bomb goes (engine readLocal)
       stickA = null;
     }
   } else if (e.button === 0 || e.type === 'pointercancel') { if (mouse.down && e.type === 'pointerup' && e.button === 0 && state === 'play') mouseRel = true; mouse.down = false; }
@@ -1056,13 +1077,26 @@ readSafe(); touchUiSync();
 /* ---------- loop ---------- */
 /* mobile: when a phone can not keep up (frames slower than ~45 a second over 2 s of play) the canvas goes one step down in pixel ratio (1.25 > 1 > .8);
    after about 10 s of smooth play it goes one step back up */
-const RS_STEPS = [1.25, 1, .8, .65];
-let MCAP = false, mcapAt = 0;      // mobile: at the lowest step and still slow -> steady 30 fps (each frame does half the drawing work)
-let rsT0 = 0, rsN = 0, rsLast = 0, rsGood = 0;
+const RS_STEPS = [2, 1.5, 1.25, 1, .8, .65];
+/* phones: the picture quality settles per device and is remembered (seum_rs: s = step, f = a step that proved too heavy). It only goes DOWN during a match and only goes UP between matches,
+   because every change repaints the map picture, which froze the game for up to a second each time it flipped back and forth mid-match (measured 2026-11-20) */
+let rsMem = { s: 1.5, f: 0 }; try { const m = JSON.parse(localStorage.getItem('seum_rs') || 'null'); if (m && RS_STEPS.includes(m.s)) rsMem = { s: m.s, f: +m.f || 0 }; } catch (e) { quietErr(e); }
+function rsSave() { rsMem.s = RSCALE; try { localStorage.setItem('seum_rs', JSON.stringify(rsMem)); } catch (e) { quietErr(e); } }
+function rsStart() { return rsMem.s; }
+RSCALE = rsStart();
+let MCAP = false, mcapAt = 0;      // (only 배터리 절약 caps the frame rate now)
+let rsT0 = 0, rsN = 0, rsLast = 0, rsGood = 0, rsAll = 0, rsSmooth = 0;
 function rsWatch(now) {
   const mob = mobileMode();
   if (SET.bat && mob) return;      // 배터리 절약: the lowest step is kept (mobset.js)
-  if (state !== 'play' || (!mob && PCQ !== 'auto') || now - rsLast > 250) { rsT0 = now; rsN = 0; rsLast = now; return; }      // (a pause, a hidden tab or the lobby does not count)
+  if (state !== 'play' || (!mob && PCQ !== 'auto') || now - rsLast > 250) {      // (a pause, a hidden tab or the lobby does not count)
+    if (mob && state !== 'play' && rsAll >= 8) {      // a whole match ran smoothly: one step sharper for the next one (never back to a step that already proved too heavy)
+      const i = Math.max(0, RS_STEPS.indexOf(RSCALE));
+      if (rsSmooth >= rsAll * .9 && i > 0 && RS_STEPS[i - 1] !== rsMem.f && RS_STEPS[i - 1] < (rsMem.f || 9)) { RSCALE = RS_STEPS[i - 1]; rsSave(); resize(); }
+      rsAll = rsSmooth = 0;
+    }
+    rsT0 = now; rsN = 0; rsLast = now; return;
+  }
   rsLast = now; rsN++;
   const el = now - rsT0; if (el < 2000) return;
   const ms = el / rsN; rsT0 = now; rsN = 0;
@@ -1074,10 +1108,8 @@ function rsWatch(now) {
     return;
   }
   const i = Math.max(0, RS_STEPS.indexOf(RSCALE));
-  if (MCAP) return;
-  if (ms > 22 && i === RS_STEPS.length - 1) { MCAP = true; return; }
-  if (ms > 22 && i < RS_STEPS.length - 1) { RSCALE = RS_STEPS[i + 1]; rsGood = 0; resize(); }
-  else if (ms < 18 && i > 0) { if (++rsGood >= 5) { RSCALE = RS_STEPS[i - 1]; rsGood = 0; resize(); } }
+  rsAll++; if (ms < 17.5) rsSmooth++;
+  if (ms > 22 && i < RS_STEPS.length - 1) { if (++rsGood >= 2) { rsMem.f = RSCALE; RSCALE = RS_STEPS[i + 1]; rsGood = 0; rsAll = rsSmooth = 0; rsSave(); resize(); } }      // two slow stretches in a row (4 s), so one busy moment does not cost the sharpness
   else rsGood = 0;
 }
 let last = performance.now(), stillAt = 0, stillW = '';

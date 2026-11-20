@@ -553,7 +553,7 @@ function emit(f, ang, o) {
       src: SRC, life: o.range || h.range || 500, dmg: o.dmg != null ? o.dmg : (h.dmgf ? h.dmgf(f) : h.dmg), team: teamOf(f), owner: f, r: o.r || 5, shape: o.shape || h.w.shape,
       pierce: o.pierce != null ? o.pierce : (h.pierce || 0), splash: o.splash != null ? o.splash : (o.skill ? 0 : (h.splash || 0)), boom: o.boom ? 1 : 0, phase: 0, bnc: o.bnc != null ? o.bnc : (o.skill ? 0 : (h.w.bounces || 0)), nb: 0, wp: o.wp != null ? o.wp : (o.shape || h.w.shape) === 'bomb' || !!h.wallPass,      // thrown bombs fly over walls (they arc)
      
-      o, hit: new Set(), born: time, basic: !o.skill, x0: f.x, y0: f.y, wid: o.skill || o.shape ? null : h.id };
+      o, hit: new Set(), born: time, basic: !o.skill, x0: f.x, y0: f.y, wid: o.skin ? h.id : o.skill || o.shape ? null : h.id };
     if (o.homing) { b.home = o.homing; b.homeT = o.homeT || 9; }
     if (o.wave) { b.wave = o.wave; b.bx = b.x; b.by = b.y; b.trav = 0; }
     if (b.basic && b.wp && f.h.splash && f.tx != null && !o.full) b.life *= bombFrac(f);      // thrown bombs land where you aim (cursor / drag length), up to the full range

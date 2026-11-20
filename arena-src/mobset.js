@@ -14,7 +14,7 @@ function mobSetFill() {
   const touch = touchMode || navigator.maxTouchPoints > 0 || matchMedia('(pointer:coarse)').matches;
   for (const r of document.querySelectorAll('#settings .mobOnly')) r.hidden = !touch;
 }
-function batApply() { if (mobileMode()) { RSCALE = SET.bat ? RS_STEPS[RS_STEPS.length - 1] : RS_STEPS[0]; resize(); } }
+function batApply() { if (mobileMode()) { RSCALE = SET.bat ? RS_STEPS[RS_STEPS.length - 1] : rsStart(); resize(); } }
 $('setBat').addEventListener('change', e => { SET.bat = e.target.checked; saveSet(); batApply(); });
 $('setBsz').addEventListener('input', e => { SET.bsz = +e.target.value; $('setBszV').textContent = SET.bsz + '%'; saveSet(); mobSetApply(); });
 new MutationObserver(mobSetApply).observe(document.body, { attributes: true, attributeFilter: ['class'] });
@@ -48,15 +48,5 @@ for (const t of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'to
   }
 }, { capture: true, passive: false });
 
-/* phones: on the first tap try fullscreen + landscape lock (Android Chrome etc.; iOS and embedded pages refuse, then #rotHint covers portrait) */
-(function () {
-  const phone = () => matchMedia('(pointer:coarse)').matches && Math.min(screen.width, screen.height) <= 900;
-  function tryLock() {
-    if (!phone()) return;
-    const o = screen.orientation, lock = () => { try { o && o.lock && o.lock('landscape').catch(() => {}); } catch (e) {} };
-    const el = document.documentElement, fs = el.requestFullscreen || el.webkitRequestFullscreen;
-    if (!document.fullscreenElement && fs) { try { const r = fs.call(el, { navigationUI: 'hide' }); r && r.then ? r.then(lock, lock) : lock(); } catch (e) { lock(); } } else lock();
-  }
-  addEventListener('pointerup', tryLock, { capture: true });
-  document.addEventListener('fullscreenchange', () => { if (document.fullscreenElement) tryLock(); });
-})();
+/* phones: no fullscreen on tap (user 2026-11-20); if the player goes fullscreen on their own, landscape is locked there. #rotHint covers portrait */
+document.addEventListener('fullscreenchange', () => { const o = screen.orientation; if (document.fullscreenElement && o && o.lock) o.lock('landscape').catch(() => {}); });

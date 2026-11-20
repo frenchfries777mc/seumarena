@@ -164,7 +164,7 @@ function gWar(p) {
   } else p.append(gEl('p', 'gDim', '이번 주에는 조가 없어요. 상대 길드가 모자라거나, 월요일 조 짜기 뒤에 만든 길드예요.'));
   const rules = gEl('p', 'gDim gRules', '승리 4점 · 패배 1점 · 같은 조 다른 길드를 만나면 2배 · 우리 길드원과 같은 팀이면 +1 · 하루 4판까지. 조 1등은 위 리그로, 꼴찌는 아래 리그로.');
   p.append(rules);
-  if (!gwBlock()) p.append(gBtn('대항전 하러 가기', 'btn-primary gBig', () => { modeView = 'gw'; modePick(); }));
+  { const why = gwBlock(), b = gBtn(why ? '대항전 시작 · ' + why : '대항전 시작', 'btn-primary gBig', () => { if (gwBlock()) return; modeView = 'gw'; modePick(); $('startBtn').click(); }); b.disabled = !!why; p.append(b); }      // 길드 대항전 starts here, not from the mode list (user 2026-11-20)
 }
 async function gRank(p) {
   const sw = gEl('div', 'gSwitch'); sw.append(gBtn('길드 순위', 'gBtn' + (gTop === 'g' ? ' on' : ''), () => { gTop = 'g'; guildRender(); }), gBtn('개인 랭크', 'gBtn' + (gTop === 'r' ? ' on' : ''), () => { gTop = 'r'; guildRender(); }));

@@ -232,20 +232,21 @@ function pvTouchStart(t, btn, e) {
 function pvTouchMove(e) {
   const p = PV.touch; if (!p || p.id !== e.pointerId) return;
   const dx = e.clientX - p.ox, dy = e.clientY - p.oy, m = Math.hypot(dx, dy);
-  p.moved = m > 14; p.dx = dx; p.dy = dy; p.cancel = m > 190;
+  p.moved = m > 14; if (p.moved) p.aimed = true; p.dx = dx; p.dy = dy; const was = p.cancel; p.cancel = m > 190 || (p.aimed && !p.moved); if (p.cancel !== was) { p.btn.classList.toggle('cancel', p.cancel); if (p.cancel && typeof buzz === 'function') buzz(12); }      // dragged out then back to the button: cancelled, like far away
 }
 function pvTouchEnd(e) {
   const p = PV.touch; if (!p || p.id !== e.pointerId) return;
-  PV.touch = null;
+  PV.touch = null; p.btn.classList.remove('cancel');
   if (e.type === 'pointerup' && !p.cancel && state === 'play') {
-    if (p.moved) { const m = Math.hypot(p.dx, p.dy), a = Math.atan2(p.dy, p.dx), far = clamp(m / 120, .2, 1.4) * 8 * T; PV.manual = { aim: a, dist: far }; }
+    if (p.t[0] === 'u' && typeof buzz === 'function') { const f = typeof driven === 'function' ? driven() : player; if (f && f.ucd <= 0) buzz(30); }
+    if (p.moved) { const m = Math.hypot(p.dx, p.dy), a = Math.atan2(p.dy, p.dx), far = clamp(m / 48, .2, 1.4) * 8 * T; PV.manual = { aim: a, dist: far }; }
     pvFire(p.t);
   }
   pvRecount();
 }
 function pvOverride(f, inp) {       // called from readLocal: a drag on a touch button points the skill
   const p = PV.touch, mn = PV.manual;
-  if (p && p.moved) { inp.aim = Math.atan2(p.dy, p.dx); const far = clamp(Math.hypot(p.dx, p.dy) / 120, .2, 1.4) * 8 * T; inp.tx = f.x + Math.cos(inp.aim) * far; inp.ty = f.y + BODY + Math.sin(inp.aim) * far; }
+  if (p && p.moved) { inp.aim = Math.atan2(p.dy, p.dx); const far = clamp(Math.hypot(p.dx, p.dy) / 48, .2, 1.4) * 8 * T; inp.tx = f.x + Math.cos(inp.aim) * far; inp.ty = f.y + BODY + Math.sin(inp.aim) * far; }
   if (mn) { inp.aim = mn.aim; inp.tx = f.x + Math.cos(mn.aim) * mn.dist; inp.ty = f.y + BODY + Math.sin(mn.aim) * mn.dist; inp.manual = true; PV.manual = null; }
 }
 

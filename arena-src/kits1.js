@@ -46,7 +46,7 @@ hero('pistol', { p: ['붉은 탄환', '5번째 발사마다 탄환이 붉게 변
   skills: [
     [1, '속사', 'buff', '2.2초 동안 연사 속도 2배', [0, 8 * T], f => buff(f, 'rapid', 2.2, .5)],
     [2, '정확한 발사', 'hit', '유도 총알 발사 · 0.75초 동안 상대를 따라가고 그 뒤로는 마지막 방향으로 일직선', [100, 9 * T], (f, a) => emit(f, a, { skill: 1, dmg: 17, homing: true, homeT: .75, turn: 7, range: 10 * T, r: 6 })],
-    [3, '양손 권총', 'buff', '1초 동안 양손에 권총 · 기본공격 쿨타임 50% 감소', [0, 8 * T], f => buff(f, 'rapid', 1, .5)],
+    [3, '양손 권총', 'buff', '1초 동안 양손에 권총 · 기본공격 쿨타임 50% 감소', [0, 8 * T], f => { buff(f, 'rapid', 1, .5); buff(f, 'akimbo', 1, 1); }],
     [4, '자동 조준', 'buff', '1.5초 동안 권총이 가장 가까운 상대를 자동 조준(커서 무시) · 발사한 탄은 약간 유도됨', [0, 8 * T], f => buff(f, 'auto', 1.5)],
     [5, '마지막 한 발', 'hit', '지난 3초 동안 자신이 받은 피해와 같은 피해의 대형 탄 1발 (받은 피해가 없으면 발동 안 됨)', [0, 9 * T], (f, a) => { const d = taken3(f); if (d < 1) return false; emit(f, a, { skill: 1, dmg: d, r: 13, range: 11 * T, shape: 'redshot' }); }, { ok: f => taken3(f) > 30 }]
   ] });
@@ -185,12 +185,12 @@ hero('wizard', { p: ['마법진의 파동', '마법진 안에서는 스킬 밀�
     [5, '마력 보호', 'buff', '자기 주위에 마력 탄환 5개가 8초 동안 빙글빙글 돎 · 상대에 닿으면 사라지며 일반 공격 피해', [0, 5 * T], f => { f.st.orb = { n: 5, t: 8, src: SRC }; }]
   ] });
 
-hero('magiccard', { p: ['카드 마술', '기본 공격은 맞은 상대를 느리게 하고 3장이 모두 맞으면 +48 피해와 0.5초 기절 · 스킬 카드 5장이 모두 한 상대에게 맞으면 기절'],
-  pre(f, o) { if (f.st.flower) { f.st.flower = 0; return Object.assign(o, { count: 1, fan: 0, dmg: 5, mute: 1, shape: 'cleonorb', r: 8 }); } const got = new Map(); o.slow = [.75, 1.2]; o.onHit = e => { const n = (got.get(e) || 0) + 1; got.set(e, n); if (n === 3) { damage(e, 4, f); buff(e, 'stun', .5); } }; return o; },
+hero('magiccard', { p: ['카드 마술', '기본 공격은 맞은 상대를 느리게 하고 스킬 카드 5장이 모두 한 상대에게 맞으면 기절'],
+  pre(f, o) { if (f.st.flower) { f.st.flower = 0; return Object.assign(o, { count: 1, fan: 0, dmg: 5, mute: 1, shape: 'cleonorb', r: 8 }); } o.slow = [.75, 1.2]; return o; },
   tick(f) { if (f.st.flower && time > f.st.flower) f.st.flower = 0; },
   ult: ['탈출 마법', '가장 가까운 상대 위치로 순간이동해 1초 동안 쿨타임 없이 카드를 2번 연속 발사, 1초 뒤 원래 있던 자리로 되돌아옴', [100, 8 * T], f => { const e = nearest(f, 9 * T, null, 0, false); if (!e) return false; const x0 = f.x, y0 = f.y; blinkTo(f, e.x - Math.cos(angTo(f, e)) * 70, e.y - Math.sin(angTo(f, e)) * 70); seq(f, 2, .4, () => { if (!e.dead) f.aim = angTo(f, e); emit(f, f.aim); }); later(1, () => blinkTo(f, x0, y0), f); }],
   skills: [
-    [1, '카드 일렬 발사', 'hit', '조준 방향으로 카드 5장을 일렬로 연달아 발사 (장당 96 피해)', [100, 7 * T], f => { const got = new Map(); seq(f, 5, .08, () => emit(f, f.aim, { skill: 1, count: 1, fan: 0, dmg: 8, onHit: e => { const n = (got.get(e) || 0) + 1; got.set(e, n); if (n === 5) { buff(e, 'stun', .8); fxAt(e, 'combo'); } } })); }],
+    [1, '카드 일렬 발사', 'hit', '조준 방향으로 카드 5장을 일렬로 연달아 발사 (장당 96 피해)', [100, 7 * T], f => { const got = new Map(); seq(f, 5, .08, () => emit(f, f.aim, { skill: 1, skin: 1, count: 1, fan: 0, dmg: 8, onHit: e => { const n = (got.get(e) || 0) + 1; got.set(e, n); if (n === 5) { buff(e, 'stun', .8); fxAt(e, 'combo'); } } })); }],
     [2, '비둘기 변신', 'move', '1.5초 동안 모자 쓴 비둘기로 변해 물 위를 지나 상대에게 날아감 · 돌진 중 상대에게 닿으면 바로 변신이 풀리고 상대 0.9초 기절', [100, 8 * T], f => { f.form = 'dove'; buff(f, 'fly', 1.5); buff(f, 'haste', 1.5, 2.1); f.b.fly.end = g => { if (g.form === 'dove') g.form = null; unstick(g); }; f.st.dove = 1; }],
     [3, '모자 던지기', 'move', '모자를 던지고 사라짐 · 모자는 조준 방향으로 일직선으로 빠르게 날아가고(벽과 물 앞에서 멈춤), 모자가 멈추면 그 자리에 마술사가 다시 나타남 (이동기)', [0, 7 * T], (f, a) => {
       f.form = 'gone'; f.ghost = true; const x0 = f.x, y0 = f.y, p = { x: x0, y: y0 }, max = 5.5 * T, side = [0, 12, -12]; f.st.hat = p;
