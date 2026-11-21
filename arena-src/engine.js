@@ -264,7 +264,10 @@ function pcInit() {
 }
 function pcSave() { if (PCQ === 'auto') try { localStorage.setItem('seum_pcauto', JSON.stringify({ s: PCSCALE, l: pcLite })); } catch (e) { quietErr(e); } }
 pcInit();
-const liteMode = () => mobileMode() || pcLite;      // light effects: a phone, or a computer that could not keep up
+/* phones draw the full effects too (glows, all the small bits, the rich skin shots; user 2026-11-21: "모바일에서도 그래픽 좀 좋게"). mobLite = this phone proved too slow for them
+   (tail.js rsWatch turns it on before it lowers the sharpness, and remembers it); mobBat = 배터리 절약 is on */
+let mobLite = false, mobBat = false;
+const liteMode = () => (mobileMode() && (mobLite || mobBat)) || pcLite;      // light effects: a phone that could not keep up (or saves battery), or a computer that could not keep up
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, mobileMode() ? RSCALE : PCSCALE);
   W = window.innerWidth; H = window.innerHeight;

@@ -1080,10 +1080,11 @@ readSafe(); touchUiSync();
 const RS_STEPS = [2, 1.5, 1.25, 1, .8, .65];
 /* phones: the picture quality settles per device and is remembered (seum_rs: s = step, f = a step that proved too heavy). It only goes DOWN during a match and only goes UP between matches,
    because every change repaints the map picture, which froze the game for up to a second each time it flipped back and forth mid-match (measured 2026-11-20) */
-let rsMem = { s: 1.5, f: 0 }; try { const m = JSON.parse(localStorage.getItem('seum_rs') || 'null'); if (m && RS_STEPS.includes(m.s)) rsMem = { s: m.s, f: +m.f || 0 }; } catch (e) { quietErr(e); }
+/* l: light effects (a phone that already had to lower its sharpness starts with them) */
+let rsMem = { s: 1.5, f: 0 }; try { const m = JSON.parse(localStorage.getItem('seum_rs') || 'null'); if (m && RS_STEPS.includes(m.s)) rsMem = { s: m.s, f: +m.f || 0, l: m.l === undefined ? (+m.f ? 1 : 0) : m.l ? 1 : 0 }; } catch (e) { quietErr(e); }
 function rsSave() { rsMem.s = RSCALE; try { localStorage.setItem('seum_rs', JSON.stringify(rsMem)); } catch (e) { quietErr(e); } }
 function rsStart() { return rsMem.s; }
-RSCALE = rsStart();
+RSCALE = rsStart(); mobLite = !!rsMem.l;
 let MCAP = false, mcapAt = 0;      // (only 배터리 절약 caps the frame rate now)
 let rsT0 = 0, rsN = 0, rsLast = 0, rsGood = 0, rsAll = 0, rsSmooth = 0;
 function rsWatch(now) {
@@ -1109,7 +1110,8 @@ function rsWatch(now) {
   }
   const i = Math.max(0, RS_STEPS.indexOf(RSCALE));
   rsAll++; if (ms < 17.5) rsSmooth++;
-  if (ms > 22 && i < RS_STEPS.length - 1) { if (++rsGood >= 2) { rsMem.f = RSCALE; RSCALE = RS_STEPS[i + 1]; rsGood = 0; rsAll = rsSmooth = 0; rsSave(); resize(); } }      // two slow stretches in a row (4 s), so one busy moment does not cost the sharpness
+  if (ms > 22 && !mobLite) { if (++rsGood >= 2) { mobLite = true; rsMem.l = 1; rsGood = 0; rsAll = rsSmooth = 0; rsSave(); } }      // too slow: first the light effects (no repaint, no freeze), only then the sharpness
+  else if (ms > 22 && i < RS_STEPS.length - 1) { if (++rsGood >= 2) { rsMem.f = RSCALE; RSCALE = RS_STEPS[i + 1]; rsGood = 0; rsAll = rsSmooth = 0; rsSave(); resize(); } }      // two slow stretches in a row (4 s), so one busy moment does not cost the sharpness
   else rsGood = 0;
 }
 let last = performance.now(), stillAt = 0, stillW = '';
