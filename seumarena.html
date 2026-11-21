@@ -4806,7 +4806,7 @@ const SeumMusic = (() => {
   const GESTURES = ['pointerup', 'touchend', 'click', 'keydown', 'mousedown'];
   let inited = false, armed = false;
   function prime(t) {
-    if (!t || t.primed || t.on) return;
+    if (!t || t.primed || t.on || IOS) return;      // iPhone/iPad: starting the other songs (even muted) can stop the one that plays; there a song that could not start waits for the next tap instead
     t.primed = 1;
     try { const p = t.a.play(); if (p && p.then) p.then(() => { if (!t.on) t.a.pause(); }, () => { t.primed = 0; }); else if (!t.on) t.a.pause(); } catch (e) { t.primed = 0; }
   }
@@ -4824,13 +4824,13 @@ const SeumMusic = (() => {
   }
   function ok() {                                         // done with taps once the sound system runs and every song exists, is primed or playing
     if (ac && ac.state !== 'running') return false;
-    for (const n of NAMES) { const t = tracks[n]; if (DATA[n] || waiting[n] || (t && !t.primed && !(t.on && !t.a.paused))) return false; }
+    for (const n of NAMES) { const t = tracks[n]; if (DATA[n] || waiting[n] || (t && !IOS && !t.primed && !(t.on && !t.a.paused))) return false; }
     return true;
   }
   function play(t) {
     if (!t) return;
     t.on = true; clearTimeout(t.off);
-    if (t.a.paused) { const p = t.a.play(); if (p && p.then) p.then(() => { t.primed = 1; }, () => { t.on = false; started = false; arm(); }); else t.primed = 1; }
+    if (t.a.paused) { const p = t.a.play(); if (p && p.then) p.then(() => { t.primed = 1; }, e => { lastErr = t.name + ': ' + (e && e.name || e); t.on = false; started = false; arm(); }); else t.primed = 1; }
   }
   function stop(t) {                                     // fade out, then really pause (saves the phone's battery)
     if (!t || !t.on) return;
@@ -4895,6 +4895,12 @@ const SeumMusic = (() => {
     setCred(null); matchCredAt = 0;      // credits live in 설정 > 크레딧 now (user 2026-11-16), none on the lobby
     lastWant = want;
   }
+  let lastErr = '';
+  /* sound check for a real phone: open the page with ?sounddebug and a small box shows what the music is doing (nothing shows without it) */
+  if (/[?&]sounddebug/.test(location.search)) addEventListener('load', () => { const d = document.createElement('pre'); d.style.cssText = 'position:fixed;z-index:99999;left:4px;top:4px;margin:0;padding:6px;font:11px/1.3 monospace;color:#fff;background:rgba(0,0,0,.8);pointer-events:none;white-space:pre';
+    document.body.append(d); setInterval(() => { const L = ['ios ' + IOS + '  file ' + FILE + '  started ' + started + '  armed ' + armed + '  want ' + want, 'music ac ' + (ac ? ac.state : '-') + '  fx ac ' + (typeof window.__fxac === 'function' ? window.__fxac() : '-'), 'vol ' + vol + '  muted ' + (typeof muted !== 'undefined' && muted)];
+      for (const n of NAMES) { const t = tracks[n]; L.push(n + ': ' + (t ? (t.a.paused ? 'paused' : 'PLAYING') + ' t=' + t.a.currentTime.toFixed(1) + ' ready=' + t.a.readyState + ' net=' + t.a.networkState + ' err=' + (t.a.error ? t.a.error.code : '-') + ' muted=' + t.a.muted + ' on=' + t.on : (blobs[n] ? 'loaded, not made' : waiting[n] ? 'waiting' : DATA[n] ? 'not loaded' : 'none'))); }
+      L.push('last play error: ' + (lastErr || '-')); d.textContent = L.join('\n'); }, 300); });
   arm();
   setInterval(tick, 200);
   /* background tab: keep playing (user request 2026-11-15); if the browser suspended the sound anyway, start it again */
@@ -5569,7 +5575,7 @@ function basic0(f, ang) {
 }
 function fire(f, ang) {
   if (BALL.own === f) return ballFire(f, ang);      // 볼 배틀: carrying the ball, the attack is a shot
-  if (f.fireCd > 0 || !canAtk(f) || f.boomOut) return false;
+  if (f.fireCd > 0 || !canAtk(f) || f.boomOut || time < (f.noAtk || 0)) return false;      // noAtk: no basic attacks while an ultimate that does its own hitting runs (사무라이 쌍검 난무, 마술사 탈출 마법; user 2026-11-21)
   f.aim = ang; f.lastFire = time; unbuff(f, 'stealth'); unbuff(f, 'ally');
   f.fireCd = cdOf(f);
   basic(f, ang);
@@ -6801,7 +6807,7 @@ hero('wizard', { p: ['마법진의 파동', '마법진 안에서는 스킬 밀�
 hero('magiccard', { p: ['카드 마술', '기본 공격은 맞은 상대를 느리게 하고 스킬 카드 5장이 모두 한 상대에게 맞으면 기절'],
   pre(f, o) { if (f.st.flower) { f.st.flower = 0; return Object.assign(o, { count: 1, fan: 0, dmg: 5, mute: 1, shape: 'cleonorb', r: 8 }); } o.slow = [.75, 1.2]; return o; },
   tick(f) { if (f.st.flower && time > f.st.flower) f.st.flower = 0; },
-  ult: ['탈출 마법', '가장 가까운 상대 위치로 순간이동해 1초 동안 쿨타임 없이 카드를 2번 연속 발사, 1초 뒤 원래 있던 자리로 되돌아옴', [100, 8 * T], f => { const e = nearest(f, 9 * T, null, 0, false); if (!e) return false; const x0 = f.x, y0 = f.y; blinkTo(f, e.x - Math.cos(angTo(f, e)) * 70, e.y - Math.sin(angTo(f, e)) * 70); seq(f, 2, .4, () => { if (!e.dead) f.aim = angTo(f, e); emit(f, f.aim); }); later(1, () => blinkTo(f, x0, y0), f); }],
+  ult: ['탈출 마법', '가장 가까운 상대 위치로 순간이동해 1초 동안 쿨타임 없이 카드를 2번 연속 발사, 1초 뒤 원래 있던 자리로 되돌아옴', [100, 8 * T], f => { const e = nearest(f, 9 * T, null, 0, false); if (!e) return false; const x0 = f.x, y0 = f.y; f.noAtk = time + 1; blinkTo(f, e.x - Math.cos(angTo(f, e)) * 70, e.y - Math.sin(angTo(f, e)) * 70); seq(f, 2, .4, () => { if (!e.dead) f.aim = angTo(f, e); emit(f, f.aim); }); later(1, () => blinkTo(f, x0, y0), f); }],
   skills: [
     [1, '카드 일렬 발사', 'hit', '조준 방향으로 카드 5장을 일렬로 연달아 발사 (장당 96 피해)', [100, 7 * T], f => { const got = new Map(); seq(f, 5, .08, () => emit(f, f.aim, { skill: 1, skin: 1, count: 1, fan: 0, dmg: 8, onHit: e => { const n = (got.get(e) || 0) + 1; got.set(e, n); if (n === 5) { buff(e, 'stun', .8); fxAt(e, 'combo'); } } })); }],
     [2, '비둘기 변신', 'move', '1.5초 동안 모자 쓴 비둘기로 변해 물 위를 지나 상대에게 날아감 · 돌진 중 상대에게 닿으면 바로 변신이 풀리고 상대 0.9초 기절', [100, 8 * T], f => { f.form = 'dove'; buff(f, 'fly', 1.5); buff(f, 'haste', 1.5, 2.1); f.b.fly.end = g => { if (g.form === 'dove') g.form = null; unstick(g); }; f.st.dove = 1; }],
@@ -6898,11 +6904,11 @@ hero('samurai', { p: ['검무', '두 손의 검으로 번갈아 4연타(220 ×3 
     f.st.cb = i + 1; f.st.la = time; if (f.st.cb % 4 === 0) fxAt(f, 'skillring', { color: '#dfe9ff' }); },
   onDeal(f, e, d, o) { if (e.minion) return; if (f.st.tg === e && time - (f.st.lt || -9) < 1) f.st.sk = (f.st.sk || 0) + 1; else f.st.sk = 0; f.st.tg = e; f.st.lt = time; },
   onHurt(f, d, by) { if (!B(f, 'parry') && time - (f.st.la || -9) < 1) return d * .85; if (B(f, 'parry') && by && by !== f && !by.dead && dist(f, by) < 2.4 * T) { unbuff(f, 'parry'); say(f, '흘려 베기', '#dfe9ff'); f.aim = angTo(f, by); seq(f, 4, .08, i => { f.swing = .14; f.st.hand = i === 3 ? 2 : i % 2 ? 0 : 1; arc(f, angTo(f, by), f.h.range * 1.15, .9, i === 3 ? 50 : 22, i === 3 ? { kb: 200 } : {}); }); return 0; } },
-  ult: ['쌍검 난무', '가장 가까운 적(4칸 안)에게 붙어 1.5초 동안 12번 베기 (11번 32 + 마지막 X자 300, 합 652, 마지막에 밀쳐냄) · 그동안 상대는 30% 느려지고, 멀어지면 순간이동으로 따라붙음 · 무적 아님, 기절하면 끊김', [0, 4 * T], f => {
+  ult: ['쌍검 난무', '가장 가까운 적(4칸 안)에게 붙어 1.5초 동안 12번 베기 (11번 45 + 마지막 X자 405, 합 900, 마지막에 밀쳐냄) · 그동안 기본 공격은 나가지 않음 · 그동안 상대는 30% 느려지고, 멀어지면 순간이동으로 따라붙음 · 무적 아님, 기절하면 끊김', [0, 4 * T], f => {
     const e = nearest(f, 4 * T, null, 0, true); if (!e) return false;
     blinkTo(f, e.x - Math.cos(angTo(f, e)) * 46, e.y - Math.sin(angTo(f, e)) * 46); fxAt(f, 'samult');
-    buff(e, 'slow', 1.6, .7);
-    seq(f, 12, .125, i => { if (e.dead || f.dead || B(f, 'stun')) return; if (dist(f, e) > 70 && dist(f, e) < 6 * T) { const g = angTo(e, f); blinkTo(f, e.x + Math.cos(g) * 46, e.y + Math.sin(g) * 46); } const a = angTo(f, e); f.aim = a; f.swing = .12; f.st.hand = i === 11 ? 2 : i % 2 ? 0 : 1; addSwing(f, a); arc(f, a, f.h.range * 1.2, 1, i === 11 ? 30 : 3.2, i === 11 ? { kb: 420 } : {}); if (i === 11) fx('samcut', e.x, e.y + BODY, { ang: 0, gy: e.y + 16 }); });
+    buff(e, 'slow', 1.6, .7); f.noAtk = time + 1.5;
+    seq(f, 12, .125, i => { if (e.dead || f.dead || B(f, 'stun')) return; if (dist(f, e) > 70 && dist(f, e) < 6 * T) { const g = angTo(e, f); blinkTo(f, e.x + Math.cos(g) * 46, e.y + Math.sin(g) * 46); } const a = angTo(f, e); f.aim = a; f.swing = .12; f.st.hand = i === 11 ? 2 : i % 2 ? 0 : 1; addSwing(f, a); arc(f, a, f.h.range * 1.2, 1, i === 11 ? 40.5 : 4.5, i === 11 ? { kb: 420 } : {}); if (i === 11) fx('samcut', e.x, e.y + BODY, { ang: 0, gy: e.y + 16 }); });
   }],
   skills: [
     [1, '십자 베기', 'move', '앞으로 2칸 파고들며 두 검으로 X자 베기 · 540 피해 + 1초 동안 30% 둔화', [60, 2 * T], (f, a) => { f.st.hand = 2; lunge(f, a, 2 * T, .15, { end: g => { g.swing = .2; addSwing(g, g.aim); arc(g, g.aim, g.h.range * 1.25, 1.1, 54, { slow: [.7, 1] }); fx('samcut', g.x + Math.cos(g.aim) * 50, g.y + BODY + Math.sin(g.aim) * 50, { ang: 0, gy: g.y + 16 }); } }); }],
@@ -13724,6 +13730,7 @@ document.addEventListener('visibilitychange', () => { try { if (ac && ac.state !
 /* iPhone/iPad: the sound effects' AudioContext can be left 'suspended' or 'interrupted' (not only 'suspended'), and iOS lets it start again only inside a real tap: every tap/key tries again, with a silent one-sample sound that unlocks iOS */
 (() => { const kick = () => { try { if (!ac || ac.state === 'running' || ac.state === 'closed') return; ac.resume().catch(() => {}); const b = ac.createBuffer(1, 1, 22050), s = ac.createBufferSource(); s.buffer = b; s.connect(ac.destination); s.start(0); } catch (e) { quietErr(e); } };
   for (const ev of ['pointerup', 'touchend', 'click', 'keydown']) addEventListener(ev, kick, true); })();
+window.__fxac = () => ac ? ac.state : 'not made yet';
 buildChars(); updatePick(); setup(false); loadAccount(); if (achScan()) saveCos(); setTimeout(() => achSync(true), 2500);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => lobbyCharPlace());
 setTimeout(lobbyCharPlace, 60);

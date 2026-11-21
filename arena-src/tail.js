@@ -1145,6 +1145,7 @@ document.addEventListener('visibilitychange', () => { try { if (ac && ac.state !
 /* iPhone/iPad: the sound effects' AudioContext can be left 'suspended' or 'interrupted' (not only 'suspended'), and iOS lets it start again only inside a real tap: every tap/key tries again, with a silent one-sample sound that unlocks iOS */
 (() => { const kick = () => { try { if (!ac || ac.state === 'running' || ac.state === 'closed') return; ac.resume().catch(() => {}); const b = ac.createBuffer(1, 1, 22050), s = ac.createBufferSource(); s.buffer = b; s.connect(ac.destination); s.start(0); } catch (e) { quietErr(e); } };
   for (const ev of ['pointerup', 'touchend', 'click', 'keydown']) addEventListener(ev, kick, true); })();
+window.__fxac = () => ac ? ac.state : 'not made yet';
 buildChars(); updatePick(); setup(false); loadAccount(); if (achScan()) saveCos(); setTimeout(() => achSync(true), 2500);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => lobbyCharPlace());
 setTimeout(lobbyCharPlace, 60);

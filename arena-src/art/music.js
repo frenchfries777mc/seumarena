@@ -68,7 +68,7 @@ const SeumMusic = (() => {
   const GESTURES = ['pointerup', 'touchend', 'click', 'keydown', 'mousedown'];
   let inited = false, armed = false;
   function prime(t) {
-    if (!t || t.primed || t.on) return;
+    if (!t || t.primed || t.on || IOS) return;      // iPhone/iPad: starting the other songs (even muted) can stop the one that plays; there a song that could not start waits for the next tap instead
     t.primed = 1;
     try { const p = t.a.play(); if (p && p.then) p.then(() => { if (!t.on) t.a.pause(); }, () => { t.primed = 0; }); else if (!t.on) t.a.pause(); } catch (e) { t.primed = 0; }
   }
@@ -86,13 +86,13 @@ const SeumMusic = (() => {
   }
   function ok() {                                         // done with taps once the sound system runs and every song exists, is primed or playing
     if (ac && ac.state !== 'running') return false;
-    for (const n of NAMES) { const t = tracks[n]; if (DATA[n] || waiting[n] || (t && !t.primed && !(t.on && !t.a.paused))) return false; }
+    for (const n of NAMES) { const t = tracks[n]; if (DATA[n] || waiting[n] || (t && !IOS && !t.primed && !(t.on && !t.a.paused))) return false; }
     return true;
   }
   function play(t) {
     if (!t) return;
     t.on = true; clearTimeout(t.off);
-    if (t.a.paused) { const p = t.a.play(); if (p && p.then) p.then(() => { t.primed = 1; }, () => { t.on = false; started = false; arm(); }); else t.primed = 1; }
+    if (t.a.paused) { const p = t.a.play(); if (p && p.then) p.then(() => { t.primed = 1; }, e => { lastErr = t.name + ': ' + (e && e.name || e); t.on = false; started = false; arm(); }); else t.primed = 1; }
   }
   function stop(t) {                                     // fade out, then really pause (saves the phone's battery)
     if (!t || !t.on) return;
@@ -157,6 +157,12 @@ const SeumMusic = (() => {
     setCred(null); matchCredAt = 0;      // credits live in 설정 > 크레딧 now (user 2026-11-16), none on the lobby
     lastWant = want;
   }
+  let lastErr = '';
+  /* sound check for a real phone: open the page with ?sounddebug and a small box shows what the music is doing (nothing shows without it) */
+  if (/[?&]sounddebug/.test(location.search)) addEventListener('load', () => { const d = document.createElement('pre'); d.style.cssText = 'position:fixed;z-index:99999;left:4px;top:4px;margin:0;padding:6px;font:11px/1.3 monospace;color:#fff;background:rgba(0,0,0,.8);pointer-events:none;white-space:pre';
+    document.body.append(d); setInterval(() => { const L = ['ios ' + IOS + '  file ' + FILE + '  started ' + started + '  armed ' + armed + '  want ' + want, 'music ac ' + (ac ? ac.state : '-') + '  fx ac ' + (typeof window.__fxac === 'function' ? window.__fxac() : '-'), 'vol ' + vol + '  muted ' + (typeof muted !== 'undefined' && muted)];
+      for (const n of NAMES) { const t = tracks[n]; L.push(n + ': ' + (t ? (t.a.paused ? 'paused' : 'PLAYING') + ' t=' + t.a.currentTime.toFixed(1) + ' ready=' + t.a.readyState + ' net=' + t.a.networkState + ' err=' + (t.a.error ? t.a.error.code : '-') + ' muted=' + t.a.muted + ' on=' + t.on : (blobs[n] ? 'loaded, not made' : waiting[n] ? 'waiting' : DATA[n] ? 'not loaded' : 'none'))); }
+      L.push('last play error: ' + (lastErr || '-')); d.textContent = L.join('\n'); }, 300); });
   arm();
   setInterval(tick, 200);
   /* background tab: keep playing (user request 2026-11-15); if the browser suspended the sound anyway, start it again */

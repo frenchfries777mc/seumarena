@@ -15,11 +15,11 @@ hero('samurai', { p: ['검무', '두 손의 검으로 번갈아 4연타(220 ×3 
     f.st.cb = i + 1; f.st.la = time; if (f.st.cb % 4 === 0) fxAt(f, 'skillring', { color: '#dfe9ff' }); },
   onDeal(f, e, d, o) { if (e.minion) return; if (f.st.tg === e && time - (f.st.lt || -9) < 1) f.st.sk = (f.st.sk || 0) + 1; else f.st.sk = 0; f.st.tg = e; f.st.lt = time; },
   onHurt(f, d, by) { if (!B(f, 'parry') && time - (f.st.la || -9) < 1) return d * .85; if (B(f, 'parry') && by && by !== f && !by.dead && dist(f, by) < 2.4 * T) { unbuff(f, 'parry'); say(f, '흘려 베기', '#dfe9ff'); f.aim = angTo(f, by); seq(f, 4, .08, i => { f.swing = .14; f.st.hand = i === 3 ? 2 : i % 2 ? 0 : 1; arc(f, angTo(f, by), f.h.range * 1.15, .9, i === 3 ? 50 : 22, i === 3 ? { kb: 200 } : {}); }); return 0; } },
-  ult: ['쌍검 난무', '가장 가까운 적(4칸 안)에게 붙어 1.5초 동안 12번 베기 (11번 32 + 마지막 X자 300, 합 652, 마지막에 밀쳐냄) · 그동안 상대는 30% 느려지고, 멀어지면 순간이동으로 따라붙음 · 무적 아님, 기절하면 끊김', [0, 4 * T], f => {
+  ult: ['쌍검 난무', '가장 가까운 적(4칸 안)에게 붙어 1.5초 동안 12번 베기 (11번 45 + 마지막 X자 405, 합 900, 마지막에 밀쳐냄) · 그동안 기본 공격은 나가지 않음 · 그동안 상대는 30% 느려지고, 멀어지면 순간이동으로 따라붙음 · 무적 아님, 기절하면 끊김', [0, 4 * T], f => {
     const e = nearest(f, 4 * T, null, 0, true); if (!e) return false;
     blinkTo(f, e.x - Math.cos(angTo(f, e)) * 46, e.y - Math.sin(angTo(f, e)) * 46); fxAt(f, 'samult');
-    buff(e, 'slow', 1.6, .7);
-    seq(f, 12, .125, i => { if (e.dead || f.dead || B(f, 'stun')) return; if (dist(f, e) > 70 && dist(f, e) < 6 * T) { const g = angTo(e, f); blinkTo(f, e.x + Math.cos(g) * 46, e.y + Math.sin(g) * 46); } const a = angTo(f, e); f.aim = a; f.swing = .12; f.st.hand = i === 11 ? 2 : i % 2 ? 0 : 1; addSwing(f, a); arc(f, a, f.h.range * 1.2, 1, i === 11 ? 30 : 3.2, i === 11 ? { kb: 420 } : {}); if (i === 11) fx('samcut', e.x, e.y + BODY, { ang: 0, gy: e.y + 16 }); });
+    buff(e, 'slow', 1.6, .7); f.noAtk = time + 1.5;
+    seq(f, 12, .125, i => { if (e.dead || f.dead || B(f, 'stun')) return; if (dist(f, e) > 70 && dist(f, e) < 6 * T) { const g = angTo(e, f); blinkTo(f, e.x + Math.cos(g) * 46, e.y + Math.sin(g) * 46); } const a = angTo(f, e); f.aim = a; f.swing = .12; f.st.hand = i === 11 ? 2 : i % 2 ? 0 : 1; addSwing(f, a); arc(f, a, f.h.range * 1.2, 1, i === 11 ? 40.5 : 4.5, i === 11 ? { kb: 420 } : {}); if (i === 11) fx('samcut', e.x, e.y + BODY, { ang: 0, gy: e.y + 16 }); });
   }],
   skills: [
     [1, '십자 베기', 'move', '앞으로 2칸 파고들며 두 검으로 X자 베기 · 540 피해 + 1초 동안 30% 둔화', [60, 2 * T], (f, a) => { f.st.hand = 2; lunge(f, a, 2 * T, .15, { end: g => { g.swing = .2; addSwing(g, g.aim); arc(g, g.aim, g.h.range * 1.25, 1.1, 54, { slow: [.7, 1] }); fx('samcut', g.x + Math.cos(g.aim) * 50, g.y + BODY + Math.sin(g.aim) * 50, { ang: 0, gy: g.y + 16 }); } }); }],
