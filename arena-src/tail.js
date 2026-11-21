@@ -395,7 +395,7 @@ function setOpen(on) {
 function setBeep() {
   try {
     if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
-    if (ac.state === 'suspended') ac.resume();
+    if (ac.state !== 'running') ac.resume();
     if (SET.vol <= 0 || muted) return;
     const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
     o.type = 'triangle'; o.frequency.value = 660; g.gain.setValueAtTime(.07 * SET.vol / 100, t); g.gain.exponentialRampToValueAtTime(.0001, t + .18);
@@ -1142,6 +1142,9 @@ setInterval(() => {
 }, 50);
 addEventListener('beforeunload', () => netReset());
 document.addEventListener('visibilitychange', () => { try { if (ac && ac.state !== 'running' && ac.state !== 'closed') ac.resume().catch(() => {}); } catch (e) { quietErr(e); } });      // sound effects: start again if the browser paused them while the tab was hidden
+/* iPhone/iPad: the sound effects' AudioContext can be left 'suspended' or 'interrupted' (not only 'suspended'), and iOS lets it start again only inside a real tap: every tap/key tries again, with a silent one-sample sound that unlocks iOS */
+(() => { const kick = () => { try { if (!ac || ac.state === 'running' || ac.state === 'closed') return; ac.resume().catch(() => {}); const b = ac.createBuffer(1, 1, 22050), s = ac.createBufferSource(); s.buffer = b; s.connect(ac.destination); s.start(0); } catch (e) { quietErr(e); } };
+  for (const ev of ['pointerup', 'touchend', 'click', 'keydown']) addEventListener(ev, kick, true); })();
 buildChars(); updatePick(); setup(false); loadAccount(); if (achScan()) saveCos(); setTimeout(() => achSync(true), 2500);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => lobbyCharPlace());
 setTimeout(lobbyCharPlace, 60);
