@@ -655,7 +655,7 @@ function basic0(f, ang) {
 }
 function fire(f, ang) {
   if (BALL.own === f) return ballFire(f, ang);      // 볼 배틀: carrying the ball, the attack is a shot
-  if (f.fireCd > 0 || !canAtk(f) || f.boomOut) return false;
+  if (f.fireCd > 0 || !canAtk(f) || f.boomOut || time < (f.noAtk || 0)) return false;      // noAtk: no basic attacks while an ultimate that does its own hitting runs (사무라이 쌍검 난무, 마술사 탈출 마법; user 2026-11-21)
   f.aim = ang; f.lastFire = time; unbuff(f, 'stealth'); unbuff(f, 'ally');
   f.fireCd = cdOf(f);
   basic(f, ang);
