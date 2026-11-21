@@ -14,11 +14,11 @@ function mobSetFill() {
   const touch = touchMode || navigator.maxTouchPoints > 0 || matchMedia('(pointer:coarse)').matches;
   for (const r of document.querySelectorAll('#settings .mobOnly')) r.hidden = !touch;
 }
-function batApply() { if (mobileMode()) { RSCALE = SET.bat ? RS_STEPS[RS_STEPS.length - 1] : rsStart(); resize(); } }
+function batApply() { mobBat = !!SET.bat; if (mobileMode()) { RSCALE = SET.bat ? RS_STEPS[RS_STEPS.length - 1] : rsStart(); resize(); } }
 $('setBat').addEventListener('change', e => { SET.bat = e.target.checked; saveSet(); batApply(); });
 $('setBsz').addEventListener('input', e => { SET.bsz = +e.target.value; $('setBszV').textContent = SET.bsz + '%'; saveSet(); mobSetApply(); });
 new MutationObserver(mobSetApply).observe(document.body, { attributes: true, attributeFilter: ['class'] });
-mobSetApply(); if (SET.bat) batApply();
+mobSetApply(); mobBat = !!SET.bat; if (SET.bat) batApply();
 /* 옮기기: the buttons show with a dashed edge and are dragged where the thumb wants them; nothing fires while placing */
 let bposWas = null, bposDrag = null;
 function bposEdit(on) {

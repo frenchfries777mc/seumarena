@@ -3717,7 +3717,7 @@ function cosLiveTick(now){
 
 /* Stickseum's per-skin attack art, as it is in the original: concept projectiles (drawConceptProjectile), every skin's own trail on shots and swings (drawBulletSkinFx), the big show of lux skins (luxFx) */
 /* phones (and 효과 줄이기): the same pictures, fewer extra particles, no glow gradients and no lux show, so a crowd of skins never slows the frame */
-function skLite(){ return (typeof lowFx==='function' && lowFx()) || (typeof mobileMode==='function' && mobileMode()); }
+function skLite(){ return (typeof lowFx==='function' && lowFx()) || (typeof liteMode==='function' && liteMode()); }
 function skP(o){ if(skLite() && (o.shape==='text' || Math.random()<0.6)) return; addP(o); }
 const CONCEPT_COLOR={nnpink:'#ff5ac8', nnplasma:'#b28cff', nnrain:'#ff6af0', kdred:'#ff2a4a', kdhell:'#ff8a2a', kdvoid:'#7a6cff', gold:'#ffd34d', fry:'#ffd34d', cupid:'#ff6fae', banana:'#ffe14d', starlight:'#ff8fd0', zeus:'#d8efff', envy:'#ffd34d', odin:'#ffd34d', poseidon:'#4fc3ff', thor:'#bfe0ff', gilga:'#ffd34d', janus:'#f2f2f4'};
 const UNO_COLS=['#e8252b','#f5c400','#2a9d4a','#1f5fd1'];
@@ -4895,12 +4895,16 @@ const SeumMusic = (() => {
     setCred(null); matchCredAt = 0;      // credits live in 설정 > 크레딧 now (user 2026-11-16), none on the lobby
     lastWant = want;
   }
-  let lastErr = '';
+  let lastErr = ''; const volLog = [];
   /* sound check for a real phone: open the page with ?sounddebug and a small box shows what the music is doing (nothing shows without it) */
   if (/[?&]sounddebug/.test(location.search)) addEventListener('load', () => { const d = document.createElement('pre'); d.style.cssText = 'position:fixed;z-index:99999;left:4px;top:4px;margin:0;padding:6px;font:11px/1.3 monospace;color:#fff;background:rgba(0,0,0,.8);pointer-events:none;white-space:pre';
     document.body.append(d); setInterval(() => { const L = ['ios ' + IOS + '  file ' + FILE + '  started ' + started + '  armed ' + armed + '  want ' + want, 'music ac ' + (ac ? ac.state : '-') + '  fx ac ' + (typeof window.__fxac === 'function' ? window.__fxac() : '-'), 'vol ' + vol + '  muted ' + (typeof muted !== 'undefined' && muted)];
       for (const n of NAMES) { const t = tracks[n]; L.push(n + ': ' + (t ? (t.a.paused ? 'paused' : 'PLAYING') + ' t=' + t.a.currentTime.toFixed(1) + ' ready=' + t.a.readyState + ' net=' + t.a.networkState + ' err=' + (t.a.error ? t.a.error.code : '-') + ' muted=' + t.a.muted + ' on=' + t.on : (blobs[n] ? 'loaded, not made' : waiting[n] ? 'waiting' : DATA[n] ? 'not loaded' : 'none'))); }
-      L.push('last play error: ' + (lastErr || '-')); d.textContent = L.join('\n'); }, 300); });
+      L.push('last play error: ' + (lastErr || '-'));
+      let raw = '?', mv = '?', sv = '?'; try { raw = localStorage.getItem('seumArenaSet'); mv = localStorage.getItem(KEY); } catch (e) { raw = mv = 'storage blocked'; }
+      try { sv = SET.vol + ' (' + typeof SET.vol + ')'; } catch (e) { sv = 'no SET'; }
+      L.push('SET.vol ' + sv + '  saved music ' + mv, 'saved set ' + String(raw).slice(0, 90), 'setVolume calls ' + volLog.length + ': ' + volLog.slice(-6).join(' '));
+      d.textContent = L.join('\n'); }, 300); });
   arm();
   setInterval(tick, 200);
   /* background tab: keep playing (user request 2026-11-15); if the browser suspended the sound anyway, start it again */
@@ -4911,7 +4915,7 @@ const SeumMusic = (() => {
   return {
     fillCredits,
     getVolume: () => vol,
-    setVolume(v) { v = +v; if (!(v >= 0)) v = 0; vol = Math.min(1, v); try { localStorage.setItem(KEY, String(vol)); } catch (e) { } tick(); },
+    setVolume(v) { volLog.push(String(v)); v = +v; if (!(v >= 0)) v = 0; vol = Math.min(1, v); try { localStorage.setItem(KEY, String(vol)); } catch (e) { } tick(); },
     get playing() { return want; }, get started() { return started; }, get tracks() { return tracks; }
   };
 })();
@@ -5184,7 +5188,10 @@ function pcInit() {
 }
 function pcSave() { if (PCQ === 'auto') try { localStorage.setItem('seum_pcauto', JSON.stringify({ s: PCSCALE, l: pcLite })); } catch (e) { quietErr(e); } }
 pcInit();
-const liteMode = () => mobileMode() || pcLite;      // light effects: a phone, or a computer that could not keep up
+/* phones draw the full effects too (glows, all the small bits, the rich skin shots; user 2026-11-21: "모바일에서도 그래픽 좀 좋게"). mobLite = this phone proved too slow for them
+   (tail.js rsWatch turns it on before it lowers the sharpness, and remembers it); mobBat = 배터리 절약 is on */
+let mobLite = false, mobBat = false;
+const liteMode = () => (mobileMode() && (mobLite || mobBat)) || pcLite;      // light effects: a phone that could not keep up (or saves battery), or a computer that could not keep up
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, mobileMode() ? RSCALE : PCSCALE);
   W = window.innerWidth; H = window.innerHeight;
@@ -7192,7 +7199,7 @@ const RND = (a, b) => a + Math.random() * (b - a);      // the Stickseum art use
 let fxQuality = 2;
 /* settings (kept in this browser): volume, aim sensitivity (touch), fewer effects */
 const SET = { vol: 100, aim: 100, fx: false, bat: false, bsz: 100, bpos: {} };
-try { const o = JSON.parse(localStorage.getItem('seumArenaSet') || '{}'); if (o.vol >= 0 && o.vol <= 100) SET.vol = o.vol | 0; if (o.aim >= 50 && o.aim <= 200) SET.aim = o.aim | 0; SET.fx = !!o.fx; SET.bat = !!o.bat; if (o.bsz >= 70 && o.bsz <= 150) SET.bsz = o.bsz | 0; if (o.bpos && typeof o.bpos === 'object') SET.bpos = o.bpos; } catch (e) { quietErr(e); }
+try { const o = JSON.parse(localStorage.getItem('seumArenaSet') || '{}'); if (typeof o.vol === 'number' && o.vol >= 0 && o.vol <= 100) SET.vol = o.vol | 0; if (o.aim >= 50 && o.aim <= 200) SET.aim = o.aim | 0; SET.fx = !!o.fx; SET.bat = !!o.bat; if (o.bsz >= 70 && o.bsz <= 150) SET.bsz = o.bsz | 0; if (o.bpos && typeof o.bpos === 'object') SET.bpos = o.bpos; } catch (e) { quietErr(e); }
 function saveSet() { try { localStorage.setItem('seumArenaSet', JSON.stringify(SET)); } catch (e) { quietErr(e); } }
 function lowFx() { return reduceMotion || SET.fx || SET.bat; }
 /* the sound and particle functions are wrapped here so the settings work without touching engine.js or the art files */
@@ -13665,10 +13672,11 @@ readSafe(); touchUiSync();
 const RS_STEPS = [2, 1.5, 1.25, 1, .8, .65];
 /* phones: the picture quality settles per device and is remembered (seum_rs: s = step, f = a step that proved too heavy). It only goes DOWN during a match and only goes UP between matches,
    because every change repaints the map picture, which froze the game for up to a second each time it flipped back and forth mid-match (measured 2026-11-20) */
-let rsMem = { s: 1.5, f: 0 }; try { const m = JSON.parse(localStorage.getItem('seum_rs') || 'null'); if (m && RS_STEPS.includes(m.s)) rsMem = { s: m.s, f: +m.f || 0 }; } catch (e) { quietErr(e); }
+/* l: light effects (a phone that already had to lower its sharpness starts with them) */
+let rsMem = { s: 1.5, f: 0 }; try { const m = JSON.parse(localStorage.getItem('seum_rs') || 'null'); if (m && RS_STEPS.includes(m.s)) rsMem = { s: m.s, f: +m.f || 0, l: m.l === undefined ? (+m.f ? 1 : 0) : m.l ? 1 : 0 }; } catch (e) { quietErr(e); }
 function rsSave() { rsMem.s = RSCALE; try { localStorage.setItem('seum_rs', JSON.stringify(rsMem)); } catch (e) { quietErr(e); } }
 function rsStart() { return rsMem.s; }
-RSCALE = rsStart();
+RSCALE = rsStart(); mobLite = !!rsMem.l;
 let MCAP = false, mcapAt = 0;      // (only 배터리 절약 caps the frame rate now)
 let rsT0 = 0, rsN = 0, rsLast = 0, rsGood = 0, rsAll = 0, rsSmooth = 0;
 function rsWatch(now) {
@@ -13694,7 +13702,8 @@ function rsWatch(now) {
   }
   const i = Math.max(0, RS_STEPS.indexOf(RSCALE));
   rsAll++; if (ms < 17.5) rsSmooth++;
-  if (ms > 22 && i < RS_STEPS.length - 1) { if (++rsGood >= 2) { rsMem.f = RSCALE; RSCALE = RS_STEPS[i + 1]; rsGood = 0; rsAll = rsSmooth = 0; rsSave(); resize(); } }      // two slow stretches in a row (4 s), so one busy moment does not cost the sharpness
+  if (ms > 22 && !mobLite) { if (++rsGood >= 2) { mobLite = true; rsMem.l = 1; rsGood = 0; rsAll = rsSmooth = 0; rsSave(); } }      // too slow: first the light effects (no repaint, no freeze), only then the sharpness
+  else if (ms > 22 && i < RS_STEPS.length - 1) { if (++rsGood >= 2) { rsMem.f = RSCALE; RSCALE = RS_STEPS[i + 1]; rsGood = 0; rsAll = rsSmooth = 0; rsSave(); resize(); } }      // two slow stretches in a row (4 s), so one busy moment does not cost the sharpness
   else rsGood = 0;
 }
 let last = performance.now(), stillAt = 0, stillW = '';
@@ -13766,11 +13775,11 @@ function mobSetFill() {
   const touch = touchMode || navigator.maxTouchPoints > 0 || matchMedia('(pointer:coarse)').matches;
   for (const r of document.querySelectorAll('#settings .mobOnly')) r.hidden = !touch;
 }
-function batApply() { if (mobileMode()) { RSCALE = SET.bat ? RS_STEPS[RS_STEPS.length - 1] : rsStart(); resize(); } }
+function batApply() { mobBat = !!SET.bat; if (mobileMode()) { RSCALE = SET.bat ? RS_STEPS[RS_STEPS.length - 1] : rsStart(); resize(); } }
 $('setBat').addEventListener('change', e => { SET.bat = e.target.checked; saveSet(); batApply(); });
 $('setBsz').addEventListener('input', e => { SET.bsz = +e.target.value; $('setBszV').textContent = SET.bsz + '%'; saveSet(); mobSetApply(); });
 new MutationObserver(mobSetApply).observe(document.body, { attributes: true, attributeFilter: ['class'] });
-mobSetApply(); if (SET.bat) batApply();
+mobSetApply(); mobBat = !!SET.bat; if (SET.bat) batApply();
 /* 옮기기: the buttons show with a dashed edge and are dragged where the thumb wants them; nothing fires while placing */
 let bposWas = null, bposDrag = null;
 function bposEdit(on) {

@@ -157,12 +157,16 @@ const SeumMusic = (() => {
     setCred(null); matchCredAt = 0;      // credits live in 설정 > 크레딧 now (user 2026-11-16), none on the lobby
     lastWant = want;
   }
-  let lastErr = '';
+  let lastErr = ''; const volLog = [];
   /* sound check for a real phone: open the page with ?sounddebug and a small box shows what the music is doing (nothing shows without it) */
   if (/[?&]sounddebug/.test(location.search)) addEventListener('load', () => { const d = document.createElement('pre'); d.style.cssText = 'position:fixed;z-index:99999;left:4px;top:4px;margin:0;padding:6px;font:11px/1.3 monospace;color:#fff;background:rgba(0,0,0,.8);pointer-events:none;white-space:pre';
     document.body.append(d); setInterval(() => { const L = ['ios ' + IOS + '  file ' + FILE + '  started ' + started + '  armed ' + armed + '  want ' + want, 'music ac ' + (ac ? ac.state : '-') + '  fx ac ' + (typeof window.__fxac === 'function' ? window.__fxac() : '-'), 'vol ' + vol + '  muted ' + (typeof muted !== 'undefined' && muted)];
       for (const n of NAMES) { const t = tracks[n]; L.push(n + ': ' + (t ? (t.a.paused ? 'paused' : 'PLAYING') + ' t=' + t.a.currentTime.toFixed(1) + ' ready=' + t.a.readyState + ' net=' + t.a.networkState + ' err=' + (t.a.error ? t.a.error.code : '-') + ' muted=' + t.a.muted + ' on=' + t.on : (blobs[n] ? 'loaded, not made' : waiting[n] ? 'waiting' : DATA[n] ? 'not loaded' : 'none'))); }
-      L.push('last play error: ' + (lastErr || '-')); d.textContent = L.join('\n'); }, 300); });
+      L.push('last play error: ' + (lastErr || '-'));
+      let raw = '?', mv = '?', sv = '?'; try { raw = localStorage.getItem('seumArenaSet'); mv = localStorage.getItem(KEY); } catch (e) { raw = mv = 'storage blocked'; }
+      try { sv = SET.vol + ' (' + typeof SET.vol + ')'; } catch (e) { sv = 'no SET'; }
+      L.push('SET.vol ' + sv + '  saved music ' + mv, 'saved set ' + String(raw).slice(0, 90), 'setVolume calls ' + volLog.length + ': ' + volLog.slice(-6).join(' '));
+      d.textContent = L.join('\n'); }, 300); });
   arm();
   setInterval(tick, 200);
   /* background tab: keep playing (user request 2026-11-15); if the browser suspended the sound anyway, start it again */
@@ -173,7 +177,7 @@ const SeumMusic = (() => {
   return {
     fillCredits,
     getVolume: () => vol,
-    setVolume(v) { v = +v; if (!(v >= 0)) v = 0; vol = Math.min(1, v); try { localStorage.setItem(KEY, String(vol)); } catch (e) { } tick(); },
+    setVolume(v) { volLog.push(String(v)); v = +v; if (!(v >= 0)) v = 0; vol = Math.min(1, v); try { localStorage.setItem(KEY, String(vol)); } catch (e) { } tick(); },
     get playing() { return want; }, get started() { return started; }, get tracks() { return tracks; }
   };
 })();

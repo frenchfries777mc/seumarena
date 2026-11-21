@@ -1,6 +1,6 @@
 /* Stickseum's per-skin attack art, as it is in the original: concept projectiles (drawConceptProjectile), every skin's own trail on shots and swings (drawBulletSkinFx), the big show of lux skins (luxFx) */
 /* phones (and 효과 줄이기): the same pictures, fewer extra particles, no glow gradients and no lux show, so a crowd of skins never slows the frame */
-function skLite(){ return (typeof lowFx==='function' && lowFx()) || (typeof mobileMode==='function' && mobileMode()); }
+function skLite(){ return (typeof lowFx==='function' && lowFx()) || (typeof liteMode==='function' && liteMode()); }
 function skP(o){ if(skLite() && (o.shape==='text' || Math.random()<0.6)) return; addP(o); }
 const CONCEPT_COLOR={nnpink:'#ff5ac8', nnplasma:'#b28cff', nnrain:'#ff6af0', kdred:'#ff2a4a', kdhell:'#ff8a2a', kdvoid:'#7a6cff', gold:'#ffd34d', fry:'#ffd34d', cupid:'#ff6fae', banana:'#ffe14d', starlight:'#ff8fd0', zeus:'#d8efff', envy:'#ffd34d', odin:'#ffd34d', poseidon:'#4fc3ff', thor:'#bfe0ff', gilga:'#ffd34d', janus:'#f2f2f4'};
 const UNO_COLS=['#e8252b','#f5c400','#2a9d4a','#1f5fd1'];

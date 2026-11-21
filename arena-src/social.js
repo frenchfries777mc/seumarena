@@ -3,7 +3,7 @@ const RND = (a, b) => a + Math.random() * (b - a);      // the Stickseum art use
 let fxQuality = 2;
 /* settings (kept in this browser): volume, aim sensitivity (touch), fewer effects */
 const SET = { vol: 100, aim: 100, fx: false, bat: false, bsz: 100, bpos: {} };
-try { const o = JSON.parse(localStorage.getItem('seumArenaSet') || '{}'); if (o.vol >= 0 && o.vol <= 100) SET.vol = o.vol | 0; if (o.aim >= 50 && o.aim <= 200) SET.aim = o.aim | 0; SET.fx = !!o.fx; SET.bat = !!o.bat; if (o.bsz >= 70 && o.bsz <= 150) SET.bsz = o.bsz | 0; if (o.bpos && typeof o.bpos === 'object') SET.bpos = o.bpos; } catch (e) { quietErr(e); }
+try { const o = JSON.parse(localStorage.getItem('seumArenaSet') || '{}'); if (typeof o.vol === 'number' && o.vol >= 0 && o.vol <= 100) SET.vol = o.vol | 0; if (o.aim >= 50 && o.aim <= 200) SET.aim = o.aim | 0; SET.fx = !!o.fx; SET.bat = !!o.bat; if (o.bsz >= 70 && o.bsz <= 150) SET.bsz = o.bsz | 0; if (o.bpos && typeof o.bpos === 'object') SET.bpos = o.bpos; } catch (e) { quietErr(e); }
 function saveSet() { try { localStorage.setItem('seumArenaSet', JSON.stringify(SET)); } catch (e) { quietErr(e); } }
 function lowFx() { return reduceMotion || SET.fx || SET.bat; }
 /* the sound and particle functions are wrapped here so the settings work without touching engine.js or the art files */
