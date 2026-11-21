@@ -7299,7 +7299,28 @@ const skinOwned = id => COS.own.includes(id);
 const cosLocked = id => skinPrice(id) > 0 && !skinOwned(id);      // has a price and is not bought yet
 if (COS.pose && cosLocked(COS.pose)) COS.pose = null;      // (victory poses used to be free: one worn but not bought goes back to 만세)
 const COS_SLOT = { bcol: 'col', name: 'name', kfx: 'kfx', pose: 'pose' };
-function goldUi() { for (const el of document.querySelectorAll('.goldN')) el.textContent = COS.gold.toLocaleString('en-US'); for (const el of document.querySelectorAll('.crN')) el.textContent = (COS.cr | 0).toLocaleString('en-US'); for (const el of document.querySelectorAll('.karmaN')) el.textContent = COS.karma.toLocaleString('en-US'); const sk = document.getElementById('streak'); if (sk) { sk.hidden = !((COS.ws | 0) >= 2); sk.querySelector('b').textContent = COS.ws | 0; }
+/* coins / crystals of a reward fly one by one from the reward picture to the count at the top left, and the count goes up as each lands (user 2026-11-21).
+   Until the reward is shown (a box still shut, a reward waiting its turn) its amount is held back from the count */
+const FLY = { g: { held: 0, sel: '.goldN', cls: 'coin' }, cr: { held: 0, sel: '.crN', cls: 'ic-cr' } };
+function flyPut(k, v) { for (const el of document.querySelectorAll(FLY[k].sel)) el.textContent = v.toLocaleString('en-US'); }
+function flyUi(k, val) { flyPut(k, Math.max(0, val - FLY[k].held)); }
+function flyHold(got) { for (const it of got.list || [got]) if (FLY[it.kind] && it.n > 0 && !it._fly) { it._fly = 1; FLY[it.kind].held += it.n; } goldUi(); }
+function flyGo(it, src) {
+  if (it._fly !== 1) return; it._fly = 2;
+  const k = it.kind, F = FLY[k], n0 = it.n, total = () => (k === 'g' ? COS.gold : COS.cr | 0);
+  const tgt = [...document.querySelectorAll(F.sel)].find(el => el.getClientRects().length && !el.closest('[hidden]'));
+  if (!tgt || !src || reduceMotion || typeof tgt.animate !== 'function') { F.held -= n0; flyUi(k, total()); return; }
+  const n = Math.min(typeof mobileMode === 'function' && mobileMode() ? 6 : 12, Math.max(1, Math.ceil(n0 / 10))), r = (tgt.previousElementSibling || tgt).getBoundingClientRect(), tx = r.left + r.width / 2, ty = r.top + r.height / 2, s = src.getBoundingClientRect(), ox = s.left + s.width / 2, oy = s.top + s.height / 2;
+  let done = 0, left = n0;
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement('i'); c.className = F.cls; c.style.cssText = 'position:fixed;z-index:100001;left:0;top:0;width:22px;height:22px;font-size:22px;pointer-events:none;will-change:transform;opacity:0';
+    document.body.appendChild(c);
+    const sx = ox - 11 + (Math.random() - .5) * 70, sy = oy - 11 + (Math.random() - .5) * 70;
+    const a = c.animate([{ transform: `translate(${sx}px,${sy}px) scale(.4)`, opacity: 0 }, { transform: `translate(${sx}px,${sy - 26}px) scale(1.15)`, opacity: 1, offset: .22 }, { transform: `translate(${tx - 11}px,${ty - 11}px) scale(.7)`, opacity: 1 }], { duration: 520, delay: 250 + i * 70, easing: 'cubic-bezier(.5,0,.7,1)', fill: 'forwards' });
+    let once = false; a.onfinish = a.oncancel = () => { if (once) return; once = true; c.remove(); done++; const part = done >= n ? left : Math.round(n0 / n); left -= part; F.held -= part; flyUi(k, total()); tgt.parentElement.animate([{ transform: 'scale(1.12)' }, { transform: 'scale(1)' }], { duration: 140 }); };
+  }
+}
+function goldUi() { flyUi('g', COS.gold); flyUi('cr', COS.cr | 0); for (const el of document.querySelectorAll('.karmaN')) el.textContent = COS.karma.toLocaleString('en-US'); const sk = document.getElementById('streak'); if (sk) { sk.hidden = !((COS.ws | 0) >= 2); sk.querySelector('b').textContent = COS.ws | 0; }
   { const kb = document.querySelector('#karmaBar i'); { let lo = 0, hi = 0; for (const r of KARMA_ROAD) { if (COS.karma >= r[0]) lo = r[0]; else { hi = r[0]; break; } } const w = (hi ? Math.round((COS.karma - lo) / (hi - lo) * 100) : 100) + '%'; if (kb) kb.style.width = w; const hb = document.querySelector('.khBar i'), hn = document.getElementById('karmaNextN'); if (hb) hb.style.width = w; if (hn) hn.textContent = hi ? COS.karma.toLocaleString('en-US') + ' / ' + hi.toLocaleString('en-US') : ''; } }      // the banner's bar: the way to the next step of the road
   const kd = document.getElementById('karmaDot'); if (kd) kd.hidden = !karmaOpen(); questUi(); passUi();
   const ai = document.getElementById('acctIcon'); if (ai) { const l = levelOf(); ai.textContent = l.lv; ai.style.setProperty('--p', Math.round(l.into / l.need * 100)); ai.title = '레벨 ' + l.lv + ' · ' + l.into + ' / ' + l.need; } }
@@ -7502,6 +7523,7 @@ function showGot(g, got) { g.hidden = true; if (got) rewardFx(got); }
 let rwTimer = 0, rwRaf = 0; const rwQ = [];
 function rewardFx(got, step) {
   const fx = document.getElementById('rwFx'); if (!fx) return;
+  if (step == null) flyHold(got);
   if (step == null && !fx.hidden && !fx.classList.contains('out')) { rwQ.push(got); return; }      // one at a time: a reward that comes while another shows waits its turn
   const L = got.list || [got], k = step | 0; if (k) got = L[k];
   const ic = fx.querySelector('.rwIc'), cvs = fx.querySelector('canvas'), txt = fx.querySelector('.rwTxt'), spk = fx.querySelector('.rwSpk');
@@ -7513,7 +7535,7 @@ function rewardFx(got, step) {
     if (got.kind === 'su') { setIcon('su'); const s = HEROES[got.hero].skills.find(x => x.n === got.sk); txt.textContent = HEROES[got.hero].name + ' · ' + (s ? nameOf(s) : '') + ' 해금'; }
     else if (got.skin) { ic.hidden = true; cvs.hidden = false; try { drawItemPreview(cvs, got.skin, performance.now()); } catch (e) { quietErr(e); } txt.textContent = HEROES[got.hero].name + ' · ' + COSMETICS[got.skin].name; }
     else {
-      setIcon(got.kind); const pre = (got.hero ? HEROES[got.hero].name + ' ' : '') + '+', n = got.n | 0, t0 = performance.now();
+      setIcon(got.kind); flyGo(got, ic); const pre = (got.hero ? HEROES[got.hero].name + ' ' : '') + '+', n = got.n | 0, t0 = performance.now();
       const tick = now => { const k = Math.min(1, (now - t0) / 650), e = 1 - Math.pow(1 - k, 3); txt.textContent = pre + Math.round(n * e).toLocaleString('en-US'); if (k < 1) rwRaf = requestAnimationFrame(tick); };
       txt.textContent = pre + '0'; rwRaf = requestAnimationFrame(tick);
     }
@@ -7586,7 +7608,7 @@ function wqTake(i) {
 }
 const wqOpen = () => { const st = wqState(); return wqList(st.d).some((q, i) => st.p[i] >= q.n && !st.c[i]); };
 /* ---------- attendance: one reward a day, seven in a row then round again. A missed day loses nothing. COS.att = { d: the day last taken, n: how many taken } ---------- */
-const ATT = [['g', 100], ['rx', 100], ['g', 150], ['rx', 150], ['g', 200], ['cx', 200], ['box']];
+const ATT = [['g', 100], ['rx', 100], ['cr', 30], ['rx', 150], ['g', 200], ['cr', 50], ['box']];      // crystals on 2 of the 7 days (user 2026-11-21)
 const attSt = () => { if (!COS.att || typeof COS.att !== 'object') COS.att = { d: 0, n: 0 }; COS.att.n = Math.max(0, COS.att.n | 0); return COS.att; };
 const attOpen = () => attSt().d !== dqDay();
 function attTake() { const a = attSt(); if (!attOpen()) return null; const r = ATT[a.n % 7]; a.d = dqDay(); a.n++; const got = giveReward(r[0], r[1]); saveCos(); goldUi(); return got; }
@@ -7650,6 +7672,8 @@ const PF_PX = { cross: ['w......w', '.w....w.', '..w..w..', '...ww...', '...ww..
 const achSt = () => { const s = COS.st && typeof COS.st === 'object' ? COS.st : (COS.st = {}); for (const k of ['k', 'w', 'g', 'mk', 'nd', 'sa', 'd', 'dk', 'mv']) s[k] = Math.max(0, Math.floor(+s[k] || 0)); for (const k of ['mw', 'mg', 'hw', 'hk', 'hg', 'hn', 'hb']) if (!s[k] || typeof s[k] !== 'object') s[k] = {}; return s; };
 const achTopRank = () => Math.max(0, ...Object.keys(HEROES).map(h => masteryOf(h).i));
 const ACH_PAY = [['g', 100], ['g', 300], ['box'], ['ebox']];
+const ACH_CR = { mk4: 20, modes: 20, nd1: 30, silver: 30, lv10: 30, allhero: 50, dia: 50, karma1k: 50 };      // about 3 achievements in 10 pay crystals instead (user 2026-11-21)
+const achPay = a => (ACH_CR[a.id] ? ['cr', ACH_CR[a.id]] : ACH_PAY[a.t]);
 const ACHS = [
   ['k10', 0, '킬 10번', 10, s => s.k], ['g5', 0, '5판 하기', 5, s => s.g], ['w1', 0, '1승', 1, s => s.w], ['mk4', 0, '한 게임에서 4킬', 4, s => s.mk], ['modes', 0, '모든 모드 1판씩', 4, s => ['team', 'solo', 'flag', 'duel'].filter(m => s.mg[m]).length],
   ['k100', 1, '킬 100번', 100, s => s.k], ['w10', 1, '10승', 10, s => s.w], ['mk7', 1, '한 게임에서 7킬', 7, s => s.mk], ['nd1', 1, '팀 아웃에서 죽지 않고 승리', 1, s => s.nd], ['solo1', 1, '원 레프트 1등', 1, s => s.s1 | 0], ['duel5', 1, '듀얼 배틀 5승', 5, s => s.mw.duel | 0], ['flag5', 1, '캡쳐 플래그 5승', 5, s => s.mw.flag | 0],
@@ -7677,7 +7701,7 @@ function achMatch(m) {
 }
 function achTake(id) {
   const a = ACHS.find(x => x.id === id); if (!a || COS.ach[id] !== 1) return null;
-  COS.ach[id] = 2; const got = giveReward(ACH_PAY[a.t][0], ACH_PAY[a.t][1]);
+  COS.ach[id] = 2; const pay = achPay(a), got = giveReward(pay[0], pay[1]);
   try { sfx(880, .18, 'triangle', .06); } catch (e) { quietErr(e); }
   achScan(); saveCos(); goldUi(); return got;
 }
@@ -7713,7 +7737,7 @@ function renderAch(got) {
   const ord = a => COS.ach[a.id] === 1 ? 0 : COS.ach[a.id] === 2 ? 2 : 1;
   for (const a of ACHS.slice().sort((x, y) => ord(x) - ord(y))) {
     const row = document.createElement('div'), t = document.createElement('span'), pc = document.createElement('small'), bar = document.createElement('div'), fill = document.createElement('i'), num = document.createElement('span'), rw = document.createElement('button');
-    const state = COS.ach[a.id] | 0, p = state ? a.n : Math.min(a.n, Math.max(0, Math.floor(a.v(s)))), pay = ACH_PAY[a.t];
+    const state = COS.ach[a.id] | 0, p = state ? a.n : Math.min(a.n, Math.max(0, Math.floor(a.v(s)))), pay = achPay(a);
     row.className = 'qRow aRow a-' + a.t + (state === 2 ? ' took' : state === 1 ? ' done' : ''); t.className = 'qTxt'; t.append(a.txt); pc.textContent = achRate(a.id); if (pc.textContent) { pc.title = '달성한 플레이어'; t.append(pc); }
     bar.className = 'qBar'; fill.style.width = Math.round(p / a.n * 100) + '%'; num.textContent = p.toLocaleString('en-US') + ' / ' + a.n.toLocaleString('en-US'); bar.append(fill, num);
     rw.type = 'button'; rw.className = 'qRw'; rw.disabled = state !== 1; rw.append(rewardIcon(pay[0])); if (pay[1]) rw.append(String(pay[1]));
@@ -7786,7 +7810,7 @@ const PASS = (() => { const sk = SEASONS[GAME_VER].skins, out = [];
   for (let i = 1; i <= PASS_N; i++) {
     if (i === 15 && sk[0]) out.push([i, 'ps', sk[0], 1]); else if (i === PASS_N && sk[1]) out.push([i, 'ps', sk[1], 1]);
     else if (i % 10 === 0) out.push([i, 'ebox', 0, 1]);
-    else out.push([i, ...[['g', 100 + 20 * i], ['box', 0, 0], ['px', 100 + 10 * i], ['g', 150 + 20 * i], ['cx', 150 + 10 * i]][i % 5]]);
+    else out.push([i, ...[['g', 100 + 20 * i], ['box', 0, 0], ['px', 100 + 10 * i], ['cr', 20 + 5 * Math.floor(i / 5)], ['cx', 150 + 10 * i]][i % 5]]);      // one step in five gives crystals, 20 to 45 (user 2026-11-21)
   }
   return out; })();
 const passXp = () => Math.max(0, Math.floor(+((COS.sx || {})[GAME_VER]) || 0));
@@ -7858,7 +7882,7 @@ function renderPassQ() {
 function renderPass(got) {
   const tr = document.getElementById('passTrack'); tr.textContent = '';
   const fill = document.createElement('div'); fill.id = 'passFill'; tr.append(fill);
-  const xp = passXp(), LBL = { g: '골드', cx: '선택 캐릭터 XP', px: '플레이어 XP', box: '랜덤상자', ebox: '에픽상자', ps: '한정 스킨' };
+  const xp = passXp(), LBL = { g: '골드', cr: '크리스탈', cx: '선택 캐릭터 XP', px: '플레이어 XP', box: '랜덤상자', ebox: '에픽상자', ps: '한정 스킨' };
   let focus = null;
   for (const r of PASS) {
     const b = document.createElement('button'), box = document.createElement('span'), pin = document.createElement('span'), num = document.createElement('span');
@@ -11361,6 +11385,7 @@ async function clCodes(uid) {
     }
     if (!gots.length) return;
     saveCos(); try { goldUi(); accountUi(); } catch (e) { quietErr(e); }
+    gots.forEach(g => { try { flyHold(g); } catch (e) { quietErr(e); } });
     gots.forEach((g, i) => setTimeout(() => { try { rewardFx(g); } catch (e) { quietErr(e); } }, i * 4600));
   } catch (e) { quietErr(e); } finally { CL.codeBusy = false; }
 }

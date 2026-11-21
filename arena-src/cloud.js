@@ -158,6 +158,7 @@ async function clCodes(uid) {
     }
     if (!gots.length) return;
     saveCos(); try { goldUi(); accountUi(); } catch (e) { quietErr(e); }
+    gots.forEach(g => { try { flyHold(g); } catch (e) { quietErr(e); } });
     gots.forEach((g, i) => setTimeout(() => { try { rewardFx(g); } catch (e) { quietErr(e); } }, i * 4600));
   } catch (e) { quietErr(e); } finally { CL.codeBusy = false; }
 }
