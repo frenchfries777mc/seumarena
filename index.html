@@ -4778,6 +4778,7 @@ const SeumMusic = (() => {
   /* songs given as a file path: fetched whole (so the app's offline cache keeps them), one at a time, a little after the page is up */
   const blobs = {}, waiting = {};
   const isPath = d => typeof d === 'string' && /\.mp3$/.test(d);
+  const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);      // iPhone/iPad: an <audio> sent through WebAudio can show as playing with no sound, so the songs play straight from the <audio> (iOS ignores .volume: muted / 0 only)
   const FILE = location.protocol === 'file:';      // page opened straight from the disk: fetch() is blocked there, so the <audio> loads the path itself (no WebAudio: it would play silence for a file:// song)
   function fetchSong(name, tries) {
     if (FILE) { blobs[name] = DATA[name]; if (waiting[name]) { waiting[name] = 0; if (inited) { tracks[name] = make(name); tick(); arm(); } } return Promise.resolve(); }
@@ -4799,7 +4800,7 @@ const SeumMusic = (() => {
     else url = b64Url(DATA[name]);
     const a = new Audio(url); a.loop = true; a.preload = 'auto';
     const t = { name, a, g: null, on: false, off: 0 };
-    try { if (FILE && isPath(DATA[name])) throw 0; const src = ac.createMediaElementSource(a); t.g = ac.createGain(); t.g.gain.value = 0; src.connect(t.g); t.g.connect(ac.destination); }
+    try { if ((FILE && isPath(DATA[name])) || IOS) throw 0; const src = ac.createMediaElementSource(a); t.g = ac.createGain(); t.g.gain.value = 0; src.connect(t.g); t.g.connect(ac.destination); }
     catch (e) { t.g = null; a.volume = 0; }            // (no WebAudio: the element's own volume does the job)
     DATA[name] = null; return t;
   }
@@ -4811,7 +4812,7 @@ const SeumMusic = (() => {
   }
   function setLevel(t, k, fast) {
     if (t.g) t.g.gain.setTargetAtTime(k, ac.currentTime, fast ? .08 : .6);
-    else t.a.volume = Math.max(0, Math.min(1, k));
+    else { t.a.volume = Math.max(0, Math.min(1, k)); t.a.muted = k <= 0; }
   }
   /* Phones only let sound start inside a real tap: pointerup / touchend / click / keydown (pointerdown of a finger does NOT count,
      which is why the music never started on phones before). So every tap tries again until the wanted song is really playing,
@@ -7919,18 +7920,23 @@ for (const id of ['karmaRoad', 'passRoad']) { const rd = document.getElementById
   rd.addEventListener('dragstart', e => e.preventDefault());
   rd.addEventListener('wheel', e => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { rd.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
 }
-/* the lobby title never sits under the top right buttons: when they overlap the title gets smaller, and if that is not enough it moves down under them */
+/* the lobby title never sits under the top right buttons or the account bar at the top left (profile, gold, crystals; user 2026-11-21): when they overlap the title gets smaller, and if that is not enough it moves down under them. It never runs into the menu on the right either */
 function fitBrand() {
   const br = document.getElementById('brandDisplay'), h1 = br && br.querySelector('h1'), tr = document.getElementById('topRight'); if (!h1 || !tr) return;
-  h1.style.fontSize = ''; br.style.marginTop = '';
+  const sub = br.querySelector('.ver'); h1.style.fontSize = ''; br.style.marginTop = ''; if (sub) sub.style.fontSize = '';
   if (!br.classList.contains('show') || tr.hidden) return;
-  const hit = () => { const a = h1.getBoundingClientRect(), b = tr.getBoundingClientRect(); return a.right > b.left - 8 && a.left < b.right + 8 && a.bottom > b.top - 4 && a.top < b.bottom + 4; };
+  const seen = el => el && !el.hidden && el.getClientRects().length, bars = [tr, document.getElementById('acct')].filter(seen), mc = document.getElementById('modeChip');
+  const over = (el, o, g) => { const a = el.getBoundingClientRect(), b = o.getBoundingClientRect(); return a.right > b.left - g && a.left < b.right + g && a.bottom > b.top - 4 && a.top < b.bottom + 4; };
+  const hit = () => bars.filter(o => over(h1, o, 8));
   let fs = parseFloat(getComputedStyle(h1).fontSize); const min = Math.max(30, fs * .6);
-  while (hit() && fs > min) { fs -= 2; h1.style.fontSize = fs + 'px'; }
-  if (hit()) { const b = tr.getBoundingClientRect(), a = h1.getBoundingClientRect(); br.style.marginTop = Math.ceil(b.bottom + 8 - a.top) + 'px'; }
+  while (hit().length && fs > min) { fs -= 2; h1.style.fontSize = fs + 'px'; }
+  const on = hit(); if (on.length) { const a = h1.getBoundingClientRect(); br.style.marginTop = Math.ceil(Math.max(...on.map(o => o.getBoundingClientRect().bottom)) + 8 - a.top) + 'px'; }
+  if (seen(mc)) { let ss = seen(sub) ? parseFloat(getComputedStyle(sub).fontSize) : 0;
+    while (over(h1, mc, 8) && fs > 30) { fs -= 2; h1.style.fontSize = fs + 'px'; }
+    while (ss > 11 && over(sub, mc, 8)) { ss -= .5; sub.style.fontSize = ss + 'px'; } }
 }
 addEventListener('resize', () => requestAnimationFrame(fitBrand));
-try { new ResizeObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('topRight')); new MutationObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('brandDisplay'), { attributes: true, attributeFilter: ['class'] }); } catch (e) { quietErr(e); }
+try { new ResizeObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('topRight')); new ResizeObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('acct')); new MutationObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('brandDisplay'), { attributes: true, attributeFilter: ['class'] }); } catch (e) { quietErr(e); }
 setTimeout(fitBrand, 300); setTimeout(fitBrand, 1500);
 { const b = document.getElementById('pass'); if (b) b.addEventListener('click', () => { showScreen('passScreen'); renderPass(); }); const k = document.getElementById('passBackBtn'); if (k) k.addEventListener('click', () => showScreen('menuScreen')); }
 function botCos(hero) {
@@ -12982,7 +12988,7 @@ function setOpen(on) {
 function setBeep() {
   try {
     if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
-    if (ac.state === 'suspended') ac.resume();
+    if (ac.state !== 'running') ac.resume();
     if (SET.vol <= 0 || muted) return;
     const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
     o.type = 'triangle'; o.frequency.value = 660; g.gain.setValueAtTime(.07 * SET.vol / 100, t); g.gain.exponentialRampToValueAtTime(.0001, t + .18);
@@ -13729,6 +13735,9 @@ setInterval(() => {
 }, 50);
 addEventListener('beforeunload', () => netReset());
 document.addEventListener('visibilitychange', () => { try { if (ac && ac.state !== 'running' && ac.state !== 'closed') ac.resume().catch(() => {}); } catch (e) { quietErr(e); } });      // sound effects: start again if the browser paused them while the tab was hidden
+/* iPhone/iPad: the sound effects' AudioContext can be left 'suspended' or 'interrupted' (not only 'suspended'), and iOS lets it start again only inside a real tap: every tap/key tries again, with a silent one-sample sound that unlocks iOS */
+(() => { const kick = () => { try { if (!ac || ac.state === 'running' || ac.state === 'closed') return; ac.resume().catch(() => {}); const b = ac.createBuffer(1, 1, 22050), s = ac.createBufferSource(); s.buffer = b; s.connect(ac.destination); s.start(0); } catch (e) { quietErr(e); } };
+  for (const ev of ['pointerup', 'touchend', 'click', 'keydown']) addEventListener(ev, kick, true); })();
 buildChars(); updatePick(); setup(false); loadAccount(); if (achScan()) saveCos(); setTimeout(() => achSync(true), 2500);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => lobbyCharPlace());
 setTimeout(lobbyCharPlace, 60);

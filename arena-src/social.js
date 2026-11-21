@@ -723,18 +723,23 @@ for (const id of ['karmaRoad', 'passRoad']) { const rd = document.getElementById
   rd.addEventListener('dragstart', e => e.preventDefault());
   rd.addEventListener('wheel', e => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { rd.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
 }
-/* the lobby title never sits under the top right buttons: when they overlap the title gets smaller, and if that is not enough it moves down under them */
+/* the lobby title never sits under the top right buttons or the account bar at the top left (profile, gold, crystals; user 2026-11-21): when they overlap the title gets smaller, and if that is not enough it moves down under them. It never runs into the menu on the right either */
 function fitBrand() {
   const br = document.getElementById('brandDisplay'), h1 = br && br.querySelector('h1'), tr = document.getElementById('topRight'); if (!h1 || !tr) return;
-  h1.style.fontSize = ''; br.style.marginTop = '';
+  const sub = br.querySelector('.ver'); h1.style.fontSize = ''; br.style.marginTop = ''; if (sub) sub.style.fontSize = '';
   if (!br.classList.contains('show') || tr.hidden) return;
-  const hit = () => { const a = h1.getBoundingClientRect(), b = tr.getBoundingClientRect(); return a.right > b.left - 8 && a.left < b.right + 8 && a.bottom > b.top - 4 && a.top < b.bottom + 4; };
+  const seen = el => el && !el.hidden && el.getClientRects().length, bars = [tr, document.getElementById('acct')].filter(seen), mc = document.getElementById('modeChip');
+  const over = (el, o, g) => { const a = el.getBoundingClientRect(), b = o.getBoundingClientRect(); return a.right > b.left - g && a.left < b.right + g && a.bottom > b.top - 4 && a.top < b.bottom + 4; };
+  const hit = () => bars.filter(o => over(h1, o, 8));
   let fs = parseFloat(getComputedStyle(h1).fontSize); const min = Math.max(30, fs * .6);
-  while (hit() && fs > min) { fs -= 2; h1.style.fontSize = fs + 'px'; }
-  if (hit()) { const b = tr.getBoundingClientRect(), a = h1.getBoundingClientRect(); br.style.marginTop = Math.ceil(b.bottom + 8 - a.top) + 'px'; }
+  while (hit().length && fs > min) { fs -= 2; h1.style.fontSize = fs + 'px'; }
+  const on = hit(); if (on.length) { const a = h1.getBoundingClientRect(); br.style.marginTop = Math.ceil(Math.max(...on.map(o => o.getBoundingClientRect().bottom)) + 8 - a.top) + 'px'; }
+  if (seen(mc)) { let ss = seen(sub) ? parseFloat(getComputedStyle(sub).fontSize) : 0;
+    while (over(h1, mc, 8) && fs > 30) { fs -= 2; h1.style.fontSize = fs + 'px'; }
+    while (ss > 11 && over(sub, mc, 8)) { ss -= .5; sub.style.fontSize = ss + 'px'; } }
 }
 addEventListener('resize', () => requestAnimationFrame(fitBrand));
-try { new ResizeObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('topRight')); new MutationObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('brandDisplay'), { attributes: true, attributeFilter: ['class'] }); } catch (e) { quietErr(e); }
+try { new ResizeObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('topRight')); new ResizeObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('acct')); new MutationObserver(() => requestAnimationFrame(fitBrand)).observe(document.getElementById('brandDisplay'), { attributes: true, attributeFilter: ['class'] }); } catch (e) { quietErr(e); }
 setTimeout(fitBrand, 300); setTimeout(fitBrand, 1500);
 { const b = document.getElementById('pass'); if (b) b.addEventListener('click', () => { showScreen('passScreen'); renderPass(); }); const k = document.getElementById('passBackBtn'); if (k) k.addEventListener('click', () => showScreen('menuScreen')); }
 function botCos(hero) {

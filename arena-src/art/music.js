@@ -26,6 +26,7 @@ const SeumMusic = (() => {
   /* songs given as a file path: fetched whole (so the app's offline cache keeps them), one at a time, a little after the page is up */
   const blobs = {}, waiting = {};
   const isPath = d => typeof d === 'string' && /\.mp3$/.test(d);
+  const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);      // iPhone/iPad: an <audio> sent through WebAudio can show as playing with no sound, so the songs play straight from the <audio> (iOS ignores .volume: muted / 0 only)
   const FILE = location.protocol === 'file:';      // page opened straight from the disk: fetch() is blocked there, so the <audio> loads the path itself (no WebAudio: it would play silence for a file:// song)
   function fetchSong(name, tries) {
     if (FILE) { blobs[name] = DATA[name]; if (waiting[name]) { waiting[name] = 0; if (inited) { tracks[name] = make(name); tick(); arm(); } } return Promise.resolve(); }
@@ -47,7 +48,7 @@ const SeumMusic = (() => {
     else url = b64Url(DATA[name]);
     const a = new Audio(url); a.loop = true; a.preload = 'auto';
     const t = { name, a, g: null, on: false, off: 0 };
-    try { if (FILE && isPath(DATA[name])) throw 0; const src = ac.createMediaElementSource(a); t.g = ac.createGain(); t.g.gain.value = 0; src.connect(t.g); t.g.connect(ac.destination); }
+    try { if ((FILE && isPath(DATA[name])) || IOS) throw 0; const src = ac.createMediaElementSource(a); t.g = ac.createGain(); t.g.gain.value = 0; src.connect(t.g); t.g.connect(ac.destination); }
     catch (e) { t.g = null; a.volume = 0; }            // (no WebAudio: the element's own volume does the job)
     DATA[name] = null; return t;
   }
@@ -59,7 +60,7 @@ const SeumMusic = (() => {
   }
   function setLevel(t, k, fast) {
     if (t.g) t.g.gain.setTargetAtTime(k, ac.currentTime, fast ? .08 : .6);
-    else t.a.volume = Math.max(0, Math.min(1, k));
+    else { t.a.volume = Math.max(0, Math.min(1, k)); t.a.muted = k <= 0; }
   }
   /* Phones only let sound start inside a real tap: pointerup / touchend / click / keydown (pointerdown of a finger does NOT count,
      which is why the music never started on phones before). So every tap tries again until the wanted song is really playing,
