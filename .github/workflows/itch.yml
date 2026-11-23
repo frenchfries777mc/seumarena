@@ -1,0 +1,35 @@
+name: itch
+
+# 게임이 main에 올라가면 itch 판을 만들어 itch.io에 자동으로 올려요. (games 저장소의 itch.yml과 같은 방식)
+# 필요한 것: 저장소 Secret ITCH_API_KEY (itch 계정 API 키), 저장소 Variable ITCH_SEUMARENA_TARGET (예: 계정이름/게임이름:html5)
+# 둘 중 하나라도 없으면 아무것도 올리지 않아요. 버전은 VERSION 파일의 값을 써요.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  BUTLER_API_KEY: ${{ secrets.ITCH_API_KEY }}
+
+jobs:
+  seumarena:
+    runs-on: ubuntu-latest
+    env:
+      TARGET: ${{ vars.ITCH_SEUMARENA_TARGET }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - id: go
+        run: |
+          if [ -n "$BUTLER_API_KEY" ] && [ -n "$TARGET" ] && { [ "${{ github.event_name }}" = workflow_dispatch ] || git diff --name-only HEAD^ HEAD | grep -qE '^(seumarena\.html|arena-src/art/music/|tools/itch/|LICENSE|VERSION)'; }; then echo run=1 >> "$GITHUB_OUTPUT"; fi
+      - if: steps.go.outputs.run == '1'
+        run: node tools/itch/build-itch.js build/out
+      - if: steps.go.outputs.run == '1'
+        run: |
+          curl -fsSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d butler && chmod +x butler/butler
+          VER=$(tr -d '[:space:]' < VERSION)
+          ./butler/butler push build/out "$TARGET" --userversion "$VER"

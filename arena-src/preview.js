@@ -26,7 +26,7 @@ const PVS = {
   'dagger:1': R('self', { r: 384, faint: 1 }), 'dagger:2': R('dash', { len: 717, w: 60 }), 'dagger:4': R('dash', { len: 205, w: 44, back: 1 }),
   'dracula:2': R('dash', { len: 256, w: 60 }),
   'wizard:1': R('self', { r: 130 }), 'wizard:2': R('line', { len: 512, w: 44, over: 1 }), 'wizard:3': R('line', { len: 512, w: 26, over: 1 }), 'wizard:4': R('line', { len: 512, w: 64, over: 1 }), 'wizard:5': R('self', { r: 54 }), 'wizard:u': R('self', { r: 198 }),
-  'magiccard:1': R('line', { len: 448, w: 26 }), 'magiccard:3': R('dash', { len: 352, w: 30 }), 'magiccard:5': R('fan', { len: 492, half: .15, n: 3 }), 'magiccard:u': R('self', { r: 512, faint: 1 }),
+  'magiccard:1': R('line', { len: 448, w: 26 }), 'magiccard:3': R('dash', { len: 352, w: 30 }), 'magiccard:5': R('fan', { len: 492, half: .15, n: 3 }), 'magiccard:u': R('ground', { max: 448, r: 155 }),
   'gambler:2': R('line', { len: 576, w: 30 }), 'gambler:3': R('pts', { pts: [[60, 0]], r: 22 }),
   'boomerang:1': R('self', { r: 160 }), 'boomerang:u': R('fan', { len: 416, half: .5, n: 5 }),
   'flamethrower:1': R('dash', { len: 269, w: 44 }), 'flamethrower:2': R('ground', { max: 384, r: 70 }), 'flamethrower:u': R('arc', { len: 64, half: 1.1 }),

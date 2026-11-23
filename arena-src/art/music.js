@@ -48,6 +48,9 @@ const SeumMusic = (() => {
     else url = b64Url(DATA[name]);
     const a = new Audio(url); a.loop = true; a.preload = 'auto';
     const t = { name, a, g: null, on: false, off: 0 };
+    /* a pause the game did not ask for (the phone's own media controls, a call, the lock screen): leave it paused until the player comes back to the game or touches it (user 2026-11-21) */
+    a.addEventListener('pause', () => { if (t.self) { t.self = 0; return; } if (t.on) t.held = true; });
+    a.addEventListener('play', () => { t.self = 0; });
     try { if ((FILE && isPath(DATA[name])) || IOS) throw 0; const src = ac.createMediaElementSource(a); t.g = ac.createGain(); t.g.gain.value = 0; src.connect(t.g); t.g.connect(ac.destination); }
     catch (e) { t.g = null; a.volume = 0; }            // (no WebAudio: the element's own volume does the job)
     DATA[name] = null; return t;
@@ -67,10 +70,13 @@ const SeumMusic = (() => {
      and on the first tap each song is started once at volume 0 and paused ("primed"), so later switches lobby <-> match work without a tap. */
   const GESTURES = ['pointerup', 'touchend', 'click', 'keydown', 'mousedown'];
   let inited = false, armed = false;
+  let away = false;                                      // phone: the game is hidden (another app, the home screen, another tab)
+  const phone = () => IOS || (typeof mobileMode === 'function' && mobileMode());
+  function pz(t) { try { if (!t.a.paused) { t.self = 1; t.a.pause(); } } catch (e) { } }
   function prime(t) {
     if (!t || t.primed || t.on || IOS) return;      // iPhone/iPad: starting the other songs (even muted) can stop the one that plays; there a song that could not start waits for the next tap instead
     t.primed = 1;
-    try { const p = t.a.play(); if (p && p.then) p.then(() => { if (!t.on) t.a.pause(); }, () => { t.primed = 0; }); else if (!t.on) t.a.pause(); } catch (e) { t.primed = 0; }
+    try { const p = t.a.play(); if (p && p.then) p.then(() => { if (!t.on) pz(t); }, () => { t.primed = 0; }); else if (!t.on) pz(t); } catch (e) { t.primed = 0; }
   }
   function unlock() {
     if (!inited) {
@@ -92,12 +98,13 @@ const SeumMusic = (() => {
   function play(t) {
     if (!t) return;
     t.on = true; clearTimeout(t.off);
+    if (away || t.held) return;
     if (t.a.paused) { const p = t.a.play(); if (p && p.then) p.then(() => { t.primed = 1; }, e => { lastErr = t.name + ': ' + (e && e.name || e); t.on = false; started = false; arm(); }); else t.primed = 1; }
   }
   function stop(t) {                                     // fade out, then really pause (saves the phone's battery)
     if (!t || !t.on) return;
     t.on = false; clearTimeout(t.off);
-    t.off = setTimeout(() => { if (!t.on) try { t.a.pause(); } catch (e) { } }, 1800);
+    t.off = setTimeout(() => { if (!t.on) pz(t); }, 1800);
   }
   function arm() { if (armed) return; armed = true; for (const ev of GESTURES) addEventListener(ev, unlock, true); }
   function disarm() { if (!armed) return; armed = false; for (const ev of GESTURES) removeEventListener(ev, unlock, true); }
@@ -125,7 +132,9 @@ const SeumMusic = (() => {
     const u = document.createElement('div'), a = document.createElement('a'); a.href = LIC_URL; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = LIC_URL; u.append(a); el.append(u);
   }
   const CRED_SONGS = ['Pixelland', 'Just Nasty', 'Pixel Peeker Polka - faster', 'Cruising for Goblins'];
-  function fillCredits(el) { el.textContent = ''; el.append(...CRED_SONGS.map(credLine)); licLines(el); }
+  /* fonts and the online library (itch release, user 2026-11-21 "빠진건 넣고"): loaded from their own hosts, named here */
+  const CRED_MORE = ['Fonts: Rajdhani (Indian Type Foundry), IBM Plex Sans KR (IBM), Black Han Sans (Zess Type) · SIL Open Font License 1.1', 'PeerJS · MIT License'];
+  function fillCredits(el) { el.textContent = ''; el.append(...CRED_SONGS.map(credLine)); licLines(el); for (const t of CRED_MORE) { const d = document.createElement('div'); d.textContent = t; el.append(d); } }
   function setCred(mode) {                               // 'lobby' (both songs, stays) | 'match' (the match song, a few seconds) | null
     const el = ensureCred();
     if (el.dataset.mode === String(mode)) return;
@@ -169,10 +178,17 @@ const SeumMusic = (() => {
       d.textContent = L.join('\n'); }, 300); });
   arm();
   setInterval(tick, 200);
-  /* background tab: keep playing (user request 2026-11-15); if the browser suspended the sound anyway, start it again */
-  const wake = () => { try { if (ac && ac.state !== 'running' && ac.state !== 'closed') ac.resume().catch(() => {}); } catch (e) { }
+  /* PC, background tab: keep playing (user request 2026-11-15); if the browser suspended the sound anyway, start it again.
+     Phone (user 2026-11-21): the song stops while the game is hidden and goes on from the same spot on coming back. */
+  const free = () => { for (const n in tracks) if (tracks[n]) tracks[n].held = false; };
+  const wake = () => { if (document.hidden && phone()) return; away = false; free();
+    try { if (ac && ac.state !== 'running' && ac.state !== 'closed') ac.resume().catch(() => {}); } catch (e) { }
     for (const n in tracks) { const t = tracks[n]; if (t && t.on && t.a.paused) try { const p = t.a.play(); if (p && p.catch) p.catch(() => {}); } catch (e) { } } };
-  document.addEventListener('visibilitychange', () => { wake(); if (!document.hidden && inited && ac && ac.state !== 'running') arm(); tick(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && phone()) { away = true; for (const n in tracks) if (tracks[n]) pz(tracks[n]); return; }
+    wake(); if (!document.hidden && inited && ac && ac.state !== 'running') arm(); tick(); });
+  addEventListener('pagehide', () => { if (phone()) { away = true; for (const n in tracks) if (tracks[n]) pz(tracks[n]); } });
+  addEventListener('pointerdown', free, true);
   addEventListener('pageshow', wake); addEventListener('focus', wake);
   return {
     fillCredits,

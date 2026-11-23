@@ -1379,7 +1379,7 @@ canvas.rwI{background:none}
     <div class="setRow" id="setPcq"><span>화질</span><span class="devSeg"><button type="button" data-pcq="auto">자동</button><button type="button" data-pcq="high">높음</button><button type="button" data-pcq="low">낮음</button></span></div>
     <div class="setRow" id="setCredRow"><span>크레딧</span><button class="btn-plain" id="setCred" type="button">보기</button><span></span></div>
     <div class="setBtns"><button class="btn-plain" id="setReset" type="button">기본값</button><button class="btn-primary" id="setClose" type="button">닫기</button></div>
-    <p class="setLic">© Frenchfries777 · <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="license noopener">CC BY-NC-ND 4.0</a></p>
+    <p class="setLic">© 2026 Frenchfries777 · <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="license noopener">CC BY-NC-ND 4.0</a></p>
   </div>
 </div>
 <div id="rotHint"><i></i>휴대폰을 가로로 돌려 주세요</div>
@@ -4800,6 +4800,9 @@ const SeumMusic = (() => {
     else url = b64Url(DATA[name]);
     const a = new Audio(url); a.loop = true; a.preload = 'auto';
     const t = { name, a, g: null, on: false, off: 0 };
+    /* a pause the game did not ask for (the phone's own media controls, a call, the lock screen): leave it paused until the player comes back to the game or touches it (user 2026-11-21) */
+    a.addEventListener('pause', () => { if (t.self) { t.self = 0; return; } if (t.on) t.held = true; });
+    a.addEventListener('play', () => { t.self = 0; });
     try { if ((FILE && isPath(DATA[name])) || IOS) throw 0; const src = ac.createMediaElementSource(a); t.g = ac.createGain(); t.g.gain.value = 0; src.connect(t.g); t.g.connect(ac.destination); }
     catch (e) { t.g = null; a.volume = 0; }            // (no WebAudio: the element's own volume does the job)
     DATA[name] = null; return t;
@@ -4819,10 +4822,13 @@ const SeumMusic = (() => {
      and on the first tap each song is started once at volume 0 and paused ("primed"), so later switches lobby <-> match work without a tap. */
   const GESTURES = ['pointerup', 'touchend', 'click', 'keydown', 'mousedown'];
   let inited = false, armed = false;
+  let away = false;                                      // phone: the game is hidden (another app, the home screen, another tab)
+  const phone = () => IOS || (typeof mobileMode === 'function' && mobileMode());
+  function pz(t) { try { if (!t.a.paused) { t.self = 1; t.a.pause(); } } catch (e) { } }
   function prime(t) {
     if (!t || t.primed || t.on || IOS) return;      // iPhone/iPad: starting the other songs (even muted) can stop the one that plays; there a song that could not start waits for the next tap instead
     t.primed = 1;
-    try { const p = t.a.play(); if (p && p.then) p.then(() => { if (!t.on) t.a.pause(); }, () => { t.primed = 0; }); else if (!t.on) t.a.pause(); } catch (e) { t.primed = 0; }
+    try { const p = t.a.play(); if (p && p.then) p.then(() => { if (!t.on) pz(t); }, () => { t.primed = 0; }); else if (!t.on) pz(t); } catch (e) { t.primed = 0; }
   }
   function unlock() {
     if (!inited) {
@@ -4844,12 +4850,13 @@ const SeumMusic = (() => {
   function play(t) {
     if (!t) return;
     t.on = true; clearTimeout(t.off);
+    if (away || t.held) return;
     if (t.a.paused) { const p = t.a.play(); if (p && p.then) p.then(() => { t.primed = 1; }, e => { lastErr = t.name + ': ' + (e && e.name || e); t.on = false; started = false; arm(); }); else t.primed = 1; }
   }
   function stop(t) {                                     // fade out, then really pause (saves the phone's battery)
     if (!t || !t.on) return;
     t.on = false; clearTimeout(t.off);
-    t.off = setTimeout(() => { if (!t.on) try { t.a.pause(); } catch (e) { } }, 1800);
+    t.off = setTimeout(() => { if (!t.on) pz(t); }, 1800);
   }
   function arm() { if (armed) return; armed = true; for (const ev of GESTURES) addEventListener(ev, unlock, true); }
   function disarm() { if (!armed) return; armed = false; for (const ev of GESTURES) removeEventListener(ev, unlock, true); }
@@ -4877,7 +4884,9 @@ const SeumMusic = (() => {
     const u = document.createElement('div'), a = document.createElement('a'); a.href = LIC_URL; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = LIC_URL; u.append(a); el.append(u);
   }
   const CRED_SONGS = ['Pixelland', 'Just Nasty', 'Pixel Peeker Polka - faster', 'Cruising for Goblins'];
-  function fillCredits(el) { el.textContent = ''; el.append(...CRED_SONGS.map(credLine)); licLines(el); }
+  /* fonts and the online library (itch release, user 2026-11-21 "빠진건 넣고"): loaded from their own hosts, named here */
+  const CRED_MORE = ['Fonts: Rajdhani (Indian Type Foundry), IBM Plex Sans KR (IBM), Black Han Sans (Zess Type) · SIL Open Font License 1.1', 'PeerJS · MIT License'];
+  function fillCredits(el) { el.textContent = ''; el.append(...CRED_SONGS.map(credLine)); licLines(el); for (const t of CRED_MORE) { const d = document.createElement('div'); d.textContent = t; el.append(d); } }
   function setCred(mode) {                               // 'lobby' (both songs, stays) | 'match' (the match song, a few seconds) | null
     const el = ensureCred();
     if (el.dataset.mode === String(mode)) return;
@@ -4921,10 +4930,17 @@ const SeumMusic = (() => {
       d.textContent = L.join('\n'); }, 300); });
   arm();
   setInterval(tick, 200);
-  /* background tab: keep playing (user request 2026-11-15); if the browser suspended the sound anyway, start it again */
-  const wake = () => { try { if (ac && ac.state !== 'running' && ac.state !== 'closed') ac.resume().catch(() => {}); } catch (e) { }
+  /* PC, background tab: keep playing (user request 2026-11-15); if the browser suspended the sound anyway, start it again.
+     Phone (user 2026-11-21): the song stops while the game is hidden and goes on from the same spot on coming back. */
+  const free = () => { for (const n in tracks) if (tracks[n]) tracks[n].held = false; };
+  const wake = () => { if (document.hidden && phone()) return; away = false; free();
+    try { if (ac && ac.state !== 'running' && ac.state !== 'closed') ac.resume().catch(() => {}); } catch (e) { }
     for (const n in tracks) { const t = tracks[n]; if (t && t.on && t.a.paused) try { const p = t.a.play(); if (p && p.catch) p.catch(() => {}); } catch (e) { } } };
-  document.addEventListener('visibilitychange', () => { wake(); if (!document.hidden && inited && ac && ac.state !== 'running') arm(); tick(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && phone()) { away = true; for (const n in tracks) if (tracks[n]) pz(tracks[n]); return; }
+    wake(); if (!document.hidden && inited && ac && ac.state !== 'running') arm(); tick(); });
+  addEventListener('pagehide', () => { if (phone()) { away = true; for (const n in tracks) if (tracks[n]) pz(tracks[n]); } });
+  addEventListener('pointerdown', free, true);
   addEventListener('pageshow', wake); addEventListener('focus', wake);
   return {
     fillCredits,
@@ -5596,7 +5612,8 @@ function basic0(f, ang) {
 }
 function fire(f, ang) {
   if (BALL.own === f) return ballFire(f, ang);      // 볼 배틀: carrying the ball, the attack is a shot
-  if (f.fireCd > 0 || !canAtk(f) || f.boomOut || time < (f.noAtk || 0)) return false;      // noAtk: no basic attacks while an ultimate that does its own hitting runs (사무라이 쌍검 난무, 마술사 탈출 마법; user 2026-11-21)
+  if (BALL.on && !BALL.own && !(RD.pause > 0) && Math.hypot(BALL.x - f.x, BALL.y - f.y) < BALL_R + 22 && ballCanHold(f)) { if (f.fireCd > 0 || (BALL.inAi && !BALL.botKick)) return false; BALL.own = f; BALL.last = f; return ballFire(f, ang); }      // (take the ball back only when the kick really goes out: taking it first and then failing on the cooldown left the ball stuck in hand right after a shot, 2026-11-23)      // the ball I just kicked bounced straight back to my feet (off a wall or an enemy next to me) but I may not pick it up again for a moment: it looks carried, so the attack is a kick here too, never a hit (user 2026-11-23, phone)
+  if (f.fireCd > 0 || !canAtk(f) || f.boomOut || time < (f.atkLockT || 0)) return false;      // atkLockT (a time; NOT the on/off flag noAtk, which canAtk reads: sharing that name locked attacks until death, fixed 2026-11-22): no basic attacks while an ultimate that does its own hitting runs (사무라이 쌍검 난무, 마술사 탈출 마법; user 2026-11-21)
   f.aim = ang; f.lastFire = time; unbuff(f, 'stealth'); unbuff(f, 'ally');
   f.fireCd = cdOf(f);
   basic(f, ang);
@@ -5644,7 +5661,7 @@ function kill(e, by) {
   if (e.h.onDeath) e.h.onDeath(e);
   const ki = by && by !== e ? fighters.indexOf(by) : -1, src = e.lastDmg && time - e.lastDmg.t < .6 ? e.lastDmg.src : '패시브';
   e.killer = { i: ki, src }; fxPlay('killinfo', fighters.indexOf(e), ki, src);
-  e.dead = true; e.respawnT = 3; e.deaths++; e.queue = []; e.dash = null; e.hp = 0; e.boomOut = false; e.dots = []; e.b = {}; e.shield = 0; e.form = null; e.ghost = false; e.noAtk = false; e.noSkill = false;
+  e.dead = true; e.respawnT = 3; e.deaths++; e.queue = []; e.dash = null; e.hp = 0; e.boomOut = false; e.dots = []; e.b = {}; e.shield = 0; e.form = null; e.ghost = false; e.noAtk = false; e.atkLockT = 0; e.noSkill = false;
   if (e.h !== e.h0) { e.h = e.h0; e.sk = e.sk0; }
   bullets = bullets.filter(b => !(b.boom && b.owner === e));
   for (const m of minions) if (m.by === e && m.bound) m.dead = true;
@@ -5671,7 +5688,7 @@ function kill(e, by) {
 function respawn(f) {
   const mt = curMode === 'duo' && state === 'play' ? fighters.find(o => o !== f && o.team === f.team && !o.dead && !o.minion) : null;      // 투 레프트: come back beside the partner
   const p = mt ? freeNear(mt.x + Math.cos(mt.aim || 0) * -.9 * T, mt.y + Math.sin(mt.aim || 0) * -.9 * T) : spawnPos(f.team, f.slot);
-  Object.assign(f, { killer: null, lastDmg: null, ivx: 0, ivy: 0, x: p.x, y: p.y, hp: f.mhp, dead: false, inv: 2, kx: 0, ky: 0, lastHit: -9, lastFire: -9, fireCd: 0, st: {}, b: {}, dots: [], recent: [], shield: 0, form: null, ghost: false, noAtk: false, noSkill: false, boomOut: false });
+  Object.assign(f, { killer: null, lastDmg: null, ivx: 0, ivy: 0, x: p.x, y: p.y, hp: f.mhp, dead: false, inv: 2, kx: 0, ky: 0, lastHit: -9, lastFire: -9, fireCd: 0, st: {}, b: {}, dots: [], recent: [], shield: 0, form: null, ghost: false, noAtk: false, atkLockT: 0, noSkill: false, boomOut: false });
   if (f.h.spawn) f.h.spawn(f);
   fx('respawn', f.x, f.y - 20, { color: TC(f.team) });
 }
@@ -5804,13 +5821,22 @@ function ai0(f, dt) {
 }
 
 /* ---------- player ---------- */
-function autoAim(f) {       // phone tap: aim at the nearest enemy, leading a moving target for shots (2026-11-12: plain aim missed anyone walking)
-  const e = nearest(f, Math.max((f.h.range || 300) * 1.15, 4 * T), null, 0, false); if (!e) return f.aim;
-  return leadAng(f, e);
+/* phone tap: whom the shot goes at (2026-11-21, user: "자동 조준도 쓰레기"). Among the enemies in sight, in this order: within reach and not behind a wall (a character before a summon),
+   within reach behind a wall, then out of reach (the shot at least goes their way instead of where the character happened to face). Inside one group the nearest wins. A moving target is led */
+function autoAim(f) {
+  const R = Math.max((f.h.range || 300) * 1.15, 4 * T), FAR = Math.max(R * 1.6, 13 * T), tm = teamOf(f); let best = null, bs = Infinity;
+  for (const e of foes(f)) {
+    if (!visibleTo(e, tm)) continue;
+    const d = dist(f, e); if (d > FAR) continue;
+    const open = los(f.x, f.y, e.x, e.y), tier = d <= R ? (open ? 0 : 2) + (e.minion ? 1 : 0) : (open ? 4 : 6) + (e.minion ? 1 : 0), sc = tier * 1e6 + d;
+    if (sc < bs) { bs = sc; best = e; }
+  }
+  return best ? leadAng(f, best) : f.aim;
 }
 function leadAng(f, e) {
   if (f.h.type === 'melee' || e.minion) return angTo(f, e);
-  const spd = f.h.bspd || 800, vx = clamp(e.vx || 0, -600, 600), vy = clamp(e.vy || 0, -600, 600);
+  let vx = clamp(e.vx || 0, -600, 600), vy = clamp(e.vy || 0, -600, 600); const spd = f.h.bspd || 800;
+  if (e.svx !== undefined) { const m = vx * vx + vy * vy, c = m > 1 ? clamp((vx * e.svx + vy * e.svy) / m, 0, 1) : 0; vx *= c; vy *= c; }      // svx: the speed evened out over a moment (step). A target that keeps its course is led in full; one that only wiggles left-right (its evened-out speed near nothing) is aimed at where it stands
   let t = Math.hypot(e.x - f.x, e.y - f.y) / spd; for (let k = 0; k < 2; k++) t = Math.hypot(e.x + vx * t - f.x, e.y + vy * t - f.y) / spd;
   t = Math.min(t, .8) * .85; return Math.atan2(e.y + vy * t - f.y, e.x + vx * t - f.x);
 }
@@ -5854,6 +5880,7 @@ function readLocal(f) {       // what this screen's controls say right now, for 
   return inp;
 }
 const IN_BUF = .4;
+const LEAD_K = 14;      // how fast the evened-out speed follows (per second); 14 measured best: steady runners as before, fast wigglers hit far more often
 function applyInput(f, inp) {       // the same for this screen's player and for a player on another screen (host side)
   if (!inp) return [0, 0];
   f.aim = inp.aim; f.tx = inp.tx; f.ty = inp.ty;
@@ -5939,7 +5966,7 @@ function updateFighter(f, dt) {
     padStep(f, dt);
   }
   const kd = Math.exp(-(onIce(f) ? 3.2 : 8) * dt); f.kx *= kd; f.ky *= kd;
-  f.vx = (f.x - px) / dt; f.vy = (f.y - py) / dt;
+  f.vx = (f.x - px) / dt; f.vy = (f.y - py) / dt; { const k = Math.min(1, dt * LEAD_K); f.svx = (f.svx || 0) + (f.vx - (f.svx || 0)) * k; f.svy = (f.svy || 0) + (f.vy - (f.svy || 0)) * k; }
   f.bob += Math.hypot(f.vx, f.vy) * dt * .06;
 }
 function updateBullets(dt) {
@@ -6477,7 +6504,7 @@ function ballFire(f, ang) {
   f.aim = ang; f.lastFire = time; f.fireCd = .45; ballShoot(f, ang, 0); return true;
 }
 function ballShoot(f, ang, sup) {
-  BALL.own = null; BALL.kf = f; BALL.kt = time + .5; BALL.last = f;
+  BALL.own = null; BALL.kf = f; BALL.kt = time + .5; BALL.last = f; f.bno = time + .5;      // bno: the shooter's own no-pick-up time. kf/kt alone was lost when someone else touched the ball in between (an enemy right in front caught it and dropped it at once: stunned, dashing), so the ball jumped back into the shooter's hand 0.1 s after the shot, with the shot still on cooldown: holding the ball, unable to shoot or attack (user 2026-11-23)
   const p = sup ? BALL_SUPER : BALL_SHOT; BALL.vx = Math.cos(ang) * p; BALL.vy = Math.sin(ang) * p;
   if (fxInView(BALL.x, BALL.y)) { burst(BALL.x, BALL.y, '#ffffff', sup ? 16 : 8, sup ? 320 : 200); if (sup) ring(BALL.x, BALL.y, 50, TC(f.team), .3); }
   if (f.isPlayer || fxInView(f.x, f.y)) sfx(sup ? 180 : 240, sup ? .2 : .1, 'triangle', .07, sup ? 2.4 : 1.6);
@@ -6494,10 +6521,11 @@ function ballBodies(dt) {
   }
   let best = null, bd = BALL_R + 22;
   for (const f of fighters) {
-    if (!ballCanHold(f) || (f === BALL.kf && time < BALL.kt)) continue;
+    if (!ballCanHold(f) || (f === BALL.kf && time < BALL.kt) || time < (f.bno || 0)) continue;
     const d = Math.hypot(BALL.x - f.x, BALL.y - f.y); if (d < bd) { bd = d; best = f; }
   }
-  if (best) { BALL.own = best; BALL.last = best; BALL.pp.delete(best); if (best.isPlayer) sfx(520, .06, 'triangle', .05, 1.4); }
+  if (best) { BALL.own = best; BALL.last = best; BALL.pp.delete(best); if (best.queue && best.queue.length) best.queue = best.queue.filter(q => q.o);      // the rest of a basic burst (기관단총병 ...) is dropped when the ball is picked up: no attacks while carrying
+    if (best.isPlayer) sfx(520, .06, 'triangle', .05, 1.4); }
 }
 /* true while a goal is being celebrated (step() skips its own end checks then) */
 function ballStep(dt) {
@@ -6828,7 +6856,7 @@ hero('wizard', { p: ['마법진의 파동', '마법진 안에서는 스킬 밀�
 hero('magiccard', { p: ['카드 마술', '기본 공격은 맞은 상대를 느리게 하고 스킬 카드 5장이 모두 한 상대에게 맞으면 기절'],
   pre(f, o) { if (f.st.flower) { f.st.flower = 0; return Object.assign(o, { count: 1, fan: 0, dmg: 5, mute: 1, shape: 'cleonorb', r: 8 }); } o.slow = [.75, 1.2]; return o; },
   tick(f) { if (f.st.flower && time > f.st.flower) f.st.flower = 0; },
-  ult: ['탈출 마법', '가장 가까운 상대 위치로 순간이동해 1초 동안 쿨타임 없이 카드를 2번 연속 발사, 1초 뒤 원래 있던 자리로 되돌아옴', [100, 8 * T], f => { const e = nearest(f, 9 * T, null, 0, false); if (!e) return false; const x0 = f.x, y0 = f.y; f.noAtk = time + 1; blinkTo(f, e.x - Math.cos(angTo(f, e)) * 70, e.y - Math.sin(angTo(f, e)) * 70); seq(f, 2, .4, () => { if (!e.dead) f.aim = angTo(f, e); emit(f, f.aim); }); later(1, () => blinkTo(f, x0, y0), f); }],
+  ult: ['장미 폭죽', '조준한 곳으로 빨간 공을 포물선으로 던짐 (벽을 넘어감) · 공이 바닥에 떨어지면 큰 장미처럼 터지며 근처 상대에게 576 피해를 주고 2초 동안 이동속도 20% 감소', [100, 7 * T], (f, a) => { const p = aimPt(f, 7 * T); emit(f, Math.atan2(p.y - f.y, p.x - f.x), { skill: 1, count: 1, fan: 0, shape: 'redball', wp: true, r: 10, spd: 600, dmg: 48, splash: 155, kb: 0, slow: [.8, 2], col: '#ff5d8f', onBoom: (x, y) => fxPlay('rose', Math.round(x), Math.round(y), 155), range: Math.max(T, Math.hypot(p.x - f.x, p.y - f.y)) }); }],      // 2026-11-22 user design: 720 real damage = 48 x10 x1.2 x1.25 (the text says 576 because ranged numbers are shown x1.25); user picked mockup 5 장미 폭죽 (radius 155) on 2026-11-23; range 7 tiles / slow 2 s are placeholders (user gave only 720 and 20%)
   skills: [
     [1, '카드 일렬 발사', 'hit', '조준 방향으로 카드 5장을 일렬로 연달아 발사 (장당 96 피해)', [100, 7 * T], f => { const got = new Map(); seq(f, 5, .08, () => emit(f, f.aim, { skill: 1, skin: 1, count: 1, fan: 0, dmg: 8, onHit: e => { const n = (got.get(e) || 0) + 1; got.set(e, n); if (n === 5) { buff(e, 'stun', .8); fxAt(e, 'combo'); } } })); }],
     [2, '비둘기 변신', 'move', '1.5초 동안 모자 쓴 비둘기로 변해 물 위를 지나 상대에게 날아감 · 돌진 중 상대에게 닿으면 바로 변신이 풀리고 상대 0.9초 기절', [100, 8 * T], f => { f.form = 'dove'; buff(f, 'fly', 1.5); buff(f, 'haste', 1.5, 2.1); f.b.fly.end = g => { if (g.form === 'dove') g.form = null; unstick(g); }; f.st.dove = 1; }],
@@ -6928,7 +6956,7 @@ hero('samurai', { p: ['검무', '두 손의 검으로 번갈아 4연타(220 ×3 
   ult: ['쌍검 난무', '가장 가까운 적(4칸 안)에게 붙어 1.5초 동안 12번 베기 (11번 45 + 마지막 X자 405, 합 900, 마지막에 밀쳐냄) · 그동안 기본 공격은 나가지 않음 · 그동안 상대는 30% 느려지고, 멀어지면 순간이동으로 따라붙음 · 무적 아님, 기절하면 끊김', [0, 4 * T], f => {
     const e = nearest(f, 4 * T, null, 0, true); if (!e) return false;
     blinkTo(f, e.x - Math.cos(angTo(f, e)) * 46, e.y - Math.sin(angTo(f, e)) * 46); fxAt(f, 'samult');
-    buff(e, 'slow', 1.6, .7); f.noAtk = time + 1.5;
+    buff(e, 'slow', 1.6, .7); f.atkLockT = time + 1.5;
     seq(f, 12, .125, i => { if (e.dead || f.dead || B(f, 'stun')) return; if (dist(f, e) > 70 && dist(f, e) < 6 * T) { const g = angTo(e, f); blinkTo(f, e.x + Math.cos(g) * 46, e.y + Math.sin(g) * 46); } const a = angTo(f, e); f.aim = a; f.swing = .12; f.st.hand = i === 11 ? 2 : i % 2 ? 0 : 1; addSwing(f, a); arc(f, a, f.h.range * 1.2, 1, i === 11 ? 40.5 : 4.5, i === 11 ? { kb: 420 } : {}); if (i === 11) fx('samcut', e.x, e.y + BODY, { ang: 0, gy: e.y + 16 }); });
   }],
   skills: [
@@ -8212,6 +8240,27 @@ FXF.sp = (type, x, y, ex) => {
   if (ex.rot && FX_NEW) { const c = Math.cos(ex.rot), s = Math.sin(ex.rot); for (const q of FX_NEW) rotQ(q, x, y, c, s); }
   FX_GY = null; FX_NEW = null; FX_WID = null; FX_COS = null;
 };
+/* 마술사 궁극기 장미 폭죽 (user picked mockup 5, 2026-11-23): a big rose opens where the ball lands and petals fly out to the edge of the area */
+const roseFx = [];
+FXF.rose = (x, y, r) => { if (fxInView(x, y)) roseFx.push({ x, y, r, t0: performance.now(), sd: Math.random() * 99 }); };
+function drawRoseFx() {
+  const now = performance.now(), lite = skLite(), N = lite ? 16 : 46;
+  for (let i = roseFx.length - 1; i >= 0; i--) {
+    const q = roseFx[i], e = (now - q.t0) / 1150; if (e >= 1) { roseFx.splice(i, 1); continue; }
+    const o = 1 - e, ez = 1 - Math.pow(1 - e, 3), R = q.r;
+    ctx.save();
+    ctx.globalAlpha = .5 * o; ctx.fillStyle = '#ff5d8f'; ctx.beginPath(); ctx.arc(q.x, q.y, R * Math.min(1, e * 5), 0, 7); ctx.fill();
+    ctx.globalAlpha = .9 * o; ctx.strokeStyle = '#ff5d8f'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(q.x, q.y, R, 0, 7); ctx.stroke();
+    if (e < .6) { ctx.globalAlpha = Math.min(1, (.6 - e) * 4); ctx.fillStyle = '#e8222b'; for (let k = 0; k < 6; k++) { const a = k * 1.047 + e * 2; ctx.beginPath(); ctx.ellipse(q.x + Math.cos(a) * R * .34 * ez, q.y + Math.sin(a) * R * .34 * ez, R * .3 * ez + 8, R * .17 * ez + 5, a, 0, 7); ctx.fill(); } ctx.fillStyle = '#ffb3c8'; ctx.beginPath(); ctx.arc(q.x, q.y, R * .09, 0, 7); ctx.fill(); }
+    ctx.globalAlpha = Math.min(1, o * 1.6);
+    for (let k = 0; k < N; k++) {
+      const h1 = Math.sin((k + q.sd) * 127.1) * 43758.5453, h2 = Math.sin((k + q.sd) * 311.7) * 24634.6345, r1 = h1 - Math.floor(h1), r2 = h2 - Math.floor(h2);
+      const a = r1 * 6.283, d = R * (.25 + .8 * r2) * ez;
+      ctx.save(); ctx.translate(q.x + Math.cos(a) * d, q.y + Math.sin(a) * d * .9 + e * 16); ctx.rotate(e * 5 + k); ctx.fillStyle = k % 2 ? '#ff5d8f' : '#e8222b'; ctx.beginPath(); ctx.ellipse(0, 0, 11, 5.5, 0, 0, 7); ctx.fill(); ctx.restore();
+    }
+    ctx.restore();
+  }
+}
 function fx(type, x, y, ex) { fxPlay('sp', type, Math.round(x), Math.round(y), ex || {}); }
 const fxAt = (f, type, ex) => fx(type, f.x, f.y + BODY, Object.assign({ gy: f.y + 16 }, ex));
 /* a line effect from a to b, built pointing right and turned */
@@ -8290,7 +8339,7 @@ function bombArc(b) {
   b._tr = tr;
   return { k, h: H * 4 * k * (1 - k), dh: H * 4 * (1 - 2 * k) / Math.max(1, b._tot), H };
 }
-function bombFrame() { bombPrev = []; for (const b of bullets) if (b.shape === 'bomb' && b._sx !== undefined) bombPrev.push({ x: b.x, y: b.y, sx: b._sx, sy: b._sy, tot: b._tot, tr: b._tr || 0, team: b.team }); }
+function bombFrame() { bombPrev = []; for (const b of bullets) if ((b.shape === 'bomb' || b.shape === 'redball') && b._sx !== undefined) bombPrev.push({ x: b.x, y: b.y, sx: b._sx, sy: b._sy, tot: b._tot, tr: b._tr || 0, team: b.team }); }
 /* ---------- 더블 킬 · 트리플 킬 (Stickseum's showMultiKillBig): kills within 6 s of each other add up; everybody sees it, bigger when it is mine ---------- */
 const MK_WIN = 6, MK_NAMES = ['', '', '더블 킬', '트리플 킬', '쿼드라 킬', '펜타 킬'];
 const MK_TIERS = { 2: { c: '#ffd34d', px: 64, n: 22 }, 3: { c: '#ff9f43', px: 84, n: 34 }, 4: { c: '#ff5d5d', px: 104, n: 48 }, 5: { c: '#d58bff', px: 124, n: 64 } };
@@ -8383,6 +8432,13 @@ function shotSkin(b) {
 function drawShot(b) {          // a projectile in the original art, turned along its flight
   if (b.shape === 'syringe') return drawSyringe(b);
   const red = b.shape === 'redshot', wid = red ? 'pistol' : b.wid || SHAPE_WID[b.shape];      // 제임스 강한 탄: Stickseum's big red pistol bullet
+  if (b.shape === 'redball') {      // 마술사 궁극기 빨간 공: flies in an arc like a thrown bomb (shadow on the ground, ball above it)
+    const A = bombArc(b), sc = 1 - .5 * A.h / Math.max(1, A.H), R = Math.max(9, b.r || 9);
+    ctx.save(); ctx.globalAlpha = .28 + .2 * sc; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(b.x, b.y + 30, R * 1.2 * sc, R * .5 * sc, 0, 0, 7); ctx.fill();
+    ctx.globalAlpha = 1; ctx.fillStyle = '#e8222b'; ctx.beginPath(); ctx.arc(b.x, b.y - A.h, R, 0, 7); ctx.fill();
+    ctx.fillStyle = '#ff8a8f'; ctx.beginPath(); ctx.arc(b.x - R * .32, b.y - A.h - R * .34, R * .3, 0, 7); ctx.fill(); ctx.restore();
+    return true;
+  }
   if (!wid) return false;
   let vx = b.vx != null ? b.vx : Math.cos(b.ang) * 100, vy = b.vy != null ? b.vy : Math.sin(b.ang) * 100, y = b.y;
   if (b.shape === 'bomb') {
@@ -9364,7 +9420,7 @@ const PVS = {
   'dagger:1': R('self', { r: 384, faint: 1 }), 'dagger:2': R('dash', { len: 717, w: 60 }), 'dagger:4': R('dash', { len: 205, w: 44, back: 1 }),
   'dracula:2': R('dash', { len: 256, w: 60 }),
   'wizard:1': R('self', { r: 130 }), 'wizard:2': R('line', { len: 512, w: 44, over: 1 }), 'wizard:3': R('line', { len: 512, w: 26, over: 1 }), 'wizard:4': R('line', { len: 512, w: 64, over: 1 }), 'wizard:5': R('self', { r: 54 }), 'wizard:u': R('self', { r: 198 }),
-  'magiccard:1': R('line', { len: 448, w: 26 }), 'magiccard:3': R('dash', { len: 352, w: 30 }), 'magiccard:5': R('fan', { len: 492, half: .15, n: 3 }), 'magiccard:u': R('self', { r: 512, faint: 1 }),
+  'magiccard:1': R('line', { len: 448, w: 26 }), 'magiccard:3': R('dash', { len: 352, w: 30 }), 'magiccard:5': R('fan', { len: 492, half: .15, n: 3 }), 'magiccard:u': R('ground', { max: 448, r: 155 }),
   'gambler:2': R('line', { len: 576, w: 30 }), 'gambler:3': R('pts', { pts: [[60, 0]], r: 22 }),
   'boomerang:1': R('self', { r: 160 }), 'boomerang:u': R('fan', { len: 416, half: .5, n: 5 }),
   'flamethrower:1': R('dash', { len: 269, w: 44 }), 'flamethrower:2': R('ground', { max: 384, r: 70 }), 'flamethrower:u': R('arc', { len: 64, half: 1.1 }),
@@ -12757,7 +12813,7 @@ function drawMinion(m) {
   ctx.restore();
   if (m.hit && k !== 'body') { ctx.fillStyle = '#0c0e13'; ctx.fillRect(m.x - 17, m.y - 66, 34, 6); ctx.fillStyle = col; ctx.fillRect(m.x - 16, m.y - 65, 32 * clamp(m.hp / m.max, 0, 1), 4); }
 }
-const SHAPE_COL = { bullet:'#ffe27a', kdgun:'#b86bff', dronebolt:'#7df0ff', needle:'#f0f0f0', blowgun:'#8dff7c', pellet:'#ffe27a', chip:'#ff5d5d', fireball:'#ff8a2a', cleonorb:'#ff7bd9', potion:'#9a4cff', mask:'#f4f4f4', card:'#ffffff', star:'#cfd3dc', boomerang:'#c98a4b', bomb:'#3a3f4a', rocket:'#cfd3dc', arrow:'#c9a463', quarrel:'#c9a463' };
+const SHAPE_COL = { bullet:'#ffe27a', kdgun:'#b86bff', dronebolt:'#7df0ff', needle:'#f0f0f0', blowgun:'#8dff7c', pellet:'#ffe27a', chip:'#ff5d5d', fireball:'#ff8a2a', cleonorb:'#ff7bd9', redball:'#e8222b', potion:'#9a4cff', mask:'#f4f4f4', card:'#ffffff', star:'#cfd3dc', boomerang:'#c98a4b', bomb:'#3a3f4a', rocket:'#cfd3dc', arrow:'#c9a463', quarrel:'#c9a463' };
 function drawBullet(b) {
   const col = SHAPE_COL[b.shape] || '#ffe27a', big = b.r > 8 ? b.r / 5 : 1, s = b.shape;
   ctx.save(); ctx.translate(b.x, b.y); ctx.scale(big, big);
@@ -12773,7 +12829,7 @@ function drawBullet(b) {
     ctx.rotate(b.ang); ctx.strokeStyle = col; ctx.lineWidth = s === 'needle' || s === 'blowgun' ? 2 : 3;
     ctx.beginPath(); ctx.moveTo(-14, 0); ctx.lineTo(8, 0); ctx.stroke();
     ctx.fillStyle = TC(b.team); ctx.beginPath(); ctx.moveTo(13, 0); ctx.lineTo(5, -4); ctx.lineTo(5, 4); ctx.closePath(); ctx.fill();
-  } else if (s === 'bomb' || s === 'rocket' || s === 'potion' || s === 'fireball' || s === 'cleonorb') {
+  } else if (s === 'bomb' || s === 'rocket' || s === 'potion' || s === 'fireball' || s === 'cleonorb' || s === 'redball') {
     ctx.rotate(b.ang);
     if (s === 'rocket') { ctx.beginPath(); ctx.roundRect(-11, -5, 22, 10, 5); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#ff8a2a'; ctx.beginPath(); ctx.arc(-13, 0, 4, 0, 6.3); ctx.fill(); }
     else { if (s !== 'bomb') { ctx.globalAlpha = .35; ctx.beginPath(); ctx.arc(0, 0, 12, 0, 6.3); ctx.fill(); ctx.globalAlpha = 1; } ctx.beginPath(); ctx.arc(0, 0, 7.5, 0, 6.3); ctx.fill(); ctx.stroke(); }
@@ -12886,6 +12942,7 @@ function render() {
   drawParticles();
   if (typeof drawGardenTop === 'function') drawGardenTop();      // (gardener.js: leaves, pollen, forest burst, vines round the feet)
   for (const g of rings) { const k = 1 - g.life / g.max; ctx.globalAlpha = 1 - k; ctx.strokeStyle = g.color; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(g.x, g.y, g.r * (.4 + .6 * k), 0, 6.3); ctx.stroke(); }
+  drawRoseFx();
   ctx.globalAlpha = 1;
   if (!menu) {
     for (const f of fighters) if (!f.dead && visibleTo(f, VIEW)) drawBars(f);
@@ -13012,6 +13069,16 @@ function setMusicVol() { try { if (window.SeumMusic && SeumMusic.setVolume) Seum
 setMusicVol();
 $('setVol').addEventListener('input', e => { SET.vol = +e.target.value; $('setVolV').textContent = SET.vol + '%'; saveSet(); setMusicVol(); });
 $('setVol').addEventListener('change', setBeep);
+/* phones: the settings window scrolls, and a finger that starts a scroll on a slider used to change it (a scroll begun at the left end of 음량 saved volume 0: no sound at all; found 2026-11-21).
+   A touch that turns out to be a scroll (more up/down than sideways) puts the slider back where it was */
+for (const el of document.querySelectorAll('#settings input[type=range]')) {
+  let st = null; el.style.touchAction = 'pan-y';
+  const back = () => { if (st && st.scroll && el.value !== st.v) { el.value = st.v; el.dispatchEvent(new Event('input', { bubbles: true })); } };
+  el.addEventListener('touchstart', e => { const t = e.touches[0]; st = { v: el.value, x: t.clientX, y: t.clientY, scroll: false, side: false }; }, { passive: true });
+  el.addEventListener('touchmove', e => { if (!st) return; const t = e.touches[0], dx = Math.abs(t.clientX - st.x), dy = Math.abs(t.clientY - st.y); if (!st.scroll && !st.side) { if (dy > 8 && dy > dx) st.scroll = true; else if (dx > 8) st.side = true; } back(); }, { passive: true });
+  const end = () => { back(); if (st && st.scroll) setTimeout(((s) => () => { st = s; back(); st = null; })(st), 0); st = null; };
+  el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
+}
 $('setAim').addEventListener('input', e => { SET.aim = +e.target.value; $('setAimV').textContent = (SET.aim / 100).toFixed(1) + '×'; saveSet(); });
 $('setFx').addEventListener('change', e => { SET.fx = e.target.checked; saveSet(); });
 $('setCred').addEventListener('click', () => { if (window.SeumMusic && SeumMusic.fillCredits) SeumMusic.fillCredits($('setCredBox')); $('credWin').hidden = false; });
@@ -13633,11 +13700,10 @@ addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouse.do
 cv.addEventListener('contextmenu', e => e.preventDefault());
 function setStick(s, e) {
   const k = s === stickA ? SET.aim / 100 : 1; let dx = (e.clientX - s.ox) * k / 48, dy = (e.clientY - s.oy) * k / 48; const l = Math.hypot(dx, dy);
-  if (s === stickM) {      // move stick (as in Brawl Stars): any push past a small dead zone is full speed, and the base slides after a thumb that runs past the rim
+  if (s === stickM) {      // move stick (as in Brawl Stars): the base slides after a thumb that runs past the rim
     const kl = Math.min(l, 1) / (l || 1); s.kx = dx * kl; s.ky = dy * kl;      // where the knob is drawn (under the thumb)
     if (l > 1.25) { s.ox = e.clientX - dx / l * 60; s.oy = e.clientY - dy / l * 60; }
-    if (l < .18) { s.dx = s.dy = 0; return; }
-    s.dx = dx / l; s.dy = dy / l; return;
+    s.dx = s.kx; s.dy = s.ky; return;      // user 2026-11-21: how far the stick is pushed sets the speed again (48px = full speed, no dead zone, as before 2026-11-20)
   }
   if (l > 1) { dx /= l; dy /= l; } s.dx = dx; s.dy = dy;
 }

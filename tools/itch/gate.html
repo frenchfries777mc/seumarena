@@ -1,0 +1,72 @@
+<style>
+#itchGate{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(6,8,12,.86);
+  padding:calc(env(safe-area-inset-top,0px) + 12px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(16px,env(safe-area-inset-left,0px));overflow-y:auto}
+#itchGate .igCard{width:min(520px,100%);margin:auto;text-align:center}
+#itchGate h1{font:700 clamp(40px,9vw,72px)/1 var(--font);margin:0 0 6px;color:var(--text);text-shadow:0 6px 18px rgba(0,0,0,.6)}
+#itchGate h1 span{color:var(--accent)}
+#itchGate .igSub{font:600 15px 'IBM Plex Sans KR',sans-serif;color:var(--text-dim);margin:0 0 22px}
+#itchGate .igRow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#itchGate .igOpt{display:flex;flex-direction:column;gap:8px}
+#itchGate .igOpt button{width:100%;min-height:58px;font-size:22px}
+#itchGate .igOpt small{font:500 13px/1.4 'IBM Plex Sans KR',sans-serif;color:var(--text-dim)}
+#itchGate .igMsg{min-height:20px;margin-top:14px;font:600 14px 'IBM Plex Sans KR',sans-serif;color:var(--sel)}
+@media (max-width:420px){#itchGate .igRow{grid-template-columns:1fr}}
+/* social logins cannot open inside itch.io's frame: they open in a new window (the site's itch-login page) and the game takes the login over */
+</style>
+<script>
+(() => {
+  const ITCH_OAUTH = ['google', 'github', 'discord'], PAGE = 'https://frenchfries777.com/games/itch-login/';
+  let poll = 0, asking = false;
+  document.addEventListener('click', e => {
+    const b = e.target && e.target.closest && e.target.closest('#ffaModal .ffa-oa'); if (!b) return;
+    e.stopPropagation(); e.preventDefault();      // not the site's own handler: it would send this frame to the provider
+    const p = b.getAttribute('data-p'), box = document.getElementById('ffaModal'), m = box.querySelector('.m'), say = t => { if (m) m.textContent = t; };
+    if (!ITCH_OAUTH.includes(p)) return;
+    const A = window.FFAuth, sb = A && A.client && A.client(); if (!sb) { say('로그인 서버에 연결하지 못했어요.'); return; }
+    const code = Array.from(crypto.getRandomValues(new Uint8Array(24)), x => x.toString(16).padStart(2, '0')).join('');      // one-time, never shown; the login is handed over under it once
+    const w = window.open(PAGE + '?go=' + p + '&c=' + code, 'ffitch', 'width=480,height=680');
+    if (!w) { say('새 창이 막혔어요. 팝업을 허용한 뒤 다시 눌러 주세요.'); return; }
+    say('새 창에서 로그인해 주세요.');
+    clearInterval(poll); const t0 = Date.now();
+    poll = setInterval(async () => {
+      if (asking) return;
+      if (Date.now() - t0 > 5 * 60 * 1000) { clearInterval(poll); say('시간이 지났어요. 다시 눌러 주세요.'); return; }
+      asking = true;
+      try {
+        const r = await sb.rpc('ff_itch_take', { p_code: code }), row = r && r.data && (Array.isArray(r.data) ? r.data[0] : r.data);
+        if (row && row.access_token) {
+          clearInterval(poll);
+          const s = await sb.auth.setSession({ access_token: row.access_token, refresh_token: row.refresh_token });
+          if (s && s.error) say('로그인하지 못했어요. 다시 눌러 주세요.'); else { say(''); box.style.display = 'none'; }
+        }
+      } catch (er) { }
+      asking = false;
+    }, 1500);
+  }, true);
+})();
+(() => {
+  const KEY = 'seumArenaItchGate'; let seen = null; try { seen = localStorage.getItem(KEY); } catch (e) { }
+  if (seen) return;
+  const g = document.createElement('div'); g.id = 'itchGate'; g.setAttribute('role', 'dialog'); g.setAttribute('aria-modal', 'true');
+  g.innerHTML = '<div class="igCard"><h1>Seum<span>Arena</span></h1><p class="igSub">어떻게 시작할까요?</p><div class="igRow">'
+    + '<div class="igOpt"><button class="btn-primary" id="igLogin" type="button">로그인</button><small>Frenchfries777 계정에 기록이 저장돼요</small></div>'
+    + '<div class="igOpt"><button class="btn-plain" id="igGuest" type="button">게스트로 하기</button><small>이 브라우저에만 저장돼요</small></div>'
+    + '</div><div class="igMsg" id="igMsg" aria-live="polite"></div></div>';
+  document.body.append(g);
+  const done = how => { try { localStorage.setItem(KEY, how); } catch (e) { } g.remove(); };
+  const msg = t => { g.querySelector('#igMsg').textContent = t; };
+  let hooked = false;
+  const hook = () => {      // closes the choice as soon as an account is signed in (also one that was already signed in here)
+    const A = window.FFAuth; if (!A || hooked) return !!A; hooked = true;
+    const chk = () => { try { if (A.user && A.user()) done('in'); } catch (e) { } };
+    try { A.ready.then(chk, () => { }); A.onChange(chk); } catch (e) { }
+    return true;
+  };
+  const wait = setInterval(() => { if (hook() || !document.body.contains(g)) clearInterval(wait); }, 300);
+  g.querySelector('#igGuest').onclick = () => done('guest');
+  g.querySelector('#igLogin').onclick = () => {
+    if (!hook()) { msg('로그인 서버에 연결하지 못했어요. 잠시 뒤에 다시 눌러 주세요.'); return; }
+    msg(''); try { window.FFAuth.openLogin(); } catch (e) { msg('로그인 창을 열지 못했어요.'); }
+  };
+})();
+</script>
