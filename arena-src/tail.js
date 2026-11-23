@@ -151,7 +151,7 @@ function drawMinion(m) {
   ctx.restore();
   if (m.hit && k !== 'body') { ctx.fillStyle = '#0c0e13'; ctx.fillRect(m.x - 17, m.y - 66, 34, 6); ctx.fillStyle = col; ctx.fillRect(m.x - 16, m.y - 65, 32 * clamp(m.hp / m.max, 0, 1), 4); }
 }
-const SHAPE_COL = { bullet:'#ffe27a', kdgun:'#b86bff', dronebolt:'#7df0ff', needle:'#f0f0f0', blowgun:'#8dff7c', pellet:'#ffe27a', chip:'#ff5d5d', fireball:'#ff8a2a', cleonorb:'#ff7bd9', potion:'#9a4cff', mask:'#f4f4f4', card:'#ffffff', star:'#cfd3dc', boomerang:'#c98a4b', bomb:'#3a3f4a', rocket:'#cfd3dc', arrow:'#c9a463', quarrel:'#c9a463' };
+const SHAPE_COL = { bullet:'#ffe27a', kdgun:'#b86bff', dronebolt:'#7df0ff', needle:'#f0f0f0', blowgun:'#8dff7c', pellet:'#ffe27a', chip:'#ff5d5d', fireball:'#ff8a2a', cleonorb:'#ff7bd9', redball:'#e8222b', potion:'#9a4cff', mask:'#f4f4f4', card:'#ffffff', star:'#cfd3dc', boomerang:'#c98a4b', bomb:'#3a3f4a', rocket:'#cfd3dc', arrow:'#c9a463', quarrel:'#c9a463' };
 function drawBullet(b) {
   const col = SHAPE_COL[b.shape] || '#ffe27a', big = b.r > 8 ? b.r / 5 : 1, s = b.shape;
   ctx.save(); ctx.translate(b.x, b.y); ctx.scale(big, big);
@@ -167,7 +167,7 @@ function drawBullet(b) {
     ctx.rotate(b.ang); ctx.strokeStyle = col; ctx.lineWidth = s === 'needle' || s === 'blowgun' ? 2 : 3;
     ctx.beginPath(); ctx.moveTo(-14, 0); ctx.lineTo(8, 0); ctx.stroke();
     ctx.fillStyle = TC(b.team); ctx.beginPath(); ctx.moveTo(13, 0); ctx.lineTo(5, -4); ctx.lineTo(5, 4); ctx.closePath(); ctx.fill();
-  } else if (s === 'bomb' || s === 'rocket' || s === 'potion' || s === 'fireball' || s === 'cleonorb') {
+  } else if (s === 'bomb' || s === 'rocket' || s === 'potion' || s === 'fireball' || s === 'cleonorb' || s === 'redball') {
     ctx.rotate(b.ang);
     if (s === 'rocket') { ctx.beginPath(); ctx.roundRect(-11, -5, 22, 10, 5); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#ff8a2a'; ctx.beginPath(); ctx.arc(-13, 0, 4, 0, 6.3); ctx.fill(); }
     else { if (s !== 'bomb') { ctx.globalAlpha = .35; ctx.beginPath(); ctx.arc(0, 0, 12, 0, 6.3); ctx.fill(); ctx.globalAlpha = 1; } ctx.beginPath(); ctx.arc(0, 0, 7.5, 0, 6.3); ctx.fill(); ctx.stroke(); }
@@ -280,6 +280,7 @@ function render() {
   drawParticles();
   if (typeof drawGardenTop === 'function') drawGardenTop();      // (gardener.js: leaves, pollen, forest burst, vines round the feet)
   for (const g of rings) { const k = 1 - g.life / g.max; ctx.globalAlpha = 1 - k; ctx.strokeStyle = g.color; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(g.x, g.y, g.r * (.4 + .6 * k), 0, 6.3); ctx.stroke(); }
+  drawRoseFx();
   ctx.globalAlpha = 1;
   if (!menu) {
     for (const f of fighters) if (!f.dead && visibleTo(f, VIEW)) drawBars(f);
@@ -406,6 +407,16 @@ function setMusicVol() { try { if (window.SeumMusic && SeumMusic.setVolume) Seum
 setMusicVol();
 $('setVol').addEventListener('input', e => { SET.vol = +e.target.value; $('setVolV').textContent = SET.vol + '%'; saveSet(); setMusicVol(); });
 $('setVol').addEventListener('change', setBeep);
+/* phones: the settings window scrolls, and a finger that starts a scroll on a slider used to change it (a scroll begun at the left end of 음량 saved volume 0: no sound at all; found 2026-11-21).
+   A touch that turns out to be a scroll (more up/down than sideways) puts the slider back where it was */
+for (const el of document.querySelectorAll('#settings input[type=range]')) {
+  let st = null; el.style.touchAction = 'pan-y';
+  const back = () => { if (st && st.scroll && el.value !== st.v) { el.value = st.v; el.dispatchEvent(new Event('input', { bubbles: true })); } };
+  el.addEventListener('touchstart', e => { const t = e.touches[0]; st = { v: el.value, x: t.clientX, y: t.clientY, scroll: false, side: false }; }, { passive: true });
+  el.addEventListener('touchmove', e => { if (!st) return; const t = e.touches[0], dx = Math.abs(t.clientX - st.x), dy = Math.abs(t.clientY - st.y); if (!st.scroll && !st.side) { if (dy > 8 && dy > dx) st.scroll = true; else if (dx > 8) st.side = true; } back(); }, { passive: true });
+  const end = () => { back(); if (st && st.scroll) setTimeout(((s) => () => { st = s; back(); st = null; })(st), 0); st = null; };
+  el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
+}
 $('setAim').addEventListener('input', e => { SET.aim = +e.target.value; $('setAimV').textContent = (SET.aim / 100).toFixed(1) + '×'; saveSet(); });
 $('setFx').addEventListener('change', e => { SET.fx = e.target.checked; saveSet(); });
 $('setCred').addEventListener('click', () => { if (window.SeumMusic && SeumMusic.fillCredits) SeumMusic.fillCredits($('setCredBox')); $('credWin').hidden = false; });
@@ -1027,11 +1038,10 @@ addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouse.do
 cv.addEventListener('contextmenu', e => e.preventDefault());
 function setStick(s, e) {
   const k = s === stickA ? SET.aim / 100 : 1; let dx = (e.clientX - s.ox) * k / 48, dy = (e.clientY - s.oy) * k / 48; const l = Math.hypot(dx, dy);
-  if (s === stickM) {      // move stick (as in Brawl Stars): any push past a small dead zone is full speed, and the base slides after a thumb that runs past the rim
+  if (s === stickM) {      // move stick (as in Brawl Stars): the base slides after a thumb that runs past the rim
     const kl = Math.min(l, 1) / (l || 1); s.kx = dx * kl; s.ky = dy * kl;      // where the knob is drawn (under the thumb)
     if (l > 1.25) { s.ox = e.clientX - dx / l * 60; s.oy = e.clientY - dy / l * 60; }
-    if (l < .18) { s.dx = s.dy = 0; return; }
-    s.dx = dx / l; s.dy = dy / l; return;
+    s.dx = s.kx; s.dy = s.ky; return;      // user 2026-11-21: how far the stick is pushed sets the speed again (48px = full speed, no dead zone, as before 2026-11-20)
   }
   if (l > 1) { dx /= l; dy /= l; } s.dx = dx; s.dy = dy;
 }

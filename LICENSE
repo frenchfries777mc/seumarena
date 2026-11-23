@@ -18,5 +18,13 @@ Full legal code:
 https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
 
 Third-party content keeps its own license:
-  - Music "Pixelland" and "Just Nasty" by Kevin MacLeod (incompetech.com),
+  - Music by Kevin MacLeod (incompetech.com): "Pixelland", "Just Nasty",
+    "Cruising for Goblins" and "Pixel Peeker Polka - faster",
     licensed under CC BY 4.0: http://creativecommons.org/licenses/by/4.0/
+  - Fonts (loaded from Google Fonts, not included in this build): Rajdhani
+    (Indian Type Foundry), IBM Plex Sans KR (IBM), Black Han Sans (Zess Type),
+    SIL Open Font License 1.1: https://openfontlicense.org
+  - PeerJS (loaded from cdnjs, not included in this build), MIT License:
+    https://github.com/peers/peerjs
+
+Official site: https://frenchfries777.com

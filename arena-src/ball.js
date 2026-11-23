@@ -77,7 +77,7 @@ function ballFire(f, ang) {
   f.aim = ang; f.lastFire = time; f.fireCd = .45; ballShoot(f, ang, 0); return true;
 }
 function ballShoot(f, ang, sup) {
-  BALL.own = null; BALL.kf = f; BALL.kt = time + .5; BALL.last = f;
+  BALL.own = null; BALL.kf = f; BALL.kt = time + .5; BALL.last = f; f.bno = time + .5;      // bno: the shooter's own no-pick-up time. kf/kt alone was lost when someone else touched the ball in between (an enemy right in front caught it and dropped it at once: stunned, dashing), so the ball jumped back into the shooter's hand 0.1 s after the shot, with the shot still on cooldown: holding the ball, unable to shoot or attack (user 2026-11-23)
   const p = sup ? BALL_SUPER : BALL_SHOT; BALL.vx = Math.cos(ang) * p; BALL.vy = Math.sin(ang) * p;
   if (fxInView(BALL.x, BALL.y)) { burst(BALL.x, BALL.y, '#ffffff', sup ? 16 : 8, sup ? 320 : 200); if (sup) ring(BALL.x, BALL.y, 50, TC(f.team), .3); }
   if (f.isPlayer || fxInView(f.x, f.y)) sfx(sup ? 180 : 240, sup ? .2 : .1, 'triangle', .07, sup ? 2.4 : 1.6);
@@ -94,10 +94,11 @@ function ballBodies(dt) {
   }
   let best = null, bd = BALL_R + 22;
   for (const f of fighters) {
-    if (!ballCanHold(f) || (f === BALL.kf && time < BALL.kt)) continue;
+    if (!ballCanHold(f) || (f === BALL.kf && time < BALL.kt) || time < (f.bno || 0)) continue;
     const d = Math.hypot(BALL.x - f.x, BALL.y - f.y); if (d < bd) { bd = d; best = f; }
   }
-  if (best) { BALL.own = best; BALL.last = best; BALL.pp.delete(best); if (best.isPlayer) sfx(520, .06, 'triangle', .05, 1.4); }
+  if (best) { BALL.own = best; BALL.last = best; BALL.pp.delete(best); if (best.queue && best.queue.length) best.queue = best.queue.filter(q => q.o);      // the rest of a basic burst (기관단총병 ...) is dropped when the ball is picked up: no attacks while carrying
+    if (best.isPlayer) sfx(520, .06, 'triangle', .05, 1.4); }
 }
 /* true while a goal is being celebrated (step() skips its own end checks then) */
 function ballStep(dt) {

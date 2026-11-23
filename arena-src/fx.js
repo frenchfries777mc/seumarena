@@ -70,6 +70,27 @@ FXF.sp = (type, x, y, ex) => {
   if (ex.rot && FX_NEW) { const c = Math.cos(ex.rot), s = Math.sin(ex.rot); for (const q of FX_NEW) rotQ(q, x, y, c, s); }
   FX_GY = null; FX_NEW = null; FX_WID = null; FX_COS = null;
 };
+/* 마술사 궁극기 장미 폭죽 (user picked mockup 5, 2026-11-23): a big rose opens where the ball lands and petals fly out to the edge of the area */
+const roseFx = [];
+FXF.rose = (x, y, r) => { if (fxInView(x, y)) roseFx.push({ x, y, r, t0: performance.now(), sd: Math.random() * 99 }); };
+function drawRoseFx() {
+  const now = performance.now(), lite = skLite(), N = lite ? 16 : 46;
+  for (let i = roseFx.length - 1; i >= 0; i--) {
+    const q = roseFx[i], e = (now - q.t0) / 1150; if (e >= 1) { roseFx.splice(i, 1); continue; }
+    const o = 1 - e, ez = 1 - Math.pow(1 - e, 3), R = q.r;
+    ctx.save();
+    ctx.globalAlpha = .5 * o; ctx.fillStyle = '#ff5d8f'; ctx.beginPath(); ctx.arc(q.x, q.y, R * Math.min(1, e * 5), 0, 7); ctx.fill();
+    ctx.globalAlpha = .9 * o; ctx.strokeStyle = '#ff5d8f'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(q.x, q.y, R, 0, 7); ctx.stroke();
+    if (e < .6) { ctx.globalAlpha = Math.min(1, (.6 - e) * 4); ctx.fillStyle = '#e8222b'; for (let k = 0; k < 6; k++) { const a = k * 1.047 + e * 2; ctx.beginPath(); ctx.ellipse(q.x + Math.cos(a) * R * .34 * ez, q.y + Math.sin(a) * R * .34 * ez, R * .3 * ez + 8, R * .17 * ez + 5, a, 0, 7); ctx.fill(); } ctx.fillStyle = '#ffb3c8'; ctx.beginPath(); ctx.arc(q.x, q.y, R * .09, 0, 7); ctx.fill(); }
+    ctx.globalAlpha = Math.min(1, o * 1.6);
+    for (let k = 0; k < N; k++) {
+      const h1 = Math.sin((k + q.sd) * 127.1) * 43758.5453, h2 = Math.sin((k + q.sd) * 311.7) * 24634.6345, r1 = h1 - Math.floor(h1), r2 = h2 - Math.floor(h2);
+      const a = r1 * 6.283, d = R * (.25 + .8 * r2) * ez;
+      ctx.save(); ctx.translate(q.x + Math.cos(a) * d, q.y + Math.sin(a) * d * .9 + e * 16); ctx.rotate(e * 5 + k); ctx.fillStyle = k % 2 ? '#ff5d8f' : '#e8222b'; ctx.beginPath(); ctx.ellipse(0, 0, 11, 5.5, 0, 0, 7); ctx.fill(); ctx.restore();
+    }
+    ctx.restore();
+  }
+}
 function fx(type, x, y, ex) { fxPlay('sp', type, Math.round(x), Math.round(y), ex || {}); }
 const fxAt = (f, type, ex) => fx(type, f.x, f.y + BODY, Object.assign({ gy: f.y + 16 }, ex));
 /* a line effect from a to b, built pointing right and turned */
@@ -148,7 +169,7 @@ function bombArc(b) {
   b._tr = tr;
   return { k, h: H * 4 * k * (1 - k), dh: H * 4 * (1 - 2 * k) / Math.max(1, b._tot), H };
 }
-function bombFrame() { bombPrev = []; for (const b of bullets) if (b.shape === 'bomb' && b._sx !== undefined) bombPrev.push({ x: b.x, y: b.y, sx: b._sx, sy: b._sy, tot: b._tot, tr: b._tr || 0, team: b.team }); }
+function bombFrame() { bombPrev = []; for (const b of bullets) if ((b.shape === 'bomb' || b.shape === 'redball') && b._sx !== undefined) bombPrev.push({ x: b.x, y: b.y, sx: b._sx, sy: b._sy, tot: b._tot, tr: b._tr || 0, team: b.team }); }
 /* ---------- 더블 킬 · 트리플 킬 (Stickseum's showMultiKillBig): kills within 6 s of each other add up; everybody sees it, bigger when it is mine ---------- */
 const MK_WIN = 6, MK_NAMES = ['', '', '더블 킬', '트리플 킬', '쿼드라 킬', '펜타 킬'];
 const MK_TIERS = { 2: { c: '#ffd34d', px: 64, n: 22 }, 3: { c: '#ff9f43', px: 84, n: 34 }, 4: { c: '#ff5d5d', px: 104, n: 48 }, 5: { c: '#d58bff', px: 124, n: 64 } };
@@ -241,6 +262,13 @@ function shotSkin(b) {
 function drawShot(b) {          // a projectile in the original art, turned along its flight
   if (b.shape === 'syringe') return drawSyringe(b);
   const red = b.shape === 'redshot', wid = red ? 'pistol' : b.wid || SHAPE_WID[b.shape];      // 제임스 강한 탄: Stickseum's big red pistol bullet
+  if (b.shape === 'redball') {      // 마술사 궁극기 빨간 공: flies in an arc like a thrown bomb (shadow on the ground, ball above it)
+    const A = bombArc(b), sc = 1 - .5 * A.h / Math.max(1, A.H), R = Math.max(9, b.r || 9);
+    ctx.save(); ctx.globalAlpha = .28 + .2 * sc; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(b.x, b.y + 30, R * 1.2 * sc, R * .5 * sc, 0, 0, 7); ctx.fill();
+    ctx.globalAlpha = 1; ctx.fillStyle = '#e8222b'; ctx.beginPath(); ctx.arc(b.x, b.y - A.h, R, 0, 7); ctx.fill();
+    ctx.fillStyle = '#ff8a8f'; ctx.beginPath(); ctx.arc(b.x - R * .32, b.y - A.h - R * .34, R * .3, 0, 7); ctx.fill(); ctx.restore();
+    return true;
+  }
   if (!wid) return false;
   let vx = b.vx != null ? b.vx : Math.cos(b.ang) * 100, vy = b.vy != null ? b.vy : Math.sin(b.ang) * 100, y = b.y;
   if (b.shape === 'bomb') {

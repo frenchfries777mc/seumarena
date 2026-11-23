@@ -658,7 +658,8 @@ function basic0(f, ang) {
 }
 function fire(f, ang) {
   if (BALL.own === f) return ballFire(f, ang);      // 볼 배틀: carrying the ball, the attack is a shot
-  if (f.fireCd > 0 || !canAtk(f) || f.boomOut || time < (f.noAtk || 0)) return false;      // noAtk: no basic attacks while an ultimate that does its own hitting runs (사무라이 쌍검 난무, 마술사 탈출 마법; user 2026-11-21)
+  if (BALL.on && !BALL.own && !(RD.pause > 0) && Math.hypot(BALL.x - f.x, BALL.y - f.y) < BALL_R + 22 && ballCanHold(f)) { if (f.fireCd > 0 || (BALL.inAi && !BALL.botKick)) return false; BALL.own = f; BALL.last = f; return ballFire(f, ang); }      // (take the ball back only when the kick really goes out: taking it first and then failing on the cooldown left the ball stuck in hand right after a shot, 2026-11-23)      // the ball I just kicked bounced straight back to my feet (off a wall or an enemy next to me) but I may not pick it up again for a moment: it looks carried, so the attack is a kick here too, never a hit (user 2026-11-23, phone)
+  if (f.fireCd > 0 || !canAtk(f) || f.boomOut || time < (f.atkLockT || 0)) return false;      // atkLockT (a time; NOT the on/off flag noAtk, which canAtk reads: sharing that name locked attacks until death, fixed 2026-11-22): no basic attacks while an ultimate that does its own hitting runs (사무라이 쌍검 난무, 마술사 탈출 마법; user 2026-11-21)
   f.aim = ang; f.lastFire = time; unbuff(f, 'stealth'); unbuff(f, 'ally');
   f.fireCd = cdOf(f);
   basic(f, ang);
@@ -706,7 +707,7 @@ function kill(e, by) {
   if (e.h.onDeath) e.h.onDeath(e);
   const ki = by && by !== e ? fighters.indexOf(by) : -1, src = e.lastDmg && time - e.lastDmg.t < .6 ? e.lastDmg.src : '패시브';
   e.killer = { i: ki, src }; fxPlay('killinfo', fighters.indexOf(e), ki, src);
-  e.dead = true; e.respawnT = 3; e.deaths++; e.queue = []; e.dash = null; e.hp = 0; e.boomOut = false; e.dots = []; e.b = {}; e.shield = 0; e.form = null; e.ghost = false; e.noAtk = false; e.noSkill = false;
+  e.dead = true; e.respawnT = 3; e.deaths++; e.queue = []; e.dash = null; e.hp = 0; e.boomOut = false; e.dots = []; e.b = {}; e.shield = 0; e.form = null; e.ghost = false; e.noAtk = false; e.atkLockT = 0; e.noSkill = false;
   if (e.h !== e.h0) { e.h = e.h0; e.sk = e.sk0; }
   bullets = bullets.filter(b => !(b.boom && b.owner === e));
   for (const m of minions) if (m.by === e && m.bound) m.dead = true;
@@ -733,7 +734,7 @@ function kill(e, by) {
 function respawn(f) {
   const mt = curMode === 'duo' && state === 'play' ? fighters.find(o => o !== f && o.team === f.team && !o.dead && !o.minion) : null;      // 투 레프트: come back beside the partner
   const p = mt ? freeNear(mt.x + Math.cos(mt.aim || 0) * -.9 * T, mt.y + Math.sin(mt.aim || 0) * -.9 * T) : spawnPos(f.team, f.slot);
-  Object.assign(f, { killer: null, lastDmg: null, ivx: 0, ivy: 0, x: p.x, y: p.y, hp: f.mhp, dead: false, inv: 2, kx: 0, ky: 0, lastHit: -9, lastFire: -9, fireCd: 0, st: {}, b: {}, dots: [], recent: [], shield: 0, form: null, ghost: false, noAtk: false, noSkill: false, boomOut: false });
+  Object.assign(f, { killer: null, lastDmg: null, ivx: 0, ivy: 0, x: p.x, y: p.y, hp: f.mhp, dead: false, inv: 2, kx: 0, ky: 0, lastHit: -9, lastFire: -9, fireCd: 0, st: {}, b: {}, dots: [], recent: [], shield: 0, form: null, ghost: false, noAtk: false, atkLockT: 0, noSkill: false, boomOut: false });
   if (f.h.spawn) f.h.spawn(f);
   fx('respawn', f.x, f.y - 20, { color: TC(f.team) });
 }
@@ -866,13 +867,22 @@ function ai0(f, dt) {
 }
 
 /* ---------- player ---------- */
-function autoAim(f) {       // phone tap: aim at the nearest enemy, leading a moving target for shots (2026-11-12: plain aim missed anyone walking)
-  const e = nearest(f, Math.max((f.h.range || 300) * 1.15, 4 * T), null, 0, false); if (!e) return f.aim;
-  return leadAng(f, e);
+/* phone tap: whom the shot goes at (2026-11-21, user: "자동 조준도 쓰레기"). Among the enemies in sight, in this order: within reach and not behind a wall (a character before a summon),
+   within reach behind a wall, then out of reach (the shot at least goes their way instead of where the character happened to face). Inside one group the nearest wins. A moving target is led */
+function autoAim(f) {
+  const R = Math.max((f.h.range || 300) * 1.15, 4 * T), FAR = Math.max(R * 1.6, 13 * T), tm = teamOf(f); let best = null, bs = Infinity;
+  for (const e of foes(f)) {
+    if (!visibleTo(e, tm)) continue;
+    const d = dist(f, e); if (d > FAR) continue;
+    const open = los(f.x, f.y, e.x, e.y), tier = d <= R ? (open ? 0 : 2) + (e.minion ? 1 : 0) : (open ? 4 : 6) + (e.minion ? 1 : 0), sc = tier * 1e6 + d;
+    if (sc < bs) { bs = sc; best = e; }
+  }
+  return best ? leadAng(f, best) : f.aim;
 }
 function leadAng(f, e) {
   if (f.h.type === 'melee' || e.minion) return angTo(f, e);
-  const spd = f.h.bspd || 800, vx = clamp(e.vx || 0, -600, 600), vy = clamp(e.vy || 0, -600, 600);
+  let vx = clamp(e.vx || 0, -600, 600), vy = clamp(e.vy || 0, -600, 600); const spd = f.h.bspd || 800;
+  if (e.svx !== undefined) { const m = vx * vx + vy * vy, c = m > 1 ? clamp((vx * e.svx + vy * e.svy) / m, 0, 1) : 0; vx *= c; vy *= c; }      // svx: the speed evened out over a moment (step). A target that keeps its course is led in full; one that only wiggles left-right (its evened-out speed near nothing) is aimed at where it stands
   let t = Math.hypot(e.x - f.x, e.y - f.y) / spd; for (let k = 0; k < 2; k++) t = Math.hypot(e.x + vx * t - f.x, e.y + vy * t - f.y) / spd;
   t = Math.min(t, .8) * .85; return Math.atan2(e.y + vy * t - f.y, e.x + vx * t - f.x);
 }
@@ -916,6 +926,7 @@ function readLocal(f) {       // what this screen's controls say right now, for 
   return inp;
 }
 const IN_BUF = .4;
+const LEAD_K = 14;      // how fast the evened-out speed follows (per second); 14 measured best: steady runners as before, fast wigglers hit far more often
 function applyInput(f, inp) {       // the same for this screen's player and for a player on another screen (host side)
   if (!inp) return [0, 0];
   f.aim = inp.aim; f.tx = inp.tx; f.ty = inp.ty;
@@ -1001,7 +1012,7 @@ function updateFighter(f, dt) {
     padStep(f, dt);
   }
   const kd = Math.exp(-(onIce(f) ? 3.2 : 8) * dt); f.kx *= kd; f.ky *= kd;
-  f.vx = (f.x - px) / dt; f.vy = (f.y - py) / dt;
+  f.vx = (f.x - px) / dt; f.vy = (f.y - py) / dt; { const k = Math.min(1, dt * LEAD_K); f.svx = (f.svx || 0) + (f.vx - (f.svx || 0)) * k; f.svy = (f.svy || 0) + (f.vy - (f.svy || 0)) * k; }
   f.bob += Math.hypot(f.vx, f.vy) * dt * .06;
 }
 function updateBullets(dt) {
