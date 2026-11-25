@@ -42,7 +42,6 @@ function drawProjectileBase(b){
       ctx.fillStyle='#e63946'; ctx.beginPath(); ctx.moveTo(-12,0); ctx.lineTo(-16,-3); ctx.lineTo(-9,0); ctx.lineTo(-16,3); ctx.closePath(); ctx.fill();
       break;
     case 'blowgun':
-      if(b.wid==='kan') ctx.scale(1.9,1.9);      // 칸's darts are bigger (the hit circle too)
       ctx.strokeStyle='#3a2a14'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(6,0); ctx.stroke();
       ctx.fillStyle='#1faa6a'; ctx.beginPath(); ctx.moveTo(10,0); ctx.lineTo(5,-2.4); ctx.lineTo(5,2.4); ctx.closePath(); ctx.fill();
       ctx.strokeStyle='#e0334a'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(-12,-2.5); ctx.moveTo(-9,0); ctx.lineTo(-12,2.5); ctx.stroke();
@@ -119,11 +118,6 @@ function drawProjectileBase(b){
       ctx.fillStyle='#ffe08a'; ctx.beginPath(); ctx.arc(0,0,3.5,0,7); ctx.fill();
       break;
     case 'greatsword': break;          // 용살자: the light is drawn along the real arm swing in drawStickman
-    case 'dspaper': {                  // 만화가 용살자: a small paper plane thrown at the enemy
-      drawPaperShape(ctx, 30, performance.now());
-      addP({x:b.x-Math.cos(ang)*8+RND(-2,2),y:b.y-Math.sin(ang)*8+RND(-2,2),vx:RND(-10,10),vy:RND(-10,20),life:RND(.25,.5),size:RND(1.4,2.4),color:'#f4f1e8',add:false,grav:40,drag:1.5});
-      break;
-    }
     case 'dsfireball': {              // the dragon's fireball: a white-hot core with ragged flame lobes and a long comet tail of fire
       const tt=performance.now()/1000;
       ctx.save(); ctx.globalCompositeOperation='lighter';
@@ -221,7 +215,7 @@ function drawProjectileBase(b){
       break;
     }
     case 'hook':
-    case 'dagger': {
+    {
       const prog=b.life0 ? clamp(1-(b.life/b.life0),0,1) : 1; ctx.lineCap='round';
       ctx.save(); ctx.globalCompositeOperation='lighter';
       ctx.strokeStyle=hexA('#cfe3ff',0.35); ctx.lineWidth=12; ctx.beginPath(); ctx.moveTo(-6,0); ctx.lineTo(-6+30*prog,0); ctx.stroke();
@@ -303,7 +297,7 @@ function drawTrail(b){
   ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(b.x,b.y,wd*3.4,0,7); ctx.fill();
   ctx.restore();
 }
-const MELEE_DRAW_RANGE={spear:160, blade:85, club:82, dagger:40, fist:45, saber:100, pitchfork:105, hook:55, katana:90, greatsword:90, neon:115};   // the reach the swing graphics were drawn for
+const MELEE_DRAW_RANGE={spear:160, blade:85, club:82, fist:45, saber:100, pitchfork:105, hook:55, katana:90, greatsword:90, neon:115};   // the reach the swing graphics were drawn for
 function drawFireDragon(c,now,face,flap,breath,headOnly){       // a red western dragon seen from the side (head toward +x): flapping bat wings with finger bones, a long arched neck, a horned head with an open fire-lit jaw, a tapering spine-covered tail
   const T=now*0.0055+(flap||0), fl=Math.sin(T*2.4), bob=Math.sin(T*1.2)*3;
   c.save(); c.scale(face,1); c.translate(0,bob); c.lineJoin='round'; c.lineCap='round';
@@ -370,10 +364,3 @@ function hexA(col,a){
 }
 const hexACache=new Map();       // hexA is called thousands of times a frame with a handful of different colours: the answers are kept, per colour, with the alpha in steps of 0.01 (nobody can see 1%)
 const BULLET_R = 5;
-function drawPaperShape(c, len, now){      // a folded paper plane seen from the side, pointing right (+x), nose at (len/2,0)
-  const h=len*0.2, n=len/2;
-  c.fillStyle='#fbf8ee'; c.strokeStyle='#8e97b8'; c.lineWidth=Math.max(1,len*0.02); c.lineJoin='round';
-  c.beginPath(); c.moveTo(n,0); c.lineTo(-n,-h*0.9); c.lineTo(-n*0.55,0); c.closePath(); c.fill(); c.stroke();      // the upper wing
-  c.fillStyle='#dfe4f4'; c.beginPath(); c.moveTo(n,0); c.lineTo(-n*0.55,0); c.lineTo(-n,h*0.7); c.closePath(); c.fill(); c.stroke();      // the lower wing in shade
-  c.strokeStyle='#b9c0dc'; c.beginPath(); c.moveTo(n*0.7,-h*0.05); c.lineTo(-n*0.7,-h*0.45); c.stroke();      // a fold line
-}

@@ -91,7 +91,7 @@ function drawRoseFx() {
     ctx.restore();
   }
 }
-function fx(type, x, y, ex) { fxPlay('sp', type, Math.round(x), Math.round(y), ex || {}); }
+function fx(type, x, y, ex) { if (awCur && ex && (ex.color || ex.col)) { ex = Object.assign({}, ex); if (ex.color) ex.color = awGold(ex.color); if (ex.col) ex.col = awGold(ex.col); } fxPlay('sp', type, Math.round(x), Math.round(y), ex || {}); }
 const fxAt = (f, type, ex) => fx(type, f.x, f.y + BODY, Object.assign({ gy: f.y + 16 }, ex));
 /* a line effect from a to b, built pointing right and turned */
 function fxLine(type, x0, y0, x1, y1, ex) { const d = Math.hypot(x1 - x0, y1 - y0) || 1, a = Math.atan2(y1 - y0, x1 - x0); fx(type, x0, y0, Object.assign({ x2: Math.round(x0 + d), y2: Math.round(y0), rot: +a.toFixed(3), dir: 1 }, ex)); }
@@ -100,8 +100,8 @@ const themeCol = id => (ULT_THEMES[id] || ULT_THEMES._).c[0];
 /* melee swings: the original weapon arcs (drawProjectileBase with a swing angle), drawn where the arm swings */
 function addSwing(f, ang) {
   const life = Math.min(.28, Math.max(.12, f.h.cd || .3));
-  const sk = skinOf(f.cos, f.h.id), s = { x: f.x + Math.cos(ang) * 26, y: f.y + BODY + Math.sin(ang) * 26, wid: f.h.id, swingAngle: ang, life, life0: life, color: CONCEPT_COLOR[conceptOfSkin(sk)] || TC(f.team), vx: 0, vy: 0, dmgless: true, sk: sk || undefined };
-  swings.push(s); evt(['w', Math.round(s.x), Math.round(s.y), s.wid, +ang.toFixed(2), +life.toFixed(2), f.team, fighters.indexOf(f)]);
+  const sk = skinOf(f.cos, f.h.id), s = { x: f.x + Math.cos(ang) * 26, y: f.y + BODY + Math.sin(ang) * 26, wid: f.h.id, swingAngle: ang, life, life0: life, color: f.awT > 0 ? '#ffd34d' : CONCEPT_COLOR[conceptOfSkin(sk)] || TC(f.team), vx: 0, vy: 0, dmgless: true, sk: f.awT > 0 ? undefined : sk || undefined };      // an awakened swing is plain gold (user 2026-11-25)
+  swings.push(s); evt(['w', Math.round(s.x), Math.round(s.y), s.wid, +ang.toFixed(2), +life.toFixed(2), f.team, fighters.indexOf(f), f.awT > 0 ? 1 : 0]);
 }
 const SHAPE_WID = {}; for (const id in WEAPONS) { const sh = WEAPONS[id].shape; if (sh && !SHAPE_WID[sh] && WEAPONS[id].kind !== 'melee') SHAPE_WID[sh] = id; }
 SHAPE_WID.bullet = 'pistol'; SHAPE_WID.fireball = 'wizard'; SHAPE_WID.bomb = 'grenade'; SHAPE_WID.rocket = 'bazooka'; SHAPE_WID.arrow = 'bow';
@@ -277,8 +277,8 @@ function drawShot(b) {          // a projectile in the original art, turned alon
     ctx.save(); ctx.globalAlpha = .28 + .2 * s; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(b.x, b.y + 30, 11 * s, 4.5 * s, 0, 0, 7); ctx.fill(); ctx.restore();
     y = b.y - A.h; vy -= A.dh * sp;                             // (the bomb turns along the arc: nose up, then down)
   }
-  const sk = red ? null : shotSkin(b), cp = sk ? conceptOfSkin(sk) : '';
-  const o = { x: b.x, y, vx: vx || Math.cos(b.ang), vy: vy || Math.sin(b.ang), wid, life: 1, life0: 1, color: red ? '#e8222b' : (CONCEPT_COLOR[cp] || TC(b.team)), big: red, ult: b.r > 8, scale: b.r > 8 ? b.r / 6 : 1, owner: 'x', sk: sk || undefined, sx: Math.round((b.ang || 0) * 100), sy: 0 };
+  const sk = red || b.gold ? null : shotSkin(b), cp = sk ? conceptOfSkin(sk) : '';
+  const o = { x: b.x, y, vx: vx || Math.cos(b.ang), vy: vy || Math.sin(b.ang), wid, life: 1, life0: 1, color: red ? '#e8222b' : b.gold ? '#ffd34d' : (CONCEPT_COLOR[cp] || TC(b.team)), big: red, ult: b.r > 8, scale: b.r > 8 ? b.r / 6 : 1, owner: 'x', sk: sk || undefined, sx: Math.round((b.ang || 0) * 100), sy: 0 };
   ctx.save();
   try { if (!(cp && drawConceptProjectile(o, cp))) { drawProjectileBase(o); if (sk) { ctx.restore(); ctx.save(); drawBulletSkinFx(o); } } } catch (e) { ctx.restore(); return false; }
   ctx.restore();
@@ -297,72 +297,29 @@ function drawSwings(dt) {
 const SKILL_FX = {
   'sword:3': f => fxAt(f, 'skillring', { color: '#dfe6f0', r: 110 }),
   'sword:4': f => fxAt(f, 'blink', { color: '#ffd34d' }),
-  'bat:1': f => fxAt(f, 'skillring', { color: '#ffffff', r: 80 }),
   'shotgun:1': f => fxAt(f, 'gust', { r: 120 }),
   'shotgun:5': f => fxAt(f, 'skillring', { color: '#c9a36a' }),
   'rifle:3': f => fxAt(f, 'skillring', { color: '#7be86a' }),
   'rifle:5': f => fxAt(f, 'shieldup'),
   'smg:3': f => fxAt(f, 'dash', { dir: 1, rot: +f.aim.toFixed(2) }),
   'gloves:2': f => fxAt(f, 'shieldup'),
-  'dagger:3': f => fxAt(f, 'skillring', { color: '#8fe04a' }),
-  'dagger:4': f => fxAt(f, 'smokeveil'),
-  'dracula:1': f => fxAt(f, 'skillring', { color: '#b01030' }),
-  'dracula:3': f => fxAt(f, 'skillring', { color: '#d01030' }),
   'wizard:1': f => fxAt(f, 'gust', { r: 130 }),
   'wizard:5': f => fxAt(f, 'skillring', { color: '#9d7bff' }),
   'magiccard:4': f => fxAt(f, 'skillring', { color: '#ff9ad0' }),
-  'boomerang:1': f => fxAt(f, 'gust', { r: 160 }),
-  'boomerang:3': f => fxAt(f, 'skillring', { color: '#ffd34d' }),
-  'flamethrower:3': f => fxAt(f, 'skillring', { color: '#ff7a2b' }),
-  'vacuum:1': f => fxAt(f, 'vacvortex', { r: px(330) }),
-  'vacuum:2': f => fxAt(f, 'smokeland'),
-  'vacuum:3': f => fxAt(f, 'skillring', { color: '#8fd3ff' }),
-  'pirate:3': f => fxAt(f, 'skillring', { color: '#d98c2b' }),
   'samurai:4': f => fxAt(f, 'skillring', { color: '#dfe9ff' }),
   'harald:1': f => fxAt(f, 'skillring', { color: '#ff5a3a' }),
   'harald:4': f => fxAt(f, 'shieldup'),
-  'horemheb:2': f => fxAt(f, 'sandpuff'),
-  'horemheb:3': f => fxAt(f, 'sandpuff'),
-  'pizarro:1': f => fxAt(f, 'skillring', { color: '#ffd34d' }),
-  'pizarro:4': f => fxAt(f, 'skillring', { color: '#ffd34d', r: 220 }),
-  'edward:2': f => fxAt(f, 'skillring', { color: '#b3202a' }),
-  'edward:4': f => fxAt(f, 'skillring', { color: '#f4f1e8' }),
-  'plague:5': f => fxAt(f, 'skillring', { color: '#9be06a' }),
-  'dragonslayer:1': f => fxAt(f, 'skillring', { color: '#ff8a3d' }),
-  'dragonslayer:2': f => fxAt(f, 'shieldup'),
-  'dragonslayer:5': f => fxAt(f, 'skillring', { color: '#ff8a3d' }),
   'shade:3': f => fxAt(f, 'skillring', { color: '#7dffd8' }),
-  'kan:5': f => fxAt(f, 'skillring', { color: '#7ddc7a' }),
-  'kurus:1': f => fxAt(f, 'darksplash'),
-  'kurus:3': f => fxAt(f, 'darksplash'),
-  'cleon:1': f => fxAt(f, 'skillring', { color: '#ff7ac8' }),
-  'cleon:5': f => fxAt(f, 'shieldup'),
-  'pel:1': f => fxAt(f, 'skillring', { color: '#7fd8ff' }),
-  'pel:3': f => fxAt(f, 'shieldup'),
-  'pel:5': f => fxAt(f, 'skillring', { color: '#7dff9a' }),
   'tionis:2': f => fxAt(f, 'skillring', { color: '#4ddb7a' }),
-  'tell:3': f => fxAt(f, 'skillring', { color: '#ffe14a' }),
-  'tell:5': f => fxAt(f, 'skillring', { color: '#9ae26a' }),
   'pistol:1': f => fxAt(f, 'skillring', { color: '#ffd34d' }),
   'pistol:3': f => fxAt(f, 'skillring', { color: '#ffd34d' }),
   'pistol:4': f => fxAt(f, 'skillring', { color: '#7bf3ff' }),
-  'medium:2': f => fxAt(f, 'skillring', { color: '#8b5cf6' }),
   /* skills that used to show only the plain ring */
   'sword:2': f => fxPlay('leap', fighters.indexOf(f), .3, 90),
   'grenade:1': f => fxPlay('leap', fighters.indexOf(f), .45, 150, 1),
   'sword:5': f => fx('spark', f.x + Math.cos(f.aim) * 46, f.y + BODY + Math.sin(f.aim) * 46, { ang: +f.aim.toFixed(2), color: '#ffffff' }),
   'pistol:2': f => fx('spark', f.x + Math.cos(f.aim) * 40, f.y + BODY + Math.sin(f.aim) * 40, { ang: +f.aim.toFixed(2), color: '#ffd34d' }),
-  'edward:3': f => fx('spark', f.x + Math.cos(f.aim) * 40, f.y + BODY + Math.sin(f.aim) * 40, { ang: +f.aim.toFixed(2), color: '#ffd34d' }),
-  'edward:4': f => fxAt(f, 'shieldup'),
   'harald:2': f => fx('dustblast', f.x + Math.cos(f.aim) * 30, f.y + BODY + Math.sin(f.aim) * 30, { ang: +f.aim.toFixed(2) }),
-  'tell:1': f => { const e = nearest(f, 9 * T, null, 0); if (e) fx('lockon', e.x, e.y + BODY); fxAt(f, 'skillring', { color: '#9ae26a', r: 80 }); },
-  'tell:3': f => fxAt(f, 'arrowwarn'),
-  'tell:4': f => { const e = nearest(f, 9 * T, null, 0); if (e) fx('lockon', e.x, e.y - 60); fxAt(f, 'skillring', { color: '#ff6a6a', r: 80 }); },
-  'tell:5': f => fxAt(f, 'arrowwarn'),
-  'kan:2': f => fxAt(f, 'smellburst'),
-  'plague:5': f => { fxAt(f, 'smellburst'); fxAt(f, 'skillring', { color: '#9be06a' }); },
-  'puppeteer:2': f => fxAt(f, 'magiccircle'),
-  'dragonslayer:1': f => { fx('flamepuff', f.x + Math.cos(f.aim) * 20, f.y + BODY + Math.sin(f.aim) * 20, { ang: +f.aim.toFixed(2) }); fxAt(f, 'skillring', { color: conceptOfSkin(skinOf(f.cos, 'dragonslayer')) === 'manga' ? '#2c2f6b' : '#ff8a3d' }); },
   'magiccard:2': f => fxAt(f, 'blink', { color: '#ffffff' }),
   'magiccard:3': f => fxAt(f, 'blink', { color: '#ff9ad0' })
 };
@@ -401,16 +358,6 @@ function syncAuras(caster, col) {
   }
 }
 FXF.aura = (fi, k, dur, col) => { const f = fighters[fi]; if (!f) return; (f.fxAura || (f.fxAura = {}))[k] = performance.now() + dur * 1000; if (col) f.fxAuraCol = col; };
-function drawBatFormArt(c, tint) {     // 드라큘라's bat form, as in Stickseum (drawBatForm): flapping wings, red glow and eyes
-  const flap = Math.sin(performance.now() / 55);
-  c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = 'rgba(255,45,45,.16)'; c.beginPath(); c.arc(0, -28, 32, 0, 7); c.fill(); c.restore();
-  const ws = 25 + flap * 5; c.fillStyle = '#15161c';
-  for (const sd of [-1, 1]) { c.beginPath(); c.moveTo(0, -32); c.quadraticCurveTo(sd * ws * .6, -46 - flap * 7, sd * ws, -26 - flap * 4); c.quadraticCurveTo(sd * ws * .65, -26, sd * ws * .4, -18); c.quadraticCurveTo(sd * ws * .2, -24, 0, -20); c.closePath(); c.fill(); }
-  c.fillStyle = '#2a0a0a'; c.beginPath(); c.ellipse(0, -27, 7, 10, 0, 0, 7); c.fill();
-  c.beginPath(); c.moveTo(-5, -35); c.lineTo(-8, -45); c.lineTo(-1.5, -36.5); c.closePath(); c.fill();
-  c.beginPath(); c.moveTo(5, -35); c.lineTo(8, -45); c.lineTo(1.5, -36.5); c.closePath(); c.fill();
-  c.fillStyle = '#ff2d2d'; c.beginPath(); c.arc(-3, -28, 1.3, 0, 7); c.fill(); c.beginPath(); c.arc(3, -28, 1.3, 0, 7); c.fill();
-}
 
 /* ---------- zones drawn like Stickseum's own (the plain circle that tail.js draws is only the fallback) ---------- */
 const KD_PAL = { a: '#9a4cff', b: '#c9a0ff', wing: '#24083a', mid: '#3a1668' };
@@ -610,12 +557,6 @@ function drawBuffAuras(dt) {
   ctx.globalAlpha = 1;
 }
 /* 도박사: the cards turn over in a banner (the original's), for whoever plays them in sight */
-function cardFx(f, cs, total, tags) {
-  if (state !== 'play' || (!f.human && player && Math.hypot(player.x - f.x, player.y - f.y) > 6 * T)) return;
-  const R = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-  const cards = cs.map(c => c >= 52 ? { joker: 1, r: '', s: '', red: 0 } : { r: R[c % 13], s: '♠♥♦♣'[Math.floor(c / 13)], red: (Math.floor(c / 13) === 1 || Math.floor(c / 13) === 2) ? 1 : 0 });
-  fx('cards', f.x, f.y + BODY, { name: f.nick || f.h0.name, cards, total, tags: tags || [] });
-}
 /* the dragon and the crows in the original art */
 function drawDragonMinion(m) {
   const face = Math.cos(m.a * .7 + Math.PI / 2) >= 0 ? -1 : 1;

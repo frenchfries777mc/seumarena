@@ -36,8 +36,13 @@ function siteChrome(page) {
   const h = document.createElement('header'); h.className = 'top';
   h.innerHTML = '<div class="wrap"><a class="brand" href="index.html">' + NAME_HTML + '</a><nav aria-label="사이트 메뉴">' +
     nav.map(n => '<a href="' + n[0] + '"' + (n[2] === page ? ' class="on" aria-current="page"' : '') + '>' + n[1] + '</a>').join('') +
-    '</nav><button type="button" class="codeBtn" id="codeBtn">코드 입력</button><span class="acct" id="acct"></span><a class="toGame" href="' + SITE.game + '">게임으로 돌아가기</a></div>';
+    '</nav><select class="langSel" id="langSel" aria-label="Language" data-noi18n hidden></select><button type="button" class="codeBtn" id="codeBtn">코드 입력</button><span class="acct" id="acct"></span><a class="toGame" href="' + SITE.game + '">게임으로 돌아가기</a></div>';
   document.body.prepend(h);
+  if (window.I18N) {      // languages: the same list as the game's 설정 (i18n.js keeps the choice in localStorage 'seum_lang', shared with the game)
+    const sel = h.querySelector('#langSel'); sel.hidden = false;
+    for (const c of ['auto', 'en', 'ko', 'fr', 'es', 'ja', 'zh']) { const o = document.createElement('option'); o.value = c; o.textContent = c === 'auto' ? 'Auto' : I18N.NAMES[c]; sel.append(o); }
+    sel.value = I18N.choice; sel.addEventListener('change', () => I18N.set(sel.value));
+  }
   h.querySelector('#codeBtn').onclick = codeDialog;
   const f = document.createElement('footer'); f.className = 'foot';
   f.innerHTML = '<div class="wrap"><div><b style="color:#eef1f6;font-size:18px">' + NAME_HTML.replace('<b>', '<b style="color:#ff5266">') + '</b><br>Frenchfries777이 만든 Stickseum의 캐릭터들이 나오는 게임이에요.</div>' +
@@ -118,8 +123,8 @@ async function loadNews() {
 }
 function newsHtml(n, full) {
   return '<article class="card news"><div class="k"><span style="background:' + (NEWS_KIND[n.kind] || '#c3c9d5') + '">' + esc(n.kind || '공지') + '</span><time>' + esc(String(n.date || '').replace(/-/g, '.')) + '</time></div>' +
-    '<h3>' + esc(n.title) + '</h3>' + (full && n.body ? '<p>' + esc(n.body) + '</p>' : '') +
-    (full && n.link && /^https:\/\//.test(n.link.url || '') ? '<a href="' + esc(n.link.url) + '" target="_blank" rel="noopener">' + esc(n.link.label || '자세히') + '</a>' : '') + '</article>';
+    '<h3 data-noi18n>' + esc(n.title) + '</h3>' + (full && n.body ? '<p data-noi18n>' + esc(n.body) + '</p>' : '') +
+    (full && n.link && /^https:\/\//.test(n.link.url || '') ? '<a href="' + esc(n.link.url) + '" target="_blank" rel="noopener"' + (n.link.label ? ' data-noi18n' : '') + '>' + esc(n.link.label || '자세히') + '</a>' : '') + '</article>';
 }
 
 /* reward code: 6 letters/digits -> public.seumarena_redeem (one use per account); the game picks the reward up from seumarena_code_uses */

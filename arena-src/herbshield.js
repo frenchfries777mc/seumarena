@@ -7,28 +7,30 @@ WEAPONS.shieldman = { id: 'shieldman', name: '짧은 창', kind: 'melee', dmg: 3
 const HB = { g: '#6ee08a', gd: '#3f9a4f', p: '#a46be0', w: '#f5efe0', s: '#5d9cec', st: '#9aa4ad' };
 const hbHurtAllies = (f, r) => allies(f).filter(o => Math.hypot(o.x - f.x, o.y - f.y) < r && o.hp < o.mhp);
 const hbMostHurt = (f, r) => { let b = null, s = 1; for (const o of hbHurtAllies(f, r)) { const k = o.hp / o.mhp; if (k < s) { s = k; b = o; } } return b; };
-function hbSplashHeal(f, x, y, r, n) { for (const o of allies(f)) if (Math.hypot(o.x - x, o.y + BODY - y) < r + 20) heal(o, n); }
+function hbH(by, o, n) { const b = o.hp; heal(o, n); if (by) awGain(by, 'heal', o.hp - b); }      // a heal by 약초꾼 (counts for the awakening gauge: health actually given to allies and herself)
+function hbSplashHeal(f, x, y, r, n) { for (const o of allies(f)) if (Math.hypot(o.x - x, o.y + BODY - y) < r + 20) hbH(f, o, n); }
 function hbPotion(f, ang, dist, o) {       // one lobbed potion (skill): lands at dist, splashes, heals allies there
   emit(f, ang, Object.assign({ skill: 1, count: 1, fan: 0, spread: 0, range: dist, shape: 'potion', wp: 1, r: 6, spd: 620, splash: 58, dmg: 18, onEnd: b => { hbSplashHeal(f, b.x, b.y, 58, 4); fxPlay('hbsplash', Math.round(b.x), Math.round(b.y), 0); } }, o));
 }
 
 /* the puddle a basic-attack potion leaves: 0.75 s, every 0.25 s allies in it heal 20 and foes take 50 (x10 in game) */
-function hbPuddle(f, x, y) {
-  zone({ by: f, x, y: y - BODY, r: 52, t: .75, col: HB.g, op: 0, kind: 'hbpuddle', seed: Math.floor(Math.random() * 1e4), fn: (z, dt) => {
+function hbPuddle(f, x, y, k) {
+  zone({ by: f, x, y: y - BODY, r: 52 * (k || 1), t: .75, col: HB.g, op: 0, kind: 'hbpuddle', seed: Math.floor(Math.random() * 1e4), fn: (z, dt) => {
     z.acc += dt; if (z.acc < .25) return; z.acc -= .25;
-    for (const o of allies(f)) if (inZone(z, o)) heal(o, 2);
+    for (const o of allies(f)) if (inZone(z, o)) hbH(f, o, 2);
     circ(f, z.x, z.y, z.r, 5, { quiet: 1 });
   } });
 }
 /* ---------- 약초꾼 ---------- */
 hero('herbal', { p: ['약초 향기', '물약이 깨진 자리 근처 아군(나 포함)은 체력 40 회복 · 상대에게 피해를 주면 그 피해의 5%만큼 내 체력 회복'],
-  onDeal(f, e, d, o) { if (!e.minion && !o.hbx) { const n = d / STAT_X * .05; if (n > 0) heal(f, n); } },
-  pre(f, o) { o.onEnd = b => { hbSplashHeal(f, b.x, b.y, 60, 4); hbPuddle(f, b.x, b.y); fxPlay('hbsplash', Math.round(b.x), Math.round(b.y), 0); }; return o; },
+  onDeal(f, e, d, o) { if (!e.minion && !o.hbx) { const n = d / STAT_X * .05; if (n > 0) hbH(f, f, n); } },
+  pre(f, o) { const k = f.awT > 0 ? 2 : 1; o.onEnd = b => { hbSplashHeal(f, b.x, b.y, 60 * k, 4); hbPuddle(f, b.x, b.y, k); fxPlay('hbsplash', Math.round(b.x), Math.round(b.y), 0); }; return o; },
   ult: ['생명의 정원', '내 주변 반지름 4칸에 5초 동안 꽃밭이 피어남 · 안의 아군은 초당 체력 240 회복, 상대는 30% 둔화', [0, 6 * T], f => {
-    const x = f.x, y = f.y;
-    zone({ by: f, x, y, r: 4 * T, t: 5, col: HB.g, op: 0, kind: 'hbgarden', fn: (z, dt) => {
+    const x = f.x, y = f.y, aw = f.awT > 0, R = (aw ? 6 : 4) * T;
+    if (aw) awGardenBeams(f, x, y, R);      // (awaken.js) 각성: the flowers bloom as columns of light
+    zone({ by: f, x, y, r: R, t: 5, col: HB.g, op: 0, kind: 'hbgarden', fn: (z, dt) => {
       z.acc += dt; if (z.acc < .5) return; z.acc -= .5;
-      for (const o of allies(f)) if (inZone(z, o)) heal(o, 12);
+      for (const o of allies(f)) if (inZone(z, o)) hbH(f, o, 12);
       for (const e of foes(f)) if (!e.minion && inZone(z, e)) buff(e, 'slow', .6, .7);
     } });
     fxPlay('hbgarden', Math.round(x), Math.round(y));
@@ -36,28 +38,30 @@ hero('herbal', { p: ['약초 향기', '물약이 깨진 자리 근처 아군(나
   skills: [
     [1, '치유 안개', 'buff', '조준한 곳(최대 5칸)에 반지름 2칸 치유 안개를 4초 동안 깔음 · 안의 아군(나 포함)은 초당 체력 120 회복', [0, 99 * T], (f, a) => {
       const t = f.ai && hbMostHurt(f, 5 * T), p = t ? { x: t.x, y: t.y } : aimPt(f, 5 * T);
-      zone({ by: f, x: p.x, y: p.y, r: 2 * T, t: 4, col: HB.g, op: 0, kind: 'hbmist', fn: (z, dt) => { z.acc += dt; if (z.acc < .5) return; z.acc -= .5; for (const o of allies(f)) if (inZone(z, o)) heal(o, 6); } });
+      zone({ by: f, x: p.x, y: p.y, r: (f.awT > 0 ? 4 : 2) * T, t: 4, col: HB.g, op: 0, kind: 'hbmist', fn: (z, dt) => { z.acc += dt; if (z.acc < .5) return; z.acc -= .5; for (const o of allies(f)) if (inZone(z, o)) hbH(f, o, 6); } });
       fxPlay('hbmist', Math.round(p.x), Math.round(p.y), 0);
     }, { ok: f => f.hp < f.mhp * .75 || hbHurtAllies(f, 5 * T).length > 1 }],
     [2, '독 안개', 'hit', '조준한 곳(최대 5칸)에 반지름 2칸 독 안개를 4초 동안 깔음 · 안의 상대는 초당 140 피해와 20% 둔화', [0, 6 * T], f => {
       const p = aimPt(f, 5 * T);
-      zone({ by: f, x: p.x, y: p.y, r: 2 * T, t: 4, col: HB.p, op: 0, kind: 'hbpoison', fn: (z, dt) => { z.acc += dt; if (z.acc < .5) return; z.acc -= .5; circ(f, z.x, z.y, z.r, 10, { quiet: 1, slow: [.8, .6] }); } });
+      zone({ by: f, x: p.x, y: p.y, r: 2 * T, t: 4, col: HB.p, op: 0, kind: 'hbpoison', fn: (z, dt) => { z.acc += dt; if (z.acc < .5) return; z.acc -= .5; circ(f, z.x, z.y, z.r, 10, f.awT > 0 ? { quiet: 1, slow: [.65, .6], fn: e => buff(e, 'blind', .6) } : { quiet: 1, slow: [.8, .6] }); } });
       fxPlay('hbmist', Math.round(p.x), Math.round(p.y), 1);
     }],
     [3, '응급 붕대', 'buff', '조준 방향 6칸 안의 아군 중 가장 많이 다친 아군에게 붕대를 던져 체력 900 회복 · 아군이 없으면 내 체력 450 회복', [0, 99 * T], (f, a) => {
       let t = null, s = 2;
       for (const o of allies(f)) { if (o === f) continue; const d = Math.hypot(o.x - f.x, o.y - f.y); if (d > 6 * T) continue; let da = Math.atan2(o.y - f.y, o.x - f.x) - a; da = Math.atan2(Math.sin(da), Math.cos(da)); if (!f.ai && Math.abs(da) > .6) continue; const k = o.hp / o.mhp; if (k < s) { s = k; t = o; } }
       if (t && t.hp >= t.mhp) t = null;
-      if (t) heal(t, 90); else heal(f, 45);
+      if (t) hbH(f, t, 90); else hbH(f, f, 45);
       const g = t || f; fxPlay('hbbandage', fighters.indexOf(f), fighters.indexOf(g));
+      if (t && f.awT > 0) { let t2 = null, s2 = 2; for (const o of allies(f)) { if (o === f || o === t || o.hp >= o.mhp || Math.hypot(o.x - f.x, o.y - f.y) > 6 * T) continue; if (o.hp / o.mhp < s2) { s2 = o.hp / o.mhp; t2 = o; } } if (t2) { hbH(f, t2, 90); fxPlay('hbbandage', fighters.indexOf(f), fighters.indexOf(t2)); } }      // 각성 A: a second ally is bandaged at the same time
     }, { ok: f => f.hp < f.mhp * .6 || !!hbMostHurt(f, 6 * T) && hbMostHurt(f, 6 * T).hp < hbMostHurt(f, 6 * T).mhp * .6 }],
     [4, '물약 소나기', 'hit', '조준한 곳 근처로 물약 5병을 한꺼번에 던짐 · 병마다 떨어지는 자리가 조금씩 흩어짐 · 한 병당 상대 126 피해, 깨진 자리 아군 40 회복', [0, 7 * T], (f, a) => {
       const p = aimPt(f, 6 * T), d0 = Math.max(1.5 * T, Math.hypot(p.x - f.x, p.y - f.y));
+      if (f.awT > 0) { awStarVolley(f, p); return; }      // (awaken.js) 각성 A: 10 potions fall in a star shape
       const off = [[0, 0], [-.22, -.12], [.22, -.08], [-.1, .16], [.12, .2]];
       off.forEach(([da, dd], i) => later(i * .06, () => { if (!f.dead) hbPotion(f, a + da, d0 * (1 + dd)); }, f));
       fxPlay('hbvolley', fighters.indexOf(f), +a.toFixed(2));
     }],
-    [5, '해독 물약', 'buff', '물약을 마셔 체력 550 회복 + 1.5초 동안 이동속도 30% 증가', [0, 99 * T], f => { heal(f, 55); buff(f, 'haste', 1.5, 1.3); fxPlay('hbdrink', fighters.indexOf(f)); }, { ok: f => f.hp < f.mhp * .55 }]
+    [5, '해독 물약', 'buff', '물약을 마셔 체력 550 회복 + 1.5초 동안 이동속도 30% 증가', [0, 99 * T], f => { hbH(f, f, 55); buff(f, 'haste', 1.5, 1.3); fxPlay('hbdrink', fighters.indexOf(f)); if (f.awT > 0) awHealWave(f); }, { ok: f => f.hp < f.mhp * .55 }]
   ] });
 HEROES.herbal.name = '약초꾼';
 HEROES.herbal.hp = 500 * STAT_X;
@@ -68,19 +72,21 @@ HEROES.herbal.xm = .7;
 hero('shieldman', { p: ['든든한 방패', '이동속도 5% 느림 · 정면에서 받는 근접 피해 15% 감소'],
   spd: () => .95,
   onHurt(e, dmg, by, o) {
-    if (B(e, 'hbdig') && Math.hypot(e.vx, e.vy) < 30) dmg *= .6;
+    if (B(e, 'hbdig') && Math.hypot(e.vx, e.vy) < 30) dmg *= (e.awT > 0 ? .4 : .6);      // 진지 구축 B (awakened): 60 % less instead of 40 % (TEMP none: user value)
     if (B(e, 'hbiron')) { e.st.hbStore = (e.st.hbStore || 0) + dmg * .5; dmg *= .5; }
     if (by && !by.minion && by.h && by.h.type === 'melee') { let da = Math.atan2(by.y - e.y, by.x - e.x) - e.aim; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) < 1.2) dmg *= .85; }
     return dmg;
   },
   ult: ['철벽 반격', '4초 동안 방패를 굳게 들어 받는 피해 50% 감소 · 막아 낸 피해를 모아 두었다가 끝나는 순간 주변 3칸 상대에게 모은 만큼(최소 300, 최대 1200) 충격파 피해 + 강하게 밀침', [0, 4 * T], f => {
-    buff(f, 'hbiron', 4); f.st.hbStore = 0;
+    const D = f.awT > 0 ? 6 : 4;      // 각성 A: 6 s and two shockwaves at the end
+    buff(f, 'hbiron', D); f.st.hbStore = 0;
     fxPlay('hbiron', fighters.indexOf(f));
-    later(4, () => {
+    later(D, () => {
       if (f.dead) return;
       const dmg = Math.max(300, Math.min(1200, f.st.hbStore || 0)); f.st.hbStore = 0;
       circ(f, f.x, f.y, 3 * T, dmg, { px: 1, kb: 650 });
       fxPlay('hbironboom', fighters.indexOf(f), Math.round(dmg));
+      if (D === 6) later(.35, () => { if (f.dead) return; awRing(f, f.x, f.y, 4 * T, '#9ecbff'); circ(f, f.x, f.y, 4 * T, dmg * .6, { px: 1, kb: 500 }); }, f);      // second shockwave: radius 4 tiles, 60 % (TEMP)
     }, f);
   }, (f, t, d) => d < 3.5 * T || f.hp < f.mhp * .6],
   skills: [

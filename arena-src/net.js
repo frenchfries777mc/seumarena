@@ -340,7 +340,7 @@ function snapFighter(f) {
   let bb = 0; NET_BUFFS.forEach((k, i) => { if (B(f, k)) bb |= 1 << i; });
   const st = {}, s0 = f.st;
   if (s0.hat) st.hat = [Math.round(s0.hat.x), Math.round(s0.hat.y)];
-  if (s0.orb && s0.orb.n > 0) st.orb = s0.orb.n;
+  if (s0.orb && s0.orb.n > 0) { st.orb = s0.orb.n; st.om = s0.orb.m || 5; }
   if (s0.dr != null) st.dr = s0.dr;
   if (s0.thread && !s0.thread.dead) st.th = ix(s0.thread);
   if (s0.mark && !s0.mark.dead) st.mk = ix(s0.mark);
@@ -351,6 +351,7 @@ function snapFighter(f) {
   if (s0.hand != null) st.hd = s0.hand;      // 사무라이: which hand swings (guests draw it too)
   const s = { h: f.h.id, h0: f.h0.id, tm: f.team, x: Math.round(f.x), y: Math.round(f.y), a: r2(f.aim), hp: Math.ceil(f.hp), mh: f.mhp, d: f.dead ? 1 : 0, rt: r1(f.respawnT),
     fm: f.form || 0, sw: r2(f.swing), sp: r2(f.spin), sh: Math.round(f.shield), iv: f.inv > 0 ? 1 : 0, bb, st, k: f.kos, de: f.deaths, lf: r1(Math.min(9, time - f.lastFire)), lh: r1(Math.min(9, time - f.lastHit)), hu: f.human ? 1 : 0 };
+  if (f.awT > 0) s.aw = r2(f.awT); if (f.human) s.ap = awPct(f);      // (awaken.js)
   if (f.remote) s.cd = cdInfo(f);
   if (f.em != null && f.emT > time) s.em = [f.em, r1(f.emT - time)];
   return s;
@@ -361,7 +362,7 @@ function hostSnap() {
     z: zones.map(z => [Math.round(z.x), Math.round(z.y), Math.round(z.r), r1(Math.min(z.t, 99)), z.col, z.op || 0, z.kind || 0, z.key ? 1 : 0, z.team, z.hidden ? 1 : 0, z.dr ? 1 : 0]),
     m: minions.map(m => [m.kind, Math.round(m.x), Math.round(m.y), m.team, Math.ceil(m.hp), m.max, m.hit ? 1 : 0, r2(m.aim || m.a || 0), m.sw ? r2(time - m.sw) : 9, m.side || 0]),
     k: strikes.map(k => [Math.round(k.x), Math.round(k.y), Math.round(k.r), r2(k.t), r2(k.max), k.col]),
-    w: [...tempWalls].filter(e => e[1] > time).map(e => [e[0], r1(e[1] - time)]), e: NET.evs };
+    w: [...tempWalls].filter(e => e[1] > time).map(e => awGoldWalls.get(e[0]) === e[1] ? [e[0], r1(e[1] - time), 1] : [e[0], r1(e[1] - time)]), e: NET.evs };      // (w[2]: a gold wall raised while awakened)
   const md = modeState(); if (md !== undefined) s.md = md;      // flags, rounds, safe zone ... whatever the mode keeps
   s.ts = r3(time);      // the host's match clock: guests place what they see on it (interpolation)
   const ev = NET.evs; NET.evs = []; snapTick++;
@@ -457,7 +458,7 @@ function guestFighter(i, s) {
       inv: 0, tapT: 0, hold: false, scd: [0, 0], sk: [null, null], queue: [], minion: false, isPlayer: i === NET.me, lastFire: -9, lastHit: -9, swing: 0, spin: 0, shield: 0, hp: s.hp, mhp: s.mh };
     fighters[i] = f;
     if (i === NET.me) { player = f; if (typeof leaveWant !== 'undefined' && leaveWant && !leaveOn && state === 'play') setTimeout(() => { if (leaveWant && !leaveOn && state === 'play' && player) leaveMark(true); }, 0); }      // (the guest's mark starts with its first snapshot, once the fighter is filled in)
-    const r = (NET.roster || [])[i] || {}; f.nick = r.nm ? cleanName(r.nm) : null; f.cos = cleanCos(r.cos, s.h0);
+    const r = (NET.roster || [])[i] || {}; f.nick = r.nm ? cleanName(r.nm) : null; if (f.nick) I18N.keep(f.nick); f.cos = cleanCos(r.cos, s.h0);
   }
   return f;
 }
@@ -466,7 +467,7 @@ function applySnap(s) {
   if (s.ts != null) netClock(s.ts);
   timeLeft = s.tl; score = s.sc;
   if (s.mr) MAP = s.mr.map(r => r.split(''));
-  tempWalls.clear(); for (const w of s.w) tempWalls.set(w[0], time + w[1]);
+  tempWalls.clear(); awGoldWalls.clear(); for (const w of s.w) { tempWalls.set(w[0], time + w[1]); if (w[2]) awGoldWalls.set(w[0], time + w[1]); }
   s.f.forEach((d, i) => {
     const f = guestFighter(i, d), me = f === player;
     if (me && !f.dead && d.hp < f.hp - .5 && !d.d) { shake = 7; sfx(120, .12, 'square', .06, .6); }
@@ -477,10 +478,11 @@ function applySnap(s) {
     f.nx = d.x; f.ny = d.y; f.na = d.a;
     if (!me && s.ts != null) { const h = f.ih || (f.ih = []); if (h.length && s.ts < h[h.length - 1].t) h.length = 0; h.push({ t: s.ts, x: d.x, y: d.y }); while (h.length > 2 && s.ts - h[0].t > 1) h.shift(); if (d.d || (f.dead && !d.d)) h.length = 0, h.push({ t: s.ts, x: d.x, y: d.y }); } if (!me) f.aim = f.aim == null ? d.a : f.aim;
     f.hp = d.hp; f.mhp = d.mh; f.dead = !!d.d; f.respawnT = d.rt; f.form = d.fm || null; f.ghost = f.form === 'gone' || f.form === 'sub' || f.form === 'spirit';
+    f.awT = d.aw || 0; f.awP = d.ap;
     f.swing = d.sw; f.spin = d.sp; f.shield = d.sh; f.inv = d.iv ? .1 : 0; f.kos = d.k; f.deaths = d.de;
     f.lastFire = time - d.lf; f.lastHit = time - d.lh;
     f.b = {}; NET_BUFFS.forEach((k, j) => { if (d.bb & (1 << j)) f.b[k] = { t: 1, v: k === 'charm' ? { team: 1 - d.tm } : 1 }; });
-    const st = d.st; f.st = { hat: st.hat ? { x: st.hat[0], y: st.hat[1] } : null, orb: st.orb ? { n: st.orb, t: 1 } : null, dr: st.dr, fsh: st.fsh ? { hp: 1 } : null, neck: st.nk != null ? time - st.nk : 0, morph: st.morph ? 1 : null, th: st.th, mk: st.mk, hand: st.hd };
+    const st = d.st; f.st = { hat: st.hat ? { x: st.hat[0], y: st.hat[1] } : null, orb: st.orb ? { n: st.orb, t: 1, m: st.om || 5 } : null, dr: st.dr, fsh: st.fsh ? { hp: 1 } : null, neck: st.nk != null ? time - st.nk : 0, morph: st.morph ? 1 : null, th: st.th, mk: st.mk, hand: st.hd };
     for (const k of ['g', 'chip', 'stack', 'pz', 'over', 'heat', 'pn']) f.st[k] = st[k] || 0;
     f.net = d.cd || null;
     if (me) NET.ps = d.cd && d.cd.pm && !d.d ? { x: d.x, y: d.y, ak: d.cd.ak | 0, ao: d.cd.ao || 0, sp: d.cd.pm } : null;
@@ -510,7 +512,7 @@ function replayEvents(es) {
       case 't': texts.push({ x: e[1], y: e[2], txt: e[3], color: e[4], small: !!e[5], life: e[6] }); break;
       case 'p': parts.push({ x: e[1], y: e[2], vx: e[3], vy: e[4], life: e[5], max: e[5], color: e[6], r: e[7] }); break;
       case 'c': showChat(fighters[e[1]], e[2]); break;
-      case 'w': { const o = e[7] >= 0 ? fighters[e[7]] : null, sk = o ? skinOf(o.cos, e[3]) : null; swings.push({ x: e[1], y: e[2], wid: e[3], swingAngle: e[4], life: e[5], life0: e[5], color: CONCEPT_COLOR[conceptOfSkin(sk)] || TC(e[6]), vx: 0, vy: 0, dmgless: true, sk: sk || undefined }); break; }
+      case 'w': { const o = e[7] >= 0 ? fighters[e[7]] : null, aw = !!e[8], sk = o && !aw ? skinOf(o.cos, e[3]) : null; swings.push({ x: e[1], y: e[2], wid: e[3], swingAngle: e[4], life: e[5], life0: e[5], color: aw ? '#ffd34d' : CONCEPT_COLOR[conceptOfSkin(sk)] || TC(e[6]), vx: 0, vy: 0, dmgless: true, sk: sk || undefined } /* e[8]: awakened = plain gold */); break; }
       case 'x': if (FXF[e[1]]) FXF[e[1]](...e.slice(2)); break;
       case 'f': { const o = e[1] >= 0 ? fighters[e[1]] : null, v = fighters[e[2]]; if (v) { addFeed(o, v); if (v === player || o === player) sfx(v === player ? 200 : 600, .3, 'triangle', .07, v === player ? .3 : 1.8); } break; }
     }

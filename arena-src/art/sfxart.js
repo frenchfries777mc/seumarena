@@ -513,38 +513,26 @@ function spawnFx0(e){
   }
 }
 const ULT_THEMES={
-  kadas:{c:['#9a4cff','#c9a0ff','#52081a'],k:'wave',f:'200,160,255'},
   shade:{c:['#7dffd8','#ffffff','#38c8ff'],k:'wave',f:'200,255,240'},
-  cleon:{c:['#ff5fb8','#ffd34d','#7a3cff'],k:'wave',f:'255,200,235'},
-  pel:{c:['#bfefff','#ffffff','#57c7ff'],k:'bolt',f:'200,240,255'},
   tionis:{c:['#ff9d2e','#3fa0ff','#ffffff'],k:'wave',f:'255,225,190'},
-  pizarro:{c:['#ffd34d','#ffffff','#c9a463'],k:'wave',f:'255,230,170'},
-  puppeteer:{c:['#ff9ecb','#ffffff','#b388ff'],k:'wave',f:'255,210,235'},
-  kan:{c:['#35d08a','#f2c230','#e0334a'],k:'wave',f:'190,255,210'},   // colours (3) + an extra flavour per character for the ultimate burst; f = the tint of the screen flash
+  // colours (3) + an extra flavour per character for the ultimate burst; f = the tint of the screen flash
   _:{c:['#ffd23f','#ff6fb5','#35e0ff'],k:'',f:'255,235,180'},
   pistol:{c:['#ffd23f','#ff8a2b','#fff1a8'],k:'',f:'255,225,150'}, rifle:{c:['#8dff5a','#ffd23f','#ff8a2b'],k:'fire',f:'220,255,170'},
   smg:{c:['#35e0ff','#7fa6ff','#ffffff'],k:'',f:'190,240,255'}, magiccard:{c:['#b45cff','#ff6fd8','#ffd23f'],k:'card',f:'235,190,255'},
-  shuriken:{c:['#35ffd0','#9fe8ff','#ffffff'],k:'',f:'190,255,240'}, bat:{c:['#ff8a2b','#ff3d3d','#ffd23f'],k:'wave',f:'255,200,150'},
-  dagger:{c:['#b45cff','#ff3d9a','#5a2bff'],k:'',f:'220,170,255'}, dracula:{c:['#ff2b4d','#8a1030','#ff9bb0'],k:'wave',f:'255,150,170'},
-  gambler:{c:['#35e86a','#ffd23f','#ff3d4d'],k:'card',f:'200,255,200'}, wizard:{c:['#9a5cff','#35a8ff','#ff6fd8'],k:'wave',f:'205,185,255'},
-  sword:{c:['#ffd23f','#ffffff','#ff9a3d'],k:'wave',f:'255,240,190'}, horemheb:{c:['#ffc24d','#e08a2b','#fff0b0'],k:'wave',f:'255,230,170'},
-  lightsaber:{c:['#35a8ff','#9fe8ff','#b45cff'],k:'bolt',f:'180,220,255'}, bazooka:{c:['#ff3d3d','#ff8a2b','#ffd23f'],k:'fire',f:'255,180,130'},
-  bow:{c:['#ff8a2b','#ffd23f','#ff3d3d'],k:'',f:'255,210,150'}, boomerang:{c:['#b6ff3d','#ffd23f','#35e0a0'],k:'',f:'225,255,170'},
+  shuriken:{c:['#35ffd0','#9fe8ff','#ffffff'],k:'',f:'190,255,240'}, 
+  wizard:{c:['#9a5cff','#35a8ff','#ff6fd8'],k:'wave',f:'205,185,255'},
+  sword:{c:['#ffd23f','#ffffff','#ff9a3d'],k:'wave',f:'255,240,190'}, 
+  bazooka:{c:['#ff3d3d','#ff8a2b','#ffd23f'],k:'fire',f:'255,180,130'},
+  bow:{c:['#ff8a2b','#ffd23f','#ff3d3d'],k:'',f:'255,210,150'}, sk_lasso:{c:['#b6ff3d','#ffd23f','#35e0a0'],k:'',f:'225,255,170'}, 
   shotgun:{c:['#ff8a2b','#ff3d3d','#ffe08a'],k:'fire',f:'255,200,150'}, gloves:{c:['#ff3d3d','#ffd23f','#ffffff'],k:'wave',f:'255,190,170'},
-  grenade:{c:['#7dff4a','#ff8a2b','#ffd23f'],k:'fire',f:'210,255,170'}, flamethrower:{c:['#ff6a1f','#ffd23f','#ff2b2b'],k:'fire',f:'255,190,120'},
-  portalgun:{c:['#b45cff','#35e0ff','#ff9a3d'],k:'wave',f:'215,190,255'}, pirate:{c:['#ffd23f','#35c8ff','#ff5a3d'],k:'fire',f:'255,235,170'},
-  vacuum:{c:['#35e0ff','#9fe8ff','#b6ff3d'],k:'wave',f:'190,245,255'},
-  kurus:{c:['#7b3fd1','#c48bff','#2a1640'],k:'wave',f:'150,110,200'},
-  samurai:{c:['#ff3d6e','#ffffff','#dfe9ff'],k:'bolt',f:'255,200,215'}, harald:{c:['#ff5a3a','#c9d4e0','#ffd34d'],k:'fire',f:'255,200,170'},
-  edward:{c:['#d3303a','#f4f1e8','#ffd34d'],k:'wave',f:'255,215,200'}, medium:{c:['#8b5cf6','#c9b3ff','#7dffd8'],k:'wave',f:'215,195,255'},
-  plague:{c:['#9be06a','#d8ff8a','#4a5a2a'],k:'wave',f:'215,255,175'}, dragonslayer:{c:['#ff8a3d','#ffd34d','#ff3b2b'],k:'fire',f:'255,205,150'},
-  tell:{c:['#9ae26a','#ffe14a','#ffffff'],k:'',f:'225,255,190'}
-};
+  grenade:{c:['#7dff4a','#ff8a2b','#ffd23f'],k:'fire',f:'210,255,170'}, 
+  portalgun:{c:['#b45cff','#35e0ff','#ff9a3d'],k:'wave',f:'215,190,255'}, 
+  samurai:{c:['#ff3d6e','#ffffff','#dfe9ff'],k:'bolt',f:'255,200,215'}, harald:{c:['#ff5a3a','#c9d4e0','#ffd34d'],k:'fire',f:'255,200,170'}};
 /* a few small pictures that fly out of each ultimate (so no two bursts look alike) */
-const ULT_EMOJI={ sword:['⚔️','✨'], pistol:['⭐','💥'], bow:['🏹','🍃'], bat:['⚾','💥'], shuriken:['⭐','💨'], shotgun:['💥','🔥'], rifle:['🎯','💥'], smg:['💥','⚡'], gloves:['🥊','💢'], grenade:['💣','💥'],
-  bazooka:['🚀','🔥'], dagger:['🗡️','☠️'], dracula:['🦇','🩸'], wizard:['✨','🔮'], magiccard:['🃏','✨'], gambler:['🎲','🪙'], boomerang:['🪃','🍃'], flamethrower:['🔥','💨'], vacuum:['🌀','💨'],
-  pirate:['⚓','🪙'], samurai:['🌸','⚔️'], harald:['🪓','🔥'], horemheb:['☀️','🏺'], pizarro:['🪙','⚜️'], edward:['⚜️','🎖️'], medium:['👻','🔮'], plague:['☣️','🦠'], dragonslayer:['🐉','🔥'],
-  shade:['👻','✨'], kadas:['🦇','💜'], kan:['🐸','☠️'], puppeteer:['🎀','✨'], tell:['🍎','🏹'], kurus:['🌑','💜'], cleon:['👑','💖'], pel:['⚡','🔧'], tionis:['🎭','⭐'] };
+const ULT_EMOJI={ sword:['⚔️','✨'], pistol:['⭐','💥'], bow:['🏹','🍃'], shuriken:['⭐','💨'], shotgun:['💥','🔥'], rifle:['🎯','💥'], smg:['💥','⚡'], gloves:['🥊','💢'], grenade:['💣','💥'],
+  bazooka:['🚀','🔥'], wizard:['✨','🔮'], magiccard:['🃏','✨'], 
+  samurai:['🌸','⚔️'], harald:['🪓','🔥'], 
+  shade:['👻','✨'], tionis:['🎭','⭐'] };
 let samScreen={dimFrom:0, dimUntil:0, flashAt:0, flashA:0, flashCol:'255,255,255'};
 function samFlash(a,col){ if(otherSettings.screenShake===false) a*=0.5; samScreen.flashAt=performance.now(); samScreen.flashA=a; samScreen.flashCol=col||'255,255,255'; }
 function drawSamScreen(){

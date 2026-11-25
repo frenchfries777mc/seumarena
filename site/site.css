@@ -172,3 +172,7 @@ footer.foot nav{display:flex;flex-wrap:wrap;gap:6px 18px}
 .codeDlg input{width:100%;box-sizing:border-box;font:700 28px Oswald,monospace;letter-spacing:8px;text-align:center;padding:10px;border-radius:10px;border:1px solid var(--line2);background:var(--bg);color:var(--text)}
 .codeDlg p{min-height:22px;color:var(--soft);font-size:14px}
 .codeRow{display:flex;gap:10px;justify-content:flex-end;align-items:center}
+
+/* language list in the header */
+.langSel{background:#161a23;color:#e8eaf0;border:1px solid #2a3142;border-radius:8px;padding:7px 8px;font:inherit;font-size:14px;min-height:36px}
+.langSel:focus-visible{outline:2px solid #6aa6ff;outline-offset:2px}

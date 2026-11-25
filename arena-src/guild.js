@@ -72,6 +72,7 @@ function guildTile() {
 /* ---------- the guild screen ---------- */
 let GTAB = '', gChatT = 0, gTop = 'g';
 const gEl = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+const gNm = (t, c, x) => { const e = gEl(t, c, x); e.setAttribute('data-noi18n', ''); return e; };      // a name someone typed: never translated
 const gBtn = (txt, cls, fn) => { const b = gEl('button', cls || 'gBtn', txt); b.type = 'button'; b.addEventListener('click', fn); return b; };
 function gToast(t) { const e = $('gToast'); e.textContent = t; e.hidden = false; clearTimeout(gToast.t); gToast.t = setTimeout(() => { e.hidden = true; }, 2600); }
 const G_ERR = { login: '로그인이 필요해요', already: '이미 길드에 있어요', name: '이름은 2~12자, 나쁜 말은 안 돼요', tag: '태그는 2~4자 (영어 대문자·숫자·한글)', name_taken: '같은 이름의 길드가 있어요', tag_taken: '같은 태그의 길드가 있어요',
@@ -93,7 +94,7 @@ function guildRender() {
   for (const [k, t] of tabs) { const b = gBtn(t, 'gTab' + (k === GTAB ? ' on' : ''), () => { GTAB = k; guildRender(); }); tb.append(b); }
   if (GUILD.g) {
     const g = GUILD.g, lg = G_LEAGUES[g.league] || G_LEAGUES[0];
-    side.append(guildLogo(g.logo, g.color, 72, g.border), gEl('b', 'gName', g.name), gEl('span', 'gTag', '[' + g.tag + ']'));
+    side.append(guildLogo(g.logo, g.color, 72, g.border), gNm('b', 'gName', g.name), gNm('span', 'gTag', '[' + g.tag + ']'));
     const st = gEl('div', 'gStats'), lgE = gEl('span', '', '대항전 ' + lg[0] + ' 리그'); lgE.style.color = lg[1];
     st.append(lgE, gEl('span', '', '멤버 ' + GUILD.members.length + '/' + G_MAX), gEl('span', '', G_JOIN[g.join] + (g.min ? ' · 카르마 ' + g.min + '+' : '')));
     side.append(st); if (g.intro) side.append(gEl('p', 'gIntro', g.intro));
@@ -107,7 +108,7 @@ function guildRender() {
 function confirmIn(host, txt) { const now = Date.now(); if (confirmIn.at && now - confirmIn.at < 3000 && confirmIn.txt === txt) { confirmIn.at = 0; return true; } confirmIn.at = now; confirmIn.txt = txt; gToast(txt + ' (한 번 더 누르면 돼요)'); return false; }
 
 function gChat(p) {
-  const list = gEl('div', 'gChat'), form = gEl('form', 'gSay'), inp = gEl('input'); inp.maxLength = 120; inp.placeholder = '길드에 한마디'; inp.autocomplete = 'off';
+  const list = gNm('div', 'gChat'), form = gEl('form', 'gSay'), inp = gEl('input'); inp.maxLength = 120; inp.placeholder = '길드에 한마디'; inp.autocomplete = 'off';
   form.append(inp, gBtn('보내기', 'btn-primary gSend', () => form.requestSubmit())); p.append(list, form);
   let last = 0; const add = rows => { for (const m of rows) { if (m.id <= last) continue; last = m.id; const row = gEl('div', 'gMsg' + (m.k ? ' sys' : m.me ? ' me' : '')); if (!m.k) row.append(gEl('b', '', m.n)); row.append(gEl('span', '', m.t)); list.append(row); } list.scrollTop = list.scrollHeight; if (last) { GUILD.seen = last; GUILD.unread = 0; guildTile(); } if (rows.some(m => m.k && m.id > (GUILD.newsAt || 0))) { const fresh = GUILD.newsAt; GUILD.newsAt = last; if (fresh) guildLoad(); } };      // someone joined / left: the member list again
   const pull = async () => { const r = await sbRpc('seumarena_guild_chat_since', { p_id: last }); if (Array.isArray(r)) add(r); };
@@ -117,7 +118,7 @@ function gChat(p) {
 function gMembers(p) {
   if (GUILD.role >= 1 && GUILD.reqs.length) {
     p.append(gEl('h3', '', '가입 신청 ' + GUILD.reqs.length));
-    for (const q of GUILD.reqs) { const row = gEl('div', 'gRow'); row.append(gEl('b', '', q.n), gEl('span', 'gDim', '카르마 ' + q.k), gBtn('받기', 'gBtn gOk', () => gAct('seumarena_guild_answer', { p_uid: q.u, p_ok: true })), gBtn('거절', 'gBtn', () => gAct('seumarena_guild_answer', { p_uid: q.u, p_ok: false }))); p.append(row); }
+    for (const q of GUILD.reqs) { const row = gEl('div', 'gRow'); row.append(gNm('b', '', q.n), gEl('span', 'gDim', '카르마 ' + q.k), gBtn('받기', 'gBtn gOk', () => gAct('seumarena_guild_answer', { p_uid: q.u, p_ok: true })), gBtn('거절', 'gBtn', () => gAct('seumarena_guild_answer', { p_uid: q.u, p_ok: false }))); p.append(row); }
     p.append(gEl('h3', '', '멤버 ' + GUILD.members.length + '/' + G_MAX));
   }
   const list = gEl('div', 'gList');
@@ -159,7 +160,7 @@ function gWar(p) {
   }
   if (GW.grp) {
     const t = gEl('div', 'gList');
-    GW.grp.forEach((x, i) => { const row = gEl('div', 'gRow' + (x.me ? ' me' : '')); row.append(gEl('b', 'gPlace', String(i + 1)), guildLogo(x.logo, x.color, 26), gEl('b', '', x.name), gEl('span', 'gDim', '[' + x.tag + ']'), gEl('span', 'gPts', x.pts + '점')); t.append(row); });
+    GW.grp.forEach((x, i) => { const row = gEl('div', 'gRow' + (x.me ? ' me' : '')); row.append(gEl('b', 'gPlace', String(i + 1)), guildLogo(x.logo, x.color, 26), gNm('b', '', x.name), gEl('span', 'gDim', '[' + x.tag + ']'), gEl('span', 'gPts', x.pts + '점')); t.append(row); });
     p.append(gEl('h3', '', '이번 주 우리 조'), t);
   } else p.append(gEl('p', 'gDim', '이번 주에는 조가 없어요. 상대 길드가 모자라거나, 월요일 조 짜기 뒤에 만든 길드예요.'));
   const rules = gEl('p', 'gDim gRules', '승리 4점 · 패배 1점 · 같은 조 다른 길드를 만나면 2배 · 우리 길드원과 같은 팀이면 +1 · 하루 4판까지. 조 1등은 위 리그로, 꼴찌는 아래 리그로.');
@@ -174,8 +175,8 @@ async function gRank(p) {
   if (!r.length) { list.textContent = gTop === 'g' ? '아직 길드가 없어요' : '아직 이번 시즌 랭크전 기록이 없어요'; return; }
   r.forEach((x, i) => {
     const row = gEl('div', 'gRow' + (GUILD.g && x.id === GUILD.g.id ? ' me' : '')); row.append(gEl('b', 'gPlace', String(i + 1)));
-    if (gTop === 'g') row.append(guildLogo(x.logo, x.color, 26), gEl('b', '', x.name), gEl('span', 'gDim', '[' + x.tag + '] · ' + x.cnt + '명'), gEl('span', 'gPts', x.rp.toLocaleString('en-US')));
-    else { const t = rankOf(x.rp), cv = gEl('canvas', 'gRk'); drawRankLogo(cv, t.i); const tr = gEl('span', 'gDim', t.name); tr.style.color = t.col; row.append(cv, gEl('b', '', (x.g ? '[' + x.g + '] ' : '') + x.n), tr, gEl('span', 'gPts', x.rp + '점')); }
+    if (gTop === 'g') row.append(guildLogo(x.logo, x.color, 26), gNm('b', '', x.name), gEl('span', 'gDim', '[' + x.tag + '] · ' + x.cnt + '명'), gEl('span', 'gPts', x.rp.toLocaleString('en-US')));
+    else { const t = rankOf(x.rp), cv = gEl('canvas', 'gRk'); drawRankLogo(cv, t.i); const tr = gEl('span', 'gDim', t.name); tr.style.color = t.col; row.append(cv, gNm('b', '', (x.g ? '[' + x.g + '] ' : '') + x.n), tr, gEl('span', 'gPts', x.rp + '점')); }
     list.append(row);
   });
 }
@@ -222,11 +223,11 @@ function gFind(p) {
     if (!Array.isArray(r)) { list.textContent = '서버에 연결할 수 없어요'; return; } if (!r.length) { list.textContent = '길드가 없어요. 먼저 만들어 보세요!'; return; }
     for (const g of r) {
       const row = gEl('div', 'gRow gFindRow'), info = gEl('div', 'gInfo'), lg = G_LEAGUES[g.league] || G_LEAGUES[0];
-      info.append(gEl('b', '', g.name + ' [' + g.tag + ']'), gEl('span', 'gDim', g.cnt + '/' + G_MAX + '명 · ' + G_JOIN[g.join] + (g.min ? ' · 카르마 ' + g.min + '+' : '') + ' · ' + lg[0] + ' 리그'));
+      info.append(gNm('b', '', g.name + ' [' + g.tag + ']'), gEl('span', 'gDim', g.cnt + '/' + G_MAX + '명 · ' + G_JOIN[g.join] + (g.min ? ' · 카르마 ' + g.min + '+' : '') + ' · ' + lg[0] + ' 리그'));
       if (g.intro) info.append(gEl('span', 'gDim', g.intro));
       const asked = GUILD.myReqs.includes(g.id), btn = gBtn(g.join === 2 ? '초대만' : asked ? '신청함' : g.join === 1 ? '신청' : '들어가기', 'gBtn gOk', async () => {
         const r2 = await sbRpc('seumarena_guild_join', { p_gid: g.id, p_code: null, p_nick: PROF.name });
-        if (r2 && r2.r === 'ok') { gToast(g.name + ' 길드에 들어왔어요!'); GTAB = 'chat'; await guildLoad(); } else if (r2 && r2.r === 'asked') { gToast('가입 신청을 보냈어요'); GUILD.myReqs.push(g.id); btn.textContent = '신청함'; } else gToast(gErr(r2));
+        if (r2 && r2.r === 'ok') { I18N.keep(g.name); gToast(g.name + ' 길드에 들어왔어요!'); GTAB = 'chat'; await guildLoad(); } else if (r2 && r2.r === 'asked') { gToast('가입 신청을 보냈어요'); GUILD.myReqs.push(g.id); btn.textContent = '신청함'; } else gToast(gErr(r2));
       });
       btn.disabled = g.join === 2 || g.cnt >= G_MAX; row.append(guildLogo(g.logo, g.color, 40), info, btn); list.append(row);
     }
@@ -250,6 +251,7 @@ Promise.resolve().then(() => {
 #guild b{font-size:11px;letter-spacing:.02em}#guild .gIco{display:flex}
 #guildDot{position:absolute;top:-5px;right:-5px;width:12px;height:12px;border-radius:50%;background:#ff4d4d;box-shadow:0 0 0 2px #10141f}
 body.mob #guild{order:99}
+body.mob #guild .gIco>*{width:20px!important;height:20px!important}body.mob #guild b{font-size:9px;letter-spacing:0;max-width:calc(100% - 4px);overflow:hidden;white-space:nowrap}
 body.mob #topRight #streak{order:100;position:static}@media (orientation:portrait){body.mob #topRight #streak{display:none}}
 body.mob #topRight:not([hidden]){position:fixed!important;top:auto!important;right:auto!important;left:50%!important;bottom:max(10px,env(safe-area-inset-bottom,0px))!important;transform:translateX(-50%);display:flex!important;flex-wrap:nowrap!important;gap:8px!important;z-index:6}
 .gLogo.gold{filter:drop-shadow(0 0 0 #ffd34d) drop-shadow(0 0 3px #ffd34d)}

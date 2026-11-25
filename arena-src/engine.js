@@ -94,6 +94,7 @@ for (const m of MAPS) m.grid = m.rows.map(r => r + [...r.slice(0, r.length - 1)]
 let COLS = 25, ROWS = 17, WW = COLS * T, WH = ROWS * T;      // set by loadMap(): the big 원 레프트 maps are larger
 let MAP = MAPS[0].grid, TH = MAPS[0].th, ROAM = [], curMap = 0;
 const tempWalls = new Map();
+const awGoldWalls = new Map();      // tile -> the same expiry as in tempWalls, for walls an awakened hero raised (drawn gold, user 2026-11-25)
 const tile = (c, r) => { if (c < 0 || r < 0 || c >= COLS || r >= ROWS) return '#'; if (tempWalls.size && tempWalls.get(c + r * COLS) > time) return '#'; return MAP[r][c]; };
 const solid = (c, r) => tile(c, r) === '#';
 const arenaEdge = (c, r) => c <= 0 || r <= 0 || c >= COLS - 1 || r >= ROWS - 1;      // the outer wall ring: even a leap cannot cross it
@@ -108,7 +109,7 @@ let VIEW = 0;      // the team this screen plays for: drawn blue, its score on t
 const TC = t => TEAM[t === VIEW ? 0 : (curMode === 'hot4' || curMode === 'duo' || curMode === 'ko3') && t >= 0 && t < TEAM.length ? (t < VIEW ? t + 1 : t) : 1];      // 4팀 핫존: me blue, the other three teams red, green, yellow in team order
 const evt = a => { if (NET.rec) NET.evs.push(a); };
 function addText(o) { texts.push(o); evt(['t', Math.round(o.x), Math.round(o.y), o.txt, o.color, o.small ? 1 : 0, o.life]); }
-function addPart(p) { parts.push(p); evt(['p', Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy), +p.life.toFixed(2), p.color, +(p.r || 3).toFixed(1)]); }
+function addPart(p) { if (awCur && p.color) p.color = awGold(p.color); parts.push(p); evt(['p', Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy), +p.life.toFixed(2), p.color, +(p.r || 3).toFixed(1)]); }
 const OT_MAX = 60;       // sudden-death overtime when the clock runs out level: first kill wins, a draw if nobody scores within this many seconds
 const STAT_X = 10;
 const DMG_RANGED = 1.25;  // 2026-11-14 (user): ranged heroes (every type but melee) deal x1.25 on everything (basic, skills, ult); melee x1
@@ -260,7 +261,7 @@ function pcInit() {
   if (PCQ === 'high') { PCSCALE = 2; pcLite = false; return; }
   if (PCQ === 'low') { PCSCALE = 1; pcLite = true; return; }
   PCSCALE = pcWeak() ? 1.5 : 2; pcLite = false;
-  try { const o = JSON.parse(localStorage.getItem('seum_pcauto') || 'null'); if (o && PC_STEPS.includes(o.s)) { PCSCALE = o.s; pcLite = !!o.l; } } catch (e) { quietErr(e); }
+  try { localStorage.removeItem('seum_pcauto'); } catch (e) { quietErr(e); }      // (user 2026-11-25: no automatic steps down any more, so an old remembered lower step is dropped)
 }
 function pcSave() { if (PCQ === 'auto') try { localStorage.setItem('seum_pcauto', JSON.stringify({ s: PCSCALE, l: pcLite })); } catch (e) { quietErr(e); } }
 pcInit();
@@ -324,11 +325,13 @@ function status(e, o) {
   if (o.infect) buff(e, 'infect', 5, o.by);
 }
 const addDot = (e, d) => { d.src = SRC; e.dots.push(d); };
+let awCur = null;      // (awaken.js) the awakened fighter whose attack/skill/ultimate is running right now: every effect colour made meanwhile turns gold (user 2026-11-25)
+const awOwn = (f, fn) => { if (!f || !(f.awT > 0)) return fn(); const o = awCur; awCur = f; try { return fn(); } finally { awCur = o; } };
 const withSrc = (s, fn) => { const o = SRC; SRC = s; try { return fn(); } finally { SRC = o; } };
 const skName = (d, f) => typeof d.name === 'function' ? d.name(f) : d.name;
 function heal(f, n) { if (f.dead || n <= 0) return; n *= STAT_X; if (f.h.healMul) n *= f.h.healMul(f); const b = f.hp; f.hp = Math.min(f.mhp, f.hp + n); f.healed = (f.healed || 0) + (f.hp - b); if (f.hp - b >= 3 * STAT_X) fx('heal', f.x, f.y - 40, { v: Math.round(f.hp - b) }); }
 function say(f, txt, col) { addText({ x: f.x, y: f.y - 96, txt, life: 1, color: col || '#ffd34d', small: 1 }); }
-function later(t, fn, f) { timers.push({ t, fn, f, src: SRC }); }
+function later(t, fn, f) { timers.push({ t, fn, f, src: SRC, auto: f && f.acast ? 1 : 0 }); }      // auto: the skill was aimed by the phone's auto aim, so every later shot of it is aimed again (user 2026-11-23: only the first card of 카드 일렬 발사 went at the target)
 function seq(f, n, gap, fn) { for (let i = 0; i < n; i++) later(i * gap, () => fn(i), f); }
 
 /* ---------- world helpers ---------- */
@@ -455,10 +458,11 @@ function knock(e, x, y, force) { const dx = e.x - x, dy = e.y - y, d = Math.hypo
 
 /* ---------- combat primitives ---------- */
 function burst(x, y, color, n, spd) {
+  if (awCur) color = awGold(color);
   evt(['b', Math.round(x), Math.round(y), color, n, Math.round(spd)]);
   for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, s = rnd(.3, 1) * spd; parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: rnd(.25, .55), max: .55, color, r: rnd(2, 5) }); }
 }
-const ring = (x, y, r, color, life) => { evt(['r', Math.round(x), Math.round(y), Math.round(r), color || '#ffb347', life || .3]); rings.push({ x, y, r, life: life || .3, max: life || .3, color: color || '#ffb347' }); };
+const ring = (x, y, r, color, life) => { if (awCur) color = awGold(color || '#ffb347'); evt(['r', Math.round(x), Math.round(y), Math.round(r), color || '#ffb347', life || .3]); rings.push({ x, y, r, life: life || .3, max: life || .3, color: color || '#ffb347' }); };
 /* 2026-11-12: ULT_CD 45 s; landing a BASIC attack on an enemy fighter refills the ult. per hit = rate * attack interval / shots per attack, rate .875 .. 2 from ultEase
    (shots = burst x count), and one attack can never give more than rate * interval, so shotguns and multi-hit swings do not overcharge.
    hitting every attack fills it in 45 / (1 + rate) = 24 s (easiest attack) .. 15 s (hardest), as the user asked */
@@ -485,6 +489,7 @@ function ultCharge(by, e, o) {
 function damage(e, dmg, by, o) {
   o = o || {};
   if (e.dead || !(dmg > 0)) return 0;
+  if (e.st && e.st.awCv && e.st.awCv.t > time && !o.cvr && by && by !== e && by.team !== e.team) { const g = e.st.awCv.by; if (g && !g.dead && g !== e) { const r = damage(g, dmg, by, Object.assign({}, o, { cvr: 1 })); g.st.awAbs = (g.st.awAbs || 0) + r; return 0; } }      // (awaken.js) 방패병 아군 엄호 B: the shield bearer takes the hit instead and stores it
   if (!o.px) { dmg *= STAT_X; const ow = by && (by.minion ? by.by : by); if (ow && ow.h && ow.h.xm) dmg *= ow.h.xm; if (ow && ow.h && ow.h.type !== 'melee') dmg *= DMG_RANGED; }   // o.px: already in scaled units (re-entry from onDmg / onDeal) · h.xm = per-hero damage multiplier (balance knob, kits2.js DMG_MUL)
   if (by && !by.minion && !o.raw) dmg *= V(by, 'dmg', 1);
   { const ow = by && (by.minion ? by.by : by); if (ow && B(ow, 'taunt') && ow.b.taunt.v !== e) dmg *= .5; }      // 방패병 도발 표식: a marked fighter deals half to anyone but the shield bearer (herbshield.js)
@@ -492,13 +497,18 @@ function damage(e, dmg, by, o) {
   if (e.inv > 0 || B(e, 'inv')) return 0;
   if (e.h.onHurt) { const r = e.h.onHurt(e, dmg, by, o); if (r === 0) return 0; if (r > 0) dmg = r; }
   dmg *= V(e, 'dr', 1) * (B(e, 'expose') ? 1.1 : 1);
+  if (e.st && e.st.awMk > time) dmg *= 1.25;      // (awaken.js) 제임스 자동 조준: marked enemy takes +25 % (TEMP)
   if (e.h.resist && o.el) dmg *= .7;
+  if (e.st && e.st.awRev > time && by && by !== e && !by.minion && by.team !== e.team && !(e.st.awRc > time)) { e.st.awRc = time + .3; awCounterShot(e, by); }      // (awaken.js) 보안관 무법자 A: a counter shot
+  if (e.shield > 0 && e.awT > 0 && e.h0 && e.h0.id === 'rifle') buff(e, 'haste', 2, 1.075);      // (awaken.js) 군인 방탄 방어막: hit while shielded -> speed +7.5 % for 2 s (refreshed, not stacked; TEMP)
   if (e.shield > 0) { const a = Math.min(e.shield, dmg); e.shield -= a; dmg -= a; if (e.shield <= 0 && e.onShieldBreak) { const fn = e.onShieldBreak; e.onShieldBreak = null; fn(e); } if (dmg <= 0) return 0; }
+  if (by !== e && !e.minion) awGain(e, 'taken', dmg);      // (awaken.js) 복서: damage taken
   e.hp -= dmg; e.lastHit = time; e.recent.push([time, dmg / STAT_X]); e.taken = (e.taken || 0) + dmg;
   ultCharge(by, e, o);
   { const ow = by && (by.minion ? by.by : by); if (ow && ow !== e && ow.h && ow.team !== e.team) e.lastAtk = { f: ow, t: time }; }
   e.lastDmg = { src: o.src || SRC || (o.basic ? '기본 공격' : '패시브'), t: time };
   if (by && by !== e) { by.dealt = (by.dealt || 0) + dmg; if (!by.minion && by.h.onDeal) by.h.onDeal(by, e, dmg, o); }
+  if (by && by !== e && !e.minion && by.team !== e.team) { awGain(by, 'dmg', dmg); if (!o.quiet) awGain(by, 'hit', 1); if (o.basic) awGain(by, 'basic', 1); }      // (awaken.js) the awakening gauge
   if (o.quiet) { e.acc += dmg; if (e.acc >= 8 * STAT_X) { addText({ x: e.x + rnd(-10, 10), y: e.y - 70, txt: String(Math.round(e.acc)), life: .6, color: '#ffb347' }); e.acc = 0; } }
   else {
     addText({ x: e.x + rnd(-10, 10), y: e.y - 70, txt: String(Math.round(dmg)), life: .7, color: e === player ? '#ff5d5d' : '#ffffff' });
@@ -536,7 +546,7 @@ function circ(by, x, y, r, dmg, o) {
   if (BALL.on) ballCirc(by, x, y, r, dmg, o);
   return out;
 }
-function boom(by, x, y, r, dmg, o) { if (o && o.col) { fx('skillring', x, y, { color: o.col, r }); burst(x, y, o.col, 12, 260); } else fx(r >= 70 ? 'explosion' : 'bombexplode', x, y, { gy: y + 30 }); return circ(by, x, y, r, dmg, Object.assign({ kb: 160 }, o)); }
+function boom(by, x, y, r, dmg, o) { if (o && o.col) { fx('skillring', x, y, { color: o.col, r }); burst(x, y, o.col, 12, 260); } else fx(r >= 70 ? 'explosion' : 'bombexplode', x, y, { gy: y + 30 }); const hit = circ(by, x, y, r, dmg, Object.assign({ kb: 160 }, o)); if (by && by.h0 && by.h0.id === 'grenade' && hit.length) awGain(by, 'bomb', hit.length); return hit; }      // (awaken.js) 폭발광: enemies caught by a bomb blast
 function pathHit(f, x0, y0, x1, y1, w, dmg, o) {       // everybody close to the segment
   o = o || {}; const out = [], dx = x1 - x0, dy = y1 - y0, l2 = dx * dx + dy * dy || 1;
   for (const e of foes(f)) {
@@ -548,15 +558,17 @@ function pathHit(f, x0, y0, x1, y1, w, dmg, o) {       // everybody close to the
   return out;
 }
 function emit(f, ang, o) {
-  o = o || {}; const h = f.h, n = o.count || h.count || 1, fan = o.fan != null ? o.fan : (h.fan || 0);
+  o = o || {}; if (f.awT > 0) { const ab = awBoost(f); if (ab && ab.shot) o = ab.shot(f, o) || o; }      // (awaken.js)
+  const h = f.h, n = o.count || h.count || 1, fan = o.fan != null ? o.fan : (h.fan || 0);
   if (h.pre && !o.skill) o = h.pre(f, Object.assign({}, o)) || o;
   for (let i = 0; i < n; i++) {
     const a = ang + (n > 1 ? (i / (n - 1) - .5) * fan : 0) + rnd(-1, 1) * (o.spread != null ? o.spread : (h.spread || 0)), spd = o.spd || h.bspd || 800;
     const b = { x: f.x + Math.cos(a) * 24 + (o.ox || 0), y: f.y + BODY + Math.sin(a) * 24 + (o.oy || 0), vx: Math.cos(a) * spd, vy: Math.sin(a) * spd, spd, ang: a,
       src: SRC, life: o.range || h.range || 500, dmg: o.dmg != null ? o.dmg : (h.dmgf ? h.dmgf(f) : h.dmg), team: teamOf(f), owner: f, r: o.r || 5, shape: o.shape || h.w.shape,
-      pierce: o.pierce != null ? o.pierce : (h.pierce || 0), splash: o.splash != null ? o.splash : (o.skill ? 0 : (h.splash || 0)), boom: o.boom ? 1 : 0, phase: 0, bnc: o.bnc != null ? o.bnc : (o.skill ? 0 : (h.w.bounces || 0)), nb: 0, wp: o.wp != null ? o.wp : (o.shape || h.w.shape) === 'bomb' || !!h.wallPass,      // thrown bombs fly over walls (they arc)
+      pierce: o.pierce != null ? o.pierce : (h.pierce || 0), splash: o.splash != null ? o.splash : (o.skill ? 0 : (h.splash || 0)), boom: o.boom ? 1 : 0, phase: 0, gold: f.awT > 0 ? 1 : 0, bnc: o.bnc != null ? o.bnc : (o.skill ? 0 : (h.w.bounces || 0)), nb: 0, wp: o.wp != null ? o.wp : (o.shape || h.w.shape) === 'bomb' || !!h.wallPass,      // thrown bombs fly over walls (they arc)
      
       o, hit: new Set(), born: time, basic: !o.skill, x0: f.x, y0: f.y, wid: o.skin ? h.id : o.skill || o.shape ? null : h.id };
+    if (o.awr) b.r *= o.awr;
     if (o.homing) { b.home = o.homing; b.homeT = o.homeT || 9; }
     if (o.wave) { b.wave = o.wave; b.bx = b.x; b.by = b.y; b.trav = 0; }
     if (b.basic && b.wp && f.h.splash && f.tx != null && !o.full) b.life *= bombFrac(f);      // thrown bombs land where you aim (cursor / drag length), up to the full range
@@ -564,7 +576,7 @@ function emit(f, ang, o) {
   }
 }
 function bombFrac(f) { return f.tx == null ? 1 : clamp(Math.hypot(f.tx - f.x, f.ty - f.y) / f.h.range, .25, 1); }
-function zone(o) { const z = Object.assign({ t: 3, r: 80, col: '#ffffff', acc: 0, src: SRC, team: o.by ? teamOf(o.by) : 0 }, o); zones.push(z); return z; }
+function zone(o) { if (awCur && o.col) o.col = awGold(o.col); const z = Object.assign({ t: 3, r: 80, col: '#ffffff', acc: 0, src: SRC, team: o.by ? teamOf(o.by) : 0 }, o); zones.push(z); return z; }
 const inZone = (z, e) => Math.hypot(e.x - z.x, e.y - z.y) < z.r + 10;
 function strike(by, x, y, r, delay, fn, col, env) { strikes.push({ by, x, y, r, t: delay, max: delay, fn, col: col || '#ff5d5d', src: SRC, env }); }
 function minion(o) { const m = Object.assign({ minion: true, vx: 0, vy: 0, kx: 0, ky: 0, b: {}, dead: false, hp: 1, t: 5, hit: false, lastFire: -9, lastHit: -9, acc: 0, born: time, src: SRC }, o); if (o.hp) m.hp = o.hp * STAT_X; m.team = o.by ? teamOf(o.by) : o.team; m.max = m.hp; minions.push(m); return m; }
@@ -584,7 +596,7 @@ function makeFighter(team, slot, id, isPlayer, lo0, cos, nick) {
     kos: 0, deaths: 0, taken: 0, healed: 0, killer: null, lastDmg: null, bob: Math.random() * 6, infTick: 0,
     ai: { pers: pick(AI_PERS_IDS), fside: Math.random() < .5 ? 1 : -1, cool: rnd(.3, 1), strafeT: 0, sdir: Math.random() < .5 ? 1 : -1, roamT: 0, rx: 0, ry: 0, dist: null, pathNext: 0, gc: -1, gr: -1, sx: p.x, sy: p.y, stT: 0, thr: .7 } };
   const lo = lo0 ? loadoutValid(h, lo0[0], lo0[1]) : isPlayer ? loadoutOf(id) : botLoadout(h);
-  f.human = !!isPlayer; f.cos = cos ? cleanCos(cos, id) : botCos(id); f.nick = nick || null;
+  f.human = !!isPlayer; f.cos = cos ? cleanCos(cos, id) : botCos(id); f.nick = nick || null; if (f.nick) I18N.keep(f.nick);
   f.sk = lo.map(n => h.skills.find(s => s.n === n)); f.sk0 = f.sk;
   if (h.spawn) h.spawn(f);
   return f;
@@ -648,13 +660,13 @@ function duelNext(t) {
 const canAct = f => !f.dead && !B(f, 'stun') && !f.dash && f.form !== 'gone';
 const canAtk = f => canAct(f) && !B(f, 'mute') && !f.noAtk && f.form !== 'sub' && f.form !== 'dove';
 const ATK_CD_MUL = .65;      // 2026-11-13 (developer): every hero's basic attack cooldown x0.65
-function cdOf(f) { const h = f.h; return (h.cdf ? h.cdf(f) : h.cd) * V(f, 'rapid', 1) * ATK_CD_MUL; }
-function basic(f, ang) { return withSrc('기본 공격', () => basic0(f, ang)); }
+function cdOf(f) { const h = f.h; return (h.cdf ? h.cdf(f) : h.cd) * V(f, 'rapid', 1) * ATK_CD_MUL * awAtkCd(f); }      // awAtkCd (awaken.js): an awakened hero's own basic attack cooldown factor
+function basic(f, ang) { return awOwn(f, () => withSrc('기본 공격', () => { const r = basic0(f, ang); if (f.awT > 0) { const ab = awBoost(f); if (ab && ab.atk) ab.atk(f, ang); } return r; })); }
 function basic0(f, ang) {
   const h = f.h;
   if (h.atk && h.atk(f, ang) !== undefined) return;
-  if (h.type === 'melee') { f.swing = .22; addSwing(f, ang); const hits = arc(f, ang, h.range, h.half, h.dmgf ? h.dmgf(f) : h.dmg, Object.assign({ kb: h.kb, basic: 1 }, h.mo ? h.mo(f) : null)); if (h.onSwing) h.onSwing(f, hits, ang); return; }
-  for (let i = 0; i < (h.burst || 1); i++) f.queue.push({ t: i * (h.bdelay || 0), ang, o: null, src: SRC });
+  if (h.type === 'melee') { f.swing = .22; addSwing(f, ang); const hits = arc(f, ang, h.range * awRng(f), awHalf(f, h.half), (h.dmgf ? h.dmgf(f) : h.dmg) * awDmgM(f), Object.assign({ kb: h.kb, basic: 1 }, h.mo ? h.mo(f) : null)); if (h.onSwing) h.onSwing(f, hits, ang); return; }
+  for (let i = 0; i < (h.burst || 1) + (f.awT > 0 && h.id === 'smg' ? 5 : 0); i++) f.queue.push({ t: i * (h.bdelay || 0), ang, o: null, src: SRC });
 }
 function fire(f, ang) {
   if (BALL.own === f) return ballFire(f, ang);      // 볼 배틀: carrying the ball, the attack is a shot
@@ -670,12 +682,14 @@ function useSkill(f, i) {
   const def = f.sk[i];
   if (!def || f.scd[i] > 0 || !canAct(f) || B(f, 'charm') || f.noSkill) return false;
   if (BALL.own === f) return false;      // 볼 배틀: no skills while carrying
-  const r = withSrc((i + 1) + '스킬: ' + skName(def, f), () => def.f(f, f.aim, i));
+  const r = awOwn(f, () => withSrc((i + 1) + '스킬: ' + skName(def, f), () => { const ab = f.awT > 0 ? awBoost(f) : null; if (ab && ab.run) { const x = ab.run(f, i, def); if (x !== undefined) return x; } return def.f(f, f.aim, i); }));      // (awaken.js) run(): an awakened hero may run the skill its own way
   if (r === false) return false;
   unbuff(f, 'ally'); if (def.k !== 'buff' && def.k !== 'move') unbuff(f, 'stealth');
   if (r !== 'hold') f.scd[i] = skillCd(f, i);
   f.lastFire = def.k === 'buff' ? f.lastFire : time;
   skillFx(f, def);
+  awGain(f, 'skill', 1);      // (awaken.js) 방패병: counts a skill use
+  if (f.awT > 0) { const ab = awBoost(f); if (ab && ab.sk) ab.sk(f, i, f.aim, def); }      // (awaken.js)
   if (state === 'play' && (f.isPlayer || visibleTo(f, VIEW))) sfx(def.k === 'buff' ? 520 : def.k === 'move' ? 380 : 260, .16, 'triangle', .05, 1.6);
   return true;
 }
@@ -684,11 +698,12 @@ function useUlt(f) {
   const u = f.h.ult;
   if (f.ucd > 0 || !canAct(f) || B(f, 'charm') || f.noSkill) return false;
   if (BALL.own === f) { ballShoot(f, f.aim, 1); f.ucd = ULT_CD * (f.h.cdMul ? f.h.cdMul(f) : 1); return true; }      // 볼 배틀: the ultimate while carrying = a super shot
-  const r = withSrc('궁극기: ' + u.name, () => u.f(f, f.aim));
+  const r = awOwn(f, () => withSrc('궁극기: ' + u.name, () => u.f(f, f.aim)));
   if (r === false) return false;
   unbuff(f, 'ally'); if (!u.quiet) unbuff(f, 'stealth');
   if (r !== 'hold') f.ucd = ULT_CD * (f.h.cdMul ? f.h.cdMul(f) : 1);
   ultFx(f);
+  if (f.awT > 0) { const ab = awBoost(f); if (ab && ab.ult) ab.ult(f, f.aim); }      // (awaken.js)
   if (state === 'play') sfx(220, .35, 'sawtooth', .06, 3);
   return true;
 }
@@ -696,6 +711,7 @@ function dashCdOf(f) { return f.h.dashCd ? f.h.dashCd(f) : 1.5; }
 function tryDash(f, dx, dy) {
   if (f.dcd > 0 || !canAct(f) || B(f, 'root') || f.form === 'sub' || (!dx && !dy)) return false;
   f.dash = { t: .16, dx, dy, v: DASH_D / .16 }; f.dcd = dashCdOf(f); f.lastDash = time;
+  awGain(f, 'dash', 1);      // (awaken.js) 네온's condition
   fxAt(f, 'dash', { dir: 1, rot: +Math.atan2(dy, dx).toFixed(2), color: TC(f.team) });
   if (f.isPlayer) sfx(400, .1, 'triangle', .05, 2);
   return true;
@@ -704,15 +720,17 @@ function kill(e, by) {
   // 2026-11-12 (user): a death with no enemy killer (safe zone, lava, vents, self) goes to the last enemy who hit them within 5 s
   if ((!by || by === e || !by.h) && e.lastAtk && time - e.lastAtk.t <= 5 && fighters.includes(e.lastAtk.f)) by = e.lastAtk.f;
   e.lastAtk = null;
+  if (by && by !== e && by.awT > 0) { const ab = awBoost(by); if (ab && ab.kill) ab.kill(by, e); }      // (awaken.js) a kill made while awakened
   if (e.h.onDeath) e.h.onDeath(e);
   const ki = by && by !== e ? fighters.indexOf(by) : -1, src = e.lastDmg && time - e.lastDmg.t < .6 ? e.lastDmg.src : '패시브';
   e.killer = { i: ki, src }; fxPlay('killinfo', fighters.indexOf(e), ki, src);
   e.dead = true; e.respawnT = 3; e.deaths++; e.queue = []; e.dash = null; e.hp = 0; e.boomOut = false; e.dots = []; e.b = {}; e.shield = 0; e.form = null; e.ghost = false; e.noAtk = false; e.atkLockT = 0; e.noSkill = false;
   if (e.h !== e.h0) { e.h = e.h0; e.sk = e.sk0; }
-  bullets = bullets.filter(b => !(b.boom && b.owner === e));
+  for (const b of bullets) if (b.boom && b.owner === e) b.boomGone = 1;      // (removed by updateBullets: replacing the array here, in the middle of its loop, made bullets[i] undefined and stopped the game loop)
   for (const m of minions) if (m.by === e && m.bound) m.dead = true;
   fxAt(e, 'death', { color: TC(e.team) });
   if (by && by !== e) {
+    awGain(by, 'ko', 1);
     by.kos++; if (by.h.onKill) by.h.onKill(by, e);
     if (by.ucd > 0) by.ucd = Math.max(0, by.ucd - ULT_KILL);      // 2026-11-12 (user): a kill refills the ult by ULT_KILL seconds
     if (by.cos && by.cos.kfx) fxPlay('kfx', by.cos.kfx, Math.round(e.x), Math.round(e.y + BODY), Math.round(e.y + 16), bodyColor(e.cos, TC(e.team)));
@@ -734,7 +752,7 @@ function kill(e, by) {
 function respawn(f) {
   const mt = curMode === 'duo' && state === 'play' ? fighters.find(o => o !== f && o.team === f.team && !o.dead && !o.minion) : null;      // 투 레프트: come back beside the partner
   const p = mt ? freeNear(mt.x + Math.cos(mt.aim || 0) * -.9 * T, mt.y + Math.sin(mt.aim || 0) * -.9 * T) : spawnPos(f.team, f.slot);
-  Object.assign(f, { killer: null, lastDmg: null, ivx: 0, ivy: 0, x: p.x, y: p.y, hp: f.mhp, dead: false, inv: 2, kx: 0, ky: 0, lastHit: -9, lastFire: -9, fireCd: 0, st: {}, b: {}, dots: [], recent: [], shield: 0, form: null, ghost: false, noAtk: false, atkLockT: 0, noSkill: false, boomOut: false });
+  Object.assign(f, { awT: 0, awG: 0, killer: null, lastDmg: null, ivx: 0, ivy: 0, x: p.x, y: p.y, hp: f.mhp, dead: false, inv: 2, kx: 0, ky: 0, lastHit: -9, lastFire: -9, fireCd: 0, st: {}, b: {}, dots: [], recent: [], shield: 0, form: null, ghost: false, noAtk: false, atkLockT: 0, noSkill: false, boomOut: false });
   if (f.h.spawn) f.h.spawn(f);
   fx('respawn', f.x, f.y - 20, { color: TC(f.team) });
 }
@@ -933,17 +951,19 @@ function applyInput(f, inp) {       // the same for this screen's player and for
   f.hold = !!inp.hold || f.tapT > 0;
   if (inp.pf) {
     const a = inp.pf.auto ? autoAim(f) : inp.pf.ang; f.aim = a;
-    if (f.h.fireHeld) f.tapT = f.h.tapHold || .5; else fire(f, a);
+    if (f.h.fireHeld) f.tapT = f.h.tapHold || .5; else { f.acast = inp.pf.auto ? 1 : 0; fire(f, a); f.acast = 0; }
   }
   const own = !B(f, 'charm'), len = Math.hypot(inp.mx, inp.my);
   // 2026-11-15 (user: "궁극기가 눌렀다 떼도 안 나감"): a press that lands a moment too early (cooldown about to end, mid dash / short stun,
   // no foe in reach for one frame) used to be thrown away. Now it is kept for IN_BUF s and tried again every tick until it goes out.
   const bf = f.ibuf || (f.ibuf = { u: null, d: null, s: [null, null] }), keep = (k, i) => ({ t: time + IN_BUF, aim: inp.aim, tx: inp.tx, ty: inp.ty, man: !!inp.manual, np: inp.np });
   if (inp.ult) bf.u = keep(); if (inp.dash) bf.d = keep(); for (let i = 0; i < 2; i++) if (inp.sk && inp.sk[i]) bf.s[i] = keep();
-  const live = b => b && time <= b.t, aimOf = (b, auto) => { if (b.man || !inp.touch) { f.aim = b.man ? b.aim : inp.aim; if (b.man) { f.tx = b.tx; f.ty = b.ty; } } else if (auto) f.aim = autoAim(f); };
+  const live = b => b && time <= b.t, aimOf = (b, auto) => { f.acast = 0; if (b.man || !inp.touch) { f.aim = b.man ? b.aim : inp.aim; if (b.man) { f.tx = b.tx; f.ty = b.ty; } } else if (auto) { f.aim = autoAim(f); f.acast = 1; } };
+  f.manAim = !!(inp.aiming || inp.manual);
   if (live(bf.u)) { aimOf(bf.u, true); if (own && useUlt(f)) bf.u = null; } else bf.u = null;
   for (let i = 0; i < 2; i++) { const b = bf.s[i]; if (live(b)) { aimOf(b, !inp.aiming); f.netNp = b.np; if (own && useSkill(f, i)) bf.s[i] = null; f.netNp = undefined; } else bf.s[i] = null; }
   if (live(bf.d)) { const ok = len > .15 ? tryDash(f, inp.mx / len, inp.my / len) : tryDash(f, Math.cos(f.aim), Math.sin(f.aim)); if (ok) bf.d = null; } else bf.d = null;
+  f.acast = 0;
   inp.pf = null; inp.ult = false; inp.dash = false; inp.sk = [false, false]; inp.manual = false;
   return [inp.mx, inp.my];
 }
@@ -990,7 +1010,7 @@ function updateFighter(f, dt) {
       if (ch) mv = (ch.isPlayer && !AUTO) ? playerInput(f) : ai(f, dt);
       else if (f.isPlayer && !AUTO) mv = driven() === f ? playerInput(f) : [0, 0];
       else if (f.remote) mv = applyInput(f, f.netIn);
-      else mv = ai(f, dt);
+      else mv = f.dummy ? [0, 0] : ai(f, dt);      // (tut.js) the tutorial's dummy stands still
       if (B(f, 'puppet')) { const m = f.b.puppet.v.mv; mv = [m[0], m[1]]; if (!mv[0] && !mv[1]) mv = norm(f.b.puppet.v.x - f.x, f.b.puppet.v.y - f.y); }
     }
     f.mv = mv;
@@ -1018,7 +1038,8 @@ function updateFighter(f, dt) {
 function updateBullets(dt) {
   const src0 = SRC;
   for (let i = bullets.length - 1; i >= 0; i--) {
-    const b = bullets[i], o = b.o, bx0 = b.x, by0 = b.y; let dead = false; SRC = b.src || null;
+    const b = bullets[i]; if (!b) continue; if (b.boomGone) { bullets.splice(i, 1); continue; }
+    const o = b.o, bx0 = b.x, by0 = b.y; let dead = false; SRC = b.src || null; awCur = b.owner && b.owner.awT > 0 ? b.owner : null;
     if (!b.id) b.id = ++bulletSeq;
     for (let s = 0; s < 2 && !dead; s++) {
       if (b.boom && b.phase === 1) {
@@ -1033,12 +1054,15 @@ function updateBullets(dt) {
         if (b.wave) { b.trav += b.spd * dt / 2; b.bx += b.vx * dt / 2; b.by += b.vy * dt / 2; const w = Math.sin(b.trav / 40) * 26 * b.wave; b.x = b.bx - Math.sin(b.ang) * w; b.y = b.by + Math.cos(b.ang) * w; }
         else { b.x += b.vx * dt / 2; b.y += b.vy * dt / 2; }
         b.life -= b.spd * dt / 2;
+        if (o.awBreak) awBreakAt(b.x, b.y, o.awBreak);      // (awaken.js) 보안관: breaks walls and bushes it passes
+        if (o.awTrail && (b.tr = (b.tr || 0) + dt / 2) > .07) { b.tr = 0; awFire(b.owner, b.x, b.y, 50, 2.5, 8); }      // (awaken.js) 제임스 강화탄: fire left behind (TEMP)
         if (b.bnc > 0 && b.life > 0 && !b.wp && !b.wave && solidAt(b.x, b.y)) {      // bouncing shots (차원 여행자): mirror off the wall face that was hit
           const px0 = b.x - b.vx * dt / 2, py0 = b.y - b.vy * dt / 2, hx = solidAt(b.x, py0), hy = solidAt(px0, b.y);
           if (hx || !hy) b.vx = -b.vx; if (hy || !hx) b.vy = -b.vy;
           b.x = px0; b.y = py0; b.ang = Math.atan2(b.vy, b.vx); b.bnc--; b.nb++; b.hit.clear();
           if (o.bmul) b.dmg = Math.min(o.bcap || 1e9, b.dmg * o.bmul);
           if (fxInView(b.x, b.y)) fx('spark', b.x, b.y, { ang: +b.ang.toFixed(2), color: TC(b.team), gy: b.y + 24 });
+          if (o.awBounce) o.awBounce(b);      // (awaken.js) 차원여행자: what an awakened bullet does when it bounces
           continue;
         }
         if (o && o.wb && !b.wp && solidAt(b.x, b.y)) { const c = Math.floor(b.x / T), r = Math.floor(b.y / T); if (c > 0 && r > 0 && c < COLS - 1 && r < ROWS - 1 && MAP[r][c] === '#') { MAP[r][c] = '.'; NET.mapVer++; burst((c + .5) * T, (r + .5) * T, TH.wt, 14, 260); } }      // o.wb: the shot breaks the inner walls it touches and keeps going
@@ -1055,16 +1079,23 @@ function updateBullets(dt) {
           if (B(e, 'reflect')) { b.vx = -b.vx; b.vy = -b.vy; b.ang += Math.PI; b.team = teamOf(e); b.owner = e; b.hit.clear(); b.life = Math.max(b.life, 300); b.home = null; ring(e.x, e.y + BODY, 40, '#ffffff', .2); if (e.h.onReflect) e.h.onReflect(e); break; }
           if (B(e, 'block') || e.st.fsh) {
             let da = Math.atan2(b.y - (e.y + BODY), b.x - e.x) - e.aim; da = Math.atan2(Math.sin(da), Math.cos(da));
-            if (Math.abs(da) < 1.25) { if (e.st.fsh && !B(e, 'block')) { e.st.fsh.hp -= b.dmg; if (e.st.fsh.hp <= 0) e.st.fsh = null; } ring(b.x, b.y, 24, '#ffd34d', .2); dead = true; b.splash = 0; b.silent = 1; break; }
+            if (Math.abs(da) < 1.25) { if (e.st.fsh && !B(e, 'block')) { e.st.fsh.hp -= b.dmg; if (e.st.fsh.hp <= 0) e.st.fsh = null; } ring(b.x, b.y, 24, '#ffd34d', .2); if (e.awT > 0) awBlocked(e, b.dmg); dead = true; b.splash = 0; b.silent = 1; break; }
           }
         }
         b.hit.add(e);
         if (b.splash) { dead = true; b.target = e; break; }
-        let dm = b.dmg; if (o.dmgAt) dm = o.dmgAt(b, e);
+        let dm = b.dmg; if (o.dmgAt) dm = o.dmgAt(b, e); if (o.dmgMul) dm *= o.dmgMul;      // (awaken.js 궁수) +7.5 %
         o.by = b.owner; status(e, o);
         const done = damage(e, dm, b.owner, { basic: b.basic, el: o.el });
         burst(b.x, b.y, '#ffffff', 4, 150);
         if (o.onHit) o.onHit(e, b, done);
+        if (b.shape === 'card') awGain(b.owner, 'card', 1);
+        if (b.owner.h0 && b.owner.h0.id === 'smg') awGain(b.owner, 'bul', 1);      // (awaken.js) 특수요원: a bullet that landed
+        if (b.owner.h0 && b.owner.h0.id === 'gardener' && plantAt(b.owner.x, b.owner.y)) awGain(b.owner, 'bush', 1);      // (awaken.js) 정원사: a hit from inside a planted bush
+        if (b.nb > 0 && b.owner.h0 && b.owner.h0.id === 'portalgun') awGain(b.owner, 'bnc', 1);      // (awaken.js) 차원여행자: a bullet that had bounced landed
+        if (b.shape === 'redshot') awGain(b.owner, 'red', 1);      // (awaken.js) 제임스: a red bullet that landed
+        if (b.owner.h0 && b.owner.h0.id === 'wizard') awGain(b.owner, 'pen', 1);      // (awaken.js) 마법사: a piercing bullet that landed
+        if (b.owner.h0 && b.owner.h0.id === 'bow' && Math.hypot(e.x - b.x0, e.y - b.y0) >= 6 * T) awGain(b.owner, 'far', 1);      // (awaken.js) 궁수: an arrow that landed from 6+ tiles away      // (awaken.js) 마술사: a card that landed
         if (b.basic && b.owner.h.onShot && !b.owner.minion) b.owner.h.onShot(b.owner, e, b, done);
         if (b.boom) continue;
         if (b.pierce > 0) { b.pierce--; if (o.fall) b.dmg *= o.fall; } else { dead = true; b.target = e; break; }
@@ -1072,7 +1103,7 @@ function updateBullets(dt) {
     }
     b.svx = (b.x - bx0) / dt; b.svy = (b.y - by0) / dt;
     if (dead) {
-      if (b.splash) boom(b.owner, b.x, b.y, b.splash, b.dmg, Object.assign({}, o, { onHit: null, fn: o.onSplash, by: b.owner }));
+      if (b.splash) { const hh = boom(b.owner, b.x, b.y, b.splash, b.dmg, Object.assign({}, o, { onHit: null, fn: o.onSplash, by: b.owner })); if (!b.basic && b.owner.h0 && b.owner.h0.id === 'bazooka' && hh.length) awGain(b.owner, 'skh', hh.length); }      // (awaken.js) 중화기병: enemies hit by a skill rocket
       if (b.splash && o.onBoom) o.onBoom(b.x, b.y);      // e.g. 폭발광 강력한 폭탄 breaks walls where it lands
       if (o.onEnd && !b.silent) o.onEnd(b);
       bullets.splice(i, 1);
@@ -1088,15 +1119,18 @@ function fxStep(dt) {
 }
 function step(dt) {
   time += dt;
-  for (let i = timers.length - 1; i >= 0; i--) { const t = timers[i]; t.t -= dt; if (t.t <= 0) { timers.splice(i, 1); if (!t.f || !t.f.dead) withSrc(t.src, t.fn); } }
+  awCur = null;
+  for (let i = timers.length - 1; i >= 0; i--) { const t = timers[i]; t.t -= dt; if (t.t <= 0) { timers.splice(i, 1); if (!t.f || !t.f.dead) { if (t.auto && t.f.h && !t.f.manAim) t.f.aim = autoAim(t.f); awOwn(t.f, () => withSrc(t.src, t.fn)); } } }
+  awStep(dt);      // (awaken.js)
   for (const f of fighters) updateFighter(f, dt);
   updateBullets(dt);
-  for (let i = zones.length - 1; i >= 0; i--) { const z = zones[i]; z.t -= dt; if (z.fn) withSrc(z.src, () => z.fn(z, dt)); if (z.t <= 0 || z.dead) { if (z.end) withSrc(z.src, () => z.end(z)); zones.splice(i, 1); } }
-  for (let i = strikes.length - 1; i >= 0; i--) { const s = strikes[i]; s.t -= dt; if (s.t <= 0) { strikes.splice(i, 1); withSrc(s.src, () => s.fn(s)); } }
+  for (let i = zones.length - 1; i >= 0; i--) { const z = zones[i]; z.t -= dt; if (z.fn) awOwn(z.by, () => withSrc(z.src, () => z.fn(z, dt))); if (z.t <= 0 || z.dead) { if (z.end) withSrc(z.src, () => z.end(z)); zones.splice(i, 1); } }
+  for (let i = strikes.length - 1; i >= 0; i--) { const s = strikes[i]; s.t -= dt; if (s.t <= 0) { strikes.splice(i, 1); awOwn(s.by, () => withSrc(s.src, () => s.fn(s))); } }
   for (let i = minions.length - 1; i >= 0; i--) { const m = minions[i]; m.t -= dt; for (const k in m.b) m.b[k].t -= dt; if (!m.dead && m.upd && !B(m, 'stun')) withSrc(m.src, () => m.upd(m, dt)); if (m.t <= 0 || m.dead || (m.bound && m.by.dead)) { if (m.end) withSrc(m.src, () => m.end(m)); minions.splice(i, 1); } }
   if (typeof gardenStep === 'function') gardenStep();      // (gardener.js: planted bushes wither)
   fxStep(dt);
   if (state === 'play') {
+    if (TUT.on) { tutStep(dt); return; }      // (tut.js) the tutorial runs no mode, clock or map event
     envStep(dt);
     const MODE = modeNow();
     if (MODE.rounds) { roundStep(dt); return; }
@@ -1327,14 +1361,14 @@ function drawPortals() {
   ctx.save(); ctx.lineCap = 'round';
   for (const z of zones) {
     if (z.kind !== 'portal' && z.kind !== 'rift') continue;
-    const x = sx(z.x), y = sy(z.y + 10), fade = clamp(z.t * 2, 0, 1), mine = z.team === VIEW;
+    const x = sx(z.x), y = sy(z.y + 10), fade = clamp(z.t * 2, 0, 1), mine = z.team === VIEW, gold = z.kind === 'portal' && z.by && z.by.awT > 0;      // awakened: the portals turn gold (user)
     if (z.kind === 'portal') {
       const R = z.r * k, rot = time * 3 + (z.other && z.other.x < z.x ? Math.PI : 0);
-      const g = ctx.createRadialGradient(x, y, R * .1, x, y, R * 1.15); g.addColorStop(0, 'rgba(20,6,40,.95)'); g.addColorStop(.6, 'rgba(110,40,220,.75)'); g.addColorStop(1, 'rgba(53,224,255,0)');
+      const g = ctx.createRadialGradient(x, y, R * .1, x, y, R * 1.15); g.addColorStop(0, gold ? 'rgba(60,35,0,.95)' : 'rgba(20,6,40,.95)'); g.addColorStop(.6, gold ? 'rgba(255,194,26,.8)' : 'rgba(110,40,220,.75)'); g.addColorStop(1, gold ? 'rgba(255,240,170,0)' : 'rgba(53,224,255,0)');
       ctx.globalAlpha = fade; ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, R * 1.15, R * .75, 0, 0, 7); ctx.fill();
-      for (let i = 0; i < 3; i++) { ctx.strokeStyle = i % 2 ? '#35e0ff' : '#c58bff'; ctx.lineWidth = (3.5 - i) * k; const a0 = rot * (i % 2 ? -1 : 1) + i * 2.1;
+      for (let i = 0; i < 3; i++) { ctx.strokeStyle = gold ? (i % 2 ? '#fff2b0' : '#ffc21a') : (i % 2 ? '#35e0ff' : '#c58bff'); ctx.lineWidth = (3.5 - i) * k; const a0 = rot * (i % 2 ? -1 : 1) + i * 2.1;
         ctx.beginPath(); ctx.ellipse(x, y, R * (1 - i * .22), R * (1 - i * .22) * .65, 0, a0, a0 + 4.2); ctx.stroke(); }
-      if (!lowFx() && Math.random() < .4) parts.push({ x: z.x + rnd(-z.r, z.r), y: z.y + 10 + rnd(-z.r, z.r) * .5, vx: 0, vy: rnd(-60, -25), life: .5, max: .5, color: Math.random() < .5 ? '#c58bff' : '#35e0ff', r: rnd(1.5, 3) });
+      if (!lowFx() && Math.random() < .4) parts.push({ x: z.x + rnd(-z.r, z.r), y: z.y + 10 + rnd(-z.r, z.r) * .5, vx: 0, vy: rnd(-60, -25), life: .5, max: .5, color: gold ? (Math.random() < .5 ? '#ffc21a' : '#fff2b0') : (Math.random() < .5 ? '#c58bff' : '#35e0ff'), r: rnd(1.5, 3) });
       if (!mine) { ctx.globalAlpha = .6 * fade; ctx.strokeStyle = TC(z.team); ctx.lineWidth = 2 * k; ctx.beginPath(); ctx.ellipse(x, y, R * 1.2, R * .8, 0, 0, 7); ctx.stroke(); }
     } else {
       const R = z.r * k, rot = time * 4;
