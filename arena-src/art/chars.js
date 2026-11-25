@@ -9,23 +9,8 @@ const WEAPONS = {
             desc:'데미지 6 · 클릭 한 번에 10발 연사 · 쿨타임 2.2초 · 탄이 약간씩 퍼지는 일제사격'},
   bow:     {id:'bow',     name:'활',       emoji:'🏹', kind:'gun',      dmg:35, cd:1.35, bulletSpeed:1100, shape:'arrow', arcs:true,
             desc:'데미지 30 · 재장전 1.35초 · 중력의 영향을 받아 포물선을 그리는 강력한 원거리 무기'},
-  lightsaber:{id:'lightsaber', name:'광선검', emoji:'⚡', kind:'melee', dmg:26, cd:1.25, range:100, shape:'saber', kbMult:2.2, deflectSec:0.25,
-            desc:'데미지 26 · 쿨타임 1.25초 · 사거리 100 · 광선검을 휘둘러 맞은 상대를 크게 날려보냄 · 휘두른 순간부터 0.25초 동안 날아오는 투사체를 쏜 사람에게 튕겨내고, 단거리 공격도 막아내고, 막아내면 쿨타임 없이 한 번 더 휘두를 수 있음 (공격받기 0.25초 전에 눌러야 함)'},
-  horemheb:{id:'horemheb', name:'쇠스랑', emoji:'🔱', kind:'melee', dmg:34, cd:0.55, range:105, shape:'pitchfork',
-            desc:'데미지 34 · 쿨타임 0.55초 · 사거리 105 · 쇠스랑을 휘둘러 근접 공격'},
-  pizarro: {id:'pizarro', name:'창',       emoji:'🪖', kind:'melee',    dmg:25, cd:0.6, range:160, shape:'spear', thrust:true, kbMult:2.6,
-            desc:'데미지 20 · 쿨타임 0.6초 · 사거리 160 · 앞으로 창을 찔러 상대를 멀리 밀어냄 · 궁극기를 쓸수록 강해짐(죽으면 초기화)'},
-  puppeteer:{id:'puppeteer', name:'실 바늘', emoji:'🪆', kind:'gun', dmg:9, cd:0.6, bulletSpeed:1300, life:0.85, shape:'needle', hitR:14,      // range 1100 (was 1560 with the default 1.2 s life)
-           
-            desc:'데미지 9 · 쿨타임 0.6초 · 빠르게 날아가는 바늘 · 궁극기로 상대를 조종해 싸움'},
-  kan:     {id:'kan',     name:'독침대롱', emoji:'🐸', kind:'gun',      dmg:5, cd:0.5, bulletSpeed:1500, shape:'blowgun', poison:1, hitR:10,
-            desc:'데미지 5 · 쿨타임 0.5초 · 맞으면 독이 쌓임 (최대 4중첩, 중첩마다 초당 2 피해, 3초 지속, 맞을 때마다 시간 갱신) · 빠르게 날아가는 독침'},
   sword:   {id:'sword',   name:'칼',       emoji:'🗡️', kind:'melee',    dmg:32, cd:0.55, range:100, shape:'blade',
             desc:'데미지 32 · 쿨타임 0.55초 · 사거리 100 · 빠르고 날카로운 근접 베기'},
-  bat:     {id:'bat',     name:'방망이',   emoji:'🏏', kind:'melee',    dmg:45, cd:0.4, range:105, shape:'club',
-            desc:'데미지 45 · 쿨타임 0.4초 · 사거리 105 · 클릭한 채 마우스를 아래로 내렸다가 다시 올리면(스윙) 그때 맞은 상대에게 타격'},
-  boomerang:{id:'boomerang',name:'부메랑', emoji:'🪃', kind:'boomerang',dmg:21, cd:0,  bulletSpeed:700, shape:'boomerang',
-            desc:'데미지 20(돌아올 때도 20) · 쿨타임 없음 · 더 멀리 날아가는 부메랑 · 던진 부메랑이 돌아와 나에게 닿고 0.25초 뒤에 다시 던질 수 있음 · 사람은 관통하고, 발판·바닥·벽에 닿으면 즉시 귀환'},
   shuriken:{id:'shuriken',name:'표창',     emoji:'⭐', kind:'gun',      dmg:14, cd:0.48, bulletSpeed:1050, shape:'star',
             desc:'데미지 14 · 쿨타임 0.48초 · 가볍고 빠르게 연속으로 던지는 투척 무기'},
   shotgun: {id:'shotgun', name:'샷건',     emoji:'💥', kind:'shotgun',  dmg:15, pellets:5, cd:1.2, bulletSpeed:850, shape:'pellet',
@@ -39,63 +24,34 @@ const WEAPONS = {
             desc:'데미지 56 · 폭발반경 145 · 쿨타임 2.0초 · 중력에 의해 포물선으로 떨어지며 범위 안 전원에게 피해(자신 포함)'},
   bazooka: {id:'bazooka', name:'바주카포', emoji:'🚀', kind:'explosive',dmg:60, cd:2.8,  bulletSpeed:750, splash:150, shape:'rocket', arcs:true,
             desc:'데미지 68 · 폭발반경 150 · 쿨타임 2.8초 · 중력의 영향을 받는 포물선 궤도, 최고 위력이지만 느린 재장전'},
-  dagger:  {id:'dagger',  name:'단검',     emoji:'🔪', kind:'melee',    dmg:43, cd:0.4,  range:65, shape:'dagger', dashCd:0.5,
-            desc:'데미지 43 · 쿨타임 0.4초 · 사거리 65 · 대쉬 쿨타임이 0.5초로 줄어드는 기동형 단검'},
-  dracula: {id:'dracula', name:'드라큘라', emoji:'🧛', kind:'melee',    dmg:15, cd:0.4, range:65, shape:'claw', lifesteal:true, lifestealFlat:5,
-            desc:'데미지 15 · 쿨타임 0.4초 · 사거리 65 · 빠른 발톱 공격, 적중할 때마다 체력 5 흡수'},
-  gambler: {id:'gambler', name:'도박사',   emoji:'🎲', kind:'gun', dmg:20, cd:1.0, bulletSpeed:1100, shape:'chip', hitR:7,
-            desc:'데미지 6~36(무작위) · 쿨타임 1.0초 · 장거리 · 칩을 곧게 던짐, 맞힐 때마다 칩 +1 (최대 6) · 칩이 많을수록 스킬·궁극기가 강해짐'},
   wizard:  {id:'wizard',  name:'마법사',   emoji:'🧙', kind:'gun',      dmg:14, cd:0.7,  bulletSpeed:750, shape:'fireball', pierce:true, pierceHits:1, platPierce:1, life:1.4,
             desc:'데미지 14(한 번 거치면 7) · 쿨타임 0.7초 · 사거리 김 · 발판을 한 번만 통과하고, 플레이어 한 명을 관통한 뒤 두 번째로 맞힌 상대에게서 멈추는 화염 마법'},
   magiccard:{id:'magiccard',name:'마술 카드',emoji:'🃏', kind:'cards',    dmg:10,  cd:0.75,  bulletSpeed:820, shape:'card', hitR:26, comboBonus:4, freeVolleys:2,
             desc:'트럼프 카드 3장이 넓게 퍼져 날아감 · 장당 데미지 10 · 쿨타임 0.75초 · 맞은 상대는 이동속도가 조금 느려짐 · 3장이 모두 맞으면 추가 4 데미지 + 0.5초 기절'},
-  flamethrower:{id:'flamethrower',name:'화염방사기',emoji:'🔥', kind:'flame', dmg:0, cd:0, range:FLAME_RANGE, shape:'flamethrower',
-            desc:'중거리 화염방사 · 쏜 시간이 합쳐서 9초가 되면 2초간 과열(끊었다 다시 쏴도 이어서 셈) · 닿으면 초당 '+FLAME_DIRECT_DPS+' 직접 피해 · 발판에 막힘'},
   portalgun:{id:'portalgun',name:'포탈건',emoji:'🌀', kind:'gun', dmg:15, cd:0.5, bulletSpeed:700, shape:'portalbullet', bounces:3,
             desc:'데미지 15 · 쿨타임 0.5초 · 바닥이나 발판에 닿으면 최대 3번까지 튕기는 탄환 · 튕길 때마다 데미지 30% 증가 (최대 30)'},
-  vacuum:{id:'vacuum',name:'청소기',emoji:'🧹', kind:'vacuum', dmg:24, cd:0.9, range:VACUUM_RANGE, shape:'vacuum',
-            desc:'사거리 '+VACUUM_RANGE+'(화염방사기보다 조금 김) · 데미지 24 · 쿨타임 0.9초 · 맞힐 때마다 스택 축적(최대 8) · 맞은 상대를 나에게 살짝 끌어당김'},
-  pirate:{id:'pirate',name:'갈고리손',emoji:'🏴‍☠️', kind:'melee', dmg:30, cd:0.3, range:70, shape:'hook',
-            desc:'데미지 30 · 쿨타임 0.3초 · 사거리 70 · 갈고리손으로 빠르게 베는 근접 공격'},
-  tell:{id:'tell',name:'석궁',emoji:'🏹', kind:'charge', dmg:64, cd:0.4, bulletSpeed:1000, shape:'quarrel', hitR:12, life:3,
-            desc:'꾹 눌러 게이지를 채우고(1.6초) 놓으면 발사 · 패시브: 게이지가 찰수록 피해 1~64, 속도가 빨라지고 점점 일직선에 가까워지며 꽉 차면 완전한 일직선 · 게이지가 차는 동안 이동속도 25% 감소'},
   harald:{id:'harald',name:'전투 도끼',emoji:'🪓', kind:'melee', dmg:73, cd:1.2, range:125, shape:'axe', kbMult:2.6,
             desc:'데미지 73 · 쿨타임 1.2초 · 사거리 125 · 도끼를 번쩍 들어 내려찍음 (느리지만 매우 아프고 크게 밀쳐냄) · 도끼가 손에 없을 땐 방패로 밀침 (피해 절반, 쿨타임 0.75배, 넉백은 같음)'},
-  plague:{id:'plague',name:'랜턴 막대',emoji:'🏮', kind:'melee', dmg:15, cd:0.6, range:100, shape:'lanternstaff',
-            desc:'데미지 15 · 쿨타임 0.6초 · 사거리 100 · 맞은 상대는 5초 동안 감염'},
   samurai:{id:'samurai',name:'카타나',emoji:'⚔️', kind:'melee', dmg:36, cd:0.65, range:95, shape:'katana',
             desc:'데미지 36 · 쿨타임 0.65초 · 사거리 95 · 한 번 베면 묵직하게 들어가는 카타나'},
   shade:{id:'shade',name:'네온 대검',emoji:'🗡️', kind:'melee', dmg:50, cd:0.95, range:135, shape:'neon', kbMult:1.6,
             desc:'데미지 50 · 쿨타임 0.95초 · 사거리 135 · 범위 안의 적 모두에게 피해 · 민트색으로 빛나는 네온 대검 · 패시브: 기본 공격을 2번 연속으로 하면 다음 공격은 강타 (추가 피해 +5, 0.4초 기절)'},
-  kadas:{id:'kadas',name:'암흑총',emoji:'🔫', kind:'gun', dmg:23, cd:0.8, bulletSpeed:1000, life:0.6, shape:'kdgun', hitR:9,
-            desc:'데미지 23 · 쿨타임 0.8초 · 중거리 · 암흑총을 발사 · 패시브: 공격할 때 0.5초 동안 이동속도 5% 증가'},
   shsword:{id:'shsword',name:'네온 대검(던짐)',emoji:'🗡️', kind:'gun', dmg:15, cd:1, bulletSpeed:1300, shape:'shsword', hitR:14, life:0.42, desc:''},
-  dspaper:{id:'dspaper',name:'종이비행기',emoji:'✈️', kind:'gun', dmg:26, cd:1, bulletSpeed:640, shape:'dspaper', hitR:13, life:3, desc:''},
-  dsfire:{id:'dsfire',name:'용의 화염구',emoji:'🔥', kind:'gun', dmg:26, cd:1, bulletSpeed:640, shape:'dsfireball', hitR:13, life:3, desc:''},
-  dragonslayer:{id:'dragonslayer',name:'장검',emoji:'🗡️', kind:'melee', dmg:41, cd:0.6, range:150, shape:'greatsword',
-            desc:'데미지 41 · 쿨타임 0.6초 · 사거리 150 · 팔을 크게 젖혔다 내리치는 묵직한 장검 휘두르기'},
-  kurus:{id:'kurus',name:'어둠의 물약',emoji:'🧪', kind:'potion', dmg:12, cd:0.5, bulletSpeed:720, shape:'potion', arcs:true, hitR:9, life:3,
-            desc:'데미지 12 · 쿨타임 0.5초 · 포물선을 그리며 날아가는 어둠의 물약 · 떨어진 자리(바닥·발판, 옆면에 맞으면 흘러내린 자리)에 캐릭터 5명 너비의 어둠이 생김 (닿은 어둠은 하나로 이어지고 어둠 탈출 전까지 사라지지 않음) · 내 어둠 위에서는 초당 체력 3 회복, 이동속도 30% 증가 · 상대는 내 어둠 위에서 이동속도 30% 감소, 주변이 잘 안 보임'},
-  cleon:{id:'cleon',name:'황제의 홀',emoji:'👑', kind:'gun', dmg:14, cd:0.8, bulletSpeed:760, shape:'cleonorb', hitR:11, life:1.5,
-            desc:'데미지 14 · 쿨타임 0.8초 · 홀에서 나가는 분홍 마법탄 (장거리) · 근위병이 살아 있는 동안 근위병 1명마다 데미지 10% 증가'},
-  pel:{id:'pel',name:'조종 드론',emoji:'🛸', kind:'gun', dmg:12, cd:0.6, bulletSpeed:1000, shape:'dronebolt', hitR:8, life:1.3,
-            desc:'데미지 12 · 쿨타임 0.6초 (드론이 2대를 넘으면 한 대당 15%씩 늘어남) · 곁을 도는 드론이 한 대당 한 발씩 쏨 (장거리) · 드론은 시작 2대'},
   tionis:{id:'tionis',name:'연극 가면',emoji:'🎭', kind:'gun', dmg:13, cd:0.6, bulletSpeed:850, shape:'mask', hitR:14, life:0.9,
             desc:'데미지 13 · 쿨타임 0.6초 · 웃는 얼굴과 우는 얼굴의 연극 가면이 회전하며 날아감 (중장거리)'},
-  edward:{id:'edward',name:'총검 머스킷',emoji:'💂', kind:'melee', dmg:30, cd:0.65, range:115, shape:'spear', thrust:true, kbMult:1.3,
-            desc:'데미지 30 · 쿨타임 0.65초 · 사거리 115 · 가까운 상대는 총검으로 찌르고, 거리가 벌어지면 같은 클릭이 머스킷 단발 사격(데미지 24)으로 바뀜'},
-  medium:{id:'medium',name:'지팡이',emoji:'🎩', kind:'melee', dmg:20, cd:0.75, range:105, shape:'cane',
-            desc:'데미지 20 · 쿨타임 0.75초 · 사거리 105 · 지팡이를 휘두름 · 영혼 상태에서는 영혼 덩어리(최대 한 번 관통, 데미지 20, 쿨타임 0.8초)를 쏨'},
+  sk_needle:{id:'sk_needle',name:'바늘',emoji:'', kind:'none', dmg:0, cd:999999, shape:'needle', desc:'스킬 전용 투사체'},
+  sk_lasso:{id:'sk_lasso',name:'올가미',emoji:'', kind:'none', dmg:0, cd:999999, shape:'boomerang', desc:'스킬 전용 투사체'},
+  sk_potion:{id:'sk_potion',name:'물약',emoji:'', kind:'none', dmg:0, cd:999999, shape:'potion', desc:'스킬 전용 투사체'},
+  sk_orb:{id:'sk_orb',name:'구슬',emoji:'', kind:'none', dmg:0, cd:999999, shape:'cleonorb', desc:'스킬 전용 투사체'},
   syringe:{id:'syringe',name:'주사기',emoji:'💉', kind:'none', dmg:20, cd:999999, bulletSpeed:900, shape:'syringe', hitR:10, life:0.6, desc:'티오니스의 채혈 주사기 (스킬 전용)'},
   guard:{id:'guard',name:'에너지 창',emoji:'🔱', kind:'melee', dmg:15, cd:0.75, range:130, shape:'spear', thrust:true, kbMult:1.2, desc:'근위병의 창 (소환 전용)'},
   none: {id:'none', name:'맨손', emoji:'', kind:'none', dmg:0, cd:999999, shape:'none', desc:'무기 없음'}
 };
 const WEAPON_PERSONA_NAME = {
-  plague:'역병 의사', edward:'에드워드', medium:'영매사', cleon:'크레온 1세', pel:'펠', tionis:'티오니스', harald:'바이킹', tell:'빌헬름 텔',
-  dragonslayer:'용살자', puppeteer:'인형술사', pizarro:'피사로', kan:'칸', horemheb:'호렘헵', lightsaber:'자다이', pistol:'제임스', smg:'특수요원', bow:'궁수', sword:'기사', bat:'야구선수', boomerang:'사냥꾼',
+  tionis:'티오니스', harald:'바이킹', 
+  pistol:'제임스', smg:'특수요원', bow:'궁수', sword:'기사', 
   shuriken:'닌자', shotgun:'보안관', rifle:'군인', gloves:'복서', grenade:'폭발광',
-  bazooka:'중화기병', dagger:'암살자', magiccard:'마술사', dracula:'드라큘라', gambler:'도박사', wizard:'마법사', flamethrower:'학살자', portalgun:'차원여행자', vacuum:'청소부', pirate:'해적', shade:'네온', kadas:'카다스', samurai:'사무라이', kurus:'쿠루스'
-};
+  bazooka:'중화기병', magiccard:'마술사', wizard:'마법사', portalgun:'차원여행자', shade:'네온', samurai:'사무라이'};
 let PERSONA_FACE=1;
 let DS_FLAME_NOW=false, BOW_P=null, TELL_P=null;
 function hslHex(h,sat,l){ h=((h%360)+360)%360; sat/=100; l/=100; const k=n=>(n+h/30)%12, a=sat*Math.min(l,1-l), f=n=>{ const v=l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1))); return Math.round(v*255).toString(16).padStart(2,'0'); }; return '#'+f(0)+f(8)+f(4); }
@@ -118,9 +74,7 @@ function kdPal(cp){      // 카다스's colours: purple, or one of its skins
 function drawWeaponPersona(c,wid,hx,hy,r,shy,tint,concept){
   c.save();
   switch(wid){
-    case 'edward': drawEdwardPersona(c,hx,hy,r,shy); break;
-    case 'medium': drawMediumPersona(c,hx,hy,r,shy); break;
-    case 'cleon': case 'guard': case 'pel': drawSpacePersona(c,wid,hx,hy,r,shy,tint); break;
+    case 'guard': drawSpacePersona(c,wid,hx,hy,r,shy,tint); break;
     case 'tionis': drawSpacePersona(c,wid,hx,hy,r,shy,tint);
       if(concept==='janus'){ mythTunic(c,hx,shy,'#d9b648',false); mythLaurel(c,hx,hy,r); }      // 야누스 티오니스: only a white tunic and a laurel wreath are new
       break;
@@ -129,11 +83,6 @@ function drawWeaponPersona(c,wid,hx,hy,r,shy,tint,concept){
     case 'gardener': if(typeof gdHat==='function') gdHat(c,hx,hy,r,1,performance.now()/1000,tint); break;
     case 'shade': { // 네온: a thin glowing visor (the colour follows the skin)
       const vc=tint||'#7dffd8'; c.save(); c.shadowColor=vc; c.shadowBlur=6; c.fillStyle='#0b1018'; c.strokeStyle=vc; c.lineWidth=1.2; c.beginPath(); c.roundRect(hx-r*0.95,hy-r*0.42,r*1.9,r*0.62,2); c.fill(); c.stroke(); c.restore();
-      break; }
-    case 'kadas': { // 카다스: half human, half demon: the right half of the face red, a horn, one yellow eye
-      c.save(); c.beginPath(); c.rect(hx,hy-r-2,r+2,2*r+4); c.clip(); c.fillStyle='#c4182e'; c.beginPath(); c.arc(hx,hy,r,0,7); c.fill(); c.restore();
-      c.fillStyle=(tint&&!concept)?tint:'#1d0a22'; c.strokeStyle='#07030c'; c.lineWidth=1; c.beginPath(); c.moveTo(hx+r*0.2,hy-r*0.8); c.lineTo(hx+r*1.15,hy-r*2.5); c.lineTo(hx+r*0.95,hy-r*0.5); c.closePath(); c.fill(); c.stroke();
-      c.fillStyle='#ffdd33'; c.beginPath(); c.arc(hx+r*0.45,hy-r*0.15,1.9,0,7); c.fill(); c.fillStyle='#2a2a40'; c.beginPath(); c.arc(hx-r*0.35,hy-r*0.15,1.4,0,7); c.fill();
       break; }
     case 'pistol': // 제임스: 선글라스 + 넥타이
       if(concept==='zeus'){      // 신 중의 신 제임스: white tunic, long white beard, white hair, bushy white brows
@@ -157,17 +106,6 @@ function drawWeaponPersona(c,wid,hx,hy,r,shy,tint,concept){
       c.strokeStyle='#20242c'; c.lineWidth=2; c.beginPath(); c.arc(hx,hy,r+2,1.1,2.4); c.stroke();
       c.fillStyle='#20242c'; c.beginPath(); c.arc(hx+r+1,hy+2,1.8,0,7); c.fill();
       break;
-    case 'tell': // 빌헬름 텔: a green felt hat with a red feather, a green tunic with a brown belt
-      c.fillStyle='#2f6b3a'; c.strokeStyle='#1c4524'; c.lineWidth=0.8; c.beginPath(); c.moveTo(hx-5.2,shy+0.6); c.lineTo(hx+5.2,shy+0.6); c.lineTo(hx+6.8,shy+16); c.lineTo(hx-6.8,shy+16); c.closePath(); c.fill(); c.stroke();
-      c.fillStyle='#5a3a1c'; c.fillRect(hx-6,shy+9,12,2.4); c.fillStyle='#e0b43a'; c.fillRect(hx-1.2,shy+8.8,2.4,2.8);
-      c.fillStyle='#e8d9a0'; for(let i=0;i<4;i++){ c.beginPath(); c.moveTo(hx-6.8+i*3.4,shy+16); c.lineTo(hx-5.1+i*3.4,shy+18.6); c.lineTo(hx-3.4+i*3.4,shy+16); c.fill(); }
-      c.fillStyle='#2f6b3a'; c.strokeStyle='#1c4524'; c.lineWidth=0.9;
-      c.beginPath(); c.ellipse(hx,hy-r*0.5,r*1.45,r*0.38,-0.05,0,7); c.fill(); c.stroke();
-      c.beginPath(); c.moveTo(hx-r*0.85,hy-r*0.55); c.quadraticCurveTo(hx-r*0.8,hy-r*1.7,hx,hy-r*1.8); c.quadraticCurveTo(hx+r*0.85,hy-r*1.7,hx+r*0.9,hy-r*0.55); c.closePath(); c.fill(); c.stroke();
-      c.fillStyle='#5a3a1c'; c.fillRect(hx-r*0.86,hy-r*0.85,r*1.76,r*0.3);
-      c.lineCap='round'; c.strokeStyle='#e63946'; c.lineWidth=2.2; c.beginPath(); c.moveTo(hx+r*0.7,hy-r*0.8); c.quadraticCurveTo(hx+r*1.6,hy-r*1.7,hx+r*1.3,hy-r*2.6); c.stroke();
-      c.strokeStyle='#ffffff'; c.lineWidth=0.7; c.stroke();
-      break;
     case 'bow': // 궁수: 초록 후드
       c.fillStyle=(concept==='cupid')?'#ffd0e4':(tint||'#2f6b3a');
       c.beginPath(); c.moveTo(hx-r-1,hy+1); c.quadraticCurveTo(hx,hy-r*2.4,hx+r+1,hy+1); c.quadraticCurveTo(hx,hy-r*0.3,hx-r-1,hy+1); c.fill();
@@ -188,82 +126,6 @@ function drawWeaponPersona(c,wid,hx,hy,r,shy,tint,concept){
       c.fillStyle=tint||'#c7ccd6';
       c.beginPath(); c.arc(hx,hy-1,r+2,Math.PI,0); c.fill(); c.fillRect(hx-r-2,hy-1,(r+2)*2,4);
       c.fillStyle='#20242c'; c.fillRect(hx-r-1,hy-1.5,(r+2)*2-2,1.6);
-      break;
-    case 'kan': {                 // 칸: a jade brow band with a crown of quetzal feathers (green, red tips), gold ear plugs and a stripe of face paint
-      const jade=tint||'#2fb87a', gold='#f2c230';
-      c.fillStyle=jade; c.fillRect(hx-r-1, hy-4.5, (r+1)*2, 3.2); c.strokeStyle='#0f6b45'; c.lineWidth=1; c.strokeRect(hx-r-1, hy-4.5, (r+1)*2, 3.2);
-      c.lineCap='round';
-      for(let k=-2;k<=2;k++){ const a=k*0.32, bx=hx+k*3.2, by=hy-4.5, L=r*1.9+(2-Math.abs(k))*2.2, ex=bx+Math.sin(a)*L, ey=by-Math.cos(a)*L;
-        c.strokeStyle=(k%2?'#1faa6a':'#35d08a'); c.lineWidth=2.2; c.beginPath(); c.moveTo(bx,by); c.lineTo(ex,ey); c.stroke();
-        c.strokeStyle='#e0334a'; c.beginPath(); c.moveTo(bx+Math.sin(a)*(L-3), by-Math.cos(a)*(L-3)); c.lineTo(ex,ey); c.stroke(); }
-      c.fillStyle=gold; for(const sd of [-1,1]){ c.beginPath(); c.arc(hx+sd*(r+0.5), hy+2, 1.8, 0, 7); c.fill(); }
-      c.fillStyle='#0f6b45'; c.fillRect(hx-r*0.5, hy+1.6, r, 1.4);
-      break; }
-    case 'pizarro': {             // 피사로: a steel morion helmet (high comb, curved brim)
-      const steel=tint||'#aeb6c2';
-      c.fillStyle=steel; c.beginPath(); c.arc(hx,hy-1,r+1.6,Math.PI,0); c.lineTo(hx+r+1.6,hy+1); c.lineTo(hx-r-1.6,hy+1); c.closePath(); c.fill();
-      c.strokeStyle='#6f7886'; c.lineWidth=1.4; c.lineCap='round';
-      c.beginPath(); c.moveTo(hx-r-4,hy+1.5); c.quadraticCurveTo(hx,hy+4,hx+r+4,hy+1.5); c.stroke();
-      c.fillStyle='#d9dee6'; c.beginPath(); c.moveTo(hx-r*0.9,hy-r-0.5); c.quadraticCurveTo(hx,hy-r*2.5,hx+r*0.9,hy-r-0.5); c.closePath(); c.fill();
-      c.fillStyle='#c9a463'; c.fillRect(hx-1,hy-r*1.6,2,r*0.9);
-      break;
-    }
-    case 'horemheb': {            // 호렘헵: the striped royal headcloth (nemes) with the golden cobra, and a gold brow band
-      if(concept==='poseidon'){      // 포세이돈 호렘헵: flowing white-blue sea-foam hair and a long beard, a gold crown with three trident points
-        const foam='#e8f7ff', edge='#6fb4dc', gold='#f2c230';
-        c.fillStyle=foam; c.strokeStyle=edge; c.lineWidth=0.8;
-        c.beginPath(); c.moveTo(hx-r-2,shy+3); c.quadraticCurveTo(hx-r-5.5,hy+1,hx-r-1,hy-r*0.9); c.quadraticCurveTo(hx,hy-r*1.75,hx+r+1,hy-r*0.9); c.quadraticCurveTo(hx+r+5.5,hy+1,hx+r+2,shy+3);
-        c.quadraticCurveTo(hx+r-0.5,shy-1,hx+r-1,hy+1); c.quadraticCurveTo(hx,hy-r*1.1,hx-r+1,hy+1); c.quadraticCurveTo(hx-r+0.5,shy-1,hx-r-2,shy+3); c.closePath(); c.fill(); c.stroke();
-        c.strokeStyle='#8fd0ee'; c.lineWidth=0.9; for(const sg of [-1,1]) for(let k=0;k<3;k++){ const yy=hy-1+k*((shy-hy)/3.2); c.beginPath(); c.moveTo(hx+sg*(r+0.5),yy); c.quadraticCurveTo(hx+sg*(r+4),yy+1.5,hx+sg*(r+1.2),yy+3.2); c.stroke(); }
-        mythBeard(c,hx,hy,r,'#f3fbff','#6fb4dc',1.25);
-        c.strokeStyle='#bfe6f8'; c.lineWidth=0.7; for(let k=-1;k<=1;k++){ c.beginPath(); c.moveTo(hx+k*r*0.4,hy+r*0.75); c.quadraticCurveTo(hx+k*r*0.5,hy+r*1.5,hx+k*r*0.2,hy+r*(2.0)); c.stroke(); }
-        c.fillStyle=gold; c.strokeStyle='#8a6a1c'; c.lineWidth=0.8; const cy=hy-r*0.95;                      // the crown: a band with three points
-        c.beginPath(); c.moveTo(hx-r-0.5,cy+2.6); c.lineTo(hx-r-0.5,cy-1.2); c.lineTo(hx-r*0.62,cy-4.2); c.lineTo(hx-r*0.3,cy-1.2); c.lineTo(hx,cy-7.4); c.lineTo(hx+r*0.3,cy-1.2); c.lineTo(hx+r*0.62,cy-4.2); c.lineTo(hx+r+0.5,cy-1.2); c.lineTo(hx+r+0.5,cy+2.6); c.closePath(); c.fill(); c.stroke();
-        c.fillStyle='#2fe0d0'; c.beginPath(); c.arc(hx,cy+0.2,1.3,0,7); c.fill();
-        c.fillStyle='#ffffff'; c.beginPath(); c.arc(hx,cy-7.4,0.9,0,7); c.fill();
-        c.strokeStyle='#e8fbff'; c.lineWidth=1.1; c.beginPath(); c.moveTo(hx-r+1.5,hy-2.2); c.lineTo(hx-2,hy-2.8); c.moveTo(hx+r-1.5,hy-2.2); c.lineTo(hx+2,hy-2.8); c.stroke();      // bushy white brows
-        break;
-      }
-      const cloth=tint||'#2f5fd0', gold='#f2c230', top=hy-r*1.95;
-      c.fillStyle=cloth;
-      c.beginPath(); c.moveTo(hx-r-3,hy+4); c.quadraticCurveTo(hx-r-4,top,hx,top); c.quadraticCurveTo(hx+r+4,top,hx+r+3,hy+4); c.lineTo(hx+r-1,hy-1); c.quadraticCurveTo(hx,hy-r*1.15,hx-r+1,hy-1); c.closePath(); c.fill();        // the cap
-      for(const s of [-1,1]){ c.beginPath(); c.moveTo(hx+s*(r+3),hy+2); c.lineTo(hx+s*(r+5),shy+4); c.lineTo(hx+s*(r-2),shy+4); c.lineTo(hx+s*(r-1),hy+2); c.closePath(); c.fill(); }   // the two flaps down to the shoulders
-      c.strokeStyle=gold; c.lineWidth=1.2; c.lineCap='round';
-      for(let k=0;k<3;k++){ const yy=top+r*(0.45+0.4*k); c.beginPath(); c.moveTo(hx-r*(0.95-0.1*k),yy+2); c.quadraticCurveTo(hx,yy-3,hx+r*(0.95-0.1*k),yy+2); c.stroke(); }      // the golden stripes across the cap
-      for(const s of [-1,1]) for(let k=0;k<3;k++){ const yy=hy+5+k*((shy-hy-4)/3.4); c.beginPath(); c.moveTo(hx+s*(r-1.5),yy); c.lineTo(hx+s*(r+4.5),yy); c.stroke(); }      // ...and across the flaps
-      c.lineWidth=2.2; c.beginPath(); c.moveTo(hx-r-2,hy-2.4); c.lineTo(hx+r+2,hy-2.4); c.stroke();                       // the gold band over the brow
-      c.fillStyle=gold; c.beginPath(); c.moveTo(hx,hy-r*1.45-5); c.quadraticCurveTo(hx+3.4,hy-r*1.2,hx+1.6,hy-r*0.92); c.lineTo(hx-1.6,hy-r*0.92); c.quadraticCurveTo(hx-3.4,hy-r*1.2,hx,hy-r*1.45-5); c.closePath(); c.fill();     // the uraeus: the golden cobra on the forehead
-      c.fillStyle='#c62828'; c.beginPath(); c.arc(hx,hy-r*1.25,0.9,0,7); c.fill();
-      break; }
-    case 'lightsaber': // 자다이: 로브 후드와 이마 띠
-      c.fillStyle=tint||'#8a6a45';
-      c.beginPath(); c.moveTo(hx-r-2,hy+4); c.quadraticCurveTo(hx-r-2,hy-r*2.0,hx,hy-r*2.0); c.quadraticCurveTo(hx+r+2,hy-r*2.0,hx+r+2,hy+4); c.lineTo(hx+r-1,hy-1); c.quadraticCurveTo(hx,hy-r*1.2,hx-r+1,hy-1); c.closePath(); c.fill();
-      c.strokeStyle='#d8c8a4'; c.lineWidth=1.4; c.beginPath(); c.moveTo(hx-r-1,hy-2.6); c.lineTo(hx+r+1,hy-2.6); c.stroke();
-      break;
-    case 'bat':
-      if(concept==='fry'){      // 종업원: a white server's cap with a red band, a white collar and a red bow tie
-        c.fillStyle='#ffffff'; c.beginPath(); c.ellipse(hx,hy-r*0.95,r*1.05,r*0.55,0,Math.PI,0); c.fill(); c.fillRect(hx-r*1.05,hy-r*0.95,r*2.1,3.4);
-        c.fillStyle='#d62839'; c.fillRect(hx-r*1.05,hy-r*0.95,r*2.1,1.6);
-        c.fillStyle='#ffffff'; c.beginPath(); c.moveTo(hx-r*0.9,shy); c.lineTo(hx,shy+5); c.lineTo(hx+r*0.9,shy); c.lineTo(hx+r*0.9,shy+3); c.lineTo(hx,shy+8); c.lineTo(hx-r*0.9,shy+3); c.closePath(); c.fill();
-        c.fillStyle='#d62839'; c.beginPath(); c.moveTo(hx,shy+3.4); c.lineTo(hx-5,shy+0.4); c.lineTo(hx-5,shy+6.4); c.closePath(); c.fill(); c.beginPath(); c.moveTo(hx,shy+3.4); c.lineTo(hx+5,shy+0.4); c.lineTo(hx+5,shy+6.4); c.closePath(); c.fill();
-        c.fillStyle='#8a1220'; c.beginPath(); c.arc(hx,shy+3.4,1.5,0,7); c.fill();
-      } else drawHat(c,'hat_cap',hx,hy,r,tint);
-      break;
-    case 'boomerang': // 사냥꾼: 부시햇
-      if(concept==='odin'){      // 사냥꾼 오딘: a gold cap with wings on both sides, a golden halo, an eyepatch, a white beard
-        mythBeard(c,hx,hy,r,'#fbfbfd','#c8ccd8',1.0);
-        mythWings(c,hx,hy,r+1.4,'#fff1b8','#c9961b',3.2);
-        c.fillStyle='#e8b923'; c.strokeStyle='#9a6a0c'; c.lineWidth=0.8; c.beginPath(); c.arc(hx,hy-1,r+1.4,Math.PI,0); c.fill(); c.stroke(); c.fillRect(hx-r-1.4,hy-1.8,(r+1.4)*2,2.6);
-        c.strokeStyle='#ffe27a'; c.lineWidth=1.7; c.beginPath(); c.ellipse(hx,hy-r-6.6,r*0.95,2.5,0,0,7); c.stroke();
-        c.strokeStyle='rgba(255,226,122,0.4)'; c.lineWidth=3.6; c.beginPath(); c.ellipse(hx,hy-r-6.6,r*0.95,2.5,0,0,7); c.stroke();
-        c.fillStyle='#14141a'; c.beginPath(); c.ellipse(hx-3.2,hy+0.4,2.7,2.2,0,0,7); c.fill();
-        c.strokeStyle='#14141a'; c.lineWidth=0.9; c.beginPath(); c.moveTo(hx-r,hy-1.2); c.lineTo(hx-3.2,hy+0.4); c.moveTo(hx-3.2,hy+0.4); c.lineTo(hx+r,hy-2.6); c.stroke();
-        c.fillStyle='#1a1a1a'; c.beginPath(); c.arc(hx+3,hy+0.2,0.9,0,7); c.fill();
-        break;
-      }
-      c.fillStyle=tint||'#b89358';
-      c.beginPath(); c.ellipse(hx,hy-1,r+5,3,0,0,7); c.fill();
-      c.beginPath(); c.arc(hx,hy-3,r-1,Math.PI,0); c.fill();
       break;
     case 'shuriken': // 닌자: 두건
       c.fillStyle=tint||'#15161c';
@@ -307,11 +169,6 @@ function drawWeaponPersona(c,wid,hx,hy,r,shy,tint,concept){
       c.fillStyle='#c9d6c0'; c.beginPath(); c.arc(hx-3,hy,2,0,7); c.fill(); c.beginPath(); c.arc(hx+3,hy,2,0,7); c.fill();
       c.fillStyle='#38403a'; c.beginPath(); c.arc(hx+r,hy+2,2,0,7); c.fill();
       break;
-    case 'dagger': // 암살자: 사무라이 삿갓
-      c.fillStyle=tint||'#c9a96a';
-      c.beginPath(); c.moveTo(hx-r-6,hy-1); c.lineTo(hx,hy-r*2.1); c.lineTo(hx+r+6,hy-1); c.closePath(); c.fill();
-      c.strokeStyle='#8a6a3f'; c.lineWidth=1; c.stroke();
-      break;
     case 'magiccard':
       if(concept==='uno'){      // 우노 마술사: a black top hat with a yellow card band and a fan of four Uno cards poking out (not the red christmas silk hat)
         drawHat(c,'hat_tophat',hx,hy,r,'#17181f');
@@ -321,48 +178,6 @@ function drawWeaponPersona(c,wid,hx,hy,r,shy,tint,concept){
         c.fillStyle='#e8252b'; c.fillRect(hx-1.6,hy-r*1.28,3.2,2.6);
         break; }
       drawHat(c,'hat_tophat',hx,hy,r,tint); break;
-    case 'dracula': // 드라큘라: 송곳니
-      c.fillStyle='#ffffff';
-      c.beginPath(); c.moveTo(hx-2.4,hy+r*0.5); c.lineTo(hx-1.1,hy+r*0.5+3.6); c.lineTo(hx-3.5,hy+r*0.5); c.closePath(); c.fill();
-      c.beginPath(); c.moveTo(hx+2.4,hy+r*0.5); c.lineTo(hx+1.1,hy+r*0.5+3.6); c.lineTo(hx+3.5,hy+r*0.5); c.closePath(); c.fill();
-      break;
-    case 'puppeteer': {           // 인형술사: a two-pointed jester hat with bells, and a thread hanging from the brim
-      const col=tint||'#ff7fb5';
-      c.fillStyle=col; c.strokeStyle='#5a2a4a'; c.lineWidth=1;
-      c.beginPath(); c.moveTo(hx-r-1,hy-3); c.lineTo(hx-r-5,hy-r*1.9); c.lineTo(hx-1,hy-r*0.9); c.lineTo(hx+r+5,hy-r*1.9); c.lineTo(hx+r+1,hy-3); c.closePath(); c.fill(); c.stroke();
-      c.fillStyle='#ffd34d'; for(const sx of [-1,1]){ c.beginPath(); c.arc(hx+sx*(r+5),hy-r*1.9,1.8,0,7); c.fill(); }
-      c.strokeStyle='#ffe3f0'; c.lineWidth=1; c.beginPath(); c.moveTo(hx+r*0.6,hy+r*0.6); c.lineTo(hx+r*0.6,hy+r*1.7); c.stroke();
-      break; }
-    case 'gambler': // 도박사: 초록 딜러 아이셰이드
-      c.fillStyle=tint||'#1c7a4a';
-      c.beginPath(); c.arc(hx,hy-2,r+1,3.4,6.05); c.fill();
-      c.fillStyle='#0e4a2a'; c.fillRect(hx-r-1,hy-3,(r+1)*2,2.2);
-      break;
-    case 'kurus': { // 쿠루스: 깊게 눌러쓴 어둠의 두건, 그 안에서 빛나는 보라색 두 눈
-      if(concept==='diaper'){      // 기저귀 쿠루스: no hood, a brown pile on his head, a nappy, stink lines over it all
-        drawDiaper(c,hx,shy);
-        c.fillStyle='#1c1328';      // the face is the usual 쿠루스 face: the dark hood and the two glowing purple eyes
-        c.beginPath(); c.moveTo(hx-r-3,hy+r*0.9); c.quadraticCurveTo(hx-r-4,hy-r*1.5,hx,hy-r*1.9); c.quadraticCurveTo(hx+r+4,hy-r*1.5,hx+r+3,hy+r*0.9);
-        c.quadraticCurveTo(hx,hy+r*0.2,hx-r-3,hy+r*0.9); c.fill();
-        c.fillStyle='#0a0612'; c.beginPath(); c.ellipse(hx,hy+0.5,r*0.72,r*0.62,0,0,7); c.fill();
-        c.fillStyle='#c48bff'; c.shadowColor='#b06bff'; c.shadowBlur=4;
-        c.beginPath(); c.ellipse(hx-2.8,hy,1.5,1.1,0,0,7); c.fill(); c.beginPath(); c.ellipse(hx+2.8,hy,1.5,1.1,0,0,7); c.fill(); c.shadowBlur=0;
-        c.fillStyle='#1c1328'; c.beginPath(); c.moveTo(hx-r+1,shy+1); c.lineTo(hx+r-1,shy+1); c.lineTo(hx+r+2,shy+9); c.lineTo(hx-r-2,shy+9); c.closePath(); c.fill();
-        drawDiaper(c,hx,shy);
-        drawPoopShape(c,hx,hy-r*1.75,1.05);
-        const nw=performance.now()/260; c.strokeStyle='rgba(150,165,60,0.8)'; c.lineWidth=1.1; c.lineCap='round';
-        for(const o of [-5,5]){ c.beginPath(); c.moveTo(hx+o,hy-r-6); c.quadraticCurveTo(hx+o+Math.sin(nw+o)*2.4,hy-r-10,hx+o,hy-r-13); c.stroke(); }
-        break;
-      }
-      const dream=(concept==='dream'), dreamNow=performance.now();
-      c.fillStyle=dream?dreamFill(c,hx,hy,r*2.4,dreamNow):(tint||'#1c1328');
-      c.beginPath(); c.moveTo(hx-r-3,hy+r*0.9); c.quadraticCurveTo(hx-r-4,hy-r*1.5,hx,hy-r*1.9); c.quadraticCurveTo(hx+r+4,hy-r*1.5,hx+r+3,hy+r*0.9);
-      c.quadraticCurveTo(hx,hy+r*0.2,hx-r-3,hy+r*0.9); c.fill();
-      c.fillStyle=dream?'#4a3a7a':'#0a0612'; c.beginPath(); c.ellipse(hx,hy+0.5,r*0.72,r*0.62,0,0,7); c.fill();
-      c.fillStyle=dream?'#fff3fb':'#c48bff'; c.shadowColor=dream?'#ff9ad9':'#b06bff'; c.shadowBlur=4;
-      c.beginPath(); c.ellipse(hx-2.8,hy,1.5,1.1,0,0,7); c.fill(); c.beginPath(); c.ellipse(hx+2.8,hy,1.5,1.1,0,0,7); c.fill(); c.shadowBlur=0;
-      c.fillStyle=dream?dreamFill(c,hx,shy+4,r*1.6,dreamNow):(tint||'#1c1328'); c.beginPath(); c.moveTo(hx-r+1,shy+1); c.lineTo(hx+r-1,shy+1); c.lineTo(hx+r+2,shy+9); c.lineTo(hx-r-2,shy+9); c.closePath(); c.fill();
-      break; }
     case 'harald': { // 하랄드: 뿔 달린 바이킹 투구 + 갈색 수염
       c.fillStyle='#6b3f1f'; c.strokeStyle='#4a2a12'; c.lineWidth=1.2; c.beginPath(); c.moveTo(hx-r+0.5,hy+1.5); c.quadraticCurveTo(hx-r-1.5,hy+r+6,hx,hy+r+12); c.quadraticCurveTo(hx+r+1.5,hy+r+6,hx+r-0.5,hy+1.5); c.quadraticCurveTo(hx,hy+r*0.5,hx-r+0.5,hy+1.5); c.closePath(); c.fill(); c.stroke();
       c.strokeStyle='#8a5a30'; c.lineWidth=1; c.beginPath(); c.moveTo(hx-3,hy+r+1); c.lineTo(hx-2,hy+r+8); c.moveTo(hx+3,hy+r+1); c.lineTo(hx+2,hy+r+8); c.stroke();
@@ -373,59 +188,9 @@ function drawWeaponPersona(c,wid,hx,hy,r,shy,tint,concept){
       c.fillStyle='#c9ced6'; c.fillRect(hx-1,hy-2,2,7);
       c.fillStyle='#e0b24a'; c.beginPath(); c.arc(hx,hy-r*0.9,1.4,0,7); c.fill();
       break; }
-    case 'dragonslayer': { // 용살자: 코린토스식 그리스 투구 (얼굴을 거의 다 덮는 청동 투구, T자 눈·코 구멍, 뺨 가리개, 위로 솟은 붉은 말총 깃)
-      const R=r+2.2, top=hy-R;
-      if(concept==='manga'){      // 만화가: a flat painter's beret, tilted, with a little stem on top
-        c.fillStyle='#b3262e'; c.beginPath(); c.ellipse(hx+1.5,hy-r+0.8,r+3.4,r*0.55,-0.18,0,7); c.fill();
-        c.fillStyle='#8f1c24'; c.beginPath(); c.ellipse(hx+1.5,hy-r+2.2,r+2.2,r*0.28,-0.18,0,7); c.fill();
-        c.fillStyle='#8f1c24'; c.beginPath(); c.arc(hx+2.6,hy-r-2.6,1.6,0,7); c.fill();
-        break;
-      }
-      c.fillStyle='#d62839'; c.strokeStyle='#7a1220'; c.lineWidth=1;
-      c.beginPath(); c.moveTo(hx-R*0.85,top+3.5); c.bezierCurveTo(hx-R*0.9,top-12,hx+R*0.1,top-16,hx+R*1.0,top-6); c.bezierCurveTo(hx+R*0.7,top-3,hx+R*0.5,top+1,hx+R*0.85,top+3.5); c.closePath(); c.fill(); c.stroke();       // the tall horsehair crest
-      c.strokeStyle='#ff8a95'; c.lineWidth=0.8; for(let k=0;k<5;k++){ const x0=hx-R*0.6+k*R*0.35; c.beginPath(); c.moveTo(x0,top+3); c.lineTo(x0+k*0.6-1,top-7-Math.sin(k*1.3)*3); c.stroke(); }
-      c.fillStyle='#c9922e'; c.strokeStyle='#6b4a12'; c.lineWidth=1.2;
-      // Corinthian helmet (open face): dome + nose guard + two cheek plates drawn as ONE bronze piece; only the outer outline is brown, no lines between the parts
-      const parts=[()=>{ c.arc(hx,hy-0.5,R,Math.PI,Math.PI*2,false); c.lineTo(hx+R*0.98,hy+R*0.2); c.lineTo(hx+R*0.6,hy+R*0.1); c.lineTo(hx+R*0.5,hy-R*0.3); c.lineTo(hx-R*0.5,hy-R*0.3); c.lineTo(hx-R*0.6,hy+R*0.1); c.lineTo(hx-R*0.98,hy+R*0.2); c.closePath(); },
-        ()=>{ c.moveTo(hx-R*0.98,hy+R*0.0); c.lineTo(hx-R*0.58,hy-R*0.12); c.lineTo(hx-R*0.6,hy+R*0.1); c.lineTo(hx-R*0.5,hy+R*0.9); c.lineTo(hx-R*0.8,hy+R*0.8); c.closePath(); },
-        ()=>{ c.moveTo(hx+R*0.98,hy+R*0.0); c.lineTo(hx+R*0.8,hy+R*0.8); c.lineTo(hx+R*0.5,hy+R*0.9); c.lineTo(hx+R*0.6,hy+R*0.1); c.lineTo(hx+R*0.58,hy-R*0.12); c.closePath(); },
-        ()=>{ c.moveTo(hx-R*0.12,hy-R*0.6); c.lineTo(hx+R*0.12,hy-R*0.6); c.lineTo(hx+R*0.1,hy+R*0.5); c.lineTo(hx-R*0.1,hy+R*0.5); c.closePath(); }];
-      c.strokeStyle='#6b4a12'; c.lineWidth=2.6; c.lineJoin='round'; c.beginPath(); for(const p of parts) p(); c.stroke();      // the outline first (thick) ...
-      c.fillStyle='#c9922e'; c.beginPath(); for(const p of parts) p(); c.fill();      // ... then the fill on top hides every inner line
-      c.fillStyle='#e8c25a'; c.beginPath(); c.arc(hx-R*0.3,hy-R*0.62,R*0.36,Math.PI*1.08,Math.PI*1.68); c.lineTo(hx-R*0.3,hy-R*0.62); c.closePath(); c.fill();
-      break;
-    }
-    case 'plague': // 역병 의사: black silk hat + a dark grey beaked mask
-      c.fillStyle='#14141a'; c.beginPath(); c.ellipse(hx,hy-r*0.78,r*1.35,r*0.28,0,0,7); c.fill();
-      c.fillRect(hx-r*0.78,hy-r*2.1,r*1.56,r*1.4); c.fillStyle='#2a2a33'; c.fillRect(hx-r*0.78,hy-r*1.05,r*1.56,r*0.3);
-      c.fillStyle='#6a6a76'; c.beginPath(); c.ellipse(hx,hy-r*2.1,r*0.78,r*0.16,0,0,7); c.fill();
-      { const f=PERSONA_FACE||1;      // the mask covers the whole head; the long beak points the way he looks
-        c.fillStyle='#4a4d56'; c.strokeStyle='#2c2e35'; c.lineWidth=1.1; c.beginPath(); c.arc(hx,hy,r*1.04,0,7); c.moveTo(hx+f*r*0.2+r*0.26,hy-r*0.22); c.ellipse(hx+f*r*0.2,hy-r*0.22,r*0.26,r*0.3,0,0,7); c.fill('evenodd'); c.stroke();      // the eye hole is cut out (see-through)
-        c.fillStyle='#3a3d45'; c.beginPath(); c.moveTo(hx+f*r*0.5,hy-r*0.75); c.quadraticCurveTo(hx+f*r*1.8,hy-r*0.4,hx+f*r*2.5,hy+r*1.0); c.quadraticCurveTo(hx+f*r*1.5,hy+r*1.0,hx+f*r*0.5,hy+r*0.85); c.closePath(); c.fill(); c.stroke();
-        c.strokeStyle='#5e626d'; c.lineWidth=0.9; c.beginPath(); c.moveTo(hx+f*r*0.7,hy+r*0.05); c.quadraticCurveTo(hx+f*r*1.7,hy+r*0.2,hx+f*r*2.35,hy+r*0.95); c.stroke();
-        c.strokeStyle='#33353d'; c.lineWidth=1; c.beginPath(); c.arc(hx-f*r*0.2,hy,r*0.62,Math.PI*0.35,Math.PI*0.9); c.stroke();      // a strap line on the mask
-      }
-      break;
     case 'samurai': // 사무라이: 상투 + 붉은 머리띠
       c.fillStyle='#1b1b22'; c.beginPath(); c.arc(hx,hy-r-3,3.4,0,7); c.fill(); c.fillRect(hx-1,hy-r-1,2,4);
       c.fillStyle=tint||'#c62828'; c.fillRect(hx-r-0.5,hy-r*0.55,(r+0.5)*2,3); c.beginPath(); c.moveTo(hx-r,hy-r*0.55); c.lineTo(hx-r-7,hy-r*0.1); c.lineTo(hx-r-2,hy-r*0.55); c.closePath(); c.fill();
-      break;
-    case 'pirate': // 해적: 삼각 모자 + 안대
-      c.fillStyle=tint||'#2b2b33';
-      c.beginPath(); c.moveTo(hx-r-7,hy-r*0.45); c.lineTo(hx,hy-r*2.0); c.lineTo(hx+r+7,hy-r*0.45); c.quadraticCurveTo(hx,hy-r*0.95,hx-r-7,hy-r*0.45); c.fill();
-      c.fillStyle='#e8c24a'; c.fillRect(hx-r-3,hy-r*0.8,(r+3)*2,1.6);
-      c.fillStyle='#f4f4f4'; c.beginPath(); c.arc(hx,hy-r*1.2,1.6,0,7); c.fill();
-      c.fillStyle='#111'; c.beginPath(); c.arc(hx+3.3,hy-0.5,2.3,0,7); c.fill();
-      c.strokeStyle='#111'; c.lineWidth=0.9; c.beginPath(); c.moveTo(hx-r,hy-3); c.lineTo(hx+r,hy+1.5); c.stroke();
-      break;
-    case 'vacuum': // 청소부: 반다나 + 보안경
-      c.fillStyle=tint||'#3a6b52';
-      c.beginPath(); c.arc(hx,hy+2,r+1,3.4,6.0); c.fill();
-      c.fillStyle='#dfe9ea';
-      c.beginPath(); c.arc(hx-3.3,hy-1,2.4,0,7); c.fill();
-      c.beginPath(); c.arc(hx+3.3,hy-1,2.4,0,7); c.fill();
-      c.strokeStyle='#223'; c.lineWidth=1;
-      c.beginPath(); c.moveTo(hx-0.9,hy-1); c.lineTo(hx+0.9,hy-1); c.stroke();
       break;
     case 'portalgun': // 차원여행자: 보라색 렌즈 고글
       c.fillStyle='#2a1a3a';
@@ -436,13 +201,6 @@ function drawWeaponPersona(c,wid,hx,hy,r,shy,tint,concept){
       c.fillStyle='#e9d5ff';
       c.beginPath(); c.arc(hx-3.3,hy-1,1,0,7); c.fill();
       c.beginPath(); c.arc(hx+3.3,hy-1,1,0,7); c.fill();
-      break;
-    case 'flamethrower': // 학살자: 방독면
-      c.fillStyle=tint||'#2a3a2a';
-      c.beginPath(); c.arc(hx,hy+1,r+1,0,Math.PI); c.fill();
-      c.fillStyle='#0f140f'; c.beginPath(); c.arc(hx-3.2,hy,2.4,0,7); c.fill(); c.beginPath(); c.arc(hx+3.2,hy,2.4,0,7); c.fill();
-      c.fillStyle='#6a8a6a'; c.beginPath(); c.arc(hx-3.2,hy,1,0,7); c.fill(); c.beginPath(); c.arc(hx+3.2,hy,1,0,7); c.fill();
-      c.fillStyle=tint||'#2a3a2a'; c.beginPath(); c.arc(hx,hy+r*0.55,2.2,0,7); c.fill();
       break;
     case 'wizard': // 마법사: 빨간 마법사 모자, 아래쪽 금색 띠 + 꼬불꼬불한 뾰족 끝
       if(concept==='starlight'){      // 별빛 사과 마법사: a pink-to-sky hat with a gold band, a gold star on the tip and a few little stars
@@ -496,47 +254,9 @@ function drawHat(c,id,hx,hy,r,tintOverride){
   }
   c.restore();
 }
-function drawDraculaCape(c,backDir,sway,sy,tint){
-  c.save(); c.fillStyle=tint||'#8b0000';
-  c.beginPath(); c.moveTo(0,sy); c.lineTo(backDir*(20+sway),sy+38); c.lineTo(backDir*(7+sway*0.4),sy+44); c.lineTo(0,sy+24); c.closePath(); c.fill();
-  c.strokeStyle='#15161c'; c.lineWidth=2; c.stroke();
-  c.restore();
-}
-function drawMediumPersona(c,hx,hy,r,shy){      // 영매사: a silk hat with a violet band, a black tailcoat and a violet scarf
-  c.save(); c.lineCap='round';
-  c.strokeStyle='#1c1a26'; c.lineWidth=7; c.beginPath(); c.moveTo(hx,shy+1); c.lineTo(hx,shy+20); c.stroke();
-  c.fillStyle='#1c1a26'; c.beginPath(); c.moveTo(hx-4,shy+20); c.lineTo(hx-10,shy+29); c.lineTo(hx-1,shy+24); c.closePath(); c.fill(); c.beginPath(); c.moveTo(hx+4,shy+20); c.lineTo(hx+10,shy+29); c.lineTo(hx+1,shy+24); c.closePath(); c.fill();
-  c.strokeStyle='#8b5cf6'; c.lineWidth=2.4; c.beginPath(); c.moveTo(hx-4,shy+1); c.lineTo(hx+4,shy+1); c.stroke(); c.beginPath(); c.moveTo(hx+3,shy+1); c.lineTo(hx+7,shy+10); c.stroke();
-  c.fillStyle='#14131a'; c.strokeStyle='#050507'; c.lineWidth=0.8;
-  c.beginPath(); c.ellipse(hx,hy-7,12.5,2.6,0,0,7); c.fill(); c.stroke();
-  c.beginPath(); c.moveTo(hx-8,hy-7); c.lineTo(hx-7.2,hy-23); c.lineTo(hx+7.2,hy-23); c.lineTo(hx+8,hy-7); c.closePath(); c.fill(); c.stroke();
-  c.fillStyle='#8b5cf6'; c.fillRect(hx-7.9,hy-12,15.8,3); c.fillStyle='rgba(255,255,255,.12)'; c.fillRect(hx-5.5,hy-22,2,13);
-  c.restore();
-}
-function drawEdwardPersona(c,hx,hy,r,shy){      // 에드워드: bearskin busby, red tunic with white cross belts, a white plume
-  c.save(); c.lineCap='round';
-  c.strokeStyle='#b3202a'; c.lineWidth=7; c.beginPath(); c.moveTo(hx,shy+1); c.lineTo(hx,shy+21); c.stroke();
-  c.strokeStyle='#f4f1e8'; c.lineWidth=1.8; c.beginPath(); c.moveTo(hx-4,shy+1); c.lineTo(hx+4,shy+19); c.moveTo(hx+4,shy+1); c.lineTo(hx-4,shy+19); c.stroke();
-  c.fillStyle='#d9b648'; for(let i=0;i<3;i++){ c.beginPath(); c.arc(hx,shy+4+i*5,0.9,0,7); c.fill(); }
-  c.strokeStyle='#1d2a5a'; c.lineWidth=2.2; c.beginPath(); c.moveTo(hx-3,shy-1); c.lineTo(hx+3,shy-1); c.stroke();
-  c.fillStyle='#17171b'; c.strokeStyle='#050507'; c.lineWidth=0.8;
-  c.beginPath(); c.moveTo(hx-9.5,hy-3); c.quadraticCurveTo(hx-12,hy-14,hx-8,hy-22); c.quadraticCurveTo(hx,hy-27,hx+8,hy-22); c.quadraticCurveTo(hx+12,hy-14,hx+9.5,hy-3); c.quadraticCurveTo(hx,hy-8,hx-9.5,hy-3); c.closePath(); c.fill(); c.stroke();
-  c.strokeStyle='#33333a'; c.lineWidth=0.7; for(let i=0;i<9;i++){ const x=hx-8+i*2; c.beginPath(); c.moveTo(x,hy-6); c.lineTo(x+(i%2?1:-1),hy-20-(i%3)); c.stroke(); }
-  c.strokeStyle='#d9b648'; c.lineWidth=1; c.beginPath(); c.arc(hx,hy+1,r,0.2,Math.PI-0.2); c.stroke();
-  c.fillStyle='#f6f4ee'; c.beginPath(); c.ellipse(hx+9.5,hy-14,1.8,6,0.18,0,7); c.fill();
-  c.restore();
-}
 function drawSpacePersona(c, wid, hx, hy, r, shy, tint){       // the looks follow the 0.9 intro picture
   const face=(rr,col)=>{ c.fillStyle=col; c.beginPath(); c.arc(hx,hy,rr,0,7); c.fill(); };
   switch(wid){
-    case 'cleon': {
-      c.fillStyle='#5b2a86'; c.beginPath(); c.moveTo(hx-4,shy-0.5); c.lineTo(hx-16,shy+25); c.lineTo(hx+16,shy+25); c.lineTo(hx+4,shy-0.5); c.closePath(); c.fill();        // the cape spreads behind
-      c.fillStyle='#7c3ad0'; c.fillRect(hx-4.6,shy-0.5,9.2,17.5);                                                                                                         // the tunic
-      c.fillStyle='#ffd34d'; c.fillRect(hx-0.9,shy-0.5,1.8,17.5); c.fillRect(hx-4.6,shy+15.2,9.2,1.8);
-      face(r-1.9,'#16121f');
-      c.strokeStyle='#ff5ac8'; c.lineWidth=1.7; c.lineCap='round'; c.beginPath(); c.moveTo(hx-5.4,hy+0.2); c.lineTo(hx-1.8,hy+0.2); c.moveTo(hx+1.8,hy+0.2); c.lineTo(hx+5.4,hy+0.2); c.stroke();
-      c.fillStyle='#ffd34d'; c.strokeStyle='#a87a00'; c.lineWidth=0.9; c.beginPath(); c.moveTo(hx-r+0.5,hy-r*0.6); c.lineTo(hx-r+0.5,hy-r*1.6); c.lineTo(hx-r*0.5,hy-r*1.1); c.lineTo(hx,hy-r*1.95); c.lineTo(hx+r*0.5,hy-r*1.1); c.lineTo(hx+r-0.5,hy-r*1.6); c.lineTo(hx+r-0.5,hy-r*0.6); c.closePath(); c.fill(); c.stroke();
-      c.fillStyle='#ff4fb0'; c.beginPath(); c.arc(hx,hy-r*1.1,1.4,0,7); c.fill(); break; }
     case 'guard': {
       c.fillStyle='#aeb7d6'; c.strokeStyle='#1a0a30'; c.lineWidth=0.9; c.beginPath(); c.rect(hx-5.2,shy+0.5,10.4,16); c.fill(); c.stroke();                                // the armour
       c.fillStyle='#8a4be0'; c.fillRect(hx-5.2,shy+7,10.4,1.6);
@@ -544,13 +264,6 @@ function drawSpacePersona(c, wid, hx, hy, r, shy, tint){       // the looks foll
       c.strokeStyle='#ff5ac8'; c.lineWidth=1.7; c.lineCap='round'; c.beginPath(); c.moveTo(hx-3.2,hy+1.6); c.lineTo(hx+3.2,hy+1.6); c.stroke();
       c.fillStyle='#aeb7d6'; c.strokeStyle='#1a0a30'; c.lineWidth=1; c.beginPath(); c.arc(hx,hy-0.5,r+1.2,Math.PI*0.97,Math.PI*2.03); c.lineTo(hx+r+0.4,hy+3.2); c.lineTo(hx+r-2,hy+3.2); c.lineTo(hx+r-2,hy-1.4); c.lineTo(hx-r+2,hy-1.4); c.lineTo(hx-r+2,hy+3.2); c.lineTo(hx-r-0.4,hy+3.2); c.closePath(); c.fill(); c.stroke();
       { const k=r/9; c.fillStyle='#8a4be0'; c.beginPath(); c.moveTo(hx-0.5*k,hy-r-1); c.quadraticCurveTo(hx+2.4*k,hy-r-9.3*k,hx+8*k,hy-r-4.5*k); c.quadraticCurveTo(hx+4*k,hy-r-4.3*k,hx+3*k,hy-r-1); c.closePath(); c.fill(); } break; }
-    case 'pel': {
-      c.fillStyle='#6b4423'; c.fillRect(hx-5.4,shy+1,10.8,16); c.fillStyle='#ff8a1f'; c.fillRect(hx-0.8,shy+1,1.6,16);                                                   // the vest
-      c.fillStyle='#ffffff'; c.strokeStyle='#9aa6b8'; c.lineWidth=0.9; c.beginPath(); c.moveTo(hx-r*0.75,hy+r*0.35); c.lineTo(hx,hy+r*2.5); c.lineTo(hx+r*0.75,hy+r*0.35); c.closePath(); c.fill(); c.stroke();       // the long white beard
-      c.fillStyle='#f5f7fa'; c.beginPath(); c.arc(hx,hy,r+0.9,0,7); c.fill(); c.stroke();                                                                                    // the helmet
-      c.fillStyle='#14161c'; c.beginPath(); c.rect(hx-r+1.2,hy-3.6,2*r-2.4,6.4); c.fill();
-      c.fillStyle='#ffc83a'; c.fillRect(hx-r+1.2,hy-3.6,2*r-2.4,1.7);
-      c.strokeStyle='#ff8a1f'; c.lineWidth=2.1; c.lineCap='butt'; c.beginPath(); c.arc(hx,hy,r+0.9,Math.PI*1.12,Math.PI*1.88); c.stroke(); break; }
     case 'tionis': {
       c.fillStyle=tint||'#2f7de1'; c.fillRect(hx-5.4,shy+1.5,3.6,16); c.fillStyle='#ff8a1f'; c.fillRect(hx-1.8,shy+1.5,3.6,16); c.fillStyle=tint||'#2f7de1'; c.fillRect(hx+1.8,shy+1.5,3.6,16);      // the striped vest
       c.fillStyle='#ffd34d'; for(const dy of [5,10,15]){ c.beginPath(); c.arc(hx,shy+dy,0.9,0,7); c.fill(); }
@@ -564,19 +277,10 @@ function drawSpacePersona(c, wid, hx, hy, r, shy, tint){       // the looks foll
       c.fillStyle='#ffd34d'; for(const q of [[-2.0,-2.0],[2.0,-2.0],[0,-1.0]]){ c.beginPath(); c.arc(hx+q[0]*r,hy+q[1]*r,1.9,0,7); c.fill(); } break; }
   }
 }
-const SPACE_HELD={cleon:1, pel:1, tionis:1, guard:1, edward:1, medium:1};
+const SPACE_HELD={tionis:1, guard:1};
 function drawSpaceHeld(c, wid, ax, ay, hx, hy){
   const ang=Math.atan2(ay,ax); c.save(); c.translate(hx,hy); c.rotate(ang); c.lineCap='round';
-  if(wid==='cleon'){
-    c.strokeStyle='#e8b932'; c.lineWidth=3.2; c.beginPath(); c.moveTo(-4,0); c.lineTo(32,0); c.stroke();
-    c.strokeStyle='#ffd34d'; c.lineWidth=2; c.beginPath(); c.moveTo(28,-5); c.lineTo(34,0); c.lineTo(28,5); c.stroke();
-    c.fillStyle='#ff4fb0'; c.strokeStyle='#ffd34d'; c.lineWidth=1.2; c.beginPath(); c.arc(37,0,5,0,7); c.fill(); c.stroke();
-    c.globalCompositeOperation='lighter'; const g=c.createRadialGradient(37,0,0,37,0,12); g.addColorStop(0,'rgba(255,120,200,0.7)'); g.addColorStop(1,'rgba(255,120,200,0)'); c.fillStyle=g; c.beginPath(); c.arc(37,0,12,0,7); c.fill();
-  } else if(wid==='pel'){
-    c.fillStyle='#2b3140'; c.strokeStyle='#ff8a1f'; c.lineWidth=1.8; c.beginPath(); c.rect(2,-4.5,15,9); c.fill(); c.stroke();
-    c.strokeStyle='#cfd8e3'; c.lineWidth=1.4; c.beginPath(); c.moveTo(14,-4.5); c.lineTo(20,-12); c.stroke();
-    c.fillStyle='#ffc83a'; c.beginPath(); c.arc(7,0,1.8,0,7); c.fill(); c.fillStyle='#ff5a5a'; c.beginPath(); c.arc(12,0,1.4,0,7); c.fill();
-  } else if(wid==='tionis'){
+  if(wid==='tionis'){
     c.rotate(-ang); const mx=Math.cos(ang)*14, my=Math.sin(ang)*14; c.translate(mx,my);
     c.fillStyle='#f4f4f4'; c.beginPath(); c.arc(0,0,6,Math.PI/2,Math.PI*1.5); c.fill(); c.fillStyle='#16161c'; c.beginPath(); c.arc(0,0,6,-Math.PI/2,Math.PI/2); c.fill();
   } else if(wid==='guard'){
@@ -585,16 +289,6 @@ function drawSpaceHeld(c, wid, ax, ay, hx, hy){
     c.globalCompositeOperation='lighter'; const fl=1+0.15*Math.sin(performance.now()/45);
     c.fillStyle='rgba(255,100,190,0.9)'; c.beginPath(); c.moveTo(44,-4*fl); c.lineTo(66*fl,0); c.lineTo(44,4*fl); c.closePath(); c.fill();
     const g=c.createRadialGradient(54,0,0,54,0,16); g.addColorStop(0,'rgba(255,200,240,0.7)'); g.addColorStop(1,'rgba(255,100,190,0)'); c.fillStyle=g; c.beginPath(); c.arc(54,0,16,0,7); c.fill();
-  } else if(wid==='medium'){
-    c.rotate(-0.55); c.strokeStyle='#3a2a1e'; c.lineWidth=2.6; c.beginPath(); c.moveTo(-6,0); c.lineTo(40,0); c.stroke();
-    c.strokeStyle='#c9c9d6'; c.lineWidth=1; c.beginPath(); c.moveTo(0,-1); c.lineTo(36,-1); c.stroke();
-    c.fillStyle='#d9d9e6'; c.strokeStyle='#8a8a99'; c.lineWidth=.8; c.beginPath(); c.arc(-7,0,3.4,0,7); c.fill(); c.stroke();
-    c.fillStyle='#8b5cf6'; c.beginPath(); c.arc(-7.6,-.6,1,0,7); c.fill();
-  } else if(wid==='edward'){
-    c.rotate(-0.1); c.fillStyle='#6b3f1d'; c.strokeStyle='#2c1a0a'; c.lineWidth=0.8;
-    c.beginPath(); c.moveTo(-15,-1.2); c.lineTo(-6,-2.4); c.lineTo(-6,2); c.lineTo(-17,3.4); c.closePath(); c.fill(); c.stroke();
-    c.fillStyle='#4b4b58'; c.fillRect(-7,-1.6,32,2.4); c.fillStyle='#c9a45a'; c.fillRect(5,-1.9,1.6,3); c.fillRect(15,-1.9,1.6,3);
-    c.fillStyle='#dfe3ea'; c.beginPath(); c.moveTo(25,-1.2); c.lineTo(45,-0.3); c.lineTo(25,0.6); c.closePath(); c.fill();
   }
   c.restore();
 }
@@ -675,7 +369,6 @@ function drawHaraldAxes(now) {                          // the thrown axe, then 
 }
 function drawHeldWeapon(c, weaponId, ax, ay, hx, hy, swingProg, concept){
   if(SPACE_HELD[weaponId]){ drawSpaceHeld(c, weaponId, ax, ay, hx, hy); return; }
-  if(concept==='breath' && weaponId==='flamethrower') return;      // 입냄새 학살자: nothing in the hands
   const w = WEAPONS[weaponId] || WEAPONS.pistol;
   if(w.shape==='axe'){ drawHaraldBody(c, ax, ay); return; }
   if(w.shape==='arrow'){
@@ -780,18 +473,9 @@ function drawHeldWeapon(c, weaponId, ax, ay, hx, hy, swingProg, concept){
       c.strokeStyle='#8a6a3f'; c.lineWidth=3;
       c.beginPath(); c.moveTo(4,-5); c.lineTo(4,5); c.stroke();
       break;
-    case 'dagger':
-      c.strokeStyle='#e6eaf2'; c.lineWidth=3;
-      c.beginPath(); c.moveTo(0,0); c.lineTo(14,0); c.stroke();
-      break;
     case 'fist':
       if(concept==='gilga'){ c.fillStyle='#e9b92e'; c.strokeStyle='#8a6a22'; c.lineWidth=1; c.beginPath(); c.arc(10,0,7.4,0,7); c.fill(); c.stroke(); c.fillStyle='#7a3a12'; c.fillRect(3,-6,3,12); c.fillStyle='#fff3b0'; c.beginPath(); c.arc(12,-2,1.6,0,7); c.fill(); break; }      // gold gauntlet-gloves with a strap
       c.fillStyle='#cc3b3b'; c.beginPath(); c.arc(10,0,7,0,7); c.fill();
-      break;
-    case 'boomerang':
-      if(concept==='odin'){ c.save(); c.translate(9,-3); drawRaven(c,22,Math.sin(performance.now()/180)*0.5); c.restore(); break; }      // 사냥꾼 오딘: a raven on the hand
-      c.strokeStyle='#cfd3dc'; c.lineWidth=3;
-      c.beginPath(); c.arc(10,0,10,0.5,2.6); c.stroke();
       break;
     case 'star':
       c.fillStyle='#cfd3dc';
@@ -891,34 +575,16 @@ function drawHeldWeapon(c, weaponId, ax, ay, hx, hy, swingProg, concept){
       c.lineCap='round'; c.strokeStyle='#6b4423'; c.lineWidth=4.5; c.beginPath(); c.moveTo(0,0); c.lineTo(9,0); c.stroke();
       c.strokeStyle='#d5dae3'; c.lineWidth=2.8; c.beginPath(); c.moveTo(9,0); c.lineTo(19,0); c.arc(19,-6,6,Math.PI/2,-Math.PI*0.4,true); c.stroke();
       break;
-    case 'vacuum': // 청소부: 손잡이+통+노즐이 있는 진공청소기
-      c.fillStyle='#4a4a52'; c.strokeStyle='#26262c'; c.lineWidth=1.5;
-      c.beginPath(); c.ellipse(4,0,13,7,0,0,7); c.fill(); c.stroke();
-      c.fillStyle='#6b6b76';
-      c.beginPath(); c.rect(14,-3,14,6); c.fill();
-      c.fillStyle='#2a2a30';
-      c.beginPath(); c.arc(28,0,3.5,0,7); c.fill();
-      break;
-    case 'portalgun': // 차원여행자: 포탈건
-      c.fillStyle='#2e2e38'; c.strokeStyle='#17171d'; c.lineWidth=1.5;
-      c.beginPath(); c.rect(-6,-4,22,8); c.fill(); c.stroke();
-      c.fillStyle='#a855f7'; c.globalCompositeOperation='lighter';
-      c.beginPath(); c.arc(17,0,4,0,7); c.fill();
-      c.fillStyle='#e9d5ff';
-      c.beginPath(); c.arc(17,0,1.8,0,7); c.fill();
-      break;
-    case 'flamethrower': // 학살자: 산소통과 연결된 화염방사기
-      c.strokeStyle='#4a5a4a'; c.lineWidth=2; c.lineCap='round';
-      c.beginPath(); c.moveTo(-10,2); c.quadraticCurveTo(-16,10,-10,16); c.stroke(); // hose back toward the tank
-      c.fillStyle='#3a4a3a'; c.strokeStyle='#1c231c'; c.lineWidth=1.5;
-      c.beginPath(); c.rect(-8,-4,20,8); c.fill(); c.stroke();
-      c.fillStyle='#232b23'; c.beginPath(); c.rect(12,-2.5,8,5); c.fill();
-      { const flick=0.6+0.4*Math.sin(performance.now()/55);
-        c.globalCompositeOperation='lighter';
-        c.fillStyle='rgba(255,106,43,'+(0.85*flick)+')'; c.beginPath(); c.arc(23,0,3.2*flick,0,7); c.fill();
-        c.fillStyle='rgba(255,211,77,'+(0.9*flick)+')'; c.beginPath(); c.arc(25,0,1.6*flick,0,7); c.fill();
-      }
-      break;
+    case 'portalgun': { // 차원여행자: 포탈건 (design B 'portal ring', chosen by the user 2026-11-24): flat body, a cyan stripe, and a purple-and-cyan ring floating at the muzzle
+      const t=performance.now()/1000, pul=1+Math.sin(t*5)*.06;
+      c.fillStyle='#3a3a4a'; c.beginPath(); c.roundRect(-8,-4,26,9,4); c.fill();
+      c.fillStyle='#2a2a36'; c.fillRect(-4,4,7,10);
+      c.fillStyle='#8de8ff'; c.fillRect(8,-4,3,9);
+      c.save(); c.translate(27,0); c.scale(.55*pul,1.1*pul);
+      c.strokeStyle='#8de8ff'; c.lineWidth=5; c.beginPath(); c.arc(0,0,10,0,7); c.stroke();
+      c.strokeStyle='#c58bff'; c.lineWidth=3; c.beginPath(); c.arc(0,0,6,t*3,t*3+4.2); c.stroke();
+      c.restore();
+      break; }
     case 'claw':
       c.strokeStyle='#e8eaf0'; c.lineWidth=2.5; c.lineCap='round';
       c.beginPath(); c.moveTo(2,-6); c.lineTo(15,-3); c.stroke();
@@ -954,7 +620,7 @@ function drawHeldWeapon(c, weaponId, ax, ay, hx, hy, swingProg, concept){
         c.fillStyle='#5a3b12'; c.beginPath(); c.arc(27,2.4,2,0,7); c.fill(); c.beginPath(); c.arc(2,3.4,1.6,0,7); c.fill();
         break;
       }
-      if(weaponId==='pistol'||weaponId==='rifle'||weaponId==='smg'){ drawGunShape(c, weaponId, ax<0); break; }
+      if(weaponId==='pistol'||weaponId==='rifle'||weaponId==='smg'||weaponId==='portalgun'){ drawGunShape(c, weaponId, ax<0); break; }
       const len = 16;
       c.strokeStyle='#cfd3dc'; c.lineWidth = 3;
       c.beginPath(); c.moveTo(0,0); c.lineTo(len,0); c.stroke();
@@ -970,17 +636,16 @@ function drawGunShape(c, id, flip){      // 2026-11-15: 제임스 / 군인 / 특
     R(-12,-2.2,9,4.6,'#9a6a3c'); R(-12,-2.2,9,1.4,'#b88452'); R(-3,-3.2,17,5.2,'#6f7f4c'); R(-3,-3.2,17,1.4,'#8a9a62'); R(0,2,3.2,5,'#4a5536');
     c.fillStyle='#4a5536'; c.beginPath(); c.moveTo(6,2); c.lineTo(10,2); c.quadraticCurveTo(10,7,13,10); c.lineTo(9.5,11); c.quadraticCurveTo(6.5,7,6,2); c.closePath(); c.fill();
     R(14,-2.4,6,3.6,'#9a6a3c'); R(20,-1.4,10,1.8,'#2c3024'); R(3,-5,6,1.8,'#2c3024');
+  } else if(id==='portalgun'){      // 차원여행자: design B 'portal ring' (user 2026-11-24): flat body, cyan stripe, a purple-and-cyan ring floating at the muzzle
+    const t=performance.now()/1000, pul=1+Math.sin(t*5)*.06;
+    c.fillStyle='#3a3a4a'; c.beginPath(); c.roundRect(-8,-4,26,9,4); c.fill(); R(-4,4,7,10,'#2a2a36'); R(8,-4,3,9,'#8de8ff');
+    c.save(); c.translate(27,0); c.scale(.55*pul,1.1*pul);
+    c.strokeStyle='#8de8ff'; c.lineWidth=5; c.beginPath(); c.arc(0,0,10,0,7); c.stroke();
+    c.strokeStyle='#c58bff'; c.lineWidth=3; c.beginPath(); c.arc(0,0,6,t*3,t*3+4.2); c.stroke(); c.restore();
   } else {      // 특수요원: a short black SMG with a red-dot sight, a front grip and a straight magazine
     R(-7,-1.8,5,3,'#1c1d21'); R(-2,-3.6,15,6,'#2a2c32'); R(-2,-3.6,15,1.5,'#454850'); R(0,2.4,3,4.5,'#1c1d21'); R(5,2.4,3,7.5,'#1c1d21');
     R(10,2.4,2.6,4,'#1c1d21'); R(13,-2.2,5,3.2,'#2a2c32'); R(17,-1.6,2.4,2,'#111214'); R(2,-7.2,6,3.6,'#1c1d21'); R(6.6,-6.4,1.6,2,'#ff3b3b');
   }
-  c.restore();
-}
-function drawKadasBack(c, f, shy, hipy, t, cp){      // 카다스: bat wings on the back and a tail from the hip (f = side the back is on)
-  const wing=Math.sin(t*3)*3, tw=Math.sin(t*4)*4, K=kdPal(cp);
-  c.save(); c.lineCap='round'; c.lineJoin='round'; c.fillStyle=K.wing; c.strokeStyle=K.a; c.lineWidth=1.2; c.shadowColor=K.a; c.shadowBlur=6;
-  c.beginPath(); c.moveTo(f*2,shy+4); c.lineTo(f*30,shy-34+wing); c.lineTo(f*22,shy-12); c.lineTo(f*40,shy-10+wing); c.lineTo(f*26,shy+8); c.lineTo(f*34,shy+22); c.lineTo(f*6,shy+14); c.closePath(); c.fill(); c.stroke(); c.shadowBlur=0;
-  c.strokeStyle='#52081a'; c.lineWidth=3; c.beginPath(); c.moveTo(f*2,hipy); c.quadraticCurveTo(f*26,hipy+8+tw,f*32,hipy-6+tw); c.stroke(); c.fillStyle='#b3182f'; c.beginPath(); c.moveTo(f*32,hipy-6+tw); c.lineTo(f*40,hipy-14+tw); c.lineTo(f*28,hipy-12+tw); c.closePath(); c.fill();
   c.restore();
 }
 function drawCardHeart(c, cx, cy, s){

@@ -36,6 +36,9 @@ function msEach(I, fn) { for (let r = 0; r < I.rows; r++) for (let cc = 0; cc < 
 /* soft shadows and glows are worked out on a canvas at a third of the size (they are blurry anyway) and stretched back: far cheaper to paint */
 const MS_Q = .34;
 function msCanvas(g, I, q) { const cv = document.createElement('canvas'); cv.width = Math.ceil(g.canvas.width * q); cv.height = Math.ceil(g.canvas.height * q); const s = cv.getContext('2d'), k = I.k * q; s.setTransform(k, 0, 0, k, I.P * k, I.P * k); return [cv, s]; }
+/* a scratch canvas is let go at once (width 0): iPhone/iPad count canvas memory until it is really freed, and over the limit the screen goes black */
+function msFree(...a) { for (const c of a) if (c) c.width = c.height = 0; }
+function maFree(e) { if (e) msFree(e.f, e.w, e.b); }
 function msPut(g, cv, alpha, op) { g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = alpha; if (op) g.globalCompositeOperation = op; g.imageSmoothingEnabled = true; g.drawImage(cv, 0, 0, g.canvas.width, g.canvas.height); g.restore(); }
 /* soft shadow / glow of a shape (one union, so overlaps never double up). invert: everything outside the shape (for inner shadows, used under a clip) */
 function msSoft(g, I, blur, alpha, col, draw, op, invert) {
@@ -45,7 +48,7 @@ function msSoft(g, I, blur, alpha, col, draw, op, invert) {
   const o = document.createElement('canvas'); o.width = m.width; o.height = m.height; const oc = o.getContext('2d');
   if (blur > 0) { const off = m.width + 60; oc.shadowColor = col; oc.shadowBlur = blur * I.k * q; oc.shadowOffsetX = off; oc.drawImage(m, -off, 0); }
   else { oc.drawImage(m, 0, 0); oc.globalCompositeOperation = 'source-in'; oc.fillStyle = col; oc.fillRect(0, 0, o.width, o.height); }
-  msPut(g, o, alpha, op);
+  msPut(g, o, alpha, op); msFree(m, o);
 }
 function msEl(s, x, y, rx, ry) { s.moveTo(x + rx, y); s.ellipse(x, y, rx, ry, 0, 0, 6.3); }
 
@@ -68,7 +71,7 @@ function msBg(g, I, col) { g.fillStyle = col; g.fillRect(-I.P, -I.P, I.cols * T 
 function msLeaf(g, x, y, len, wid, ang) { const c = Math.cos(ang), s = Math.sin(ang), px = -s * wid, py = c * wid; g.moveTo(x, y); g.quadraticCurveTo(x + c * len * .5 + px, y + s * len * .5 + py, x + c * len, y + s * len); g.quadraticCurveTo(x + c * len * .5 - px, y + s * len * .5 - py, x, y); }
 const msWave = (c, x, y, col, k, a, lw) => { const o = Math.sin(k) * 5; c.strokeStyle = col; c.globalAlpha = a; c.lineWidth = lw || 3; c.lineCap = 'round'; c.beginPath(); c.moveTo(x + 12 + o, y + 26); c.quadraticCurveTo(x + 20 + o, y + 21, x + 28 + o, y + 26); c.moveTo(x + 34 - o, y + 46); c.quadraticCurveTo(x + 42 - o, y + 41, x + 50 - o, y + 46); c.stroke(); c.globalAlpha = 1; };
 
-function msRing(g, I, col, alpha, outer, inner) { const [cv, s] = msCanvas(g, I, 1); s.fillStyle = col; s.beginPath(); outer(s); s.fill(); s.globalCompositeOperation = 'destination-out'; s.beginPath(); inner(s); s.fill(); msPut(g, cv, alpha); }
+function msRing(g, I, col, alpha, outer, inner) { const [cv, s] = msCanvas(g, I, 1); s.fillStyle = col; s.beginPath(); outer(s); s.fill(); s.globalCompositeOperation = 'destination-out'; s.beginPath(); inner(s); s.fill(); msPut(g, cv, alpha); msFree(cv); }
 function msHex(h, s, l) { const f = n => { const k = (n + h / 30) % 12, a = s * Math.min(l, 1 - l); return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, '0'); }; return '#' + f(0) + f(8) + f(4); }
 const msSat = (c, k) => { const [h, s, l] = msHsl(c); return msHex(h, Math.min(1, s * k + (s > .05 ? .08 : 0)), l); };
 function msBrawl(o) { return { id: 'brawl' + o.n, H: o.H,
@@ -216,25 +219,26 @@ function maFind(c) {
   const m = c.getTransform(), k = Math.round(Math.hypot(m.a, m.b) * 1000) / 1000;
   if (c !== ctx) {      // a small map picture (lobby, map picker): painted, used for its three passes, then let go
     if (MA.temp && MA.temp.map === MAP && MA.temp.th === TH && MA.temp.kq === k) return MA.temp;
-    return MA.temp = maPaint(k, MAP, TH);
+    maFree(MA.temp); return MA.temp = maPaint(k, MAP, TH);
   }
-  MA.main = MA.main.filter(e => e.th === TH && e.rows === MAP.length);      // same map (a guest gets a new MAP array whenever walls change, so match by the map's colours)
+  MA.main = MA.main.filter(e => (e.th === TH && e.rows === MAP.length) || (e !== MA.temp && maFree(e)));      // same map (a guest gets a new MAP array whenever walls change, so match by the map's colours)
   let e = MA.main.find(e => Math.abs(e.kq - k) < .002) || MA.main.find(e => e.kq / k > .97 && e.kq / k < 1.03);      // (kq: the size asked for; k: the size painted, smaller on very big maps)      // a tiny zoom change reuses the painting; otherwise it is painted again at the new size (a stretched copy costs more every frame)
   if (e && (e.map !== MAP || e.ver !== NET.mapVer)) {      // the map changed under the painting
     let back = false; for (let r = 0; r < e.rows && !back; r++) for (let cc = 0; cc < e.snap[r].length; cc++) if (MAP[r][cc] === '#' && e.snap[r][cc] !== '#') { back = true; break; }
-    if (back) { MA.main.splice(MA.main.indexOf(e), 1); e = null; }      // a new match on the same map: walls are back, paint again
+    if (back) { MA.main.splice(MA.main.indexOf(e), 1); maFree(e); e = null; }      // a new match on the same map: walls are back, paint again
     else {      // walls knocked down: rubble, no repaint
       for (let r = 0; r < e.rows; r++) for (let cc = 0; cc < e.snap[r].length; cc++) if (e.snap[r][cc] === '#' && MAP[r][cc] !== '#') maRubble(e, cc, r);
       e.map = MAP; e.snap = MAP.map(r => typeof r === 'string' ? r : r.join('')); e.ver = NET.mapVer;
     }
   }
-  if (!e) { while (MA.main.length >= (mobileMode() ? 1 : 2)) MA.main.shift(); e = maPaint(k, MAP, TH); MA.main.push(e); }      // phones keep one painting (memory); PCs two (lobby + match)
+  if (!e) { while (MA.main.length >= (mobileMode() ? 1 : 2)) maFree(MA.main.shift()); e = maPaint(k, MAP, TH); MA.main.push(e); }      // phones keep one painting (memory); PCs two (lobby + match)
   return e;
 }
 function maTempWall(c, cc, r) {        // a wall a skill raises for a moment (특수요원 방벽 등)
   const x = cc * T, y = r * T, H = MAP_ART.H;
-  c.fillStyle = '#2b6f8a'; c.beginPath(); c.roundRect(x + 2, y + T - H - 8, T - 4, H + 8, 6); c.fill();
-  c.fillStyle = '#56b4e9'; c.beginPath(); c.roundRect(x + 2, y - H, T - 4, T - 4, 6); c.fill();
+  const gd = awGoldWalls.size && awGoldWalls.get(cc + r * COLS) === tempWalls.get(cc + r * COLS);
+  c.fillStyle = gd ? '#b9761a' : '#2b6f8a'; c.beginPath(); c.roundRect(x + 2, y + T - H - 8, T - 4, H + 8, 6); c.fill();
+  c.fillStyle = gd ? '#ffd34d' : '#56b4e9'; c.beginPath(); c.roundRect(x + 2, y - H, T - 4, T - 4, 6); c.fill();
 }
 function MS_draw(c, c0, c1, r0, r1, pass) {
   const e = maFind(c);

@@ -13,7 +13,6 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   c.save();
   if (lux >= 3) { c.save(); try { drawSkinLux(c, lux, tint, now, 7, 'back'); } catch (e) { quietErr(e); } c.restore(); }
   if (spec) { try { const mo = skinMotion(sid, now / 1000); c.translate(mo.dx, mo.dy); c.rotate(mo.rot); } catch (e) { quietErr(e); } }
-  c.save(); try { if (id === 'dracula') drawDraculaCape(c, -face, 3, SH, tint); if (id === 'kadas') drawKadasBack(c, -face, SH, HIP, t, cp); } catch (e) { quietErr(e); } c.restore();
   const body = () => { c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 5; c.lineCap = 'round'; c.lineJoin = 'round'; };
   body();
   const s = Math.sin(walk) * 6;
@@ -25,7 +24,6 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   body();
   const hx = ax * reach, hy = SH + 6 + ay * reach;
   if (id !== 'harald') { c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(hx, hy); c.stroke(); }      // (하랄드 draws both of his bent arms himself, in art/chars.js)
-  if (id === 'kadas') { c.strokeStyle = '#c4182e'; c.beginPath(); c.moveTo(0, SH + 6); c.lineTo(hx, hy); c.stroke(); }
   if (id === 'samurai') { c.save(); try {      // 쌍검 사무라이 (2026-11-15): the off hand holds a second katana and sweeps the other way
     const b = swing > 0 && samHand !== 1 ? ang - (swing - .5) * 2.4 * face : ang + 1.05 * face, ox = -face * 3, bx = ox + Math.cos(b) * (reach - 3), by = SH + 7 + Math.sin(b) * (reach - 3);
     body(); c.globalAlpha *= .82; c.beginPath(); c.moveTo(ox, SH + 7); c.lineTo(bx, by); c.stroke(); c.globalAlpha /= .82;      /* left arm a little behind the body (darker, shoulder offset) so the two hands read apart */ drawHeldWeapon(c, id, Math.cos(b), Math.sin(b), bx, by, swing, cp); } catch (e) { quietErr(e); } c.restore(); }
@@ -67,15 +65,18 @@ function drawFighter0(f, alpha) {
   if (f.form === 'sub') { ctx.fillStyle = '#12061f'; ctx.beginPath(); ctx.ellipse(0, 0, 26 + Math.sin(time * 8) * 3, 11, 0, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#9a4cff'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore(); return; }
   ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(0, 1, 18, 7, 0, 0, 6.3); ctx.fill();
   if (curMode === 'solo' && f.inv > 0 && state === 'play' && timeLeft > modeNow().time - SOLO_GUARD - .2) { const k = Math.min(1, f.inv / .5), pu = 1 + Math.sin(time * 6) * .04; ctx.save(); ctx.globalAlpha = alpha * k; ctx.fillStyle = 'rgba(255,214,90,.16)'; ctx.strokeStyle = '#ffd65a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, -30, 42 * pu, 0, 6.3); ctx.fill(); ctx.stroke(); ctx.restore(); }      // 원 레프트 start guard bubble
+  awDraw(f);      // (awaken.js)
+  if (f.awT > 0 && f.h0 && f.h0.id === 'shieldman' && B(f, 'hbdig')) { ctx.save(); ctx.globalAlpha = .55; ctx.fillStyle = '#1a1030'; ctx.beginPath(); ctx.ellipse(0, -30, 26, 44, 0, 0, 6.3); ctx.fill(); ctx.globalAlpha = .9; ctx.strokeStyle = '#6a45b0'; ctx.lineWidth = 3; ctx.setLineDash([7, 5]); ctx.lineDashOffset = -time * 30; ctx.stroke(); ctx.restore(); }      // 진지 구축 B: shadow armour
+  if (f.st && f.st.awRev > time) { ctx.save(); ctx.globalAlpha = .35 + Math.sin(time * 10) * .1; ctx.fillStyle = '#8de8ff'; ctx.beginPath(); ctx.arc(0, -30, 38, 0, 6.3); ctx.fill(); ctx.globalAlpha = .9; ctx.strokeStyle = '#e8fbff'; ctx.lineWidth = 3; ctx.setLineDash([8, 6]); ctx.lineDashOffset = -time * 40; ctx.stroke(); ctx.restore(); }      // 보안관 무법자 shield
+  if (f.st && f.st.awMk > time) { const k = 1 + Math.sin(time * 9) * .12; ctx.save(); ctx.translate(0, -88 + Math.sin(time * 6) * 3); ctx.scale(k, k); ctx.strokeStyle = '#ffc21a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, 13, 0, 6.3); ctx.stroke(); ctx.fillStyle = '#ff3d3d'; ctx.beginPath(); ctx.moveTo(-9, -22); ctx.lineTo(9, -22); ctx.lineTo(0, -8); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.arc(0, 0, 4, 0, 6.3); ctx.fill(); ctx.restore(); }      // 제임스 표식
   ctx.strokeStyle = f.isPlayer ? '#ffd34d' : col; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(0, 1, 22, 9, 0, 0, 6.3); ctx.stroke();
   if (f.spin > 0) { ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(0, -30, (f.h.range || 80) * (f.h.type === 'melee' ? 1 : .3), time * 30, time * 30 + 4.5); ctx.stroke(); }
   if (f.shield > 0) { ctx.strokeStyle = '#7ef0a8'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, -30, 40, 0, 6.3); ctx.stroke(); }
   if (B(f, 'reflect') || B(f, 'sand') || B(f, 'inv') || B(f, 'counter') || B(f, 'guard')) { ctx.strokeStyle = B(f, 'sand') ? '#d8b46a' : '#ffffff'; ctx.globalAlpha = alpha * .6; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, -30, 38, 0, 6.3); ctx.stroke(); ctx.globalAlpha = alpha; }
-  if (B(f, 'block') || st.fsh) { ctx.strokeStyle = st.fsh && !B(f, 'block') ? '#ff7a1a' : '#ffd34d'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(0, -30, 44, f.aim - 1.1, f.aim + 1.1); ctx.stroke(); }
-  if (f.form === 'bat' || f.form === 'dove') {
+  if (B(f, 'block') || st.fsh) { ctx.strokeStyle = st.fsh && !B(f, 'block') ? '#ff7a1a' : '#ffd34d'; ctx.lineWidth = 6 + Math.min(8, (st.awB || 0) / 3); ctx.beginPath(); ctx.arc(0, -30, 44, f.aim - 1.1, f.aim + 1.1); ctx.stroke(); if (st.awB > 0) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2 + Math.min(4, st.awB / 8); ctx.globalAlpha *= .5 + .4 * Math.sin(time * 14); ctx.stroke(); } }
+  if (f.form === 'dove') {
     if (f.form === 'dove' && typeof drawDoveFormArt === 'function') { drawDoveFormArt(ctx, col, f); ctx.restore(); ctx.globalAlpha = 1; return; }     // (fx.js: the magician's pigeon)
-    if (f.form === 'bat' && typeof drawBatFormArt === 'function') { drawBatFormArt(ctx, col); ctx.restore(); ctx.globalAlpha = 1; return; }     // (Stickseum's own bat, from fx.js)
-    const w = Math.sin(time * 22) * 10; ctx.translate(0, -34); ctx.fillStyle = f.form === 'bat' ? '#2a0a14' : '#f4f4f4'; ctx.strokeStyle = col; ctx.lineWidth = 2;
+    const w = Math.sin(time * 22) * 10; ctx.translate(0, -34); ctx.fillStyle = '#f4f4f4'; ctx.strokeStyle = col; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-26, -8 - w); ctx.lineTo(-14, 6); ctx.lineTo(0, 10); ctx.lineTo(14, 6); ctx.lineTo(26, -8 - w); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.beginPath(); ctx.arc(0, 0, 8, 0, 6.3); ctx.fill(); ctx.stroke();
     if (f.form === 'dove') { ctx.fillStyle = '#16181f'; ctx.fillRect(-6, -18, 12, 9); ctx.fillRect(-9, -10, 18, 3); }
@@ -85,11 +86,10 @@ function drawFighter0(f, alpha) {
   if (typeof haraldCtx === 'function') haraldCtx(f);
   pistolDual = f.h.id === 'pistol' && B(f, 'akimbo');
   samHand = f.h.id === 'samurai' && f.st ? (f.st.hand != null ? f.st.hand : 1) : 1;
-  drawStick(ctx, f.h.id, col, f.aim, f.bob, f.swing > 0 ? 1 - f.swing / .22 : 0, time, f.cos);
+  drawStick(ctx, f.h.id, awCol(f, col), f.aim, f.bob, f.swing > 0 ? 1 - f.swing / .22 : 0, time, f.cos);
   pistolDual = false;
   ctx.restore(); ctx.globalAlpha = alpha;
-  if (f.h.id === 'pel') for (let i = 0; i < st.dr; i++) { const an = time * 2 + i * 6.283 / st.dr, x = Math.cos(an) * 34, y = Math.sin(an) * 22 - 56; ctx.fillStyle = '#2b3140'; ctx.strokeStyle = '#7df0ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, 9, 5, 0, 0, 6.3); ctx.fill(); ctx.stroke(); }
-  if (st.orb && st.orb.n > 0) for (let i = 0; i < st.orb.n; i++) { const a = time * 3 + i * 6.283 / 5; ctx.fillStyle = '#ff8a2a'; ctx.beginPath(); ctx.arc(Math.cos(a) * 54, Math.sin(a) * 54 - 16, 7, 0, 6.3); ctx.fill(); }
+  if (st.orb && st.orb.n > 0) for (let i = 0; i < st.orb.n; i++) { const a = time * 3 + i * 6.283 / (st.orb.m || 5); ctx.fillStyle = '#ff8a2a'; ctx.beginPath(); ctx.arc(Math.cos(a) * 54, Math.sin(a) * 54 - 16, 7, 0, 6.3); ctx.fill(); }
   ctx.restore(); ctx.globalAlpha = 1;
   const th = st.thread; if (th && !th.dead) { ctx.strokeStyle = '#ff7bd9'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(f.x, f.y - 30); ctx.lineTo(th.x, th.y - 30); ctx.stroke(); }
 }
@@ -120,7 +120,6 @@ function drawBars(f) {
   ctx.font = '700 14px Rajdhani, "IBM Plex Sans KR", sans-serif'; ctx.textAlign = 'center';
   ctx.lineWidth = 4; ctx.strokeStyle = '#0c0e13'; ctx.fillStyle = f.isPlayer ? '#ffd34d' : (f.nick && f.cos && f.cos.name ? nameColorFor(f.cos.name) : col);
   let label = f.nick || f.h0.name;
-  if (f.isPlayer) { const h = f.h.id; if (h === 'gambler') label += ' · 칩 ' + (st.chip || 0); if (h === 'vacuum') label += ' · 스택 ' + (st.stack || 0); if (h === 'pizarro') label += ' · ' + ((st.pz || 0) + 1) + '단계'; if (h === 'pel') label += ' · 드론 ' + st.dr; if (h === 'flamethrower') label += st.over > 0 ? ' · 과열' : ' · 열 ' + Math.round((st.heat || 0) / 9 * 100) + '%'; }
   if (!stampText(ctx, label, ctx.font, ctx.fillStyle, '#0c0e13', 4, f.x, y - 6)) { ctx.strokeText(label, f.x, y - 6); ctx.fillText(label, f.x, y - 6); }
   if (curMode === 'star' && f.star) { const sy = y - 30, tx = String(f.star); starIcon(ctx, f.x - 9, sy, 9); ctx.font = '800 15px Rajdhani, sans-serif'; ctx.textAlign = 'left'; ctx.lineWidth = 4; ctx.strokeStyle = '#0c0e13'; ctx.fillStyle = '#ffd34d'; ctx.strokeText(tx, f.x + 2, sy + 5); ctx.fillText(tx, f.x + 2, sy + 5); ctx.textAlign = 'center'; }      // 리워드 헌터: what this fighter is worth
   ctx.fillStyle = '#0c0e13'; ctx.beginPath(); ctx.roundRect(x - 2, y - 2, w + 4, 11, 4); ctx.fill();
@@ -137,9 +136,9 @@ function drawBars(f) {
 function drawMinion(m) {
   const col = TC(m.team), k = m.kind;
   ctx.save(); ctx.translate(m.x, m.y);
-  if (k === 'guard' || k === 'clone' || k === 'body' || k === 'doll') {
-    ctx.translate(0, 16); if (k === 'body') ctx.globalAlpha = .75; const sc = k === 'doll' ? .55 : k === 'guard' ? .95 : 1.15; ctx.scale(sc, sc);
-    drawStick(ctx, k === 'guard' ? 'guard' : k === 'clone' ? 'tionis' : k === 'body' ? 'medium' : 'puppeteer', k === 'body' ? '#8890a4' : col, m.aim || 0, m.bob || 0, m.sw && time - m.sw < .22 ? (time - m.sw) / .22 : 0, time);
+  if (k === 'clone') {
+    ctx.translate(0, 16); ctx.scale(1.15, 1.15);
+    drawStick(ctx, 'tionis', col, m.aim || 0, m.bob || 0, m.sw && time - m.sw < .22 ? (time - m.sw) / .22 : 0, time);
   } else if (k === 'sunflower' && typeof drawSunflower === 'function') { drawSunflower(m);      // (정원사's turret: gardener.js)
   } else if (k === 'turret') { ctx.fillStyle = '#3a3f4a'; ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, 18, 0, 6.3); ctx.fill(); ctx.stroke(); ctx.rotate(m.aim || 0); ctx.fillStyle = '#16181f'; ctx.fillRect(0, -7, 34, 14); }
   else if (k === 'dragon' && typeof drawFireDragon === 'function') { ctx.restore(); drawDragonMinion(m); return; }
@@ -151,9 +150,9 @@ function drawMinion(m) {
   ctx.restore();
   if (m.hit && k !== 'body') { ctx.fillStyle = '#0c0e13'; ctx.fillRect(m.x - 17, m.y - 66, 34, 6); ctx.fillStyle = col; ctx.fillRect(m.x - 16, m.y - 65, 32 * clamp(m.hp / m.max, 0, 1), 4); }
 }
-const SHAPE_COL = { bullet:'#ffe27a', kdgun:'#b86bff', dronebolt:'#7df0ff', needle:'#f0f0f0', blowgun:'#8dff7c', pellet:'#ffe27a', chip:'#ff5d5d', fireball:'#ff8a2a', cleonorb:'#ff7bd9', redball:'#e8222b', potion:'#9a4cff', mask:'#f4f4f4', card:'#ffffff', star:'#cfd3dc', boomerang:'#c98a4b', bomb:'#3a3f4a', rocket:'#cfd3dc', arrow:'#c9a463', quarrel:'#c9a463' };
+const SHAPE_COL = { shadow:'#6a45b0', icy:'#8de8ff', tracer:'#ffc21a', pwave:'#ffd9a0', xwave:'#eaf2ff', bullet:'#ffe27a', kdgun:'#b86bff', dronebolt:'#7df0ff', needle:'#f0f0f0', blowgun:'#8dff7c', pellet:'#ffe27a', chip:'#ff5d5d', fireball:'#ff8a2a', cleonorb:'#ff7bd9', redball:'#e8222b', potion:'#9a4cff', mask:'#f4f4f4', card:'#ffffff', star:'#cfd3dc', boomerang:'#c98a4b', bomb:'#3a3f4a', rocket:'#cfd3dc', arrow:'#c9a463', quarrel:'#c9a463' };
 function drawBullet(b) {
-  const col = SHAPE_COL[b.shape] || '#ffe27a', big = b.r > 8 ? b.r / 5 : 1, s = b.shape;
+  const col = b.gold ? '#ffd34d' : SHAPE_COL[b.shape] || '#ffe27a', big = b.r > 8 ? b.r / 5 : 1, s = b.shape;
   ctx.save(); ctx.translate(b.x, b.y); ctx.scale(big, big);
   ctx.lineCap = 'round'; ctx.lineWidth = 2; ctx.strokeStyle = TC(b.team); ctx.fillStyle = col;
   if (s === 'star' || s === 'boomerang' || s === 'card' || s === 'mask' || s === 'chip') {
@@ -163,6 +162,12 @@ function drawBullet(b) {
     else if (s === 'card') ctx.roundRect(-6, -8, 12, 16, 2);
     else ctx.arc(0, 0, s === 'mask' ? 8 : 6, 0, 6.3);
     ctx.fill(); ctx.stroke();
+  } else if (s === 'pwave') {      // (awaken.js 복서) a punch shockwave: a thick bright arc
+    ctx.rotate(b.ang); ctx.lineCap = 'round'; ctx.globalAlpha = .9;
+    ctx.strokeStyle = TC(b.team); ctx.lineWidth = 3.6; ctx.beginPath(); ctx.arc(-4, 0, 9, -1.1, 1.1); ctx.stroke(); ctx.strokeStyle = col; ctx.lineWidth = 1.8; ctx.stroke();
+  } else if (s === 'xwave') {      // (awaken.js 사무라이) an X-shaped sword wave
+    ctx.rotate(b.ang); ctx.globalAlpha = .9; ctx.lineCap = 'round';
+    for (const k of [-1, 1]) { ctx.strokeStyle = TC(b.team); ctx.lineWidth = 3.4; ctx.beginPath(); ctx.moveTo(-8, -9 * k); ctx.quadraticCurveTo(0, 0, 8, 9 * k); ctx.stroke(); ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.stroke(); }
   } else if (s === 'arrow' || s === 'quarrel' || s === 'needle' || s === 'blowgun') {
     ctx.rotate(b.ang); ctx.strokeStyle = col; ctx.lineWidth = s === 'needle' || s === 'blowgun' ? 2 : 3;
     ctx.beginPath(); ctx.moveTo(-14, 0); ctx.lineTo(8, 0); ctx.stroke();
@@ -272,6 +277,7 @@ function render() {
   drawTiles(ctx, c0, c1, r0, r1, 2);
   if (me && state === 'play') { if (!drawPreviews(me)) drawBasicGuide(me); }      // previews over the bush tiles, so a bush never hides them
   for (const f of inBush) drawFighter(f, f.team === VIEW ? .6 : .85);
+  drawRopes();      // (awaken.js / 보안관 올가미)
   for (const b of bullets) if (!(b.shape === 'potion' && typeof drawPotionShot === 'function' && drawPotionShot(b)) && !(b.shape === 'seed' && typeof drawSeedShot === 'function' && drawSeedShot(b)) && !drawShot(b)) drawBullet(b);      // shots and swings over walls and bushes, so nothing hides them
   { const now = performance.now(); drawSwings(Math.min(.05, (now - (render.last || now)) / 1000)); render.last = now; }
   for (const m of minions) if (m.kind === 'dragon' || m.kind === 'crow') drawMinion(m);
@@ -373,7 +379,7 @@ function addFeed(owner, victim, src) {
   while (feed.children.length > 3) feed.firstChild.remove();
   setTimeout(() => d.remove(), 3500);
 }
-function showPlayUi(on) { hud.hidden = feed.hidden = ultBtn.hidden = dashBtn.hidden = skBtn[0].hidden = skBtn[1].hidden = soundBtn.hidden = $('emoteBtn').hidden = $('chatBtn').hidden = $('setBtn').hidden = $('chatFeed').hidden = !on; if (!on) { setOpen(false); notice.hidden = true; emoteWheel(false); chatOpen(false); pvClear(); } }
+function showPlayUi(on) { if (!on) { const a = $('awBar'); if (a) { a.hidden = true; a._k = null; } } hud.hidden = feed.hidden = ultBtn.hidden = dashBtn.hidden = skBtn[0].hidden = skBtn[1].hidden = soundBtn.hidden = $('emoteBtn').hidden = $('chatBtn').hidden = $('setBtn').hidden = $('chatFeed').hidden = !on; if (!on) { setOpen(false); notice.hidden = true; emoteWheel(false); chatOpen(false); pvClear(); } }
 function tapBtnUi(b, fn) { b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); fn(); }); }
 
 /* ---------- settings window ---------- */
@@ -514,8 +520,7 @@ function attackText(h) {
   if (h.type === 'melee') return '데미지 ' + rd(h.dmg * SX) + ' · 쿨타임 ' + h.cd + '초 · 근접 사거리 ' + tiles + (h.w.thrust ? ' · 앞으로 찌르기' : ' · 넓게 휘두르기') + (h.w.kbMult ? ' · 크게 밀쳐 냄' : '');
   if (h.type === 'flame') return '누르고 있는 동안 화염 방사 · 초당 ' + rd(FLAME_DIRECT_DPS * SX) + ' 피해 · 사거리 ' + tiles + ' · 쏜 시간이 합쳐서 9초가 되면 2초간 과열';
   if (h.type === 'cone') return '데미지 ' + rd(h.dmg * SX) + ' · 쿨타임 ' + h.cd + '초 · 사거리 ' + tiles;
-  if (h.id === 'tell') return '꾹 눌렀다 놓으면 발사 · 데미지 ' + rd(1 * SX) + '~' + rd(64 * SX) + ' · 최대 사거리 ' + tiles;
-  return '데미지 ' + (h.id === 'gambler' ? rd(4 * SX) + '~' + rd(36 * SX) : h.id === 'bow' ? rd(10 * SX) + '~' + rd(36 * SX) : rd(h.dmg * SX)) + (h.count > 1 ? ' × ' + h.count + '발' : '') + (h.burst > 1 ? ' · ' + h.burst + '연발' : '') + ' · 쿨타임 ' + h.cd + '초 · 사거리 ' + tiles + (h.splash ? ' · 폭발 범위 피해' : '') + (h.pierce ? ' · 한 명 관통' : '');
+  return '데미지 ' + (h.id === 'bow' ? rd(10 * SX) + '~' + rd(36 * SX) : rd(h.dmg * SX)) + (h.count > 1 ? ' × ' + h.count + '발' : '') + (h.burst > 1 ? ' · ' + h.burst + '연발' : '') + ' · 쿨타임 ' + h.cd + '초 · 사거리 ' + tiles + (h.splash ? ' · 폭발 범위 피해' : '') + (h.pierce ? ' · 한 명 관통' : '');
 }
 const lobby = $('lobby');
 modeApply();
@@ -569,6 +574,7 @@ function renderLobbyDuel() {
     b.addEventListener('click', () => { DSLOT = k; showScreen('weaponScreen'); if (id) openDetail(id); else { closeDetail(); renderDuelLine(); } });
     box.append(b);
   });
+  lobbyCharPlace();      // new pictures have no size or place until they are laid out (they stood full size over the menu until the next resize)
 }
 function lobbyDuelPlace(cr, floor, right) {
   const box = $('lobbyDuel'); if (!isDuelMode(modeSel) || !box.children.length) { box.hidden = true; document.body.classList.remove('ldOn'); return; }
@@ -603,6 +609,10 @@ function drawPortrait(canvas, id, breathe) {
   c.translate(canvas.width / 2 - (id === 'shade' ? 16 * k : 0), canvas.height * .7); c.scale(1.8 * k, 1.8 * k);
   if (breathe) { const br = Math.sin(performance.now() / 620); c.scale(1 - .012 * br, 1 + .02 * br); }
   drawStick(c, id, '#3fe0c5', .3, 0, 0, performance.now() / 1000, myCos(id));
+  /* skin glows and rays are bigger than the picture: fade them out toward the edge instead of cutting them off in a square (user 2026-11-23, iPad lobby) */
+  c.setTransform(canvas.width / 2, 0, 0, canvas.height / 2, canvas.width / 2, canvas.height / 2);
+  const g = c.createRadialGradient(0, 0, .8, 0, 0, 1); g.addColorStop(0, '#000'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  c.globalCompositeOperation = 'destination-in'; c.fillStyle = g; c.fillRect(-1, -1, 2, 2); c.globalCompositeOperation = 'source-over';
 }
 function drawIcon(canvas, id) {
   canvas.width = 128; canvas.height = 128;
@@ -664,7 +674,7 @@ function openDetail(id) {
   $('weaponPortraitName').textContent = h.name;
   const d = $('weaponDetail'); d.textContent = '';
   const line = (label, text) => { const p = document.createElement('p'), s = document.createElement('strong'); s.textContent = label; p.append(s, text); return p; };
-  d.append(line('무기', h.wname + ' · ' + attackText(h)), line('패시브', h.p[0] + ' · ' + dmgDesc(h, h.p[1])), line('궁극기', h.ult.name + ' · ' + dmgDesc(h, h.ult.d) + (id === 'medium' ? '' : ' (쿨타임 ' + ULT_CD + '초)')), line('체력', Math.round(h.hp * HP_SCALE) + ' · 대쉬 쿨타임 ' + (h.dashCd ? h.dashCd({ st: {}, b: {} }) : 1.5) + '초'));
+  d.append(line('무기', h.wname + ' · ' + attackText(h)), line('패시브', h.p[0] + ' · ' + dmgDesc(h, h.p[1])), line('궁극기', h.ult.name + ' · ' + dmgDesc(h, h.ult.d) + ' (쿨타임 ' + ULT_CD + '초)'), line('체력', Math.round(h.hp * HP_SCALE) + ' · 대쉬 쿨타임 ' + (h.dashCd ? h.dashCd({ st: {}, b: {} }) : 1.5) + '초'));
   { /* mastery of this character: rank, bar, points */
     const m = masteryOf(id), row = document.createElement('div'), nm = document.createElement('b'), bar = document.createElement('span'), fl = document.createElement('i'), num = document.createElement('small');
     row.className = 'mRow'; row.style.setProperty('--mc', m.col); nm.textContent = m.name; fl.style.width = Math.round(m.into / m.need * 100) + '%'; bar.className = 'mBar'; bar.append(fl); num.textContent = m.top ? m.mp.toLocaleString('en-US') : m.into + ' / ' + m.need;
@@ -965,7 +975,7 @@ function endGame(keepRunning) {
   if (isLeft(curMode) && player && player.dead && (curMode === 'solo' || RD.out.includes(player.team))) soloOutShown = true;
   showPlayUi(false);
   const oc = modeOutcome(), solo = isLeft(curMode) || curMode === 'star', mine = oc.a, theirs = oc.b;
-  const draw = oc.draw, first = oc.win, win = first || ((curMode === 'solo' || curMode === 'star') && !draw && oc.place >= 2 && oc.place <= 3), rt = $('resultText');      // 원 레프트: 1-3등 are wins (user 2026-11-15); first = really the last one standing
+  const draw = oc.draw, first = oc.win || (!oc.draw && oc.place === 2 && isLeft(curMode)), win = first || ((curMode === 'solo' || curMode === 'star') && !draw && oc.place >= 2 && oc.place <= 3), rt = $('resultText');      // 원 레프트: 1-3등 are wins (user 2026-11-15); first = really the last one standing
   const kept = !draw && !win && oc.place === 2 && (curMode === 'duo' || curMode === 'hot4');      // 투 레프트 / 4팀 핫존 2등: the streak is kept, so the place instead of 패배
   rt.textContent = draw ? '무승부' : win ? (first ? '승리' : oc.place + '등') : kept ? '2등' : '패배';      // 원 레프트 / 리워드 헌터 2-3등: the place instead of 승리
   document.querySelector('#overScreen .final').classList.toggle('solo', solo);
@@ -984,7 +994,9 @@ function endGame(keepRunning) {
     $('goldGain').hidden = !pay; $('crGain').hidden = true; $('mpCard').hidden = true;
     if (pay) {
       const m0 = masteryOf(hid); COS.gold += pay.gold; if (win && !draw) COS.cr = (COS.cr | 0) + WIN_CR;      // 승리마다 크리스탈 +3 (user 2026-11-16)
-       COS.karma += pay.karma; COS.xp += pay.xp; addMp(hid, pay.mp); dqMatch({ mode: curMode, win, kills: player.kos || 0, place: solo ? oc.place : 0, hero: hid, dealt: player.dealt || 0 }); achMatch({ mode: curMode, win, first, kills: player.kos || 0, deaths: player.deaths || 0, hero: hid, n: fighters.length, mvp: matchMvp(first, draw) === player }); saveCos(); goldUi();
+       COS.karma += pay.karma; COS.xp += pay.xp; addMp(hid, pay.mp);
+       if (isDuelMode(curMode) && DUEL.line && DUEL.line[player.team]) { const li = DUEL.li[player.team] | 0; new Set(DUEL.line[player.team].slice(0, li + 1)).forEach(id => { if (id && id !== hid) addMp(id, pay.mp); }); }      // 듀얼: every character that came out gets the mastery, not only the last one (user 2026-11-23)
+       dqMatch({ mode: curMode, win, kills: player.kos || 0, place: solo ? oc.place : 0, hero: hid, dealt: player.dealt || 0 }); achMatch({ mode: curMode, win, first: oc.win, kills: player.kos || 0, deaths: player.deaths || 0, hero: hid, n: fighters.length, mvp: matchMvp(first, draw) === player }); saveCos(); goldUi();
       $('goldGainN').textContent = '+' + pay.gold; $('crGain').hidden = !(win && !draw); $('karmaGain').hidden = !pay.karma; $('karmaGainN').textContent = '+' + pay.karma; $('mpGainN').textContent = '+' + pay.mp; $('xpGainN').textContent = '+' + pay.xp;
       $('mpGain').style.color = masteryOf(hid).col;
       { /* mastery card: logo, rank, bar (old part solid, this match lighter), rank-up line */
@@ -1093,11 +1105,14 @@ const RS_STEPS = [2, 1.5, 1.25, 1, .8, .65];
 /* l: light effects (a phone that already had to lower its sharpness starts with them) */
 let rsMem = { s: 1.5, f: 0 }; try { const m = JSON.parse(localStorage.getItem('seum_rs') || 'null'); if (m && RS_STEPS.includes(m.s)) rsMem = { s: m.s, f: +m.f || 0, l: m.l === undefined ? (+m.f ? 1 : 0) : m.l ? 1 : 0 }; } catch (e) { quietErr(e); }
 function rsSave() { rsMem.s = RSCALE; try { localStorage.setItem('seum_rs', JSON.stringify(rsMem)); } catch (e) { quietErr(e); } }
-function rsStart() { return rsMem.s; }
-RSCALE = rsStart(); mobLite = !!rsMem.l;
+/* user 2026-11-25: the picture must never get worse by itself. The automatic steps down (sharpness, light effects) are off: they lowered the graphics and every step repainted the whole map mid-match
+   (measured: 4 repaints in the first 26 s of a phone match, 120-300 ms frozen each, ~60 MB of new canvas each time). Every phone starts at the normal sharpness again. 배터리 절약 (the player's own choice) still lowers it. */
+function rsStart() { return 1.5; }
+RSCALE = rsStart(); mobLite = false; try { localStorage.removeItem('seum_rs'); } catch (e) { quietErr(e); }
 let MCAP = false, mcapAt = 0;      // (only 배터리 절약 caps the frame rate now)
 let rsT0 = 0, rsN = 0, rsLast = 0, rsGood = 0, rsAll = 0, rsSmooth = 0;
 function rsWatch(now) {
+  return;      // (off, see rsStart)
   const mob = mobileMode();
   if (SET.bat && mob) return;      // 배터리 절약: the lowest step is kept (mobset.js)
   if (state !== 'play' || (!mob && PCQ !== 'auto') || now - rsLast > 250) {      // (a pause, a hidden tab or the lobby does not count)
@@ -1133,11 +1148,11 @@ function frame(now) {
   const dt = Math.min(MCAP || SET.bat ? .05 : .033, (now - last) / 1000); last = now;
   const still = state === 'menu' && !DED && mobileMode();      // mobile: the match behind the lobby stands still (drawn again once a second), so the lobby costs a phone almost nothing
   if (NET.role === 'guest' && state === 'play') { if (dt > 0) guestStep(dt); }
-  else if (state !== 'over' && dt > 0 && !(performance.now() < hitStopUntil) && !still) { if (dt > .034) { step(dt / 2); if (state !== 'over') step(dt / 2); } else step(dt); }
+  else if (state !== 'over' && dt > 0 && !(performance.now() < hitStopUntil) && !still) { try { if (dt > .034) { step(dt / 2); if (state !== 'over') step(dt / 2); } else step(dt); } catch (e) { quietErr(e); } }      // one failing step must not stop the whole game loop (the screen would freeze for good)
   netTick(dt);
   if (DED) { requestAnimationFrame(frame); return; }      // a dedicated host (net.js) only runs the match: nothing is drawn
-  if (state === 'play') updateHud();
-  if (!still || now - stillAt > 1000 || stillW !== cv.width + 'x' + cv.height) { render(); stillAt = now; stillW = cv.width + 'x' + cv.height; }
+  if (state === 'play') { awHud(); updateHud(); }
+  if (!still || now - stillAt > 1000 || stillW !== cv.width + 'x' + cv.height) { try { render(); } catch (e) { quietErr(e); ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; } stillAt = now; stillW = cv.width + 'x' + cv.height; }
   if (!lobby.hidden) {
     if ($('menuScreen').classList.contains('active')) { drawPortrait($('lobbyCharCanvas'), chosen, true); if (!still && !$('lobbyDuel').hidden) for (const c of $('lobbyDuel').querySelectorAll('canvas')) drawPortrait(c, c.dataset.id, true); }
     else if (viewing) drawPortrait($('weaponPortraitCanvas'), viewing, true);
@@ -1176,7 +1191,7 @@ function duelHud() {
   });
 }
 window.__arena = { modeLineup, modeDay, modeOpen, modeDayTick, get modeChoice() { return modeChoice; }, sqList, sqState, sqTake, sqOpen, swList, swState, PASS, GAME_VER, passXp, passAdd, passTake, renderPass, passLimited, modes: MODE_LIST, ACHS, achMatch, achScan, achSt, renderAch, questTab, setAchRates(r) { achRates = r; }, dqList, dqMatch, dqState, renderQuests, wqList, wqState, attSt, attTake, dealIds, cosPrice, TITLES, renderProfile, renderCos, rewardFx, matchMvp, endGame, goldUi, matchPay, masteryOf, levelOf, KARMA_ROAD, MASTERY, giveReward, COSMETICS, skinPrice, get COS() { return COS; }, get state() { return state; }, get score() { return score; }, get player() { return player; }, get fighters() { return fighters; }, step, MAPS, ROSTER, HEROES, useSkill, useUlt, render,
-  setChar(id) { chosen = id; }, setMap(i) { mapChoice = i; }, tileAt: (x, y) => tile(Math.floor(x / T), Math.floor(y / T)), auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get PV() { return { sk: PV.sk, ult: PV.ult, dash: PV.dash }; }, get bullets() { return bullets; }, BALL, offline() { netReset(); startMatch(null); } };
+  setChar(id) { chosen = id; }, awStart() { awStart(player); }, awOf: () => player && ({ T: player.awT, G: player.awG }), setMap(i) { mapChoice = i; }, tileAt: (x, y) => tile(Math.floor(x / T), Math.floor(y / T)), auto(v) { AUTO = v; }, nearest, angTo, get NET() { return NET; }, get VIEW() { return VIEW; }, get PV() { return { sk: PV.sk, ult: PV.ult, dash: PV.dash }; }, get bullets() { return bullets; }, BALL, offline() { netReset(); startMatch(null); } };
 })();
 </script>
 

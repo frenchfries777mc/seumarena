@@ -37,7 +37,7 @@ PROF.name = guestName();
 const cleanName = s => String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 23);      // 16 + a guild tag '[TAG] '
 function syncAccount() {
   const A = window.FFAuth, u = A && A.user && A.user();
-  if (u) { PROF.guest = false; PROF.uid = u.id; PROF.name = cleanName(A.nickname && A.nickname()) || PROF.name; }
+  if (u) { PROF.guest = false; PROF.uid = u.id; PROF.name = cleanName(A.nickname && A.nickname()) || PROF.name; I18N.keep(PROF.name); }
   else { PROF.guest = true; PROF.uid = null; PROF.name = guestName(); }
   accountUi(); if (typeof updatePick === 'function') updatePick();
   if (typeof cloudAuth === 'function') cloudAuth();
@@ -810,7 +810,8 @@ function showChat(f, text) {
   f.chat = text; f.chatT = time + 4.5;
   const box = document.getElementById('chatFeed'), d = document.createElement('div'), n = document.createElement('b');
   n.textContent = (f.nick || f.h0.name) + ': '; n.className = f.team === VIEW ? 'b' : 'r';
-  d.append(n, text); box.append(d);
+  const tx = document.createElement('span'); tx.setAttribute('data-noi18n', ''); tx.textContent = text; I18N.keep(text);      // what a person typed stays as typed
+  d.append(n, tx); box.append(d);
   while (box.children.length > 6) box.firstChild.remove();
   setTimeout(() => d.remove(), 12000);
 }
@@ -842,7 +843,7 @@ function winScreen(won, draw) {
   const cvs = document.getElementById('winCanvas'), c = cvs.getContext('2d'), run = ++winRun, Wc = cvs.width, Hc = cvs.height;
   const mine = fighters.filter(f => f && f.team === VIEW), rt = curMode === 'star' || curMode === 'ko3' ? score.map((v, t) => t).filter(t => t !== VIEW).sort((a, b) => (score[b] | 0) - (score[a] | 0))[0] : curMode === 'hot4' ? [0, 1, 2, 3].filter(t => t !== VIEW).sort((a, b) => (score[b] | 0) - (score[a] | 0))[0] : curMode === 'duo' ? (RD.win >= 0 && RD.win !== VIEW ? RD.win : RD.out.filter(t => t !== VIEW).pop() ?? -1) : -1, theirs = fighters.filter(f => f && f.team !== VIEW && (rt < 0 || f.team === rt));      // 4팀 핫존: only the best other team stands opposite (투 레프트: the winning pair, or the pair that lasted longest)
   const figs = [];
-  const place = (list, x0, x1, win) => { const n = list.length, sc = n >= 3 ? 1.15 : n === 2 ? 1.5 : 1.9; list.forEach((f, i) => figs.push({ f, win, x: x0 + (x1 - x0) * (n === 1 ? .5 : (i + .5) / n), sc })); };
+  const place = (list, x0, x1, win) => { const n = list.length, sc = n >= 3 ? 1.15 : n === 2 ? 1.5 : 1.9; list.forEach((f, i) => figs.push({ f, win, x: x0 + (x1 - x0) * (n === 1 ? .5 : (i + .5) / n), sc, w: (x1 - x0) / n })); };
   place(mine, 10, Wc / 2 - 10, won || draw); place(theirs, Wc / 2 + 10, Wc - 10, !won || draw);
   const conf = []; if (won) for (let i = 0; i < 90; i++) conf.push({ x: Math.random() * Wc, y: -Math.random() * Hc, vy: 40 + Math.random() * 70, vx: (Math.random() - .5) * 30, r: Math.random() * 6, vr: (Math.random() - .5) * 8, w: 5 + Math.random() * 5, h: 3 + Math.random() * 4, col: ['#ff5d73', '#ffd34d', '#5fff8a', '#4dd9ff', '#c17bff'][i % 5] });
   let last = performance.now();
@@ -858,8 +859,10 @@ function winScreen(won, draw) {
       c.shadowColor = col; c.shadowBlur = 10; c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 5; c.lineCap = 'round'; c.lineJoin = 'round';
       try { if (g.win) drawWinPose(c, (f.cos && f.cos.pose) || 'pose_cheer', t, wid, tint, conceptOfSkin(sk)); else drawLosePose(c, t, wid, tint, conceptOfSkin(sk)); } catch (e) { quietErr(e); }
       c.restore();
-      c.save(); c.font = '700 13px "IBM Plex Sans KR", sans-serif'; c.textAlign = 'center'; c.fillStyle = f === player ? '#ffd34d' : (f.nick ? nameColorFor(f.cos && f.cos.name) : '#8890a4');
-      c.fillText(f.nick || f.h0.name, g.x, Hc - 12); c.restore();
+      c.save(); c.textAlign = 'center'; c.fillStyle = f === player ? '#ffd34d' : (f.nick ? nameColorFor(f.cos && f.cos.name) : '#8890a4');
+      const nm = f.nick || f.h0.name, mw = Math.max(20, g.w - 5);      // each name stays inside its own figure's share of the width: a long one gets a smaller font, then is squeezed
+      if (!g.fs) { g.fs = 13; c.font = '700 13px "IBM Plex Sans KR", sans-serif'; while (g.fs > 9 && c.measureText(nm).width > mw) { g.fs--; c.font = '700 ' + g.fs + 'px "IBM Plex Sans KR", sans-serif'; } }
+      c.font = '700 ' + g.fs + 'px "IBM Plex Sans KR", sans-serif'; c.fillText(nm, g.x, Hc - 12, mw); c.restore();
     }
     requestAnimationFrame(fr);
   })(last);

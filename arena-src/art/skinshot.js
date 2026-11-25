@@ -8,15 +8,8 @@ const LUX_THEME={flame:['#ff7a1a','#ffe27a'], frost:['#9fe8ff','#ffffff'], elect
 const skinFxCache={};
 function drawConceptProjectile(b,cp){
   const swing=b.swingAngle!==undefined, shot=!swing && !b.dmgless && b.vx!==undefined;
-  if(cp==='poseidon' && shot && b.wid==='horemheb'){      // 포세이돈: the trident flies in a straight line (no spinning), pointing where it goes, with a trail of sea spray
-    drawTrail(b); const a=Math.atan2(b.vy||0,b.vx||0);
-    if(Math.random()<0.85) skP({x:b.x-Math.cos(a)*14+RND(-5,5),y:b.y-Math.sin(a)*14+RND(-5,5),vx:RND(-40,40)-Math.cos(a)*60,vy:RND(-30,60),life:RND(.25,.5),size:RND(1.6,3.2),color:Math.random()<.5?'#bff4ff':'#ffffff',glow:1,grav:260,drag:1.2});
-    ctx.save(); ctx.translate(b.x,b.y); ctx.rotate(a); ctx.translate(-26,0); drawTrident(ctx,1.2,true); ctx.restore(); return true;
-  }
   if(cp==='dragon' && shot && b.wid==='wizard'){ drawDragonShot(b); return true; }
   if(cp==='uno' && shot && b.wid==='magiccard'){ drawTrail(b); drawUnoCard(b); return true; }
-  if(cp==='dream' && shot && b.wid==='kurus'){ drawDreamFlask(b); return true; }
-  if(cp==='diaper' && shot && b.wid==='kurus'){ drawPoopShot(b); return true; }
   if(cp==='cupid' && shot && b.wid==='bow'){ drawCupidArrow(b); return true; }
   if(cp==='banana' && shot && b.wid==='pistol'){ drawBananaShot(b); return true; }
   if(cp==='zeus' && shot && b.wid==='pistol'){      // the bolt itself is thrown
@@ -28,11 +21,6 @@ function drawConceptProjectile(b,cp){
     drawTrail(b); const t=performance.now();
     if(Math.random()<0.6) skP({x:b.x+RND(-4,4),y:b.y+RND(-4,4),vx:RND(-30,30),vy:RND(-30,40),life:RND(.3,.6),size:RND(1.8,3.4),color:Math.random()<.5?'#ffe27a':'#fff6c8',glow:1,grav:30,drag:1.5});
     ctx.save(); ctx.translate(b.x,b.y); drawGoldApple(ctx,9,t*0.012); ctx.restore(); return true;
-  }
-  if(cp==='odin' && shot && b.wid==='boomerang'){      // a raven flies out and comes back
-    drawTrail(b); const t=performance.now(), a=Math.atan2(b.vy||0,b.vx||0), left=Math.cos(a)<0;
-    if(Math.random()<0.5) skP({x:b.x+RND(-3,3),y:b.y+RND(-3,3),vx:RND(-20,20),vy:RND(-10,30),life:RND(.3,.6),size:RND(1.4,2.6),color:'#2a2a38',add:false,grav:60,drag:1.2});
-    ctx.save(); ctx.translate(b.x,b.y); if(left) ctx.scale(-1,1); ctx.rotate(left?Math.PI-a:a); drawRaven(ctx,34,t*0.02); ctx.restore(); return true;
   }
   if(cp==='starlight' && shot){ if(b.wid==='wizard') drawWizardStarShot(b); else drawStarShot(b); return true; }
   if(swing && cp==='gold'){ for(let i=0;i<3;i++){ const a=b.swingAngle+RND(-0.9,0.9), r=RND(30,80); skP({x:b.x-Math.cos(b.swingAngle)*30+Math.cos(a)*r,y:b.y-Math.sin(b.swingAngle)*30+Math.sin(a)*r,vx:RND(-60,60),vy:RND(-120,-20),life:RND(.4,.8),size:RND(1.8,3.6),color:i%2?'#ffd34d':'#fff3b0',grav:80,drag:1.2}); } }
@@ -137,22 +125,6 @@ function drawWizardStarShot(b){
   ctx.fillStyle=tg; ctx.beginPath(); ctx.moveTo(0,-8*sc/0.62); ctx.lineTo(-tl,0); ctx.lineTo(0,8*sc/0.62); ctx.closePath(); ctx.fill(); ctx.restore();
   ctx.save(); ctx.globalCompositeOperation='lighter'; for(let k=0;k<3;k++){ const a=now*0.012+k*2.094, d=17*sc/0.62; ctx.globalAlpha=0.9; ctx.save(); ctx.translate(Math.cos(a)*d,Math.sin(a)*d); ctx.rotate(-a*2); ctx.scale(0.2*sc/0.62,0.2*sc/0.62); ctx.drawImage(sp,-48,-48); ctx.restore(); } ctx.restore();
   ctx.rotate(now*0.008+(b.sx||0)*0.01); ctx.scale(sc*1.25,sc*1.25); ctx.drawImage(sp,-48,-48);
-  ctx.restore();
-}
-function drawDreamFlask(b){
-  const now=performance.now();
-  if(Math.random()<0.5) skP({x:b.x+RND(-4,4),y:b.y+RND(-4,4),vx:RND(-20,20),vy:RND(-30,-5),life:RND(.3,.6),size:RND(1.6,3),color:DREAM_STOPS[(Math.random()*5)|0],drag:2});
-  ctx.save(); ctx.translate(b.x,b.y); ctx.rotate(now*0.014+(b.sx||0)*0.01);
-  ctx.fillStyle=dreamFill(ctx,0,0,8,now); ctx.strokeStyle='#ffffff'; ctx.lineWidth=1.6;
-  ctx.beginPath(); ctx.arc(0,2,7,0,7); ctx.fill(); ctx.stroke();
-  ctx.fillStyle='#f4e8ff'; ctx.fillRect(-2,-8,4,5); ctx.fillStyle='#ffc6ea'; ctx.fillRect(-2.6,-10,5.2,2.4);
-  ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.beginPath(); ctx.arc(-2,0.5,2,0,7); ctx.fill();
-  ctx.restore();
-}
-function drawPoopShot(b){      // 기저귀 쿠루스's thrown flask: a spinning poo with a little fly-trail of brown crumbs
-  if(Math.random()<0.45) skP({x:b.x+RND(-4,4),y:b.y+RND(-4,4),vx:RND(-20,20),vy:RND(-30,-5),life:RND(.3,.6),size:RND(1.6,3),color:Math.random()<.5?'#7d4a1c':'#a3a64a',drag:2});
-  ctx.save(); ctx.translate(b.x,b.y); ctx.rotate(performance.now()*0.012+(b.sx||0)*0.01);
-  drawPoopShape(ctx,0,6,0.9);
   ctx.restore();
 }
 function drawCupidArrow(b){

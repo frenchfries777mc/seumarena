@@ -37,9 +37,9 @@ function newsItemHtml(n, unread) {
   return '<article class="nwItem" style="--c:' + c + '">' + (img ? '<img src="' + newsEsc(img) + '" alt="" loading="lazy" decoding="async">' : '') +
     '<div class="nwBody"><div class="nwMeta">' + (n.kind ? '<span class="nwTag">' + newsEsc(n.kind) + '</span>' : '') + (n.pin ? '<svg class="nwPin" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4H6l4-4z M12 13v8" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>' : '') +
     '<span>' + newsDate(n.date) + '</span>' + (unread ? '<i class="nwNew" aria-label="새 소식"></i>' : '') + '</div>' +
-    '<h3>' + newsEsc(n.title) + '</h3>' + (n.body ? '<p>' + newsEsc(n.body) + '</p>' : '') +
-    (n.poll && Array.isArray(n.poll.o) ? '<div class="nwPoll" data-id="' + newsEsc(n.id) + '">' + n.poll.o.map((o, i) => '<button type="button" class="nwOpt" data-i="' + i + '"><i></i><span>' + newsEsc(o) + '</span><b></b></button>').join('') + '<small class="nwVotes"></small></div>' : '') +
-    (lk ? '<a class="btn-primary nwLink" href="' + newsEsc(lk) + '" target="_blank" rel="noopener">' + newsEsc(n.link.label || '열기') + '</a>' : '') + '</div></article>';
+    '<h3 data-noi18n>' + newsEsc(n.title) + '</h3>' + (n.body ? '<p data-noi18n>' + newsEsc(n.body) + '</p>' : '') +
+    (n.poll && Array.isArray(n.poll.o) ? '<div class="nwPoll" data-id="' + newsEsc(n.id) + '">' + n.poll.o.map((o, i) => '<button type="button" class="nwOpt" data-i="' + i + '"><i></i><span data-noi18n>' + newsEsc(o) + '</span><b></b></button>').join('') + '<small class="nwVotes"></small></div>' : '') +
+    (lk ? '<a class="btn-primary nwLink" href="' + newsEsc(lk) + '" target="_blank" rel="noopener"' + (n.link.label ? ' data-noi18n' : '') + '>' + newsEsc(n.link.label || '열기') + '</a>' : '') + '</div></article>';
 }
 const NEWS_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 5.5h13v13a2 2 0 0 0 2 2h-13a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16.5 9h4v9.5a2 2 0 0 1-4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M6.5 9h7v4h-7z" fill="currentColor"/><path d="M6.5 15.5h7M6.5 18h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
 const NEWS_CSS = `

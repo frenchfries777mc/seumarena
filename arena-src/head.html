@@ -794,6 +794,12 @@ body.touchUi canvas{touch-action:none}
 .setCard h2{margin:0 0 10px;font-size:22px}
 .setRow{display:grid;grid-template-columns:92px minmax(0,1fr) 52px;align-items:center;gap:10px;min-height:50px;font:600 15px 'IBM Plex Sans KR',sans-serif}
 .setRow[hidden]{display:none}
+.langBtn{grid-column:2 / 4;min-height:38px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font:700 14px 'IBM Plex Sans KR',sans-serif;display:flex;align-items:center;justify-content:space-between;padding:0 12px;width:100%;cursor:pointer}
+.langBtn i{font-style:normal;color:var(--accent-2)}.langBtn[aria-expanded=true] i{transform:rotate(180deg)}
+.langList{position:fixed;z-index:10050;background:#1a2030;border:1px solid var(--line);border-radius:10px;padding:5px;box-shadow:0 14px 40px rgba(0,0,0,.55)}
+.langList.two{display:grid;grid-template-columns:1fr 1fr;gap:4px}.langList[hidden]{display:none}
+.langList button{display:block;width:100%;text-align:left;padding:8px 10px;border:0;border-radius:7px;background:none;color:#fff;font:700 14px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
+.langList button.on{background:var(--accent-2);color:#062824}
 .setRow output{text-align:right;color:var(--sel);font-variant-numeric:tabular-nums;font-weight:700}
 .setRow input[type=range]{width:100%;height:36px;margin:0;accent-color:var(--accent-2);touch-action:pan-y}
 .setSwitch{appearance:none;-webkit-appearance:none;grid-column:3;justify-self:end;width:52px;height:30px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line);position:relative;cursor:pointer;margin:0;transition:background .15s}
@@ -1277,6 +1283,64 @@ canvas.rwI{background:none}
   #rotHint i{width:54px;height:92px;border:5px solid #ffd54a;border-radius:12px;animation:rotHintSp 1.8s ease-in-out infinite}
 }
 @keyframes rotHintSp{0%,25%{transform:rotate(0)}60%,100%{transform:rotate(90deg)}}
+/* texts that were cut or sat on each other (every language, 2026-11-24) */
+#modeScreen.pc .mN{white-space:normal;line-height:1.05;letter-spacing:0;font-size:clamp(13px,1.25vw,19px);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}      /* on the PC cards a mode name may take two lines instead of ending in … */
+body .mSize{white-space:nowrap} body .mSz{flex-wrap:wrap;row-gap:2px}
+html:not([lang=ko]) #modeScreen.pc .mN{font-size:clamp(11px,1.02vw,15px);overflow-wrap:break-word;line-height:1.1}
+html:not([lang=ko]) #modeScreen.pc .mSize{font-size:clamp(15px,1.55vw,21px)}
+html:not([lang=ko]) #modeScreen.pc .mRule{font-size:11.5px;padding:3px 8px 3px 6px;gap:4px}
+html:not([lang=ko]) #modeScreen.pc .mRules{padding-inline:14px}
+body .skillBtn b{max-width:calc(100% - 6px)} html:not([lang=ko]) .skillBtn b{max-width:90%;word-break:normal;overflow-wrap:normal;hyphens:manual;-webkit-hyphens:manual} html:is([lang=ja],[lang^=zh]) .skillBtn b{word-break:keep-all;line-break:strict}      /* a word never splits in the middle: i18n.js fit() shrinks the font instead */
+body.touchUi #soundBtn{max-width:58px;overflow:hidden;white-space:nowrap}
+html:is([lang=en],[lang=fr],[lang=es]) .skillBtn b{font-size:9.5px;-webkit-line-clamp:3}
+.osRow .on small.stars{margin:0 5px 0 0;color:#ffd34d}
+#dashBtn span{white-space:nowrap}
+/* ---- awakening gauge (awaken.js) ---- */
+.skillBtn{overflow:visible}
+body.awOn .skillBtn::after{content:"";position:absolute;inset:-5px;border-radius:50%;pointer-events:none;background:conic-gradient(#fff2b0,#ffc21a,#ff7a1a,#ffc21a,#fff2b0,#ffc21a,#ff7a1a,#ffc21a,#fff2b0);-webkit-mask:radial-gradient(farthest-side,#0000 calc(100% - 7px),#000 calc(100% - 6px));mask:radial-gradient(farthest-side,#0000 calc(100% - 7px),#000 calc(100% - 6px));animation:awSpin 2.4s linear infinite}
+body.awOn .skillBtn span,body.awOn #ultBtn.ready span,body.awOn .skillBtn.ready span{background:#1b140a;color:#ffe27a}
+body.awOn .skillBtn small,body.awOn .skillBtn.ready small,body.awOn #ultBtn.ready small{color:#d9ae4a}
+body.awOn .skillBtn.cancel span,body.awOn #ultBtn.cancel span{background:#ff5d5d!important;color:#fff!important}
+@keyframes awSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){body.awOn .skillBtn::after{animation:none}}
+#awBar{position:fixed;z-index:5;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 12px);width:min(180px,34vw);height:14px;border-radius:7px;background:rgba(16,19,30,.8);overflow:hidden;pointer-events:none}
+#awBar i{position:absolute;left:0;top:0;bottom:0;width:0;background:#8a6a1a;border-radius:7px}
+#awBar span{position:relative;display:block;text-align:center;font:800 10px/14px 'IBM Plex Sans KR',sans-serif;color:#fff2c4;letter-spacing:.06em;white-space:nowrap}
+#awBar.on i{background:linear-gradient(90deg,#ffb020,#ffd34d)}#awBar.on span{color:#2a1c00}
+/* ---- tutorial (tut.js) ---- */
+#tut{position:fixed;inset:0;z-index:7;pointer-events:none;font-family:'IBM Plex Sans KR',system-ui,sans-serif;color:#fff}
+#tut .tuBan{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);transform:translateX(-50%);background:rgba(16,19,30,.92);border-radius:14px;padding:10px 22px 12px;text-align:center;min-width:300px;max-width:min(620px,calc(100vw - 340px));box-shadow:0 8px 24px rgba(0,0,0,.35)}
+#tut .tuSt{font:400 13px 'Black Han Sans','IBM Plex Sans KR',sans-serif;letter-spacing:.08em;color:#3fe0c5}
+#tut .tuTx{font-weight:700;font-size:19px;line-height:1.35;margin-top:2px;overflow-wrap:break-word}
+#tut .tuTx b{display:inline-block;background:#fff;color:#10131e;border-radius:6px;padding:0 7px;margin:0 2px;font-size:15px;line-height:24px;vertical-align:2px}
+#tut .tuDots{display:flex;gap:6px;justify-content:center;margin-top:8px}#tut .tuDots i{width:26px;height:5px;border-radius:3px;background:#39405a}#tut .tuDots i.on{background:#3fe0c5}#tut .tuDots i.done{background:#ffd34d}
+#tut .tuSkip{pointer-events:auto;position:absolute;left:max(14px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 14px);margin:0;border:0;background:rgba(16,19,30,.85);border-radius:10px;padding:8px 14px;font:700 13px 'IBM Plex Sans KR',sans-serif;color:#c9cfe0;cursor:pointer;white-space:nowrap;max-width:150px}
+#tut .tuTgt{position:absolute;border-radius:50%;border:5px solid #ffd34d;box-shadow:0 0 22px #ffd34d,inset 0 0 18px rgba(255,211,77,.6);transform:translate(-50%,-50%);animation:tuPulse 1.1s ease-in-out infinite}
+#tut .tuTgt:after{content:'';position:absolute;inset:30%;border-radius:50%;background:#ffd34d}
+#tut .tuArr{position:absolute;height:8px;border-radius:4px;background:repeating-linear-gradient(90deg,#ffd34d 0 14px,transparent 14px 24px);transform-origin:0 50%}
+#tut .tuHl{position:absolute;border-radius:50%;border:5px solid #ffd34d;box-shadow:0 0 0 6px rgba(255,211,77,.28),0 0 26px #ffd34d;transform:translate(-50%,-50%);animation:tuPulse 1.1s ease-in-out infinite}
+#tut .tuTip{position:absolute;background:#ffd34d;color:#201a05;font-weight:800;font-size:14px;border-radius:9px;padding:5px 11px;transform:translate(-50%,-100%);white-space:nowrap}
+#tut .tuEnd{position:absolute;inset:0;background:rgba(8,10,18,.72);pointer-events:auto;display:flex;align-items:center;justify-content:center}
+#tut .tuCard{background:#141824;border-radius:16px;padding:26px 34px 22px;text-align:center;width:min(380px,calc(100vw - 32px));box-sizing:border-box;box-shadow:0 20px 60px rgba(0,0,0,.5);display:flex;flex-direction:column}
+#tut .tuCard h2{margin:0;font:400 34px 'Black Han Sans','IBM Plex Sans KR',sans-serif;letter-spacing:.04em}#tut .tuCard p{color:#aab2c8;font-size:15px;margin:8px 0 18px}
+#tut .tuGo{margin:0;border:0;color:#fff;cursor:pointer;font:400 20px 'Black Han Sans','IBM Plex Sans KR',sans-serif;letter-spacing:.06em;padding:13px 20px;background:linear-gradient(105deg,#4a9dff,#8b5cf6 55%,#ff5a5f);clip-path:polygon(16px 0,100% 0,calc(100% - 16px) 100%,0 100%)}
+#tut .tuLobby{margin:8px 0 0;border:0;background:none;cursor:pointer;padding:8px;font:700 13px 'IBM Plex Sans KR',sans-serif;color:#8791aa}
+@keyframes tuPulse{50%{box-shadow:0 0 34px #ffd34d,inset 0 0 18px rgba(255,211,77,.6)}}
+.skillBtn.tutHl,#ultBtn.tutHl{box-shadow:0 0 0 5px #ffd34d,0 0 26px 6px #ffd34d;animation:tuBtn 1s ease-in-out infinite}
+@keyframes tuBtn{50%{box-shadow:0 0 0 5px #ffd34d,0 0 12px 2px #ffd34d}}
+body.tutOn .scorebar,body.tutOn #feed,body.tutOn #emoteBtn,body.tutOn #chatBtn,body.tutOn #chatFeed{visibility:hidden!important}
+html.inMatch #setTutRow,body.tutOn #setTutRow{display:none}
+body.touchUi #tut .tuBan{top:calc(env(safe-area-inset-top,0px) + 8px);padding:6px 16px 8px;min-width:220px;max-width:calc(100vw - 400px)}body.touchUi #tut .tuTx{font-size:15px;line-height:1.25}body.touchUi #tut .tuSt{font-size:11px}
+body.touchUi #tut .tuSkip{top:calc(env(safe-area-inset-top,0px) + 8px);padding:6px 10px;font-size:12px;max-width:110px}
+@media (max-height:440px){#tut .tuCard{padding:16px 26px 12px}#tut .tuCard h2{font-size:26px}#tut .tuCard p{margin:6px 0 12px;font-size:14px}}
+body #resultText{white-space:nowrap;overflow-x:clip;overflow-y:visible;min-width:0;max-width:100%}
+#modeScreen.ph .mTop{max-width:calc(100% - 132px)}      /* the name stops before the map picture */
+#passHead .khCol,#karmaHead .khCol{flex:none;max-width:46%} #passHead .khCol small,#karmaHead .khCol small{overflow-wrap:anywhere}
+body #mapTitle{padding-inline:64px;line-height:1.15;overflow-wrap:anywhere}
+@media (max-height:440px) and (orientation:landscape){
+  body #modeScreen.ph .mIn{padding:3px 12px;row-gap:0}
+  body #modeScreen.ph .mN{font-size:17px} body #modeScreen.ph .mSize{font-size:16px} body #modeScreen.ph .mTop .mIco{width:22px;height:22px}
+}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -1300,6 +1364,8 @@ canvas.rwI{background:none}
 </svg>
 <canvas id="game" class="inLobby" aria-label="경기장"></canvas>
 
+<div id="setLangList" class="langList" role="listbox" hidden></div>
+<div id="awBar" hidden aria-hidden="true"><i></i><span>각성</span></div>
 <div id="hud" hidden>
   <div class="scorebar">
     <div class="score b"><small id="sbL">블루</small><span id="sb">0</span></div>
@@ -1344,6 +1410,8 @@ canvas.rwI{background:none}
     <div class="setRow mobOnly" id="setBposRow"><span>버튼 위치</span><button class="btn-plain" id="setBpos" type="button">옮기기</button><span></span></div>
     <div class="setRow" id="setDev"><span>기기</span><span class="devSeg"><button type="button" data-dev="mobile">모바일</button><button type="button" data-dev="pc">컴퓨터</button></span></div>
     <div class="setRow" id="setPcq"><span>화질</span><span class="devSeg"><button type="button" data-pcq="auto">자동</button><button type="button" data-pcq="high">높음</button><button type="button" data-pcq="low">낮음</button></span></div>
+    <div class="setRow" id="setLangRow"><span>언어 · Language</span><button type="button" class="langBtn" aria-haspopup="listbox" aria-expanded="false"><span></span><i aria-hidden="true">▾</i></button></div>
+    <div class="setRow" id="setTutRow"><span>튜토리얼</span><button class="btn-plain" id="setTut" type="button">다시 보기</button><span></span></div>
     <div class="setRow" id="setCredRow"><span>크레딧</span><button class="btn-plain" id="setCred" type="button">보기</button><span></span></div>
     <div class="setBtns"><button class="btn-plain" id="setReset" type="button">기본값</button><button class="btn-primary" id="setClose" type="button">닫기</button></div>
     <p class="setLic">© 2026 Frenchfries777 · <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="license noopener">CC BY-NC-ND 4.0</a></p>

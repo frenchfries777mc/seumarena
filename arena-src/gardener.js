@@ -53,9 +53,10 @@ hero('gardener', { p: ['초록 손', '내가 심은 덤불(덤불 심기, 숲 �
   reveal: f => plantAt(f.x, f.y) ? .4 : .8,
   pre(f, o) { o.onEnd = b => gdSprout(f, b.x, b.y - BODY); return o; },
   ult: ['숲 폭발', '내 주변 반지름 4칸이 7초 동안 덤불로 바뀜 · 펼쳐지는 순간 그 안의 상대는 넝쿨에 1초 속박되고 720 피해 · 덤불 안의 상대는 아주 가까이 가야만 보임', [0, 3.5 * T], f => {
-    const x = f.x, y = f.y; gdPlant(cellsInCircle(x, y, 4 * T), 7);
-    fxPlay('garden', 'forest', Math.round(x), Math.round(y), 4 * T);
-    circ(f, x, y, 4 * T, 60, { root: 1, kb: 0 });
+    const x = f.x, y = f.y, R = (f.awT > 0 ? 6 : 4) * T; gdPlant(cellsInCircle(x, y, R), 7);
+    fxPlay('garden', 'forest', Math.round(x), Math.round(y), R);
+    circ(f, x, y, R, 60, { root: 1, kb: 0 });
+    if (f.awT > 0) awForestRoot(f, x, y, R);      // (awaken.js) 각성: enemies inside the bush stay rooted
   }],
   skills: [
     [1, '덤불 심기', 'buff', '조준한 곳(최대 5칸)에 2×2칸 덤불이 10초 동안 자라남 · 일반 풀숲처럼 숨을 수 있음 · 덤불은 2개까지 (3번째를 심으면 가장 오래된 덤불이 시듦) · 벽, 물, 용암 위에는 자라지 않음', [0, 6 * T], (f, a) => {

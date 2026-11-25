@@ -5,53 +5,32 @@ const COSMETICS={
   skin_smg:{cat:'skin',char:'smg',name:'앰버 고글',price:800,tint:'#ffb347'},
   skin_bow:{cat:'skin',char:'bow',name:'황혼의 후드',price:800,tint:'#7a3b8f'},
   skin_sword:{cat:'skin',char:'sword',name:'흑기사 투구',price:1000,tint:'#2a2d35'},
-  skin_bat:{cat:'skin',char:'bat',name:'올스타 캡',price:600,tint:'#ffd34d'},
-  skin_boomerang:{cat:'skin',char:'boomerang',name:'사막의 부시햇',price:600,tint:'#c9954f'},
   skin_shuriken:{cat:'skin',char:'shuriken',name:'진홍 두건',price:900,tint:'#b3122b'},
   skin_shotgun:{cat:'skin',char:'shotgun',name:'은빛 스텟슨',price:700,tint:'#c7ccd6'},
   skin_rifle:{cat:'skin',char:'rifle',name:'사막 위장모',price:900,tint:'#a0895a'},
   skin_gloves:{cat:'skin',char:'gloves',name:'챔피언 골드',price:900,tint:'#ffd34d'},
   skin_grenade:{cat:'skin',char:'grenade',name:'매그마 고글',price:700,tint:'#ff5a1f'},
   skin_bazooka:{cat:'skin',char:'bazooka',name:'스텔스 마스크',price:900,tint:'#1c1d22'},
-  skin_dagger:{cat:'skin',char:'dagger',name:'심연의 삿갓',price:1000,tint:'#3a1f4d'},
   skin_magiccard:{cat:'skin',char:'magiccard',name:'미드나잇 실크햇',price:1000,tint:'#0e2a4a'},
-  skin_dracula:{cat:'skin',char:'dracula',name:'로열 퍼플 망토',price:1200,tint:'#4a1568'},
-  skin_gambler:{cat:'skin',char:'gambler',name:'하이롤러 바이저',price:900,tint:'#7a1620'},
   skin_wizard:{cat:'skin',char:'wizard',name:'에메랄드 로브',price:1200,tint:'#1c6b4a'},
-  skin_lightsaber:{cat:'skin',char:'lightsaber',name:'사막 수련 로브',price:300,tint:'#c9b48a'},        // (these five characters had no basic skin; they are also the skins a random box can give: 400 G or less)
-  skin_puppeteer:{cat:'skin',char:'puppeteer',name:'청록 광대 모자',price:400,tint:'#33c7bd'},        // (was pink #ff7fb5 = the same as the bare hat)
-  skin_puppeteer_c:{cat:'skin',char:'puppeteer',name:'자줏빛 광대 모자',price:300,tint:'#8a4fd6'},
-  skin_pizarro:{cat:'skin',char:'pizarro',name:'황금빛 모리온 투구',price:400,tint:'#d4a437'},
-  skin_pizarro_c:{cat:'skin',char:'pizarro',name:'흑강철 모리온 투구',price:300,tint:'#3a3f4a'},
-  skin_horemheb:{cat:'skin',char:'horemheb',name:'노을빛 왕의 두건',price:400,tint:'#e07a3a'},
-  skin_flamethrower:{cat:'skin',char:'flamethrower',name:'그을린 마스크',price:300,tint:'#6b3a1f'},
+  // (these five characters had no basic skin; they are also the skins a random box can give: 400 G or less)
+  // (was pink #ff7fb5 = the same as the bare hat)
   skin_samurai:{cat:'skin',char:'samurai',name:'쪽빛 무사 머리띠',price:400,tint:'#1f4e9c'},
   skin_samurai_c:{cat:'skin',char:'samurai',name:'먹빛 낭인 머리띠',price:400,tint:'#2b2b33'},
-  skin_pirate:{cat:'skin',char:'pirate',name:'선장의 붉은 삼각모',price:400,tint:'#8e1b1b'},
-  skin_pirate_c:{cat:'skin',char:'pirate',name:'푸른 항해사 모자',price:400,tint:'#1d3d6b'},
   skin_portalgun:{cat:'skin',char:'portalgun',name:'보랏빛 차원 고글',price:400,tint:'#9b6bff'},
-  skin_vacuum:{cat:'skin',char:'vacuum',name:'코발트 방진 마스크',price:300,tint:'#2f7fd0'},
-  skin_kurus:{cat:'skin',char:'kurus',name:'핏빛 늪의 두건',price:400,tint:'#6b1530'},
-  skin_kurus_v:{cat:'skin',char:'kurus',name:'독초 늪의 두건',price:1000,tint:'#2e7d32'},
   // the cheap skins (300-400 G) of the characters that already had a dearer one: together with the five above they are what a random box can give
   skin_pistol_c:{cat:'skin',char:'pistol',name:'회색 정장 타이',price:300,tint:'#8a8f9c'},
   skin_smg_c:{cat:'skin',char:'smg',name:'카키 고글',price:300,tint:'#6b7a3a'},
   skin_bow_c:{cat:'skin',char:'bow',name:'숲속 초록 후드',price:300,tint:'#3f7a3a'},
   skin_sword_c:{cat:'skin',char:'sword',name:'은빛 견습 투구',price:400,tint:'#aab3c4'},
-  skin_bat_c:{cat:'skin',char:'bat',name:'홈팀 레드 캡',price:300,tint:'#c0392b'},
-  skin_boomerang_c:{cat:'skin',char:'boomerang',name:'초원 부시햇',price:300,tint:'#7da34a'},
   skin_shuriken_c:{cat:'skin',char:'shuriken',name:'밤색 두건',price:400,tint:'#3b3a52'},
   skin_shotgun_c:{cat:'skin',char:'shotgun',name:'갈색 카우보이 모자',price:300,tint:'#8a5a2b'},
   skin_rifle_c:{cat:'skin',char:'rifle',name:'정글 위장모',price:400,tint:'#3f6b3a'},
   skin_gloves_c:{cat:'skin',char:'gloves',name:'파랑 연습 글러브',price:300,tint:'#2f6fd0'},
   skin_grenade_c:{cat:'skin',char:'grenade',name:'회색 방진 고글',price:300,tint:'#7a7f8a'},
   skin_bazooka_c:{cat:'skin',char:'bazooka',name:'올리브 마스크',price:400,tint:'#5a6b3a'},
-  skin_dagger_c:{cat:'skin',char:'dagger',name:'회청 삿갓',price:400,tint:'#4a5a6b'},
   skin_magiccard_c:{cat:'skin',char:'magiccard',name:'보라 연습 실크햇',price:300,tint:'#7a4ab0'},
-  skin_dracula_c:{cat:'skin',char:'dracula',name:'붉은 안감 망토',price:400,tint:'#8a1b2b'},
-  skin_gambler_c:{cat:'skin',char:'gambler',name:'초록 카지노 바이저',price:300,tint:'#1f7a4a'},
   skin_wizard_c:{cat:'skin',char:'wizard',name:'하늘빛 견습 로브',price:400,tint:'#4a8fd0'},
-  skin_kurus_c:{cat:'skin',char:'kurus',name:'잿빛 안개 두건',price:300,tint:'#6b6f7a'},
   name_cyan:{cat:'name',name:'하늘색 이름표',price:500,color:'#4dd9ff'},
   name_pink:{cat:'name',name:'분홍 이름표',price:500,color:'#ff8fd9'},
   name_gold:{cat:'name',name:'금색 이름표',price:1000,color:'#ffd34d'},
@@ -288,58 +267,33 @@ const NEW_SKINS=[
   ['smg','홀로그램 고글','#b388ff','glow'],
   ['bow','벚꽃 요정 후드','#ff9ecb','sparkle'],
   ['sword','서리 왕의 투구','#aee6ff','frost'],
-  ['bat','레트로 네온 캡','#ff2bd6','glow'],      // (replaced by the 감자튀김 선수 concept skin right after the loop)
-  ['boomerang','정글 탐험가 모자','#4caf50','sparkle'],
+  // (replaced by the 감자튀김 선수 concept skin right after the loop)
   ['shuriken','벚꽃 닌자 두건','#ff8fb8','sparkle'],
   ['shotgun','사이버 카우보이 햇','#00ffa3','glow'],
   ['rifle','도시 야간 위장모','#6c7a89','glow'],
   ['gloves','오로라 헤드기어','#8affc1','glow'],
   ['grenade','레이저 고글','#ff3d71','glow'],
   ['bazooka','팬텀 스텔스 마스크','#5c6bc0','glow'],
-  ['dagger','불꽃 삿갓','#ff7043','flame'],
   ['magiccard','크리스마스 실크햇','#e53935','sparkle'],
-  ['dracula','블러드 문 망토','#b71c1c','glow'],
-  ['gambler','카지노 로열 바이저','#ffca28','sparkle'],
-  ['puppeteer','무대 위 꼭두각시 모자','#ff9ecb','sparkle'],
   ['wizard','은하수 마법사 모자','#5c7cff','sparkle'],
-  ['flamethrower','화염 전사 방독면','#ff6d00','flame'],
   ['portalgun','네온 포털 고글','#00e676','glow'],
-  ['vacuum','터보 청소부 반다나','#26c6da','glow'],
-  ['pirate','유령선 선장 모자','#7ef0e8','glow'],
   ['samurai','달빛 무사 투구띠','#bfe3ff','glow'],
-  ['lightsaber','은하 수도승 후드','#e0c9a6','glow'],
-  ['horemheb','청금석 왕의 두건','#1f8fd6','glow'],
-  ['kurus','심연의 별빛 두건','#3d2b8f','glow'],
-  ['pizarro','황금 약탈자의 투구','#ffd34d','sparkle']
 ];
 const TIER_SKINS=[
   ['pistol',['크리스탈 타이','#7bf3ff','sparkle'],['오로라 빛의 타이','#5cffb8','sparkle']],
   ['smg',['네온 사이버 고글','#39ff14','glow'],['오로라 빛줄기 헤드셋','#5cf0ff','sparkle']],
   ['bow',['서리 숲의 후드','#8fe3ff','frost'],['오로라 숲의 후드','#9a8cff','sparkle']],
   ['sword',['수정 기사 투구','#7bf3ff','sparkle'],['극광 기사 투구','#ff8cf0','sparkle']],
-  ['bat',['다이아 올스타 캡','#7bf3ff','sparkle'],['북극광 홈런 캡','#5cffb8','sparkle']],
-  ['boomerang',['오로라 부시햇','#7bffd0','glow'],['극광 부시햇','#5cf0ff','sparkle']],
   ['shuriken',['월광 두건','#c9d6ff','glow'],['오로라 그림자 두건','#9a8cff','sparkle']],
   ['shotgun',['크롬 스텟슨','#dfe9ff','sparkle'],['극광 보안관 스텟슨','#ff8cf0','sparkle']],
   ['rifle',['북극 위장모','#bfe9ff','frost'],['극지 오로라 방탄모','#5cffb8','sparkle']],
   ['gloves',['다이아 챔프 헤드기어','#7bf3ff','sparkle'],['극광 챔피언 헤드기어','#5cf0ff','sparkle']],
   ['grenade',['다이아몬드 고글','#7bf3ff','glow'],['오로라 별빛 고글','#9a8cff','sparkle']],
   ['bazooka',['메탈릭 방독면','#9fb4c8','glow'],['극광 방독면','#ff8cf0','sparkle']],
-  ['dagger',['월야 삿갓','#9a85ff','void'],['오로라 달빛 삿갓','#5cffb8','sparkle']],
   ['magiccard',['다이아 실크햇','#7bf3ff','sparkle'],['오로라 마술사 실크햇','#5cf0ff','sparkle']],
-  ['dracula',['진홍 달의 망토','#c1103a','glow'],['극광 백작의 망토','#9a8cff','sparkle']],
-  ['gambler',['에메랄드 바이저','#2bff9a','glow'],['오로라 잭팟 바이저','#ff8cf0','sparkle']],
-  ['puppeteer',['붉은 실의 광대 모자','#ff5c8a','glow'],['오로라 광대 모자','#5cffb8','sparkle']],
   ['wizard',['별빛 마법사 모자','#7bf3ff','sparkle'],['오로라 대마법사 모자','#5cf0ff','sparkle']],
-  ['vacuum',['크리스탈 반다나','#7bf3ff','sparkle'],['극광 청소왕 반다나','#9a8cff','sparkle']],
   ['portalgun',['차원 균열 고글','#39ff14','electric'],['오로라 차원 고글','#ff8cf0','sparkle']],
-  ['pirate',['해골 선장 모자','#e8e8e8','sparkle'],['오로라 해적왕 모자','#5cffb8','sparkle']],
   ['samurai',['벚꽃 무사 투구띠','#ff9ad5','sparkle'],['극광 쇼군 투구띠','#5cf0ff','sparkle']],
-  ['flamethrower',['용암 방독면','#ff7a2b','flame'],['오로라 극지 방독면','#9a8cff','sparkle']],
-  ['lightsaber',['청광 수호자 후드','#7bf3ff','sparkle'],['오로라 수호자 후드','#ff8cf0','sparkle']],
-  ['horemheb',['태양신 라의 두건','#ffc93c','sparkle'],['오로라 신성 두건','#5cffb8','sparkle']],
-  ['kurus',['자수정 늪의 두건','#b47bff','void'],['오로라 밤하늘 두건','#5cf0ff','sparkle']],
-  ['pizarro',['황금도시 정복자의 투구','#ffc93c','sparkle'],['오로라 황제 투구','#9a8cff','sparkle']]
 ];
 for(const [ch,nm,tint,fx] of NEW_SKINS) COSMETICS['skin_'+ch+'_new']={cat:'skin', char:ch, name:nm, price:NEW_SKIN_PRICE, tint, fx, isNew:true};
 COSMETICS.skin_pistol_s1={cat:'skin', char:'pistol', name:'오로라 총잡이', price:0, tint:'#7bf3ff', fx:'halo', lux:1, seasonOnly:true};      // (season pass only)
@@ -350,40 +304,28 @@ COSMETICS.skin_grenade_envy ={cat:'skin', char:'grenade',   name:'질투의 폭�
 COSMETICS.skin_pistol_zeus  ={cat:'skin', char:'pistol',    name:'신 중의 신 제임스', price:0, tint:'#cfe9ff', fx:'halo',  lux:3, seasonOnly:true, concept:'zeus'};
 COSMETICS.skin_gloves_gilga ={cat:'skin', char:'gloves',    name:'길가메시 복서',   price:0, tint:'#ffc93c', fx:'crown',   lux:3, seasonOnly:true, concept:'gilga'};
 COSMETICS.skin_sword_thor   ={cat:'skin', char:'sword',     name:'토르 기사',       price:0, tint:'#cfd8e8', fx:'frost',   lux:3, seasonOnly:true, concept:'thor'};
-COSMETICS.skin_horemheb_poseidon={cat:'skin', char:'horemheb', name:'포세이돈 호렘헵', price:0, tint:'#2fa8e8', fx:'halo', lux:3, seasonOnly:true, concept:'poseidon'};      // 시즌 패스 마지막 단계(60)
-COSMETICS.skin_boomerang_odin={cat:'skin', char:'boomerang', name:'사냥꾼 오딘',     price:0, tint:'#ffd34d', fx:'halo',    lux:3, seasonOnly:true, concept:'odin'};
 for(const [ch,a,b] of TIER_SKINS) [a,b].forEach((s,i)=>{ COSMETICS['skin_'+ch+'_t'+(i+1)]={cat:'skin', char:ch, name:s[0], price:0, tint:s[1], fx:s[2], tier:TIER_SKIN_TIERS[i], lux:(i===1?4:1)}; });
 const PREMIUM_SKIN_PRICE=4000;      // one 4000 G skin per character: the last cards of the skin tab
 const PREMIUM_SKINS=[
-  ['puppeteer','심야 인형극장의 모자','#7a3cff','void'], ['pizarro','태양의 정복자 투구','#ffb02e','flame'], ['kan','비취 뱀신의 깃털관','#2bffb0','halo'],
-  ['horemheb','황금 매의 두건','#ffd34d','crown'], ['lightsaber','쌍성 수호자 후드','#9a85ff','electric'], ['pistol','다이아 요원 타이','#bff6ff','sparkle'],
+  ['pistol','다이아 요원 타이','#bff6ff','sparkle'],
   ['smg','블랙아웃 작전 고글','#ff3b5c','electric'], ['bow','달빛 궁수의 후드','#d9e4ff','frost'], ['sword','성검 기사단 투구','#fff1a8','halo'],
-  ['bat','월드시리즈 캡','#ff7a2b','crown'], ['boomerang','사막 폭풍 부시햇','#e0b060','flame'], ['shuriken','천둥 닌자 두건','#62e6ff','electric'],
+  ['shuriken','천둥 닌자 두건','#62e6ff','electric'],
   ['shotgun','무법자의 검은 스텟슨','#2a2a33','void'], ['rifle','특전사 야간 방탄모','#3fe07a','glow'], ['gloves','세계 챔피언 헤드기어','#ffd34d','crown'],
-  ['grenade','불꽃놀이 고글','#ff5fd2','sparkle'], ['bazooka','강철 거신 방독면','#9fb4c8','electric'], ['dagger','그림자 연꽃 삿갓','#c17bff','void'],
-  ['magiccard','무대 거장의 실크햇','#ffd34d','sparkle'], ['dracula','핏빛 백작의 망토','#ff2b4a','void'], ['gambler','다이아 잭팟 바이저','#7bf3ff','crown'],
-  ['wizard','성운 대현자의 모자','#5c7cff','halo'], ['flamethrower','태양 용광로 방독면','#ffe14d','flame'], ['portalgun','다중우주 고글','#39ffd6','void'],
-  ['vacuum','블랙홀 청소부 반다나','#1a1030','void'], ['pirate','심해 해적왕 모자','#2bc3ff','glow'], ['samurai','천하 통일 투구띠','#ff3b3b','crown'],
-  ['kurus','칠흑 여왕의 두건','#b47bff','halo']
+  ['grenade','불꽃놀이 고글','#ff5fd2','sparkle'], ['bazooka','강철 거신 방독면','#9fb4c8','electric'], 
+  ['magiccard','무대 거장의 실크햇','#ffd34d','sparkle'], 
+  ['wizard','성운 대현자의 모자','#5c7cff','halo'], ['portalgun','다중우주 고글','#39ffd6','void'],
+  ['samurai','천하 통일 투구띠','#ff3b3b','crown'],
 ];
 for(const [ch,nm,tint,fx] of PREMIUM_SKINS) COSMETICS['skin_'+ch+'_p']={cat:'skin', char:ch, name:nm, price:PREMIUM_SKIN_PRICE, tint, fx, lux:3, premium:true};
 /* concept skins: not just another colour, a whole idea (concept = how the character's attacks and gear are drawn, see drawConceptProjectile / drawWeaponPersona) */
 Object.assign(COSMETICS.skin_wizard_p, {name:'청룡의 마법사', tint:'#2bb8ff', fx:'halo', concept:'dragon'});
 Object.assign(COSMETICS.skin_sword_p, {name:'황금의 기사', concept:'gold'});
-Object.assign(COSMETICS.skin_kurus_p, {name:'꿈의 쿠루스', tint:'#9fe8ff', fx:'sparkle', concept:'dream'});
 Object.assign(COSMETICS.skin_magiccard_p, {name:'우노 마술사', tint:'#e8252b', fx:'sparkle', concept:'uno'});
-Object.assign(COSMETICS.skin_bat_new, {name:'감자튀김 선수', tint:'#ffd34d', fx:'sparkle', concept:'fry'});
 Object.assign(COSMETICS.skin_bow_new, {name:'큐피트', tint:'#ff6fae', fx:'sparkle', concept:'cupid'});
 COSMETICS.skin_shade_pink   ={cat:'skin', char:'shade',  name:'핑크 네온',        price:200,  tint:'#ff5ac8', concept:'nnpink',   isNew:true};      // 200 sC: the sword and chain glow pink
 COSMETICS.skin_shade_plasma ={cat:'skin', char:'shade',  name:'플라즈마 네온',    price:1200, tint:'#b28cff', fx:'electric', concept:'nnplasma', isNew:true};      // 1200 sC: violet plasma with sparks round the head
 COSMETICS.skin_shade_rain_p ={cat:'skin', char:'shade',  name:'하이퍼 레인보우 네온', price:3600, tint:'#ff6af0', fx:'halo', lux:3, premium:true, concept:'nnrain', isNew:true};      // 3600 sC: a sword whose colour runs through the whole rainbow, a halo and a light show
-COSMETICS.skin_kadas_red    ={cat:'skin', char:'kadas',  name:'핏빛 악마',        price:200,  tint:'#ff2a4a', concept:'kdred',    isNew:true};      // 200 sC: crimson gun, wings and darkness
-COSMETICS.skin_kadas_hell   ={cat:'skin', char:'kadas',  name:'지옥불 카다스',    price:1200, tint:'#ff8a2a', fx:'flame', concept:'kdhell',  isNew:true};      // 1200 sC: hellfire orange with flames round the head
-COSMETICS.skin_kadas_void_p ={cat:'skin', char:'kadas',  name:'심연의 군주',      price:3600, tint:'#7a6cff', fx:'void', lux:3, premium:true, concept:'kdvoid', isNew:true};      // 3600 sC: a drifting deep-space violet, a void aura and a light show
-COSMETICS.skin_kurus_diaper={cat:'skin', char:'kurus', name:'기저귀 쿠루스', price:3600, tint:'#7a4a1e', concept:'diaper'};      // owner 11-05: a baby in a diaper with a brown pile on his head; the flask is a thrown poo, the dark puddle is a murky brown one, and a smell rises from it
 COSMETICS.skin_harald_baby={cat:'skin', char:'harald', name:'아기 카트 바이킹', price:3600, tint:'#ff8a7a', concept:'babycart', premium:true};      // 3600 sC: a small baby Harald in a shopping cart (cart in front, toy axe); only the look changes, the hitbox is the normal Harald's
-COSMETICS.skin_dragonslayer_manga={cat:'skin', char:'dragonslayer', name:'만화가 용살자', price:2800, tint:'#ffffff', concept:'manga', premium:true};      // 2800 sC: a pen for the sword, a beret, dress shoes, ink instead of flame sparks, a paper plane instead of the dragon (look only)
-COSMETICS.skin_flamethrower_br={cat:'skin', char:'flamethrower', name:'입냄새 학살자', price:4000, tint:'#9fb52a', fx:'sparkle', concept:'breath', premium:true};      // 4000 sC: no weapon, a stink cloud round the body, the attack is breath from the mouth, shield / skills in the same sickly green
 Object.assign(COSMETICS.skin_pistol_new, {name:'바나나 제임스', price:1500, tint:'#ffe14d', fx:'sparkle', concept:'banana'});
 /* 별빛 사과 skins (owner 11-02, an apology gift for one account): never sold, only given as a gift (gifts row). Drawn from a few cached little pictures, so it costs far less than the 그랜드 마스터 show. */
 const STAR_TINT='#ff9ad5';
@@ -395,14 +337,14 @@ for(const [id,ch,nm,price,tint,fx,x] of [
   ['skin_harald_new','harald','서리 거인 투구',2000,'#aee6ff','frost',{isNew:true}],
   ['skin_tionis','tionis','진홍 광대 조끼',1000,'#d0303a'], ['skin_tionis_c','tionis','풀빛 광대 조끼',300,'#3f9a3a'],
   ['skin_tionis_new','tionis','별밤 광대 조끼',2000,'#5c6bff','sparkle',{isNew:true}],
-  ['skin_shade_c','shade','레몬 네온',300,'#ffe14d'], ['skin_kadas_c','kadas','잿빛 악마',300,'#8a8f9c'],
+  ['skin_shade_c','shade','레몬 네온',300,'#ffe14d'],
   ['skin_portalgun_m','portalgun','진홍 차원 고글',900,'#d0303a']
 ]) COSMETICS[id]=Object.assign({cat:'skin', char:ch, name:nm, price, tint}, fx?{fx}:{}, x||{});
 for(const [ch,a,b] of [['gardener',['서리꽃 밀짚모자','#9fe8ff','frost'],['오로라 정원사 모자','#5cffb8','sparkle']],
   ['harald',['수정 전사 투구','#7bf3ff','sparkle'],['오로라 발할라 투구','#9a8cff','sparkle']],
   ['tionis',['수정 광대 조끼','#7bf3ff','sparkle'],['오로라 광대 조끼','#ff8cf0','sparkle']],
   ['shade',['수정 네온','#7bf3ff','sparkle'],['오로라 네온','#5cffb8','sparkle']],
-  ['kadas',['자수정 악마','#b47bff','void'],['오로라 악마','#5cf0ff','sparkle']]])
+  ])
   [a,b].forEach((s,i)=>{ COSMETICS['skin_'+ch+'_t'+(i+1)]={cat:'skin', char:ch, name:s[0], price:0, tint:s[1], fx:s[2], tier:TIER_SKIN_TIERS[i], lux:(i===1?4:1)}; });
 /* 2026-11-15 (user): every playable character has 7 skins — one more for the ones that had 6 */
 for(const [ch,nm,price,tint,fx] of [
@@ -420,7 +362,7 @@ COSMETICS.bcol_silver={cat:'bcol', name:'반짝이는 은색', price:2000, color
 COSMETICS.bcol_gold={cat:'bcol', name:'반짝이는 금색', price:2500, color:'#ffcf3a', shine:'gold'};
 COSMETICS.bcol_rainbow={cat:'bcol', name:'무지개', price:4000, color:'#ff7ad9', shine:'rainbow'};
 for(const [ch,nm,tint,fx] of [['sword','유령 기사 투구','#b86bff','glow'], ['pistol','영혼 수집가 중절모','#c9a0ff','void'], ['wizard','영혼 마법사 후드','#9a5cff','sparkle'],
-  ['dracula','영혼 군주의 망토','#7a2cff','void'], ['bow','영혼 사냥 두건','#d6b3ff','frost'], ['kurus','영혼 늪의 두건','#e0c4ff','halo']])
+  ['bow','영혼 사냥 두건','#d6b3ff','frost'], ])
   COSMETICS['skin_'+ch+'_soul']={cat:'skin', char:ch, name:nm, price:0, tint, fx};      // bought with souls (the purple currency), not gold
 function bodyShineColor(id, now, seed){                                                                                         // the color of a shiny body right now
   const it=COSMETICS[id]; if(!it || !it.shine) return it ? it.color : null;
@@ -545,9 +487,8 @@ function drawItemPreview(cv,id,nowMs){
     if(it.lux){ c.save(); c.translate(40,79); c.scale(0.55,0.55); drawSkinLux(c,it.lux,it.tint,nowT,id.length,'back'); c.restore(); c.strokeStyle='#cfd3dc'; c.fillStyle='#cfd3dc'; c.lineWidth=4; }   // (the show behind the little figure)
     c.beginPath(); c.arc(40,50,10,0,7); c.fill();
     c.beginPath(); c.moveTo(40,60); c.lineTo(40,78); c.stroke();
-    if(it.char==='dracula') drawDraculaCape(c,-1,2,38,it.tint);
     drawWeaponPersona(c,it.char,40,50,10,60,it.tint,it.concept);
-    if(it.char==='shade' || it.char==='kadas'){ c.save(); c.lineWidth=3; c.beginPath(); c.moveTo(40,62); c.lineTo(50,70); c.stroke(); c.translate(50,70); c.scale(0.5,0.5); drawHeldWeapon(c,it.char,0.5,-0.866,0,0,0,it.concept); c.restore(); }
+    if(it.char==='shade'){ c.save(); c.lineWidth=3; c.beginPath(); c.moveTo(40,62); c.lineTo(50,70); c.stroke(); c.translate(50,70); c.scale(0.5,0.5); drawHeldWeapon(c,it.char,0.5,-0.866,0,0,0,it.concept); c.restore(); }
     if(it.fx) drawSkinFx(c,(it.lux>=4?'sparkle':it.fx),(it.lux>=4?auroraHex(nowT/1000*0.9,1):it.tint),40,50,it.lux?13:10,nowT);
     if(it.lux){ c.save(); c.translate(40,79); c.scale(0.55,0.55); drawSkinLux(c,it.lux,it.tint,nowT,id.length,'front'); c.restore(); }   // (and in front of it)
     c.restore();
@@ -648,11 +589,6 @@ function luxSprite(kind, col, col2, big){
   luxSpriteCache.set(key,sp); return sp;
 }
 let auroraDrawn=0;
-function drawDiaper(c,hx,shy){      // 기저귀: a fat white nappy at the hips with two blue tapes and a little wave of yellow stains
-  c.fillStyle='#f4f1e8'; c.strokeStyle='#bdb7a4'; c.lineWidth=1; c.beginPath(); c.moveTo(hx-7.4,shy+13.4); c.lineTo(hx+7.4,shy+13.4); c.quadraticCurveTo(hx+9.2,shy+20,hx+4.6,shy+25.4); c.lineTo(hx+0.8,shy+22.6); c.lineTo(hx-0.8,shy+22.6); c.lineTo(hx-4.6,shy+25.4); c.quadraticCurveTo(hx-9.2,shy+20,hx-7.4,shy+13.4); c.closePath(); c.fill(); c.stroke();
-  c.fillStyle='#8ec7ff'; c.fillRect(hx-7.8,shy+14.4,3.6,2.2); c.fillRect(hx+4.2,shy+14.4,3.6,2.2);
-  c.strokeStyle='#d8c27a'; c.lineWidth=0.9; c.beginPath(); c.moveTo(hx-4.5,shy+18.6); c.quadraticCurveTo(hx-2,shy+20,hx,shy+18.8); c.quadraticCurveTo(hx+2,shy+17.6,hx+4.5,shy+19); c.stroke();
-}
 function auroraHex(t, i){
   const k=0.5+0.5*(Math.sin(t*0.9+i*1.1)*0.62+Math.sin(t*0.37+i*1.9)*0.38), h=(140+k*185)%360/360, l=0.62+0.1*Math.sin(t*1.7+i*2.3), sa=0.92;
   const a=sa*Math.min(l,1-l), f=n=>{ const kk=(n+h*12)%12; return l-a*Math.max(-1,Math.min(kk-3,9-kk,1)); };
@@ -725,17 +661,6 @@ function mythWings(c,hx,hy,r,fill,edge,dy){      // a pair of feathered wings on
     c.fillStyle=fill; c.strokeStyle=edge; c.lineWidth=0.8;
     c.beginPath(); c.moveTo(bx,by); c.quadraticCurveTo(hx+s*(r+7),ty-3.5,tx,ty); c.quadraticCurveTo(hx+s*(r+8),ty+3.4,bx,by+1.6); c.closePath(); c.fill(); c.stroke();
   }
-}
-function drawRaven(c,len,flap){      // a raven seen from the side, beak to +x (flap: -1..1)
-  const L=len, w=Math.sin(flap)*L*0.34;
-  c.save(); c.lineJoin='round'; c.lineCap='round';
-  c.fillStyle='#17171f'; c.strokeStyle='#4a4a5c'; c.lineWidth=Math.max(0.6,L*0.03);
-  c.beginPath(); c.moveTo(-L*0.52,-L*0.04); c.lineTo(-L*0.3,-L*0.12); c.lineTo(L*0.22,-L*0.12); c.lineTo(L*0.42,-L*0.04); c.lineTo(L*0.22,L*0.12); c.lineTo(-L*0.3,L*0.1); c.closePath(); c.fill(); c.stroke();      // tail and body
-  c.beginPath(); c.moveTo(-L*0.15,-L*0.1); c.quadraticCurveTo(-L*0.02,-L*0.1-w-L*0.2,L*0.2,-L*0.1-w*0.6-L*0.04); c.quadraticCurveTo(L*0.02,-L*0.08,-L*0.15,-L*0.02); c.closePath(); c.fill(); c.stroke();      // the wing
-  c.beginPath(); c.arc(L*0.3,-L*0.12,L*0.11,0,7); c.fill(); c.stroke();      // head
-  c.fillStyle='#e8b923'; c.beginPath(); c.moveTo(L*0.4,-L*0.15); c.lineTo(L*0.58,-L*0.11); c.lineTo(L*0.4,-L*0.08); c.closePath(); c.fill();
-  c.fillStyle='#ffffff'; c.beginPath(); c.arc(L*0.33,-L*0.14,L*0.025,0,7); c.fill();
-  c.restore();
 }
 const STAR_COL=['#ff8fd0','#ffd66b','#8fe3ff'], starSp={};
 function starImg(ci){ return starSprite('star'+ci,48,48,(c)=>{

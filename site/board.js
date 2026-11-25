@@ -25,7 +25,7 @@ async function countsOf(sb, ids) {
 function rowHtml(p, names, cnt) {
   const c = catOf(p.title);
   return '<a class="row" href="community.html?p=' + encodeURIComponent(p.id) + '"><span class="t" style="color:' + catCol(c) + '">' + esc(catName(c)) + '</span>' +
-    '<span class="m"><b>' + esc(titleOf(p.title)) + '</b><small>' + esc(names[p.user_id] || '플레이어') + ' · ' + esc(ago(p.created_at)) + '</small></span>' +
+    '<span class="m"><b data-noi18n>' + esc(titleOf(p.title)) + '</b><small>' + (names[p.user_id] ? '<span data-noi18n>' + esc(names[p.user_id]) + '</span>' : '플레이어') + ' · ' + esc(ago(p.created_at)) + '</small></span>' +
     '<span class="c">' + (cnt.l[p.id] ? '♥ ' + cnt.l[p.id] + ' ' : '') + (cnt.c[p.id] ? '댓글 ' + cnt.c[p.id] : '') + '</span></a>';
 }
 
@@ -72,14 +72,14 @@ function boardPage() {
     const cm = cr.data || [], likes = lr.data || [], names = await namesOf(sb, [p.user_id, ...cm.map(c => c.user_id)]);
     const me = st.me, liked = !!(me && likes.some(l => l.user_id === me.id)), c = catOf(p.title);
     const pics = (p.images || []).filter(u => /^https:\/\//.test(u));
-    view.innerHTML = '<article class="post"><span style="color:' + catCol(c) + ';font-weight:700;font-size:14px">' + esc(catName(c)) + '</span><h2>' + esc(titleOf(p.title)) + '</h2>' +
-      '<div class="meta">' + esc(names[p.user_id] || '플레이어') + ' · ' + esc(ago(p.created_at)) + (p.edited_at ? ' · 수정됨' : '') + '</div>' +
-      (p.body && p.body.trim() ? '<div class="body">' + esc(p.body) + '</div>' : '') +
+    view.innerHTML = '<article class="post"><span style="color:' + catCol(c) + ';font-weight:700;font-size:14px">' + esc(catName(c)) + '</span><h2 data-noi18n>' + esc(titleOf(p.title)) + '</h2>' +
+      '<div class="meta">' + (names[p.user_id] ? '<span data-noi18n>' + esc(names[p.user_id]) + '</span>' : '플레이어') + ' · ' + esc(ago(p.created_at)) + (p.edited_at ? ' · 수정됨' : '') + '</div>' +
+      (p.body && p.body.trim() ? '<div class="body" data-noi18n>' + esc(p.body) + '</div>' : '') +
       (pics.length ? '<div class="pics">' + pics.map(u => '<a href="' + esc(u) + '" target="_blank" rel="noopener"><img src="' + esc(u) + '" alt="첨부 사진" loading="lazy"></a>').join('') + '</div>' : '') +
       '<div class="acts"><button type="button" id="like" class="' + (liked ? 'on' : '') + '" aria-pressed="' + liked + '">♥ ' + likes.length + '</button>' +
       (me && me.id === p.user_id ? '<button type="button" id="del">글 삭제</button>' : '') + '<button type="button" id="back">목록으로</button></div>' +
       '<h3 style="margin:8px 0 0;font-size:17px">댓글 ' + cm.length + '</h3><div class="cmts">' +
-      cm.map(x => '<div><small>' + esc(names[x.user_id] || '플레이어') + ' · ' + esc(ago(x.created_at)) + '</small><p>' + esc(x.body) + '</p></div>').join('') + '</div>' +
+      cm.map(x => '<div><small>' + (names[x.user_id] ? '<span data-noi18n>' + esc(names[x.user_id]) + '</span>' : '플레이어') + ' · ' + esc(ago(x.created_at)) + '</small><p data-noi18n>' + esc(x.body) + '</p></div>').join('') + '</div>' +
       '<form class="cmt" id="cmt"><label class="sr" for="cb">댓글</label><textarea id="cb" maxlength="1000" placeholder="' + (me ? '댓글을 남겨 주세요' : '로그인하면 댓글을 쓸 수 있어요') + '"></textarea><button type="submit" class="slant">등록</button></form><p class="msg" id="pm"></p></article>';
     view.classList.add('card');
     $('#back').onclick = () => { history.pushState(null, '', 'community.html'); view.hidden = true; list_(); };
