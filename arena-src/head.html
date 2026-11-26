@@ -1391,6 +1391,19 @@ body.mob #topRight #guild{order:-1}body.mob #topRight #seasonBtn{order:0;height:
 
 /* practice range (practice.js) */
 #weaponPracBtn{color:#7ff0dd}
+#prBar .prSk{height:40px;border-radius:12px;border:1px solid #3fe0c8;background:#0d1f1c;color:#7ff0dd;font:800 14px 'IBM Plex Sans KR',sans-serif;padding:0 12px;cursor:pointer}
+#prSkWin{position:fixed;inset:0;z-index:60;background:rgba(5,6,10,.55);display:grid;place-items:center;font-family:'IBM Plex Sans KR',sans-serif;color:#e8eaf0}
+#prSkWin .prSkBox{background:#151922;border:1px solid #2a3142;border-radius:16px;padding:16px 18px;width:min(560px,calc(100vw - 40px));max-height:calc(var(--vh,100vh) - 24px);overflow:auto;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+#prSkWin h3{margin:0;font:800 19px 'IBM Plex Sans KR',sans-serif;display:flex;justify-content:space-between;align-items:center}
+#prSkWin .prSkX{background:none;border:0;color:#9aa3b2;font:600 13px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
+#prSkWin .prSkG{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#prSkWin .prSkC{border:1.5px solid #2a3142;border-radius:12px;padding:9px 11px;background:#1a1d26;display:flex;flex-direction:column;gap:6px}
+#prSkWin .prSkC.on{border-color:#3fe0c8;background:#0d1f1c}
+#prSkWin .prSkC b{font-size:15px}#prSkWin .prSkC i{font-style:normal;font-size:11px;color:#9aa3b2;border:1px solid #3a4152;border-radius:8px;padding:0 6px;margin-left:6px}
+#prSkWin .prSkLk{color:#ffd34d;font-size:12px;font-weight:700}
+#prSkWin .prSkS{display:flex;gap:6px}#prSkWin .prSkS button{flex:1;font:800 12px 'IBM Plex Sans KR',sans-serif;border:0;border-radius:8px;padding:5px 0;background:#232836;color:#9aa3b2;cursor:pointer}#prSkWin .prSkS button.on{background:#3fe0c8;color:#0d1f1c}
+#prSkWin .prSkN{font-size:12.5px;color:#9aa3b2}
+@media (max-height:520px){#prBar .prSk{height:34px;font-size:13px;padding:0 9px}#prSkWin .prSkBox{padding:10px 12px;gap:6px}#prSkWin h3{font-size:16px}#prSkWin .prSkC{padding:6px 9px;gap:4px}#prSkWin .prSkC b{font-size:13px}#prSkWin .prSkN{font-size:11px}}
 #prBar{position:fixed;z-index:7;left:max(16px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;align-items:center;gap:8px;font-family:'IBM Plex Sans KR',sans-serif}
 #prBar .prT{display:flex;align-items:center;gap:8px;height:40px;padding:0 14px 0 6px;border-radius:12px;background:rgba(20,22,28,.85);border:1px solid #3fe0c8;color:#e8eaf0;font-weight:800;font-size:15px;white-space:nowrap}
 #prBar .prT i{font-style:normal;background:#3fe0c8;color:#0d1f1c;border-radius:8px;padding:3px 8px;font-size:13px}

@@ -513,7 +513,7 @@ const savePrefs = () => { mapByMode[mapKey(modeCur())] = mapChoice; try { localS
 const KIND_LABEL = { melee: '근접', shot: '원거리', flame: '방사', cone: '흡입' }, SK_LABEL = { hit: '공격', move: '이동', buff: '강화' };
 /* skill / passive / ult texts are written in melee units; ranged heroes really deal DMG_RANGED more (engine.js damage), so their damage numbers are scaled when shown */
 function dmgDesc(h, t) {
-  const m = h && h.type !== 'melee' && typeof DMG_RANGED === 'number' ? DMG_RANGED : 1; if (m === 1 || !t) return t;
+  const m = (h && h.type !== 'melee' && typeof DMG_RANGED === 'number' ? DMG_RANGED : 1) * (h && typeof BAL_DMG === 'object' && BAL_DMG[h.id] || 1); if (m === 1 || !t) return t;      // BAL_DMG: 2026-11-26 balance pass (TEMP)
   const r = v => String(Math.round(+v * m));
   return t.replace(/(최소\s*)(\d+)(\s*~\s*최대\s*)(\d+)/g, (a, p, x, s, y) => p + r(x) + s + r(y))
     .replace(/(피해가[^()]*\(최대\s*)(\d{2,})(?=\))/g, (a, p, x) => p + r(x))

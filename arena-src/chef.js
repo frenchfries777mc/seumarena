@@ -77,7 +77,7 @@ hero('chef', { p: ['맛보기 감각', '앞쪽 가까이(2.5칸 안)에 상대�
       if (aw) chefSoupFan(f, ang);
       return true;
     }
-    emit(f, ang, { onHit: e => { if (!e.minion) awGain(f, 'ladle', 1); }, onEnd: b => { if (aw) chefSoupAt(f, b.x, b.y - BODY); } });
+    emit(f, ang, { onHit: (e, b) => { if (!e.minion) awGain(f, 'ladle', 1); fxPlay('chef', 'ladlehit', Math.round(e.x), Math.round(e.y)); }, onEnd: b => { if (aw) chefSoupAt(f, b.x, b.y - BODY); } });
     return true;
   },
   ult: ['거대 뒤집개', '상대가 가까이(3칸 안) 있으면 거대한 뒤집개를 휘둘러 1200 피해 + 크게 밀쳐 내고 1초 기절 · 멀면 거대한 뒤집개를 던짐: 1080 피해, 상대를 모두 관통하고 벽을 부수며 날아감', [0, 9 * T], f => {
@@ -122,8 +122,9 @@ Object.assign(PVS, {
 });
 
 /* ================= art ================= */
-function chefLadle(c, a, s, gold) {      // handle along +x, the bowl at the end
+function chefLadle(c, a, s, gold, mono) {      // handle along +x, the bowl at the end (mono: one flat colour, used as a shadow)
   c.save(); c.rotate(a); c.scale(s, s); c.lineCap = 'round';
+  if (mono) { c.strokeStyle = c.fillStyle = mono; c.lineWidth = 3.4; c.beginPath(); c.moveTo(-4, 0); c.lineTo(18, 0); c.stroke(); c.beginPath(); c.arc(22, 1, 6.5, 0, 7); c.fill(); c.restore(); return; }
   c.strokeStyle = gold ? '#e8c15a' : '#b9c1cb'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(-4, 0); c.lineTo(18, 0); c.stroke();
   c.fillStyle = gold ? '#c99a2a' : '#8f98a3'; c.beginPath(); c.arc(22, 1, 5.5, 0, Math.PI * 1.05); c.fill();
   c.fillStyle = gold ? '#ffe28a' : '#d5dbe2'; c.fillRect(16, -.6, 12, 1.8);
@@ -164,7 +165,15 @@ function drawChef(c, o) {
 /* projectiles */
 function drawChefShot(b) {
   const t = performance.now() / 1000;
-  if (b.shape === 'ladle') { ctx.save(); ctx.translate(b.x, b.y); chefLadle(ctx, t * 16, 1.25, b.gold); ctx.restore(); return true; }
+  if (b.shape === 'ladle') {      // user 2026-11-26: the thrown ladle was hard to see -> bigger, a pale halo, a soup-drop + steam trail
+    const tr = b.ctr || (b.ctr = []); tr.push([b.x, b.y, t]); while (tr.length && t - tr[0][2] > .22) tr.shift();
+    for (let i = 0; i < tr.length - 1; i++) { const [x, y, tt] = tr[i], k = 1 - (t - tt) / .22; ctx.globalAlpha = k * .5; ctx.fillStyle = '#eef3f8'; ctx.beginPath(); ctx.arc(x, y, 7 + (1 - k) * 8, 0, 7); ctx.fill(); ctx.globalAlpha = k; ctx.fillStyle = b.gold ? '#ffcf5a' : '#ff8a2c'; ctx.beginPath(); ctx.arc(x + Math.sin(tt * 40) * 4, y + Math.cos(tt * 33) * 4, 2.6 * k + 1, 0, 7); ctx.fill(); }
+    ctx.globalAlpha = 1;
+    const g = ctx.createRadialGradient(b.x, b.y, 4, b.x, b.y, 30); g.addColorStop(0, b.gold ? 'rgba(255,236,170,.75)' : 'rgba(255,246,226,.7)'); g.addColorStop(1, 'rgba(255,246,226,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(b.x, b.y, 30, 0, 7); ctx.fill();
+    ctx.save(); ctx.translate(b.x + 2, b.y + 3); ctx.globalAlpha = .45; chefLadle(ctx, t * 16, 2, b.gold, '#1d1410'); ctx.restore();      // a dark shadow copy for contrast
+    ctx.save(); ctx.translate(b.x, b.y); chefLadle(ctx, t * 16, 2, b.gold); ctx.restore(); return true;
+  }
   if (b.shape === 'spatula') { ctx.save(); ctx.translate(b.x, b.y); chefSpatulaArt(ctx, t * 12, 2.4); ctx.restore(); return true; }
   if (b.shape === 'tklob') {
     const A = bombArc(b), s = 1 - .45 * A.h / Math.max(1, A.H);
@@ -203,6 +212,7 @@ FXF.chef = (type, x, y, v, w) => { CHF.fx.push({ type, x, y, v: +v || 0, w: +w |
   const n = lowFx() ? 4 : 10;
   if (type === 'serve') for (let i = 0; i < n; i++) CHF.p.push({ x, y, vx: rnd(-160, 160), vy: rnd(-200, -40), g: 420, life: .8, max: .8, k: i % 3 ? 'drop' : 'feather' });
   if (type === 'deco') for (let i = 0; i < n * 2; i++) { const a = rnd(0, 6.283), d = rnd(10, v); CHF.p.push({ x: x + Math.cos(a) * d, y: y + Math.sin(a) * d * .7 - 30, vx: 0, vy: rnd(-40, -10), life: 1, max: 1, k: 'spr', c: ['#ff7ad9', '#7fe0ff', '#ffe07a', '#9fff8a'][i % 4] }); }
+  if (type === 'ladlehit') { for (let i = 0; i < n + 4; i++) { const a = rnd(0, 6.283), v2 = rnd(120, 300); CHF.p.push({ x, y: y - 26, vx: Math.cos(a) * v2, vy: Math.sin(a) * v2 - 120, g: 700, life: .6, max: .6, k: 'soup', r: rnd(2.5, 5) }); } for (let i = 0; i < 5; i++) CHF.p.push({ x: x + rnd(-14, 14), y: y - 30, vx: rnd(-15, 15), vy: rnd(-70, -40), life: .9, max: .9, k: 'steam', r: rnd(6, 10) }); }      // user 2026-11-26: a clear soup splash + steam where the thrown ladle lands
   if (type === 'taste') for (let i = 0; i < n; i++) CHF.p.push({ x: x + rnd(-14, 14), y: y - 40, vx: rnd(-10, 10), vy: rnd(-60, -30), life: 1, max: 1, k: 'heart' });
 };
 const CHF_DUR = { swing: .22, pan: .3, flip: .4, throw: .3, serve: .5, taste: .9, deco: .8 };
@@ -233,6 +243,8 @@ function drawChefTop() {       // tail.js render(): above the fighters
     ctx.save(); ctx.globalAlpha = Math.min(1, p.life / p.max * 1.5); ctx.translate(p.x, p.y);
     if (p.k === 'feather') { ctx.rotate(p.life * 6); ctx.fillStyle = '#c9772e'; ctx.beginPath(); ctx.ellipse(0, 0, 6, 2.2, 0, 0, 7); ctx.fill(); }
     else if (p.k === 'drop') { ctx.fillStyle = '#a0521c'; ctx.beginPath(); ctx.arc(0, 0, 3, 0, 7); ctx.fill(); }
+    else if (p.k === 'soup') { ctx.fillStyle = '#ff8a2c'; ctx.beginPath(); ctx.arc(0, 0, p.r, 0, 7); ctx.fill(); ctx.fillStyle = '#ffd8a8'; ctx.beginPath(); ctx.arc(-p.r * .35, -p.r * .35, p.r * .35, 0, 7); ctx.fill(); }
+    else if (p.k === 'steam') { ctx.globalAlpha *= .55; ctx.fillStyle = '#f4f7fb'; ctx.beginPath(); ctx.arc(0, 0, p.r * (1.6 - p.life / p.max), 0, 7); ctx.fill(); }
     else if (p.k === 'spr') { ctx.rotate(p.life * 8); ctx.fillStyle = p.c; ctx.fillRect(-3.5, -1.2, 7, 2.4); }
     else if (p.k === 'heart') { ctx.fillStyle = '#ff6b8a'; ctx.beginPath(); ctx.arc(-2.5, 0, 3, 0, 7); ctx.arc(2.5, 0, 3, 0, 7); ctx.moveTo(-5.5, 1); ctx.lineTo(0, 7); ctx.lineTo(5.5, 1); ctx.fill(); }
     ctx.restore();
