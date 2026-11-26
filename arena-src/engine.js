@@ -121,7 +121,7 @@ const STAT_X = 10;
 const DMG_RANGED = 1.25;  // 2026-11-14 (user): ranged heroes (every type but melee) deal x1.25 on everything (basic, skills, ult); melee x1
 // STAT_X:       // every hp and every damage/heal/shield number written in the kits is multiplied by this (damage() and heal() do it, so kit code keeps the original small numbers)
 /* 2026-11-26 (user: low win rate -> a little more hp, high win rate -> a little less damage). TEMP values from bot sims; hero id -> factor */
-const BAL_HP = {}, BAL_DMG = {};
+const BAL_HP = {gardener:  1.1, tionis:  1.244, pistol:  1.332, shade:  1.108, chef:  1.17, gloves:  1.208, sword:  1.147, harald:  1.187, samurai:  1.234, portalgun:  1.041, bow:  1.073, shuriken:  1.031, magiccard:  1.056}, BAL_DMG = {shieldman:  0.706, bazooka:  0.8, grenade:  0.816, shotgun:  0.858, herbal:  0.806, wizard:  0.899, smg:  0.982, rifle:  0.983};
 const HP_SCALE = .5;      // 2026-11-13 (developer): every fighter's hp is halved (damage, heals and shields stay as written) so fights end sooner
 const WIN_SCORE = 10, MATCH_TIME = 150, MAX_HP = 600, ULT_CD = 45, ULT_KILL = 10, CD1 = 5, CD2 = 10, DASH_D = 3.2 * T, SPEED = 205;
 

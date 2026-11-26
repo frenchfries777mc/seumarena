@@ -43,14 +43,15 @@ function prStart(id) {
 function prUi() {
   if (PRAC.el) PRAC.el.remove();
   const el = PRAC.el = document.createElement('div'); el.id = 'prBar';
-  el.innerHTML = '<button type="button" class="prEx"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>나가기</button><span class="prT"><i>연습장</i></span>';
+  el.innerHTML = '<button type="button" class="prEx"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>나가기</button><span class="prT"><i>연습장</i></span><button type="button" class="prSk">⚙ 스킬</button>';
   el.querySelector('.prT').append(HEROES[PRAC.id].name);
   document.body.appendChild(el);
   el.querySelector('.prEx').addEventListener('click', () => prEnd(true));
+  el.querySelector('.prSk').addEventListener('click', () => prSkWin(true));
 }
 function prOff() {
   if (!PRAC.on) return false;
-  PRAC.on = false; PRAC.ds = []; document.body.classList.remove('prOn');
+  PRAC.on = false; PRAC.ds = []; document.body.classList.remove('prOn'); prSkWin(false);
   if (PRAC.el) { PRAC.el.remove(); PRAC.el = null; }
   return true;
 }
@@ -67,4 +68,35 @@ function prStep(dt) {
     d.aim = angTo(d, P);
     if (time - d.lastHit > 3 && d.hp < d.mhp) d.hp = Math.min(d.mhp, d.hp + d.mhp * .5 * dt);      // heals back up when left alone
   }
+}
+/* skill picker (mockup 5-A approved 2026-11-26): a "스킬" button beside the practice chip opens a window of every skill of the hero,
+   locked ones too (practice only; the real loadout is not changed). A slot that gets a new skill starts with its cooldown at 0. */
+function prSkWin(open) {
+  let w = document.getElementById('prSkWin');
+  if (!open || !PRAC.on) { if (w) w.remove(); return; }
+  for (const k in keys) keys[k] = false; mouse.down = false;
+  const P = player, h = P.h0 || P.h;
+  if (!w) { w = document.createElement('div'); w.id = 'prSkWin'; document.body.appendChild(w); w.addEventListener('pointerdown', e => { if (e.target === w) prSkWin(false); }); }
+  w.textContent = '';
+  const box = document.createElement('div'); box.className = 'prSkBox'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true');
+  const hd = document.createElement('h3'); hd.append(h.name + ' 스킬 고르기'); const x = document.createElement('button'); x.type = 'button'; x.className = 'prSkX'; x.textContent = '✕ 닫기'; x.addEventListener('click', () => prSkWin(false)); hd.append(x);
+  const g = document.createElement('div'); g.className = 'prSkG';
+  for (const s of h.skills) {
+    const c = document.createElement('div'), at = P.sk.indexOf(s); c.className = 'prSkC' + (at >= 0 ? ' on' : '');
+    const t = document.createElement('div'), b = document.createElement('b'), i = document.createElement('i'); b.textContent = nameOf(s); i.textContent = SK_LABEL[s.k] || ''; t.append(b, i); c.append(t);
+    if (typeof skOpen === 'function' && !skOpen(h.id, s.n)) { const l = document.createElement('div'); l.className = 'prSkLk'; l.textContent = '🔒 잠김 · 연습장에서는 써 볼 수 있어요'; c.append(l); }
+    const row = document.createElement('div'); row.className = 'prSkS';
+    for (let k = 0; k < 2; k++) { const bt = document.createElement('button'); bt.type = 'button'; bt.textContent = (k + 1) + '스킬'; if (at === k) bt.className = 'on';
+      bt.addEventListener('click', () => { prSkPut(k, s); prSkWin(true); }); row.append(bt); }
+    c.append(row); g.append(c);
+  }
+  const n = document.createElement('div'); n.className = 'prSkN'; n.textContent = '카드의 1스킬 · 2스킬을 누르면 그 칸에 들어가요. 바꾼 칸은 쿨타임 0부터.';
+  box.append(hd, g, n); w.append(box);
+}
+function prSkPut(k, s) {
+  const P = player; if (!P || P.sk[k] === s) return;
+  const sk = P.sk.slice(), o = sk.indexOf(s);
+  if (o >= 0) { sk[o] = sk[k]; P.scd[o] = 0; }      // already in the other slot: the two swap
+  sk[k] = s; P.scd[k] = 0; P.sk = sk; P.sk0 = sk;
+  lastHud = '';
 }

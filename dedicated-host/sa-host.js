@@ -4,7 +4,7 @@
    설정 (/etc/sa-host.env):
      SA_GAME=/opt/sa-host/seumarena.html   게임 파일 (install.sh 가 받아 둬요)
      SA_WAITING=1      모드마다 기다리는 빈 방 수
-     SA_MAX=12         한꺼번에 열어 둘 방 수 (진행 중 포함, 램 약 250MB/방)
+     SA_MAX=           (비워 두면 돼요) 방 수는 서버가 CPU·램을 보고 스스로 정해요. 적으면 그 수를 넘지 않아요
      SA_RESTART_H=6    이만큼 지나고 진행 중인 경기가 없으면 스스로 다시 시작 (새 게임 파일을 읽어요)
      SA_SB_KEY=...     랭크전·길드 대항전 결과를 기록하는 서버 키 (Supabase seumarena_srv 표의 'key' 와 같은 값). 없으면 기록하지 않아요
      (대기: 다른 방에서 기다리는 사람이 아무도 없으면 15초 대신 3초만 기다려요)
@@ -12,7 +12,16 @@
 const { chromium } = require('playwright');
 const fs = require('fs'), os = require('os');
 const GAME = process.env.SA_GAME || '/opt/sa-host/seumarena.html';
-const MAXR = Math.max(1, Math.min(+process.env.SA_MAX || 12, Math.floor(os.totalmem() / 1048576 / 250)));
+/* 방 수는 서버가 스스로 정해요 (2026-11-26 user: 용량 보고 알아서): CPU 사용률과 남은 램을 5초마다 재서, 여유가 있을 때만 새 방을 열어요 */
+const HARD = Math.max(1, Math.min(+process.env.SA_MAX || 1e9, Math.floor(os.totalmem() / 1048576 / 250)));      // 램으로 본 최대 (방당 약 250MB)
+const CPU_OPEN = +process.env.SA_CPU_OPEN || .75, RAM_KEEP = +process.env.SA_RAM_KEEP || 1500;      // CPU 75% 아래, 남은 램 1.5GB 위일 때만 새 방
+let cpuBusy = 0, cpuPrev = null;
+function cpuSample() { const t = os.cpus().reduce((a, c) => { const v = c.times; a.idle += v.idle; a.all += v.user + v.nice + v.sys + v.irq + v.idle; return a; }, { idle: 0, all: 0 });
+  if (cpuPrev && t.all > cpuPrev.all) cpuBusy = 1 - (t.idle - cpuPrev.idle) / (t.all - cpuPrev.all); cpuPrev = t; }
+cpuSample(); setInterval(cpuSample, 5000);
+const freeMB = () => { try { const m = /MemAvailable:\s+(\d+)/.exec(fs.readFileSync('/proc/meminfo', 'utf8')); if (m) return +m[1] / 1024; } catch (e) {} return os.freemem() / 1048576; };
+const roomOk = () => live.length < HARD && cpuBusy < CPU_OPEN && freeMB() > RAM_KEEP;      // 새 방을 열어도 되나
+const tight = () => cpuBusy > CPU_OPEN - .1 || freeMB() < RAM_KEEP + 1000;      // 간당간당 (게임 쪽 연습장·튜토리얼이 보고 내 기기로 돌려요)
 const WAITING = Math.max(1, +process.env.SA_WAITING || 1), RESTART_H = +process.env.SA_RESTART_H || 6;
 const online = () => live.reduce((n, h) => n + (h.closed ? 0 : h.humans | 0), 0);      // 지금 서버의 모든 방에 있는 사람 수
 const waitingElse = me => live.reduce((n, h) => n + (h === me || h.closed || h.started ? 0 : h.humans | 0), 0);      // 이 방 말고 다른 대기 방에 있는 사람 수
@@ -23,7 +32,7 @@ let browser = null, stopping = false, html = '', modes = [];
 const live = [];                 // {mode, k, page, ctx, started, closed}
 const blocked = new Map();
 const STATUS = process.env.SA_STATUS || '/opt/sa-host/status.json';
-function writeStatus() { try { fs.writeFileSync(STATUS + '.tmp', JSON.stringify({ t: Date.now(), pid: process.pid, rooms: live.length, online: online(), playing: live.filter(h => h.started && !h.closed).length, opened: openedCount })); fs.renameSync(STATUS + '.tmp', STATUS); } catch (e) {} }
+function writeStatus() { try { fs.writeFileSync(STATUS + '.tmp', JSON.stringify({ t: Date.now(), pid: process.pid, rooms: live.length, cpu: Math.round(cpuBusy * 100), freeMB: Math.round(freeMB()), online: online(), playing: live.filter(h => h.started && !h.closed).length, opened: openedCount })); fs.renameSync(STATUS + '.tmp', STATUS); } catch (e) {} }
 let openedCount = 0;
 /* Supabase: 계정 확인 (플레이어가 보낸 로그인 토큰 -> 계정 id) 과 결과 기록 */
 const SB = process.env.SA_SB_URL || 'https://kebsbuvuutilitwlvxzv.supabase.co', SB_ANON = process.env.SA_SB_ANON || 'sb_publishable_4Egu0zm3p6cxWGvP_-GlIw_mlCpO1Nf', SB_KEY = process.env.SA_SB_KEY || '';
@@ -105,7 +114,7 @@ async function main() {
   browser = await chromium.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', '--autoplay-policy=no-user-gesture-required'].concat((process.env.SA_CHROME_ARGS || '').split(' ').filter(Boolean)) });
   browser.on('disconnected', () => { if (!stopping) { log('브라우저가 꺼졌어요, 다시 시작해요'); process.exit(1); } });
   { const t = await newTab(); modes = await t.page.evaluate(() => window.__sad.modes()); await t.ctx.close(); }
-  log('전용 방장 시작', GAME, '모드', modes.join(','), '최대', MAXR, '방');
+  log('전용 방장 시작', GAME, '모드', modes.join(','), '램으로 본 최대', HARD, '방 (CPU·램 여유를 보고 열어요)');
   let fails = 0; setInterval(writeStatus, 5000); writeStatus();
   gwTick(); setInterval(gwTick, 600e3);
   let modesAt = Date.now();
@@ -117,11 +126,11 @@ async function main() {
       for (const x of live.slice()) if (!x.started && !x.humans && !modes.includes(x.mode)) await x.close('닫힌 모드');
     }
     const order = modes.includes('rank') ? ['rank'].concat(modes.filter(m => m !== 'rank')) : modes;      // 랭크전 먼저
-    if (order[0] === 'rank' && !live.some(h => h.mode === 'rank' && !h.started) && live.length >= MAXR) {      // 방이 다 찼어요: 사람 없는 다른 대기 방 하나를 랭크전에 내줘요
+    if (order[0] === 'rank' && !live.some(h => h.mode === 'rank' && !h.started) && !roomOk()) {      // 방이 다 찼어요: 사람 없는 다른 대기 방 하나를 랭크전에 내줘요
       const v = live.find(h => h.mode !== 'rank' && !h.started && !h.humans); if (v) await v.close('랭크전 자리');
     }
     for (const m of order) {
-      if (live.length >= MAXR) break;
+      if (!roomOk()) break;
       if (live.filter(h => h.mode === m && !h.started).length >= WAITING) continue;
       if (await openRoom(m)) { opened = true; fails = 0; } else fails++;
     }
