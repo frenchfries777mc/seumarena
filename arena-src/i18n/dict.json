@@ -1594,5 +1594,17 @@
 "스킬 고르기": ["Choose skills","Choisir les compétences","Elegir habilidades","スキル選択","选择技能"],
 "✕ 닫기": ["✕ Close","✕ Fermer","✕ Cerrar","✕ 閉じる","✕ 关闭"],
 "🔒 잠김 · 연습장에서는 써 볼 수 있어요": ["🔒 Locked · you can try it in the practice range","🔒 Verrouillé · essayable au terrain d'entraînement","🔒 Bloqueado · puedes probarla en el campo de práctica","🔒 ロック中 · 練習場では試せます","🔒 未解锁 · 可在练习场试用"],
-"카드의 #스킬 · #스킬을 누르면 그 칸에 들어가요. 바꾼 칸은 쿨타임 #부터.": ["Tap a card's skill # · skill # to put it in that slot. A changed slot starts from cooldown #.","Touchez la compétence # · compétence # d'une carte pour la mettre dans cet emplacement. Un emplacement changé repart de la recharge #.","Toca la habilidad # · habilidad # de una carta para ponerla en esa ranura. La ranura cambiada empieza desde recarga #.","カードのスキル# · スキル#を押すとその枠に入ります。変えた枠はクールタイム#から。","点卡片的技能# · 技能#即可放入该栏。更换的栏从冷却#开始。"]
+"카드의 #스킬 · #스킬을 누르면 그 칸에 들어가요. 바꾼 칸은 쿨타임 #부터.": ["Tap a card's skill # · skill # to put it in that slot. A changed slot starts from cooldown #.","Touchez la compétence # · compétence # d'une carte pour la mettre dans cet emplacement. Un emplacement changé repart de la recharge #.","Toca la habilidad # · habilidad # de una carta para ponerla en esa ranura. La ranura cambiada empieza desde recarga #.","カードのスキル# · スキル#を押すとその枠に入ります。変えた枠はクールタイム#から。","点卡片的技能# · 技能#即可放入该栏。更换的栏从冷却#开始。"],
+"시험 스킨": ["Test skin","Skin de test","Aspecto de prueba","テストスキン","测试皮肤"],
+"시험 이모트": ["Test emote","Emote de test","Emote de prueba","テストエモート","测试表情"],
+"🧪 시험 모드": ["🧪 Test mode","🧪 Mode test","🧪 Modo de prueba","🧪 テストモード","🧪 测试模式"],
+"시험 모드에서는 온라인 경기를 할 수 없어요. 설정에서 시험 모드를 꺼 주세요.": ["Online matches are off in test mode. Turn test mode off in Settings.","Les parties en ligne sont désactivées en mode test. Désactivez-le dans les paramètres.","No puedes jugar en línea en modo de prueba. Desactívalo en Ajustes.","テストモードではオンライン対戦ができません。設定でテストモードをオフにしてください。","测试模式下无法进行在线比赛。请在设置中关闭测试模式。"],
+"시험 모드": ["Test mode","Mode test","Modo de prueba","テストモード","测试模式"],
+"개발자 도구의 시험 코드": ["Test code from the developer tool","Code de test de l'outil développeur","Código de prueba de la herramienta de desarrollo","開発者ツールのテストコード","开发者工具的测试代码"],
+"적용": ["Apply","Appliquer","Aplicar","適用","应用"],
+"끄기": ["Off","Désactiver","Desactivar","オフ","关闭"],
+"켜짐: 이 기기에서만 바뀐 수치로 혼자 하기(봇 경기)를 할 수 있어요.": ["On: you can play solo (bot matches) with the changed numbers on this device only.","Activé : vous pouvez jouer en solo (contre des bots) avec les valeurs modifiées, sur cet appareil uniquement.","Activado: puedes jugar solo (contra bots) con los valores cambiados, solo en este dispositivo.","オン: この端末でだけ、変えた数値でひとりプレイ（ボット戦）ができます。","开启：仅在本设备上可用修改后的数值单人游戏（机器人对战）。"],
+"꺼짐: 원래 수치예요.": ["Off: original numbers.","Désactivé : valeurs d'origine.","Desactivado: valores originales.","オフ: 元の数値です。","关闭：原始数值。"],
+"코드가 맞지 않아요. 개발자 도구에서 다시 복사해 주세요.": ["The code doesn't match. Copy it again from the developer tool.","Le code ne correspond pas. Recopiez-le depuis l'outil développeur.","El código no es válido. Cópialo de nuevo desde la herramienta de desarrollo.","コードが合いません。開発者ツールからもう一度コピーしてください。","代码不正确。请从开发者工具重新复制。"],
+"명 바뀜)": [" changed)"," modifiés)"," cambiados)","人変更)","人已更改)"]
 }

@@ -233,12 +233,15 @@ const KARMA_TABLE = {
 function modeKarma(o) { const t = KARMA_TABLE[o.mode === 'rank' ? 'duel' : o.mode] || KARMA_TABLE.team, k = Math.min(t.killMax, Math.max(0, o.kills | 0)) * t.kill;
   if (t.place) return k + (t.place[(o.place | 0) - 1] || 0);
   return k + t.res[o.win ? 0 : o.draw ? 1 : 2]; }
+/* match pay numbers in one place (the developer tool's 기타 수치 tab can change them in 시험 모드). res = [loss, draw, win] */
+const PAY_CFG = { cap: 10, gold: { res: [30, 40, 60], kill: 5, duel: .6 }, mp: { base: 10, res: [0, 25, 50], kill: 5, ast: 5 }, xp: { res: [40, 55, 70], kill: 4 } };
 function matchPay(o) {      // o: { mode, win, draw, kills, assists, place }
   if (o.mode === 'flag5') o = Object.assign({}, o, { mode: 'flag' });      // capture the flag pays the same whatever the team size
   const pm = MODE_PAY[o.mode] || MODE_PAY.team, solo = o.mode === 'solo' || o.mode === 'star', k = Math.max(0, o.kills | 0), as = Math.max(0, o.assists | 0), good = o.win ? 2 : o.draw || (solo && o.place <= 3) || (o.mode === 'hot4' && o.place === 2) || (o.mode === 'duo' && o.place === 2) ? 1 : 0;      // 4팀 핫존: 2nd of 4 pays like a draw
-  return { gold: Math.round(([30, 40, 60][good] + 5 * Math.min(10, k)) * (isDuelMode(o.mode) ? .6 : 1)), karma: modeKarma(o),
-    mp: Math.round((10 + [0, 25, 50][good] + 10 * Math.min(10, k) + 5 * Math.min(10, as)) * pm.mm),      // user 2026-11-26: base 10 + result + 10/kill + 5/assist, x mode
-    xp: [40, 55, 70][good] + 4 * Math.min(10, k) };
+  const P = PAY_CFG, cap = P.cap;
+  return { gold: Math.round((P.gold.res[good] + P.gold.kill * Math.min(cap, k)) * (isDuelMode(o.mode) ? P.gold.duel : 1)), karma: modeKarma(o),
+    mp: Math.round((P.mp.base + P.mp.res[good] + P.mp.kill * Math.min(cap, k) + P.mp.ast * Math.min(cap, as)) * pm.mm),      // user 2026-11-26: base 10 + result + 5/kill (was 10) + 5/assist, x mode
+    xp: P.xp.res[good] + P.xp.kill * Math.min(cap, k) };
 }
 /* streaks: every win in a row after the first adds 1 karma to the next win (up to +5); after three losses in a row the next match pays half as much gold again.
    A draw, or a kept place (원 레프트 2-3등, 투 레프트 / 4팀 핫존 2등), leaves the streaks as they are. COS.ws wins in a row, COS.ls losses in a row.
