@@ -5,7 +5,7 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   const sid = skinOf(cos, id), it = sid ? COSMETICS[sid] : null, tint = it ? it.tint : undefined, cp = sid ? conceptOfSkin(sid) : '', now = performance.now();
   const spec = !!(it && skinIsSpecial(sid)), lux = spec ? (it.lux || 0) : 0;
   if (cos && cos.col) col = bodyColor(cos, col);
-  let a = ang, reach = 24;
+  let a = id === 'plain' ? Math.PI / 2 - .5 * face : ang, reach = id === 'plain' ? 18 : 24;      // (practice.js) a plain stickman dummy: arm hanging, nothing held
   const samL = id === 'samurai' && swing > 0 && samHand === 0;      // 사무라이: odd hits swing the right hand, even hits the left (samHand 0), the 4th both (2)
   if (swing > 0 && h && h.type === 'melee') { if (h.w.thrust) reach = 24 + Math.sin(swing * Math.PI) * 12; else a = samL ? ang - .15 * face : ang + (swing - .5) * 2.2 * face; }
   const ax = Math.cos(a), ay = Math.sin(a);
@@ -32,7 +32,7 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
     const b = ang + .38 * face, ox = -face * 3, bx = ox + Math.cos(b) * (reach - 4), by = SH + 7 + Math.sin(b) * (reach - 4);
     body(); c.globalAlpha *= .82; c.beginPath(); c.moveTo(ox, SH + 7); c.lineTo(bx, by); c.stroke(); c.globalAlpha /= .82; drawHeldWeapon(c, id, ax, ay, bx, by, swing, cp); } catch (e) { quietErr(e); } c.restore(); }
   if (cp === 'tk' && (id === 'herbal' || id === 'shieldman' || id === 'gardener')) { c.save(); try { tkPersona(c, id, 0, HEADCY, HEADR, SH); tkHeld(c, id, ax, ay, hx, hy, swing); } catch (e) { quietErr(e); } c.restore(); } else
-  c.save(); try { if (id === 'herbal' && typeof drawHerbal === 'function') drawHerbal(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'shieldman' && typeof drawShieldman === 'function') drawShieldman(c, { face, ax, ay, hx, hy, swing, t: now / 1000, HEADCY, HEADR, SH, HIP, tint, raise: 0 }); else if (id === 'gardener' && typeof drawGardener === 'function') drawGardener(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'chef' && typeof drawChef === 'function') drawChef(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) { quietErr(e); } c.restore();      // (정원사's hat, slingshot and pouch: gardener.js)
+  c.save(); try { if (id === 'herbal' && typeof drawHerbal === 'function') drawHerbal(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'shieldman' && typeof drawShieldman === 'function') drawShieldman(c, { face, ax, ay, hx, hy, swing, t: now / 1000, HEADCY, HEADR, SH, HIP, tint, raise: 0 }); else if (id === 'gardener' && typeof drawGardener === 'function') drawGardener(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'chef' && typeof drawChef === 'function') drawChef(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id !== 'plain') drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) { quietErr(e); } c.restore();      // (정원사's hat, slingshot and pouch: gardener.js)
   if (it && it.fx) { c.save(); try { drawSkinFx(c, lux >= 4 ? 'sparkle' : it.fx, lux >= 4 ? auroraHex(now / 1000 * .9, 1) : tint, 0, HEADCY, HEADR * 1.3, now); } catch (e) { quietErr(e); } c.restore(); }
   if (cos && cos.col && COSMETICS[cos.col] && COSMETICS[cos.col].shine) { c.save(); try { drawShineGlints(c, now, 0); } catch (e) { quietErr(e); } c.restore(); }
   c.restore();
@@ -84,11 +84,11 @@ function drawFighter0(f, alpha) {
     if (f.form === 'dove') { ctx.fillStyle = '#16181f'; ctx.fillRect(-6, -18, 12, 9); ctx.fillRect(-9, -10, 18, 3); }
     ctx.restore(); ctx.globalAlpha = 1; return;
   }
-  ctx.save(); ctx.scale(1.15, 1.15);
+  ctx.save(); ctx.scale(1.15 * (f.big || 1), 1.15 * (f.big || 1));      // (practice.js: the big dummy)
   if (typeof haraldCtx === 'function') haraldCtx(f);
   pistolDual = f.h.id === 'pistol' && B(f, 'akimbo');
   samHand = f.h.id === 'samurai' && f.st ? (f.st.hand != null ? f.st.hand : 1) : 1;
-  TK_DRAW_AW = TK_AW = f.awT > 0; try { drawStick(ctx, f.h.id, awCol(f, col), f.aim, f.bob, f.swing > 0 ? 1 - f.swing / .22 : 0, time, f.cos); } finally { TK_DRAW_AW = TK_AW = false; }
+  TK_DRAW_AW = TK_AW = f.awT > 0; try { drawStick(ctx, f.plain ? 'plain' : f.h.id, awCol(f, col), f.aim, f.bob, f.swing > 0 ? 1 - f.swing / .22 : 0, time, f.cos); } finally { TK_DRAW_AW = TK_AW = false; }
   pistolDual = false;
   ctx.restore(); ctx.globalAlpha = alpha;
   if (st.orb && st.orb.n > 0) for (let i = 0; i < st.orb.n; i++) { const a = time * 3 + i * 6.283 / (st.orb.m || 5); ctx.fillStyle = '#ff8a2a'; ctx.beginPath(); ctx.arc(Math.cos(a) * 54, Math.sin(a) * 54 - 16, 7, 0, 6.3); ctx.fill(); }
@@ -118,7 +118,7 @@ function stampText(c, txt, font, fill, stroke, lw, x, y) {
 }
 function drawBars(f) {
   if (f.form === 'gone' || f.form === 'sub') return;
-  const w = 54, x = f.x - w / 2, y = f.y - 72, st = f.st, col = B(f, 'ally') ? TC(1 - f.team) : TC(f.team);
+  const w = 54, x = f.x - w / 2, y = f.y - 72 - (f.big ? (f.big - 1) * 78 : 0), st = f.st, col = B(f, 'ally') ? TC(1 - f.team) : TC(f.team);
   ctx.font = '700 14px Rajdhani, "IBM Plex Sans KR", sans-serif'; ctx.textAlign = 'center';
   ctx.lineWidth = 4; ctx.strokeStyle = '#0c0e13'; ctx.fillStyle = f.isPlayer ? '#ffd34d' : (f.nick && f.cos && f.cos.name ? nameColorFor(f.cos.name) : col);
   let label = f.nick || f.h0.name;
@@ -138,7 +138,7 @@ function drawBars(f) {
 function drawMinion(m) {
   const col = TC(m.team), k = m.kind;
   ctx.save(); ctx.translate(m.x, m.y);
-  if (k === 'turkey') { drawTurkeyMinion(m); ctx.restore(); return; }
+  if (k === 'turkey') { if (m.rx != null) { const now = performance.now(), dt = Math.min(.05, (now - (m.rt || now)) / 1000), e = 1 - Math.exp(-dt * 14); m.rt = now; m.rx += (m.x - m.rx) * e; m.ry += (m.y - m.ry) * e; ctx.translate(m.rx - m.x, m.ry - m.y); } drawTurkeyMinion(m); ctx.restore(); return; }      // (a guest's turkey eases toward the snapshot position: net.js)
   if (k === 'clone') {
     ctx.translate(0, 16); ctx.scale(1.15, 1.15);
     drawStick(ctx, 'tionis', col, m.aim || 0, m.bob || 0, m.sw && time - m.sw < .22 ? (time - m.sw) / .22 : 0, time);
@@ -705,6 +705,7 @@ $('weaponLockBtn').addEventListener('click', () => {
   else chosen = viewing;
   savePrefs(); markSel(); closeDetail(); showScreen('menuScreen'); });
 $('weaponBackListBtn').addEventListener('click', closeDetail);
+$('weaponPracBtn').addEventListener('click', () => { const id = viewing; if (!id || state !== 'menu' || NET.role) return; closeDetail(); if (!prStart(id)) openDetail(id); });      // (practice.js) locked heroes too
 $('weaponBrowseBackBtn').addEventListener('click', () => { closeDetail(); showScreen('menuScreen'); });
 $('goCharBtn').addEventListener('click', () => { DSLOT = 0; showScreen('weaponScreen'); openDetail(chosen); });       // one button: the picked character's skills first, the list one tap away
 
@@ -1002,7 +1003,7 @@ function endGame(keepRunning) {
   $('mine').textContent = modeNow().name + ' · ' + (player ? MAPS[curMap].name + ' · ' + player.h0.name + ' · ' + player.kos + '킬 ' + player.deaths + '데스' : MAPS[curMap].name);
   buildOverStats(first, draw);
   { /* what the match pays (social.js matchPay): gold, karma, mastery points for the character played, player xp */
-    const pay = player ? matchPay({ mode: curMode, win: first, draw, kills: player.kos || 0, place: oc.place }) : null, hid = player ? player.h0.id : null;
+    const pay = player ? matchPay({ mode: curMode, win: first, draw, kills: player.kos || 0, assists: player.ast || 0, place: oc.place }) : null, hid = player ? player.h0.id : null;
     const sk = pay ? streakStep(first, draw, oc.place >= 2 && oc.place <= (curMode === 'solo' || curMode === 'star' ? 3 : curMode === 'duo' || curMode === 'hot4' ? 2 : 0)) : null;      // 원 레프트 2-3등, 투 레프트 / 4팀 핫존 2등 keep the win streak
     if (sk) { pay.karma += sk.karma; pay.gold = Math.round(pay.gold * sk.gm); }
     { const e = $('streakGain'); e.hidden = !(sk && sk.st); if (sk && sk.st) { e.className = sk.st; e.textContent = sk.st === 'up' ? '🔥 ' + sk.ws + '연승' : sk.st === 'keep' ? '🔥 ' + sk.ws + '연승 유지' : '연승 끊김'; } }
@@ -1029,7 +1030,7 @@ function endGame(keepRunning) {
   emoteWheel(false); chatOpen(false);
   winScreen(win, draw); mvpFx(first, draw);
 }
-function toMenu() { leaveMark(false); mvpRun++; $('mvpFx').hidden = true; netReset(); VIEW = 0; state = 'menu'; setup(false); showPlayUi(false); lobby.hidden = false; cv.classList.add('inLobby'); showScreen('menuScreen'); }
+function toMenu() { if (typeof prOff === 'function') prOff(); leaveMark(false); mvpRun++; $('mvpFx').hidden = true; netReset(); VIEW = 0; state = 'menu'; setup(false); showPlayUi(false); lobby.hidden = false; cv.classList.add('inLobby'); showScreen('menuScreen'); }
 $('startBtn').addEventListener('click', startOnline);
 $('againBtn').addEventListener('click', () => { netReset(); if (state !== 'menu') { VIEW = 0; state = 'menu'; setup(false); } startOnline(); });
 $('lobbyBtn').addEventListener('click', toMenu);
@@ -1038,7 +1039,7 @@ $('specBack').addEventListener('click', () => soloWatch(false));
 $('roomCancelBtn').addEventListener('click', () => { netReset(); showScreen('menuScreen'); });
 $('goCosBtn').addEventListener('click', () => { showScreen('cosScreen'); renderCos(); });
 $('cosBackBtn').addEventListener('click', () => showScreen('menuScreen'));
-$('acctBtn').addEventListener('click', () => { const A = window.FFAuth; if (!A) return; if (!PROF.guest) { showScreen('profScreen'); renderProfile(); return; } try { A.openLogin(); } catch (e) { quietErr(e); } });
+$('acctBtn').addEventListener('click', () => { if (!PROF.guest) { showScreen('profScreen'); renderProfile(); return; } acctLogin(); });
 tapBtnUi($('emoteBtn'), () => emoteWheel());
 tapBtnUi($('chatBtn'), () => chatOpen(true));
 $('chatSend').addEventListener('click', () => { sendChat($('chatInput').value); chatOpen(false); });

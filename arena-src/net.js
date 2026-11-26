@@ -357,7 +357,7 @@ function snapFighter(f) {
   if (s0.morph) st.morph = 1;
   if (s0.hand != null) st.hd = s0.hand;      // 사무라이: which hand swings (guests draw it too)
   const s = { h: f.h.id, h0: f.h0.id, tm: f.team, x: Math.round(f.x), y: Math.round(f.y), a: r2(f.aim), hp: Math.ceil(f.hp), mh: f.mhp, d: f.dead ? 1 : 0, rt: r1(f.respawnT),
-    fm: f.form || 0, sw: r2(f.swing), sp: r2(f.spin), sh: Math.round(f.shield), iv: f.inv > 0 ? 1 : 0, bb, st, k: f.kos, de: f.deaths, lf: r1(Math.min(9, time - f.lastFire)), lh: r1(Math.min(9, time - f.lastHit)), hu: f.human ? 1 : 0 };
+    fm: f.form || 0, sw: r2(f.swing), sp: r2(f.spin), sh: Math.round(f.shield), iv: f.inv > 0 ? 1 : 0, bb, st, k: f.kos, as: f.ast | 0, de: f.deaths, lf: r1(Math.min(9, time - f.lastFire)), lh: r1(Math.min(9, time - f.lastHit)), hu: f.human ? 1 : 0 };
   if (f.awT > 0) s.aw = r2(f.awT); if (f.human) s.ap = awPct(f);      // (awaken.js)
   if (f.remote) s.cd = cdInfo(f);
   if (f.em != null && f.emT > time) s.em = [f.em, r1(f.emT - time)];
@@ -487,7 +487,7 @@ function applySnap(s) {
     if (!me && s.ts != null) { const h = f.ih || (f.ih = []); if (h.length && s.ts < h[h.length - 1].t) h.length = 0; h.push({ t: s.ts, x: d.x, y: d.y }); while (h.length > 2 && s.ts - h[0].t > 1) h.shift(); if (d.d || (f.dead && !d.d)) h.length = 0, h.push({ t: s.ts, x: d.x, y: d.y }); } if (!me) f.aim = f.aim == null ? d.a : f.aim;
     f.hp = d.hp; f.mhp = d.mh; f.dead = !!d.d; f.respawnT = d.rt; f.form = d.fm || null; f.ghost = f.form === 'gone' || f.form === 'sub' || f.form === 'spirit';
     f.awT = d.aw || 0; f.awP = d.ap;
-    f.swing = d.sw; f.spin = d.sp; f.shield = d.sh; f.inv = d.iv ? .1 : 0; f.kos = d.k; f.deaths = d.de; f.tk = d.tk | 0;
+    f.swing = d.sw; f.spin = d.sp; f.shield = d.sh; f.inv = d.iv ? .1 : 0; f.kos = d.k; f.ast = d.as | 0; f.deaths = d.de; f.tk = d.tk | 0;
     f.lastFire = time - d.lf; f.lastHit = time - d.lh;
     f.b = {}; NET_BUFFS.forEach((k, j) => { if (d.bb & (1 << j)) f.b[k] = { t: 1, v: k === 'charm' ? { team: 1 - d.tm } : 1 }; });
     const st = d.st; f.st = { hat: st.hat ? { x: st.hat[0], y: st.hat[1] } : null, orb: st.orb ? { n: st.orb, t: 1, m: st.om || 5 } : null, dr: st.dr, fsh: st.fsh ? { hp: 1 } : null, neck: st.nk != null ? time - st.nk : 0, morph: st.morph ? 1 : null, th: st.th, mk: st.mk, hand: st.hd };
@@ -507,7 +507,9 @@ function applySnap(s) {
     zones = s.z.map(z => { const n = { x: z[0], y: z[1], r: z[2], t: z[3], col: z[4], op: z[5], kind: z[6] || null, key: z[7] ? 'k' : null, team: z[8], hidden: !!z[9], dr: z[10] ? 1 : 0 };
       const o = old.find(q => q.t0 !== undefined && q.kind === n.kind && q.col === n.col && Math.abs(q.x - n.x) < 2 && Math.abs(q.y - n.y) < 2 && q.r === n.r);
       if (o) n.t0 = o.t0; return n; }); }
+  { const oldTk = minions.find(o => o.kind === 'turkey');
   minions = s.m.map(m => ({ minion: true, kind: m[0], x: m[1], y: m[2], team: m[3], hp: m[4], max: m[5], hit: !!m[6], aim: m[7], a: m[7], sw: time - m[8], side: m[9], b: {}, dead: false, bob: time * 8 }));
+    const nt = minions.find(o => o.kind === 'turkey'); if (nt && oldTk) { nt.rx = oldTk.rx ?? oldTk.x; nt.ry = oldTk.ry ?? oldTk.y; } }      // 칠면조 잡기: the guest draws the turkey easing toward each snapshot (tail.js drawMinion uses rx/ry), so it glides instead of jumping (2026-11-26)
   strikes = s.k.map(k => ({ x: k[0], y: k[1], r: k[2], t: k[3], max: k[4], col: k[5] }));
   if (s.md !== undefined && typeof applyModeSnap === 'function') try { applyModeSnap(s.md); } catch (e) { quietErr(e); }
   replayEvents(s.e);

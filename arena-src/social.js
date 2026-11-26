@@ -42,6 +42,16 @@ function syncAccount() {
   accountUi(); if (typeof updatePick === 'function') updatePick();
   if (typeof cloudAuth === 'function') cloudAuth();
 }
+/* the game is always dark (user 2026-11-26): the site's shared scripts (ff-lang.js via ff-auth.js) put html[data-ff-theme=light] and light --bg/--panel/--text/--line
+   for people who picked the light theme on the hub, and the game's windows read those same variables. Keep the page on dark whatever the hub setting is. */
+(() => { const h = document.documentElement, dark = () => { if (h.getAttribute('data-ff-theme') !== 'dark') h.setAttribute('data-ff-theme', 'dark'); };
+  dark(); try { new MutationObserver(dark).observe(h, { attributes: true, attributeFilter: ['data-ff-theme'] }); } catch (e) { quietErr(e); } })();
+let acctWantLogin = false;
+function acctLogin() {      // the lobby's login button: open the frenchfries777 login, loading the account script again first if it has not come yet
+  const A = window.FFAuth; if (A && A.openLogin) { try { A.openLogin(); } catch (e) { quietErr(e); } return; }
+  acctWantLogin = true; if (typeof leaveNote === 'function') leaveNote('로그인 창을 여는 중이에요…', 2000);
+  if (!document.querySelector('script[data-ffauth-retry]')) { const r = document.createElement('script'); r.src = 'https://frenchfries777.com/games/ff-auth.js'; r.async = true; r.dataset.ffauthRetry = '1'; r.onload = () => { if (!PROF.online && window.FFAuth) { PROF.online = true; try { window.FFAuth.ready.then(syncAccount, () => {}); window.FFAuth.onChange(syncAccount); window.FFAuth.onNick(syncAccount); } catch (e) { quietErr(e); } } if (acctWantLogin) { acctWantLogin = false; acctLogin(); } }; r.onerror = () => { r.remove(); acctWantLogin = false; if (typeof leaveNote === 'function') leaveNote('로그인 서버에 연결할 수 없어요. 잠시 뒤 다시 눌러 주세요.', 3000); }; document.head.appendChild(r); }
+}
 function loadAccount() {
   accountUi();
   const s = document.createElement('script'); s.src = 'https://frenchfries777.com/games/ff-auth.js'; s.async = true;
@@ -60,8 +70,7 @@ function accountUi() {
   n.textContent = PROF.name; n.style.color = nameColorFor(COS.name); goldUi();
   { const t = document.getElementById('acctTitle'); if (t) { t.textContent = myTitle(); t.hidden = !t.textContent; } }
   b.hidden = false;
-  if (!PROF.online) { b.textContent = '게스트'; b.disabled = true; b.title = 'Frenchfries777 계정 로그인은 frenchfries777.com에 올린 게임에서 쓸 수 있어요'; }
-  else { b.disabled = false; b.title = ''; b.textContent = PROF.guest ? '로그인' : '프로필'; }
+  b.disabled = false; b.title = ''; b.textContent = PROF.guest ? '로그인' : '프로필';      // a guest always gets a working login button, even while (or if) the account script has not loaded (user 2026-11-26)
 }
 
 /* cosmetics: everything the original game sells or gives is free to wear here */
@@ -224,11 +233,11 @@ const KARMA_TABLE = {
 function modeKarma(o) { const t = KARMA_TABLE[o.mode === 'rank' ? 'duel' : o.mode] || KARMA_TABLE.team, k = Math.min(t.killMax, Math.max(0, o.kills | 0)) * t.kill;
   if (t.place) return k + (t.place[(o.place | 0) - 1] || 0);
   return k + t.res[o.win ? 0 : o.draw ? 1 : 2]; }
-function matchPay(o) {      // o: { mode, win, draw, kills, place }
+function matchPay(o) {      // o: { mode, win, draw, kills, assists, place }
   if (o.mode === 'flag5') o = Object.assign({}, o, { mode: 'flag' });      // capture the flag pays the same whatever the team size
-  const pm = MODE_PAY[o.mode] || MODE_PAY.team, solo = o.mode === 'solo' || o.mode === 'star', k = Math.max(0, o.kills | 0), good = o.win ? 2 : o.draw || (solo && o.place <= 3) || (o.mode === 'hot4' && o.place === 2) || (o.mode === 'duo' && o.place === 2) ? 1 : 0;      // 4팀 핫존: 2nd of 4 pays like a draw
+  const pm = MODE_PAY[o.mode] || MODE_PAY.team, solo = o.mode === 'solo' || o.mode === 'star', k = Math.max(0, o.kills | 0), as = Math.max(0, o.assists | 0), good = o.win ? 2 : o.draw || (solo && o.place <= 3) || (o.mode === 'hot4' && o.place === 2) || (o.mode === 'duo' && o.place === 2) ? 1 : 0;      // 4팀 핫존: 2nd of 4 pays like a draw
   return { gold: Math.round(([30, 40, 60][good] + 5 * Math.min(10, k)) * (isDuelMode(o.mode) ? .6 : 1)), karma: modeKarma(o),
-    mp: Math.round(([30, 42, 55][good] + 3 * Math.min(10, k)) * pm.mm * 1.75),      // user 2026-11-15: mastery x1.75
+    mp: Math.round((10 + [0, 25, 50][good] + 10 * Math.min(10, k) + 5 * Math.min(10, as)) * pm.mm),      // user 2026-11-26: base 10 + result + 10/kill + 5/assist, x mode
     xp: [40, 55, 70][good] + 4 * Math.min(10, k) };
 }
 /* streaks: every win in a row after the first adds 1 karma to the next win (up to +5); after three losses in a row the next match pays half as much gold again.
