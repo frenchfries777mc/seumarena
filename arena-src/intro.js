@@ -1,13 +1,13 @@
 /* ---------- launch intro (mockup #14 "한 줄", approved 2026-11-12) ----------
    Plays once when the page opens: black screen, one white line, a stick figure rises out of it and keeps running off screen, the letters stand up
-   behind him, one red stroke colours the second half and the app icon pops in above. 4.5 s, then it fades into the lobby. A tap / click / key skips it.
+   behind him, one red stroke colours the second half and the app icon pops in above. 4.5 s, then it fades into the lobby. It can not be skipped.
    The title is read from the lobby brand (<h1>Seum<span>Arena</span>), so renaming the game there renames the intro too.
    Sound only plays where the browser already allows it (no tap yet = silent; the lobby music still starts on the first tap). */
 {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const h1 = document.querySelector('#brandDisplay h1'), sp = h1 && h1.querySelector('span');
   const TT = sp ? [h1.textContent.slice(0, h1.textContent.length - sp.textContent.length), sp.textContent] : ['Seum', 'Arena'];
-  if (!reduce && !window.__noIntro) {
+  if (!window.__noIntro) {      // (user 2026-11-26: plays even with the device's reduce-motion setting on)
     const DUR = 4.5, FADE = .45, ACC = '#ff4d4d', TF = 'Rajdhani, "Black Han Sans", "IBM Plex Sans KR", sans-serif';
     const cvI = document.createElement('canvas'), c = cvI.getContext('2d');
     cvI.id = 'introCv'; cvI.setAttribute('aria-label', TT.join(''));
@@ -93,8 +93,8 @@
       for (const ev of ['keydown']) removeEventListener(ev, skipKey, true);
       setTimeout(() => { cvI.remove(); try { if (ac) ac.close(); } catch (e) { } }, FADE * 1000 + 50);
     };
-    const skip = e => { e.preventDefault(); e.stopPropagation(); end(); };
-    const skipKey = e => { if (!done) { e.preventDefault(); e.stopPropagation(); end(); } };
+    const skip = e => { e.preventDefault(); e.stopPropagation(); };      // (user 2026-11-26: the intro can not be skipped; taps/keys are only kept from reaching the lobby)
+    const skipKey = e => { if (!done) { e.preventDefault(); e.stopPropagation(); } };
     cvI.addEventListener('pointerdown', skip); cvI.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
     addEventListener('keydown', skipKey, true);
     let go = false; const start = () => { if (!go) { go = true; raf = requestAnimationFrame(frame); } };

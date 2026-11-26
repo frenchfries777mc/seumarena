@@ -7,6 +7,7 @@ const UNO_COLS=['#e8252b','#f5c400','#2a9d4a','#1f5fd1'];
 const LUX_THEME={flame:['#ff7a1a','#ffe27a'], frost:['#9fe8ff','#ffffff'], electric:['#7fd0ff','#ffffff'], void:['#b388ff','#2a1450'], halo:['#ffe27a','#ffffff'], crown:['#ffd34d','#fff6c8'], sparkle:['#ffffff','#ffd9f2']};
 const skinFxCache={};
 function drawConceptProjectile(b,cp){
+  if(cp==='tk') return tkShot(b);      // 칠면조 스킨 (art/tkart.js)
   const swing=b.swingAngle!==undefined, shot=!swing && !b.dmgless && b.vx!==undefined;
   if(cp==='dragon' && shot && b.wid==='wizard'){ drawDragonShot(b); return true; }
   if(cp==='uno' && shot && b.wid==='magiccard'){ drawTrail(b); drawUnoCard(b); return true; }

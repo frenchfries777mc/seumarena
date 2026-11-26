@@ -66,7 +66,7 @@ function accountUi() {
 
 /* cosmetics: everything the original game sells or gives is free to wear here */
 const COS_KEY = 'seumArenaCos';
-const cosDefault = () => ({ skin: {}, col: null, name: null, kfx: null, pose: 'pose_cheer', emo: [0, 1, 2, 3, 4, 5, 6, 7], gold: 500, own: null, v: 0, cr: 0, su: [] });
+const cosDefault = () => ({ skin: {}, col: null, name: null, kfx: null, pose: 'pose_cheer', emo: [0, 1, 2, 3, 4, 5, 6, 7], gold: 500, own: null, v: 0, cr: 0, su: [], tl: 0, tt: 0 });
 function cosNorm(C) {      // the save-version fixes, run on this browser's save and on one that comes from the account (cloud.js)
   delete C.suAll;      // every account, old or new, has only the first two skills of a character open; the rest are unlocked with crystals or from a box (user 2026-11-15)
   if (!Array.isArray(C.own) || !(C.v >= 2)) { C.own = []; C.skin = {}; C.gold = Math.max(500, +C.gold || 0); C.v = 2; }      // skins worn before gold existed are not owned: they have to be bought (v2 also takes back the ones an earlier build handed out)
@@ -75,6 +75,7 @@ function cosNorm(C) {      // the save-version fixes, run on this browser's save
   C.v = 5;      // v3: the road got new steps, nothing on it is taken yet
   C.xp = Math.max(0, Math.floor(+C.xp || 0)); if (!C.mp || typeof C.mp !== 'object') C.mp = {};
   C.cr = Math.max(0, Math.floor(+C.cr || 0)); if (!Array.isArray(C.su)) C.su = [];
+  C.tl = Math.max(0, Math.floor(+C.tl || 0)); C.tt = Math.max(0, Math.floor(+C.tt || 0));      // turkey season: 칠면조 다리, 뽑기권 (season.js)
   return C;
 }
 let COS = cosDefault();
@@ -126,7 +127,7 @@ function flyGo(it, src) {
 }
 function goldUi() { flyUi('g', COS.gold); flyUi('cr', COS.cr | 0); for (const el of document.querySelectorAll('.karmaN')) el.textContent = COS.karma.toLocaleString('en-US'); const sk = document.getElementById('streak'); if (sk) { sk.hidden = !((COS.ws | 0) >= 2); sk.querySelector('b').textContent = COS.ws | 0; }
   { const kb = document.querySelector('#karmaBar i'); { let lo = 0, hi = 0; for (const r of KARMA_ROAD) { if (COS.karma >= r[0]) lo = r[0]; else { hi = r[0]; break; } } const w = (hi ? Math.round((COS.karma - lo) / (hi - lo) * 100) : 100) + '%'; if (kb) kb.style.width = w; const hb = document.querySelector('.khBar i'), hn = document.getElementById('karmaNextN'); if (hb) hb.style.width = w; if (hn) hn.textContent = hi ? COS.karma.toLocaleString('en-US') + ' / ' + hi.toLocaleString('en-US') : ''; } }      // the banner's bar: the way to the next step of the road
-  const kd = document.getElementById('karmaDot'); if (kd) kd.hidden = !karmaOpen(); questUi(); passUi();
+  const kd = document.getElementById('karmaDot'); if (kd) kd.hidden = !karmaOpen(); questUi(); passUi(); try { tkUi(); } catch (e) {}      // (season.js, not loaded yet on the first call)
   const ai = document.getElementById('acctIcon'); if (ai) { const l = levelOf(); ai.textContent = l.lv; ai.style.setProperty('--p', Math.round(l.into / l.need * 100)); ai.title = '레벨 ' + l.lv + ' · ' + l.into + ' / ' + l.need; } }
 /* ---------- progression: karma road, boxes, player level, character mastery ---------- */
 /* karma road: [karma needed, kind, amount]. kinds: g gold · rx mastery points for a random character · cx mastery points for the picked character · box / ebox · skin (amount = dearest tier). Taken steps are kept in COS.kr */
@@ -257,6 +258,7 @@ function giveReward(kind, n) {
   if (kind === 'su') { const p = pick(skShut()); if (p) { COS.su.push(p[0] + ':' + p[1]); return { kind, hero: p[0], sk: p[1] }; } kind = 'cr'; n = SK_PRICE; }      // nothing locked left: its worth in crystals
   if (kind === 'g') { COS.gold += n; return { kind, n }; }
   if (kind === 'cr') { COS.cr = (COS.cr | 0) + n; return { kind, n }; }
+  if (kind === 'tl') { COS.tl = (COS.tl | 0) + n; return { kind, n }; }
   if (kind === 'px') { COS.xp += n; return { kind, n }; }
   if (kind === 'k') { COS.karma += n; return { kind, n }; }
   const hero = kind === 'cx' && HEROES[chosen] ? chosen : pick(Object.keys(HEROES)); addMp(hero, n); return { kind, n, hero };
@@ -268,7 +270,7 @@ function karmaTake(r) {
   try { sfx(880, .18, 'triangle', .06); } catch (e) { quietErr(e); }
   saveCos(); goldUi(); return got;
 }
-const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin', cr: 'ic-cr', su: 'ic-su' };
+const RW_ICON = { g: null, rx: 'ic-xpR', cx: 'ic-xpC', px: 'ic-xpP', box: 'ic-box', ebox: 'ic-ebox', skin: 'ic-skin', cr: 'ic-cr', su: 'ic-su', tl: 'ic-leg' };
 /* crystals: a road or pass step can carry some on top of its own reward (r[4]); they show after it */
 const WIN_CR = 3;      // crystals per win
 function crExtra(got, n) { if (!got || !(n > 0)) return got; const c = giveReward('cr', n); got.list = (got.list || [got]).concat([c]); return got; }
@@ -337,6 +339,7 @@ function rewardFx(got, step) {
   const open = () => {
     fx.classList.remove('shake'); void fx.offsetWidth; fx.classList.add('open');
     if (got.kind === 'su') { setIcon('su'); const s = HEROES[got.hero].skills.find(x => x.n === got.sk); txt.textContent = HEROES[got.hero].name + ' · ' + (s ? nameOf(s) : '') + ' 해금'; }
+    else if (got.kind === 'hero') { ic.hidden = true; cvs.hidden = false; try { const g = cvs.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cvs.width, cvs.height); g.translate(cvs.width / 2 - 8, cvs.height * .9); g.scale(cvs.width / 80, cvs.width / 80); drawStick(g, got.hero, '#ffd34d', .3, 0, 0, 0, null); } catch (e) { quietErr(e); } txt.textContent = '새 캐릭터 ' + HEROES[got.hero].name + ' 획득!'; }      // (셰프 from the season draw: season.js)
     else if (got.skin) { ic.hidden = true; cvs.hidden = false; try { drawItemPreview(cvs, got.skin, performance.now()); } catch (e) { quietErr(e); } txt.textContent = HEROES[got.hero].name + ' · ' + COSMETICS[got.skin].name; }
     else {
       setIcon(got.kind); flyGo(got, ic); const pre = (got.hero ? HEROES[got.hero].name + ' ' : '') + '+', n = got.n | 0, t0 = performance.now();
@@ -608,8 +611,8 @@ const SEASONS = { '1.0': { skins: ['skin_sword_s1', 'skin_pistol_zeus'], col: ['
 /* each version's own pass colours are set in SEASONS[ver].col by the user: [main, light, background tint top, bottom] */
 const passCol = () => SEASONS[GAME_VER] && SEASONS[GAME_VER].col || ['#e0a82e', '#ffe58a', '#3a2608', '#120a03'];
 const PASS_STEP = 200, PASS_N = 30;
-const PASS_SKINS = (() => { const all = Object.values(SEASONS).flatMap(s => s.skins), spare = COS_IDS('skin').filter(id => COSMETICS[id].seasonOnly && HEROES[COSMETICS[id].char] && !all.includes(id)).sort(); if (!SEASONS[GAME_VER]) SEASONS[GAME_VER] = { skins: spare.slice(0, 2) }; return new Set(Object.values(SEASONS).flatMap(s => s.skins)); })();
-const passLimited = id => PASS_SKINS.has(id) && !skinOwned(id);
+const PASS_SKINS = (() => { const all = Object.values(SEASONS).flatMap(s => s.skins), spare = COS_IDS('skin').filter(id => COSMETICS[id].seasonOnly && !COSMETICS[id].turkey && HEROES[COSMETICS[id].char] && !all.includes(id)).sort(); if (!SEASONS[GAME_VER]) SEASONS[GAME_VER] = { skins: spare.slice(0, 2) }; return new Set(Object.values(SEASONS).flatMap(s => s.skins)); })();
+const passLimited = id => (PASS_SKINS.has(id) || !!(COSMETICS[id] && COSMETICS[id].turkey)) && !skinOwned(id);      // pass skins and the turkey season skins (season.js) are never sold or dropped
 const PASS = (() => { const sk = SEASONS[GAME_VER].skins, out = [];
   for (let i = 1; i <= PASS_N; i++) {
     if (i === 15 && sk[0]) out.push([i, 'ps', sk[0], 1]); else if (i === PASS_N && sk[1]) out.push([i, 'ps', sk[1], 1]);
@@ -757,7 +760,12 @@ function bodyColor(cos, fallback) {
 const FXF = {
   kfx(k, x, y, gy, vc) { FX_GY = gy; try { spawnKillEffect({ k, vc }, x, y, addP, burstP, shakeFrom); } catch (e) { quietErr(e); } FX_GY = null; }
 };
-function fxPlay(name, ...a) { evt(['x', name].concat(a)); if (FXF[name]) FXF[name](...a); }
+function fxPlay(name, ...a) {
+  if (typeof tkCur !== 'undefined' && tkCur && name !== 'tkon' && name !== 'tkf') {      // (tkskin.js) a turkey skin's effect: its colours and pictures turn turkey on every screen (tkon/tkoff round it)
+    const aw = awCur ? 1 : 0; a = a.map(v => typeof v === 'string' && v[0] === '#' ? tkCol(v, aw) : v);
+    evt(['x', 'tkon', aw]); FXF.tkon(aw); try { evt(['x', name].concat(a)); if (FXF[name]) FXF[name](...a); } finally { evt(['x', 'tkon', -1]); FXF.tkon(-1); } return;
+  }
+  evt(['x', name].concat(a)); if (FXF[name]) FXF[name](...a); }
 
 /* emotes */
 

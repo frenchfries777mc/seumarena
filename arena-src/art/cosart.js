@@ -297,6 +297,27 @@ const TIER_SKINS=[
 ];
 for(const [ch,nm,tint,fx] of NEW_SKINS) COSMETICS['skin_'+ch+'_new']={cat:'skin', char:ch, name:nm, price:NEW_SKIN_PRICE, tint, fx, isNew:true};
 COSMETICS.skin_pistol_s1={cat:'skin', char:'pistol', name:'오로라 총잡이', price:0, tint:'#7bf3ff', fx:'halo', lux:1, seasonOnly:true};      // (season pass only)
+// season "The key of Turkey" (season.js): one turkey skin per hero, bought with 칠면조 다리. concept 'tk' = art/tkart.js (outfit, weapon, every shot and swing, awakened gold roast)
+COSMETICS.skin_sword_turkey={cat:'skin', char:'sword', name:'칠면조 기사', price:0, tint:'#e8892e', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_pistol_turkey={cat:'skin', char:'pistol', name:'추수감사 제임스', price:0, tint:'#c0582a', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_bow_turkey={cat:'skin', char:'bow', name:'칠면조 사냥꾼', price:0, tint:'#8a5a22', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_shuriken_turkey={cat:'skin', char:'shuriken', name:'단풍 닌자', price:0, tint:'#d9541e', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_shotgun_turkey={cat:'skin', char:'shotgun', name:'옥수수 농부', price:0, tint:'#e6c46a', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_rifle_turkey={cat:'skin', char:'rifle', name:'개척민 군인', price:0, tint:'#7a4a22', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_smg_turkey={cat:'skin', char:'smg', name:'팝콘 요리사', price:0, tint:'#e23b3b', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_gloves_turkey={cat:'skin', char:'gloves', name:'칠면조 복서', price:0, tint:'#6e3b1c', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_grenade_turkey={cat:'skin', char:'grenade', name:'호박 폭발광', price:0, tint:'#e8892e', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_bazooka_turkey={cat:'skin', char:'bazooka', name:'로스트 포병', price:0, tint:'#8f5028', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_wizard_turkey={cat:'skin', char:'wizard', name:'수확의 마법사', price:0, tint:'#6a3a1a', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_magiccard_turkey={cat:'skin', char:'magiccard', name:'추수감사 마술사', price:0, tint:'#c0582a', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_samurai_turkey={cat:'skin', char:'samurai', name:'칠면조 사무라이', price:0, tint:'#8a4a24', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_harald_turkey={cat:'skin', char:'harald', name:'칠면조 바이킹', price:0, tint:'#e8892e', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_shade_turkey={cat:'skin', char:'shade', name:'칠면조 네온', price:0, tint:'#ff8a2a', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_tionis_turkey={cat:'skin', char:'tionis', name:'칠면조 티오니스', price:0, tint:'#8f5028', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_portalgun_turkey={cat:'skin', char:'portalgun', name:'오븐 차원여행자', price:0, tint:'#c0582a', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_gardener_turkey={cat:'skin', char:'gardener', name:'호박밭 정원사', price:0, tint:'#8a5a22', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_herbal_turkey={cat:'skin', char:'herbal', name:'크랜베리 약초꾼', price:0, tint:'#c0582a', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
+COSMETICS.skin_shieldman_turkey={cat:'skin', char:'shieldman', name:'파이 방패병', price:0, tint:'#e8892e', fx:'sparkle', lux:1, seasonOnly:true, turkey:1, concept:'tk'};
 COSMETICS.skin_sword_s1={cat:'skin', char:'sword', name:'황금 시즌 기사', price:0, tint:'#ffd34d', fx:'crown', lux:2, seasonOnly:true};
 // ---- 1.0 season pass: the six limited myth skins (never sold; the pass unlocks them one after the other)
 COSMETICS.skin_tionis_janus ={cat:'skin', char:'tionis',    name:'야누스 티오니스', price:0, tint:'#f2f2f4', fx:'halo',    lux:3, seasonOnly:true, concept:'janus'};
@@ -405,6 +426,7 @@ function drawSkinFx(c, fx, tint, hx, hy, r, now){      // a little effect around
     case 'flame': { glow(r*2.2, 0.25); for(let i=0;i<3;i++){ const fx0=hx+(i-1)*r*0.8, hgt=r*(1.3+0.7*Math.abs(Math.sin(t*9+i*2))), base=hy-r*0.9; const g=c.createLinearGradient(fx0,base,fx0,base-hgt); g.addColorStop(0,hexA('#ffe9a8',0.95)); g.addColorStop(0.5,hexA(col,0.85)); g.addColorStop(1,hexA(col,0)); c.fillStyle=g; c.beginPath(); c.moveTo(fx0-r*0.38,base); c.quadraticCurveTo(fx0-r*0.1,base-hgt*0.5,fx0+Math.sin(t*7+i)*1.4,base-hgt); c.quadraticCurveTo(fx0+r*0.1,base-hgt*0.5,fx0+r*0.38,base); c.closePath(); c.fill(); } break; }
     case 'frost': glow(r*2.6, 0.3); c.strokeStyle=hexA('#e6fbff',0.95); c.lineWidth=1.1; for(let i=0;i<2;i++){ const a=t*1.2+i*Math.PI, x=hx+Math.cos(a)*r*2.2, y=hy+Math.sin(a)*r*1.4; for(let k=0;k<3;k++){ const b=k*Math.PI/3+t; c.beginPath(); c.moveTo(x-Math.cos(b)*2.6,y-Math.sin(b)*2.6); c.lineTo(x+Math.cos(b)*2.6,y+Math.sin(b)*2.6); c.stroke(); } } break;
     case 'halo': { c.globalCompositeOperation='lighter'; c.strokeStyle=hexA(col,0.9); c.lineWidth=2.4; c.beginPath(); c.ellipse(hx,hy-r*2.1,r*1.35,r*0.4,0,0,7); c.stroke(); c.strokeStyle=hexA(col,0.3); c.lineWidth=5.5; c.beginPath(); c.ellipse(hx,hy-r*2.1,r*1.35,r*0.4,0,0,7); c.stroke(); break; }
+    case 'turkey': { const by=hy-r*1.05, s=r/13; c.save(); c.translate(hx,by); c.scale(s,s); const F=['#c0582a','#e8892e','#f2c14e','#e8892e','#c0582a']; for(let i=0;i<5;i++){ c.save(); c.rotate(-1+i*.5+Math.sin(t*2+i)*.04); c.fillStyle=F[i]; c.beginPath(); c.ellipse(0,-8,5,13,0,0,7); c.fill(); c.restore(); } c.fillStyle='#6e3b1c'; c.beginPath(); c.ellipse(0,2,11,7,0,0,7); c.fill(); c.fillStyle='#f0c6b4'; c.beginPath(); c.arc(0,-3,4.5,0,7); c.fill(); c.fillStyle='#e23b3b'; c.beginPath(); c.ellipse(2,1.5,1.8,2.8,0,0,7); c.fill(); c.restore(); break; }
     case 'crown': { const by=hy-r*1.15, w=r*1.2; c.fillStyle=col; c.strokeStyle='#fff6c8'; c.lineWidth=0.9; c.beginPath(); c.moveTo(hx-w,by); c.lineTo(hx-w,by-r*0.9); c.lineTo(hx-w*0.5,by-r*0.35); c.lineTo(hx,by-r*1.15); c.lineTo(hx+w*0.5,by-r*0.35); c.lineTo(hx+w,by-r*0.9); c.lineTo(hx+w,by); c.closePath(); c.fill(); c.stroke(); c.fillStyle='#ff4d6d'; c.beginPath(); c.arc(hx,by-r*0.45,r*0.2,0,7); c.fill(); glow(r*2.2, 0.16); break; }
     case 'void': { glow(r*2.8, 0.34); c.fillStyle='rgba(14,6,26,0.85)'; c.strokeStyle=hexA(col,0.9); c.lineWidth=1.1; for(let i=0;i<2;i++){ const a=-t*2.2+i*Math.PI, x=hx+Math.cos(a)*r*2, y=hy+Math.sin(a)*r*1.35; c.beginPath(); c.arc(x,y,2.5,0,7); c.fill(); c.stroke(); } break; }
     case 'electric': { glow(r*2.2, 0.2); c.strokeStyle=hexA(col,0.95); c.lineWidth=1.3; const s=Math.floor(t*14); for(let i=0;i<3;i++){ const a=((s*37+i*113)%360)*Math.PI/180; let x=hx+Math.cos(a)*r*1.3, y=hy+Math.sin(a)*r*1.3; c.beginPath(); c.moveTo(x,y); for(let k=0;k<3;k++){ x+=Math.cos(a)*3.4+((s*7+k*i)%5-2)*1.3; y+=Math.sin(a)*3.4+((s*3+k)%5-2)*1.3; c.lineTo(x,y); } c.stroke(); } break; }

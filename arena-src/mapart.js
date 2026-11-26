@@ -231,9 +231,29 @@ function maFind(c) {
       e.map = MAP; e.snap = MAP.map(r => typeof r === 'string' ? r : r.join('')); e.ver = NET.mapVer;
     }
   }
+  if (!e && MA.pre && MA.pre.th === TH && MA.pre.rows === MAP.length && MA.pre.kq / k > .97 && MA.pre.kq / k < 1.03 && MA.pre.snap.every((r, i) => r === (typeof MAP[i] === 'string' ? MAP[i] : MAP[i].join('')))) {      // painted ahead in the lobby: no pause when the match starts
+    while (MA.main.length >= (mobileMode() ? 1 : 2)) maFree(MA.main.shift()); e = MA.pre; MA.pre = null; e.map = MAP; e.ver = NET.mapVer; MA.main.push(e);
+  }
   if (!e) { while (MA.main.length >= (mobileMode() ? 1 : 2)) maFree(MA.main.shift()); e = maPaint(k, MAP, TH); MA.main.push(e); }      // phones keep one painting (memory); PCs two (lobby + match)
   return e;
 }
+/* the match's map picture is painted ahead while the lobby sits idle (painting it when the match started froze the start: ~160 ms on a slowed phone, measured 2026-11-26).
+   A random map is picked ahead for that (maNextMap gives it to setup). Same painting code, same size as in the match, so the picture is exactly the same. */
+let MA_NEXT = -1, maPreKey = '';
+function maNextMap(list) { if (list.includes(MA_NEXT)) { const i = MA_NEXT; MA_NEXT = -1; return i; } return pick(list); }
+function maPrepaint() {
+  try {
+    if (state !== 'menu' || (typeof DED !== 'undefined' && DED) || typeof lobby === 'undefined' || lobby.hidden) return;
+    const list = modeOf(modeChoice).maps; if (!list || !list.length) return;
+    let id = mapChoice; if (id < 0 || !list.includes(id)) { if (!list.includes(MA_NEXT)) MA_NEXT = pick(list); id = MA_NEXT; }
+    const m = MAPS[id]; if (!m) return;
+    const s = Math.min(W, H) / (10.5 * T) * ((H > W * 1.15 && W <= 600) || (W > H && H <= 520 && touchUi()) ? 1.2 : 1), k = Math.round(DPR * s * 1000) / 1000;      // (the same zoom render() uses in a match)
+    const key = id + '|' + k; if (key === maPreKey && MA.pre) return;
+    if (MA.main.some(e => e.th === m.th && e.rows === m.grid.length && e.kq / k > .97 && e.kq / k < 1.03 && e.snap.join() === m.grid.join())) return;      // (already there)
+    maFree(MA.pre); MA.pre = maPaint(k, m.grid, m.th); maPreKey = key;
+  } catch (e) { quietErr(e); }
+}
+setInterval(() => { if (state === 'menu') (window.requestIdleCallback || (f => setTimeout(f, 0)))(maPrepaint, { timeout: 3000 }); }, 2500);
 function maTempWall(c, cc, r) {        // a wall a skill raises for a moment (특수요원 방벽 등)
   const x = cc * T, y = r * T, H = MAP_ART.H;
   const gd = awGoldWalls.size && awGoldWalls.get(cc + r * COLS) === tempWalls.get(cc + r * COLS);
@@ -274,25 +294,35 @@ function base(bio,th){ return {grass:mix(th.f1,'#4a8a3a',.55),swamp:mix(th.f1,'#
 function ground(g,bio,th,x0,y0,w,h){ const b=base(bio,th),lt=mix(b,'#fff',.12),dk=mix(b,'#000',.14);
   g.fillStyle=b; g.fillRect(x0,y0,w,h);
   const S=Math.floor;
-  // big soft colour patches
-  for(let y=S(y0/160)*160-160;y<y0+h+160;y+=160)for(let x=S(x0/160)*160-160;x<x0+w+160;x+=160){const px=x+H(x,y,800)*160,py=y+H(x,y,801)*160,r=70+H(x,y,802)*70;g.fillStyle=A(H(x,y,803)<.5?lt:dk,.5);g.beginPath();el(g,px,py,r*1.4,r);g.fill();}
-  if(bio==='stone'||bio==='lava'){ // flagstones: offset rows of irregular slabs with dark seams
-    const sz=bio==='lava'?96:72; for(let r=S(y0/sz)-1;r*sz<y0+h+sz;r++){const off=(r%2)*sz/2; for(let c=S((x0-off)/sz)-1;c*sz+off<x0+w+sz;c++){const x=c*sz+off,y=r*sz,hh=H(c,r,810);
-      g.fillStyle=bio==='lava'?mix(b,'#000',.35):mix(b,'#000',.25);g.beginPath();g.roundRect(x,y,sz,sz,6);g.fill();
-      g.fillStyle=mix(b,hh<.5?'#fff':'#000',hh*.12);g.beginPath();g.roundRect(x+3,y+3,sz-6,sz-6,bio==='lava'?14:8);g.fill();
-      if(bio==='lava'&&hh<.12){g.strokeStyle=A('#ff7a2a',.55);g.lineWidth=2.5;g.beginPath();g.moveTo(x+10,y+sz*.4);g.lineTo(x+sz*.45,y+sz*.55);g.lineTo(x+sz-12,y+sz*.35);g.stroke();} }}
-  } else if(bio==='city'){ // asphalt: big slabs, specks, a few painted lines
-    for(let r=S(y0/128)-1;r*128<y0+h+128;r++)for(let c=S(x0/128)-1;c*128<x0+w+128;c++){g.fillStyle=A('#000',.18);g.fillRect(c*128,r*128,128,2);g.fillRect(c*128,r*128,2,128);}
-    for(let i=0;i<w*h/900;i++){const x=x0+H(i,1,820)*w,y=y0+H(i,2,820)*h;g.fillStyle=A(H(i,3,820)<.5?'#fff':'#000',.12);g.fillRect(x,y,2,2);}
+  // big soft colour patches (two batched paths: light, dark)
+  const pl=new Path2D(),pd=new Path2D();
+  for(let y=S(y0/160)*160-160;y<y0+h+160;y+=160)for(let x=S(x0/160)*160-160;x<x0+w+160;x+=160){const px=x+H(x,y,800)*160,py=y+H(x,y,801)*160,r=70+H(x,y,802)*70,q=H(x,y,803)<.5?pl:pd;q.moveTo(px+r*1.4,py);q.ellipse(px,py,r*1.4,r,0,0,6.3);}
+  g.fillStyle=A(lt,.5);g.fill(pl);g.fillStyle=A(dk,.5);g.fill(pd);
+  if(bio==='stone'||bio==='lava'){ // flagstones: offset rows of slabs with dark seams (seams = one fill under, faces batched by shade)
+    const sz=bio==='lava'?96:72, faces=[new Path2D(),new Path2D(),new Path2D(),new Path2D()], cracks=new Path2D(); g.fillStyle=bio==='lava'?mix(b,'#000',.35):mix(b,'#000',.25); g.fillRect(x0,y0,w,h);
+    for(let r=S(y0/sz)-1;r*sz<y0+h+sz;r++){const off=(r%2)*sz/2; for(let c=S((x0-off)/sz)-1;c*sz+off<x0+w+sz;c++){const x=c*sz+off,y=r*sz,hh=H(c,r,810);
+      faces[Math.min(3,S(hh*4))].roundRect(x+3,y+3,sz-6,sz-6,bio==='lava'?14:8);
+      if(bio==='lava'&&hh<.12){cracks.moveTo(x+10,y+sz*.4);cracks.lineTo(x+sz*.45,y+sz*.55);cracks.lineTo(x+sz-12,y+sz*.35);} }}
+    faces.forEach((f,i)=>{const hh=(i+.5)/4;g.fillStyle=mix(b,hh<.5?'#fff':'#000',hh*.12);g.fill(f);});
+    if(bio==='lava'){g.strokeStyle=A('#ff7a2a',.55);g.lineWidth=2.5;g.stroke(cracks);}
+  } else if(bio==='city'){ // asphalt: big slabs, specks
+    g.fillStyle=A('#000',.18); for(let r=S(y0/128)-1;r*128<y0+h+128;r++)for(let c=S(x0/128)-1;c*128<x0+w+128;c++){g.fillRect(c*128,r*128,128,2);g.fillRect(c*128,r*128,2,128);}
+    const n=w*h/900; g.fillStyle=A('#fff',.12); for(let i=0;i<n;i+=2)g.fillRect(x0+H(i,1,820)*w,y0+H(i,2,820)*h,2,2); g.fillStyle=A('#000',.12); for(let i=1;i<n;i+=2)g.fillRect(x0+H(i,1,820)*w,y0+H(i,2,820)*h,2,2);
   } else if(bio==='roof'){ // rooftop deck: wide planks
-    for(let r=S(y0/40)-1;r*40<y0+h+40;r++){const off=H(r,0,830)*200;g.fillStyle=A('#000',.16);g.fillRect(x0,r*40,w,2);for(let c=S((x0-off)/200)-1;c*200+off<x0+w;c++){g.fillRect(c*200+off,r*40,2,40);g.fillStyle=A(H(c,r,831)<.5?'#fff':'#000',.05);g.fillRect(c*200+off+2,r*40+2,198,38);g.fillStyle=A('#000',.16);}}
-  } else { // natural ground: strokes and specks
-    const n=w*h/(bio==='grass'||bio==='swamp'?500:900);
+    const seam=new Path2D(),pl2=new Path2D(),pd2=new Path2D();
+    for(let r=S(y0/40)-1;r*40<y0+h+40;r++){const off=H(r,0,830)*200;seam.rect(x0,r*40,w,2);for(let c=S((x0-off)/200)-1;c*200+off<x0+w;c++){seam.rect(c*200+off,r*40,2,40);(H(c,r,831)<.5?pl2:pd2).rect(c*200+off+2,r*40+2,198,38);}}
+    g.fillStyle=A('#fff',.05);g.fill(pl2);g.fillStyle=A('#000',.05);g.fill(pd2);g.fillStyle=A('#000',.16);g.fill(seam);
+  } else { // natural ground: strokes and specks, batched by colour
+    const n=w*h/(bio==='grass'||bio==='swamp'?500:900), a=new Path2D(), c2=new Path2D(), sp=[];
     for(let i=0;i<n;i++){const x=x0+H(i,1,840)*w,y=y0+H(i,2,840)*h,q=H(i,3,840);
-      if(bio==='grass'||bio==='swamp'){g.strokeStyle=A(q<.5?mix(b,'#fff',.25):mix(b,'#000',.25),.7);g.lineWidth=2;g.lineCap='round';g.beginPath();g.moveTo(x,y);g.lineTo(x-2+q*4,y-7);g.stroke();}
-      else if(bio==='sand'){ if(q<.3){g.strokeStyle=A('#fff',.25);g.lineWidth=2;g.beginPath();g.moveTo(x-18,y);g.quadraticCurveTo(x,y-6,x+18,y);g.stroke();} else {g.fillStyle=A(mix(b,'#000',.3),.5);g.fillRect(x,y,2,2);} }
-      else if(bio==='snow'){ if(q<.15){g.fillStyle=A('#8fb0d0',.18);g.beginPath();el(g,x,y,22,8);g.fill();} else {g.fillStyle=A('#fff',.9);g.fillRect(x,y,2,2);} } }
-    if(bio==='grass'){ for(let i=0;i<w*h/60000;i++){const x=x0+H(i,5,850)*w,y=y0+H(i,6,850)*h;g.fillStyle=A('#8a6a3a',.28);g.beginPath();el(g,x,y,40+H(i,7,850)*40,22);g.fill();} }
+      if(bio==='grass'||bio==='swamp'){const p=q<.5?a:c2;p.moveTo(x,y);p.lineTo(x-2+q*4,y-7);}
+      else if(bio==='sand'){ if(q<.3){a.moveTo(x-18,y);a.quadraticCurveTo(x,y-6,x+18,y);} else sp.push(x,y); }
+      else if(bio==='snow'){ if(q<.15){c2.moveTo(x+22,y);c2.ellipse(x,y,22,8,0,0,6.3);} else sp.push(x,y); } }
+    g.lineCap='round'; g.lineWidth=2;
+    if(bio==='grass'||bio==='swamp'){g.strokeStyle=A(mix(b,'#fff',.25),.7);g.stroke(a);g.strokeStyle=A(mix(b,'#000',.25),.7);g.stroke(c2);}
+    else if(bio==='sand'){g.strokeStyle=A('#fff',.25);g.stroke(a);g.fillStyle=A(mix(b,'#000',.3),.5);for(let i=0;i<sp.length;i+=2)g.fillRect(sp[i],sp[i+1],2,2);}
+    else if(bio==='snow'){g.fillStyle=A('#8fb0d0',.18);g.fill(c2);g.fillStyle=A('#fff',.9);for(let i=0;i<sp.length;i+=2)g.fillRect(sp[i],sp[i+1],2,2);}
+    if(bio==='grass'){ const d=new Path2D(); for(let i=0;i<w*h/60000;i++){const x=x0+H(i,5,850)*w,y=y0+H(i,6,850)*h,rx=40+H(i,7,850)*40;d.moveTo(x+rx,y);d.ellipse(x,y,rx,22,0,0,6.3);} g.fillStyle=A('#8a6a3a',.28);g.fill(d); }
   }
 }
 return {ground,base};})();
@@ -427,6 +457,7 @@ function newFloor(g,I,bio){ const th=I.th, lava=M.msLava(th), wa=M.isWa(I);
   MD_G.ground(g,bio,th,-I.P,-I.P,I.cols*T+2*I.P,I.rows*T+2*I.P);
   M.msEach(I,(t,x,y,cc,r)=>{ if(t==='i'){ g.fillStyle=(cc+r)%2?'#e4f5ff':'#d3ecfb'; g.fillRect(x,y,T+.6,T+.6); g.strokeStyle='rgba(255,255,255,.95)'; g.lineWidth=4; g.lineCap='round'; const q=H(cc,r,300)*14; g.beginPath(); g.moveTo(x+12+q,y+32); g.lineTo(x+28+q,y+16); g.stroke(); } });
   floorD(g,I,bio);
+  if(I.hasWater){      /* (no water on the map: skip the five full-size soft passes, the slowest part of painting) */
   g.beginPath(); M.msShape(g,I,wa,14,0); g.fillStyle=lava?th.wa:mix(th.wa,'#00a0ff',.25); g.fill();
   g.save(); g.beginPath(); M.msShape(g,I,wa,14,0); g.clip();
   M.msSoft(g,I,0,.55,lava?'#ffc04a':'#9fe3ff',s=>M.msShape(s,I,wa,14,0),null,true);
@@ -434,7 +465,7 @@ function newFloor(g,I,bio){ const th=I.th, lava=M.msLava(th), wa=M.isWa(I);
   M.msSoft(g,I,16,.45,lava?'#6a0e00':'#00305a',s=>M.msShape(s,I,wa,12,-24));
   M.msSoft(g,I,0,.35,'#000',s=>M.msShape(s,I,wa,14,0,10),null,true);
   g.restore();
-  M.msRing(g,I,lava?'#ffe08a':'#ffffff',.85,s=>M.msShape(s,I,wa,13,-6.5),s=>M.msShape(s,I,wa,11,-9.5));
+  M.msRing(g,I,lava?'#ffe08a':'#ffffff',.85,s=>M.msShape(s,I,wa,13,-6.5),s=>M.msShape(s,I,wa,11,-9.5)); }
   M.msSoft(g,I,3,.3,'#0a0a20',s=>M.msEach(I,(t,x,y,cc,r)=>{ if(t==='#'&&!(cc===0||r===0||cc===I.cols-1||r===I.rows-1)) s.rect(x+14,y+4,T,T+8); else if(t==='g') el(s,x+40,y+T-2,32,14); }));
 }
 return {BIOME,tweak,newFloor,wallsD,bushD};})();

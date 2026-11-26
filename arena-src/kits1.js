@@ -39,15 +39,23 @@ hero('sword', { p: ['기사도', '상대에게 피해를 줄 때마다 5% 확률
     }]
   ] });
 
+function akimboFx(f) {      // 양손 권총: pale-blue frost breath at both muzzles and two brass casings tossed onto the floor
+  const a = f.aim, c = Math.cos(a), s = Math.sin(a);
+  for (const sd of [-1, 1]) { const mx = f.x + c * 30 - s * 7 * sd, my = f.y + BODY + s * 30 + c * 7 * sd;
+    for (let k = 0; k < 2; k++) addPart({ x: mx, y: my, vx: c * rnd(20, 60) + rnd(-25, 25), vy: s * rnd(20, 60) - rnd(10, 35), life: .45, max: .45, color: k ? '#d8f4ff' : '#9fdcff', r: rnd(3, 5) });
+    addPart({ x: f.x - s * 9 * sd, y: f.y + BODY, vx: -s * sd * rnd(90, 140) - c * 30, vy: c * sd * rnd(90, 140) - s * 30 + rnd(20, 60), life: .7, max: .7, color: '#d9a640', r: 1.8 }); }
+}
 hero('pistol', { p: ['붉은 탄환', '5번째 발사마다 탄환이 붉게 변하고 피해와 크기가 1.25배'],
   pre(f, o) { if (f.st.big) { f.st.big = 0; return Object.assign(o, { dmg: 66, r: 12, pierce: 99, wb: 1, spd: f.h.bspd * 1.5, range: 11 * T, shape: 'redshot' }); }
-    f.st.n = (f.st.n || 0) + 1; if (f.st.n % 5 === 0) { o.dmg = f.h.dmg * 1.25; o.r = 7; o.shape = 'redshot'; } if (B(f, 'auto')) { o.homing = true; o.turn = 2.5; } return o; },
+    f.st.n = (f.st.n || 0) + 1; if (f.st.n % 5 === 0) { o.dmg = f.h.dmg * 1.25; o.r = 7; o.shape = 'redshot'; } if (B(f, 'auto')) { o.homing = true; o.turn = 2.5; }
+    if (B(f, 'akimbo')) { o.dmg = (o.dmg != null ? o.dmg : f.h.dmg) * .7; o.pair = 1; akimboFx(f); }      // 양손 권총: two bullets side by side, x0.7 each (TEMP)
+    return o; },
   tick(f) { if (B(f, 'auto')) { const e = nearest(f, f.h.range, null, 0); if (e) f.aim = angTo(f, e); } },
   ult: ['강화탄', '다음 발사 때 데미지 924의 크고 빠른 탄환 1발 (플레이어와 벽을 뚫고 나아감)', [0, 9 * T], f => { f.st.big = 1; f.fireCd = 0; }],
   skills: [
     [1, '속사', 'buff', '2.2초 동안 연사 속도 2배', [0, 8 * T], f => buff(f, 'rapid', 2.2, .5)],
     [2, '정확한 발사', 'hit', '유도 총알 발사 · 0.75초 동안 상대를 따라가고 그 뒤로는 마지막 방향으로 일직선', [100, 9 * T], (f, a) => emit(f, a, { skill: 1, dmg: 17, homing: true, homeT: .75, turn: 7, range: 10 * T, r: 6 })],
-    [3, '양손 권총', 'buff', '1초 동안 양손에 권총 · 기본공격 쿨타임 50% 감소', [0, 8 * T], f => { buff(f, 'rapid', 1, .5); buff(f, 'akimbo', 1, 1); }],
+    [3, '양손 권총', 'buff', '1.5초 동안 양손에 권총 · 기본공격이 2발씩 나란히 나감(각 0.7배 피해)', [0, 8 * T], f => buff(f, 'akimbo', 1.5, 1)],
     [4, '자동 조준', 'buff', '1.5초 동안 권총이 가장 가까운 상대를 자동 조준(커서 무시) · 발사한 탄은 약간 유도됨', [0, 8 * T], f => buff(f, 'auto', 1.5)],
     [5, '마지막 한 발', 'hit', '지난 3초 동안 자신이 받은 피해와 같은 피해의 대형 탄 1발 (받은 피해가 없으면 발동 안 됨)', [0, 9 * T], (f, a) => { const d = taken3(f); if (d < 1) return false; emit(f, a, { skill: 1, dmg: d, r: 13, range: 11 * T, shape: 'redshot' }); }, { ok: f => taken3(f) > 30 }]
   ] });
