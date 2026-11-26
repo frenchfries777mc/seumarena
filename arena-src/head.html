@@ -1389,6 +1389,9 @@ body.mob #topRight #guild{order:-1}body.mob #topRight #seasonBtn{order:0;height:
 .tkNote b{color:#fff}
 #tkGot{min-height:20px;margin-top:8px;font-weight:800;color:#ffd08a}
 
+/* lobby top row grouped by shape (user 2026-11-26): guild rightmost, then the long ones (season, karma), then the small square ones. The row is row-reverse, so a lower order sits further right */
+body #topRight > #guild{order:1!important}body #topRight > #seasonBtn{order:2!important}body #topRight > #karma{order:3!important}
+body #topRight > #ptBtn{order:4!important}body #topRight > #quest{order:5!important}body #topRight > #newsBtn{order:6!important}body #topRight > #siteBtn{order:7!important}body #topRight > #pass{order:8!important}body #topRight > #streak{order:9!important}
 /* practice range (practice.js) */
 #weaponPracBtn{color:#7ff0dd}
 #prBar .prSk{height:40px;border-radius:12px;border:1px solid #3fe0c8;background:#0d1f1c;color:#7ff0dd;font:800 14px 'IBM Plex Sans KR',sans-serif;padding:0 12px;cursor:pointer}
