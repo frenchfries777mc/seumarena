@@ -27,6 +27,7 @@ button{font-family:inherit}
 button:focus-visible,input:focus-visible{outline:3px solid var(--accent-2);outline-offset:2px}
 #game{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;background:var(--bg);transition:filter .4s}
 #game.inLobby{filter:blur(1.5px) brightness(.5) saturate(1.1)}
+#game.inLobby.artBg{filter:none}
 
 /* ---------- lobby ---------- */
 :root{--vh:100vh}@supports (height:100dvh){:root{--vh:100dvh}}
@@ -77,6 +78,8 @@ body.mob #lobbyDuel canvas{filter:none}#lobbyCharName .ldNo{display:none;color:#
   transition:border-color .12s ease;min-width:0}
 .wpnCard:hover{border-color:var(--accent-2)}
 .wpnCard.sel{border-color:var(--sel);box-shadow:0 0 10px rgba(255,211,77,.45)}
+.wpnCard.heroLock canvas{filter:grayscale(.85) brightness(.6)}.wpnCard .hLock{position:absolute;top:6px;left:0;right:0;font-size:11px;font-weight:700;color:#ffd34d;text-shadow:0 1px 2px #000}
+.hLockBox{background:rgba(255,211,77,.1);border:1px solid rgba(255,211,77,.45);border-radius:10px;padding:10px 12px;margin:0 0 10px;font-size:13px;line-height:1.5;display:flex;flex-wrap:wrap;gap:8px;align-items:center}.hLockBox .hBuy{flex:0 0 auto}
 .wpnCard canvas{width:64px;height:64px;max-width:100%;display:block;margin:0 auto}
 .wpnCard .wn{font-weight:700;font-size:13px;line-height:1.2;overflow-wrap:anywhere}
 .wpnCard .wk{font-size:11px;color:var(--text-dim)}
@@ -1341,6 +1344,48 @@ body #mapTitle{padding-inline:64px;line-height:1.15;overflow-wrap:anywhere}
   body #modeScreen.ph .mIn{padding:3px 12px;row-gap:0}
   body #modeScreen.ph .mN{font-size:17px} body #modeScreen.ph .mSize{font-size:16px} body #modeScreen.ph .mTop .mIco{width:22px;height:22px}
 }
+/* ---- season "The key of Turkey" (turkey.js, season.js; 2026-11-25) ---- */
+.ic-leg{background:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PGcgdHJhbnNmb3JtPSJyb3RhdGUoLTQwIDI0IDI0KSI+PHJlY3QgeD0iMjEiIHk9IjIyIiB3aWR0aD0iNiIgaGVpZ2h0PSIyMCIgcng9IjMiIGZpbGw9IiNmM2VhZDgiLz48Y2lyY2xlIGN4PSIyMCIgY3k9IjQyIiByPSI0IiBmaWxsPSIjZjNlYWQ4Ii8+PGNpcmNsZSBjeD0iMjgiIGN5PSI0MiIgcj0iNCIgZmlsbD0iI2YzZWFkOCIvPjxwYXRoIGQ9Ik0yNCAyYzkgMCAxNCA3IDE0IDE0IDAgNi00IDEwLTggMTBoLTEyYy00IDAtOC00LTgtMTAgMC03IDUtMTQgMTQtMTR6IiBmaWxsPSIjYjg2NjJlIi8+PHBhdGggZD0iTTE4IDdjMy0yIDctMiA5LTEtNCAxLTcgNC04IDgtMi0xLTItNS0xLTd6IiBmaWxsPSIjZDk4YTQ2Ii8+PHJlY3QgeD0iMTYiIHk9IjIyIiB3aWR0aD0iMTYiIGhlaWdodD0iNCIgcng9IjIiIGZpbGw9IiM4ZjRhMWYiLz48L2c+PC9zdmc+) center/contain no-repeat} i.ic-leg{display:inline-block;width:1.15em;height:1.15em;vertical-align:-.2em;flex:none}
+#tkHud{margin:6px auto 0;width:max-content;display:flex;align-items:center;gap:6px;padding:4px 12px 4px 10px;border-radius:999px;background:rgba(20,12,6,.82);color:#ffe0b0;font:800 13px 'IBM Plex Sans KR',sans-serif}
+#tkHud b{color:#fff}
+#seasonBtn{position:relative;box-sizing:border-box;display:flex;align-items:center;gap:6px;height:56px;margin:0;padding:0 12px 0 6px;border-radius:14px;border:2px solid #e8892e;background:linear-gradient(180deg,#5a2e12,#2a1406);box-shadow:0 4px 0 #170a03;color:#ffe0b0;font:800 12px 'IBM Plex Sans KR',sans-serif;cursor:pointer;transition:transform .08s ease}
+#seasonBtn:active{transform:translateY(2px)}
+#seasonBtn .sT{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
+#seasonBtn .sT small{font:400 13px 'Black Han Sans','IBM Plex Sans KR',sans-serif;color:#ffd08a;letter-spacing:.02em;white-space:nowrap}
+#seasonBtn .sT b{display:flex;align-items:center;gap:4px;font-size:14px;color:#fff}
+#seasonDot{position:absolute;right:-4px;top:-4px;width:12px;height:12px;border-radius:50%;background:#ff4d4d}
+@media (max-width:520px){#seasonBtn{height:44px;width:46px;padding:0;justify-content:center;border-radius:12px;box-shadow:0 3px 0 #170a03;flex-direction:column;gap:0}#seasonBtn canvas{width:26px!important;height:26px!important}#seasonBtn .sT small{display:none}#seasonBtn .sT b{font-size:11px;gap:2px}#topRight #karmaBar{width:34px}#topRight{gap:5px}}
+body.mob #topRight #guild{order:-1}body.mob #topRight #seasonBtn{order:0;height:40px;width:46px;padding:0;justify-content:center;border-radius:12px;box-shadow:0 3px 0 #170a03;flex-direction:column;gap:0}body.mob #seasonBtn canvas{width:24px!important;height:24px!important}body.mob #seasonBtn .sT small{display:none}body.mob #seasonBtn .sT b{font-size:10px;gap:2px}      /* phones: season = small tile, guild at the right end (user 2026-11-25) */
+#tkScreen{width:min(1100px,100%);background:radial-gradient(ellipse at 50% 0,#6a3410 0,#2a1406 55%,#140a04 100%);border:2px solid #b8662e;color:#fff}
+.tkHead{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.tkHead h2{margin:0;font:400 30px 'Black Han Sans','IBM Plex Sans KR',sans-serif;transform:skewX(-8deg);text-shadow:0 3px 0 rgba(0,0,0,.45);color:#ffd08a}
+.tkHead .sub{font-size:13px;color:#e6b98a}
+.tkBal{margin-left:auto;display:flex;gap:8px}
+.tkBal span{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:#1c1008;font-weight:800;font-size:16px}
+.tkGrid{display:grid;grid-template-columns:1.25fr 1fr;gap:16px;margin-top:14px}
+@media (max-width:760px){.tkGrid{grid-template-columns:1fr}}
+.tkBox{background:rgba(0,0,0,.3);border-radius:16px;padding:14px;min-width:0}
+.tkBox h3{margin:0 0 10px;font:400 19px 'Black Han Sans','IBM Plex Sans KR',sans-serif;color:#ffd08a}
+.tkGacha{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.tkBall{width:130px;height:130px;border-radius:24px;background:linear-gradient(160deg,#e8892e,#8a3a12);display:flex;align-items:center;justify-content:center;flex:none}
+.tkBtns{display:flex;flex-direction:column;gap:8px;flex:1;min-width:200px}
+.tkBtn{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:0 14px;border:0;border-radius:10px;font:800 15px 'IBM Plex Sans KR',sans-serif;color:#2a1406;background:linear-gradient(180deg,#ffd34d,#f2a93b);box-shadow:0 3px 0 #8a5a10;cursor:pointer}
+.tkBtn.alt{background:#3a2416;color:#ffe0b0;box-shadow:0 3px 0 #140a04}
+.tkBtn:disabled{opacity:.45;cursor:not-allowed}
+.tkBtn span{display:flex;align-items:center;gap:5px}
+.tkOdds{margin-top:12px;display:grid;grid-template-columns:auto 1fr auto;gap:5px 10px;font-size:13px;align-items:center}
+.tkOdds .bar{height:8px;border-radius:4px;background:#3a2416;overflow:hidden}.tkOdds .bar i{display:block;height:100%}
+.tkOdds b{text-align:right}
+.tkNew{margin-top:12px;padding:10px 12px;border-radius:12px;background:linear-gradient(180deg,#3a2a52,#1c1430);color:#d9c8ff;font-size:13px}
+.tkSkins{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tkSk{border-radius:14px;overflow:hidden;background:#1c1008;display:flex;flex-direction:column}
+.tkSk canvas{display:block;width:100%;height:auto;background:radial-gradient(circle at 50% 60%,#f2c14e55,transparent 60%),linear-gradient(180deg,#e8892e,#a8481a)}
+.tkSk .nm{padding:6px 8px 2px;font-weight:800;font-size:13px}
+.tkSk .nm small{display:block;color:#e6b98a;font-weight:400;font-size:11px}
+.tkSk .tkBtn{margin:6px 8px 8px;justify-content:center}
+.tkNote{margin-top:10px;padding:10px 12px;border-radius:10px;background:#1c1008;font-size:13px;color:#e6b98a;line-height:1.5}
+.tkNote b{color:#fff}
+#tkGot{min-height:20px;margin-top:8px;font-weight:800;color:#ffd08a}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -1353,6 +1398,7 @@ body #mapTitle{padding-inline:64px;line-height:1.15;overflow-wrap:anywhere}
     <symbol id="mi-m-flag" viewBox="0 0 24 24"><path d="M6 21V4M6 5h12l-3 4 3 4H6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="mi-m-flag5" viewBox="0 0 24 24"><path d="M4 21V5M4 6h8l-2 3 2 3H4M14 21V9M14 10h7l-2 2.5 2 2.5h-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="mi-m-duel" viewBox="0 0 24 24"><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14 6l-4 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="mi-m-turkey" viewBox="0 0 24 24"><path d="M12 3.5a8.5 8.5 0 0 0-8.5 8.5h3a5.5 5.5 0 0 1 11 0h3A8.5 8.5 0 0 0 12 3.5z" fill="currentColor"/><circle cx="12" cy="14.5" r="5" fill="currentColor"/><circle cx="12" cy="8.6" r="2.4" fill="currentColor"/></symbol>
     <symbol id="mi-m-ball" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.6l4 2.9-1.5 4.7h-5L8 10.5z" fill="currentColor"/></symbol>
     <symbol id="mi-m-hot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4.2 2.8"/><path d="M12 7.5c1.9 2 3 3.4 3 5.2a3 3 0 0 1-6 0c0-1.1.5-2 1.3-2.8.1 1 .6 1.6 1.3 1.9-.3-1.5-.1-2.9.4-4.3z" fill="currentColor"/></symbol>
     <symbol id="mi-m-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
@@ -1376,6 +1422,7 @@ body #mapTitle{padding-inline:64px;line-height:1.15;overflow-wrap:anywhere}
     <div class="score g" hidden><small></small><span id="sg">0</span></div>
     <div class="score y" hidden><small></small><span id="sy">0</span></div>
   </div>
+  <div id="tkHud" hidden>내가 잡은 칠면조 <b>0</b> · <i class="ic-leg"></i> <span class="tkL">+0</span></div>
 </div>
 <div id="safeProbe" aria-hidden="true"></div>
 <div id="feed" hidden></div>
@@ -1481,6 +1528,24 @@ body #mapTitle{padding-inline:64px;line-height:1.15;overflow-wrap:anywhere}
     <div id="passQs"><section id="passQd"><h3>일일<em></em></h3><div class="pqL"></div></section><section id="passQw"><h3>주간<em></em></h3><div class="pqL"></div></section></div>
   </div>
 
+  <div class="card" id="tkScreen">
+    <div class="tkHead"><button class="msBack" id="tkBackBtn" type="button" aria-label="뒤로가기"><span aria-hidden="true">&lsaquo;</span></button><div><h2>The key of Turkey</h2><div class="sub" id="tkLeft"></div></div><div class="tkBal"><span aria-label="칠면조 다리"><i class="ic-leg"></i><b id="tkLegN">0</b></span><span aria-label="뽑기권"><b>🎟️</b><b id="tkTixN">0</b></span></div></div>
+    <div class="tkGrid">
+      <div class="tkBox"><h3>시즌 뽑기</h3>
+        <div class="tkGacha"><div class="tkBall" id="tkBall"></div><div class="tkBtns">
+          <button class="tkBtn" id="tkDraw" type="button"><span>뽑기권으로 1회 뽑기</span><span>🎟️ 1</span></button>
+          <button class="tkBtn alt" id="tkBuy1" type="button"><span>뽑기권 1장 사기</span><span><i class="ic-leg"></i><b class="p"></b></span></button>
+          <button class="tkBtn alt" id="tkBuy5" type="button"><span>뽑기권 5장 사기</span><span><i class="ic-leg"></i><b class="p"></b></span></button>
+        </div></div>
+        <div id="tkGot"></div>
+        <div class="tkOdds" id="tkOdds"></div>
+        <div class="tkNew" id="tkNew"></div>
+      </div>
+      <div class="tkBox"><h3>한정 칠면조 스킨</h3><div class="tkSkins" id="tkSkins"></div>
+        <div class="tkNote" id="tkHow"></div>
+      </div>
+    </div>
+  </div>
   <div class="card" id="questScreen">
     <button class="backlink" id="questBackBtn" type="button">&larr; 뒤로가기</button>
     <div class="qTabs"><button id="qTabD" type="button" class="on">일일 과제</button><button id="qTabW" type="button">주간 과제<i id="wqDot" hidden></i></button><button id="qTabA" type="button">도전과제<i id="achDot" hidden></i></button></div>
@@ -1547,7 +1612,7 @@ body #mapTitle{padding-inline:64px;line-height:1.15;overflow-wrap:anywhere}
     <canvas id="winCanvas" width="520" height="190"></canvas>
     <div class="final"><span class="b" id="fb">0</span><span>:</span><span class="r" id="fr">0</span><span id="fq"></span></div>
     <p id="mine"></p>
-    <p id="goldGain" hidden><span id="karmaGain"><svg aria-hidden="true"><use href="#mi-karma"/></svg><b id="karmaGainN"></b></span><span><i class="coin"></i><b id="goldGainN"></b></span><span id="crGain" hidden><i class="ic-cr"></i><b>+3</b></span><span id="mpGain"><i class="rwI ic-xpC"></i><b id="mpGainN"></b></span><span id="xpGain"><i class="rwI ic-xpP"></i><b id="xpGainN"></b></span><span id="streakGain" hidden></span></p>
+    <p id="goldGain" hidden><span id="karmaGain"><svg aria-hidden="true"><use href="#mi-karma"/></svg><b id="karmaGainN"></b></span><span><i class="coin"></i><b id="goldGainN"></b></span><span id="tlGain" hidden><i class="ic-leg"></i><b id="tlGainN">+0</b></span><span id="crGain" hidden><i class="ic-cr"></i><b>+3</b></span><span id="mpGain"><i class="rwI ic-xpC"></i><b id="mpGainN"></b></span><span id="xpGain"><i class="rwI ic-xpP"></i><b id="xpGainN"></b></span><span id="streakGain" hidden></span></p>
     <div id="mpCard" hidden><canvas id="mpLogo" width="128" height="128"></canvas><div class="mpI"><small id="mpHero"></small><b id="mpRank"></b><div class="mpBar"><i id="mpOld"></i><i id="mpNew"></i></div></div><b id="mpCardN"></b><p id="mpUp" hidden></p></div>
     <div id="overStats"></div>
     <button class="btn-primary btn-full" id="againBtn" type="button">다시 하기</button>

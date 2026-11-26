@@ -18,14 +18,14 @@ const AW_COND = {
   smg: { kind: 'bul', need: 50 }      /* DECIDED by the user 2026-11-24: 40 bullet hits */, shuriken: { kind: 'stl', need: 3 }      /* DECIDED by the user 2026-11-24: hit enemies 8 times while hidden (an attack ends the hiding, so a hit counts when the stealth was on up to 0.7 s before it; the 0.7 s is TEMP) */, grenade: { kind: 'bomb', need: 15 }      /* DECIDED by the user 2026-11-24: 9 enemies hit by bombs */,
   shotgun: { kind: 'dmg', need: 4500 }      /* DECIDED by the user 2026-11-24: damage dealt 3000 */, portalgun: { kind: 'bnc', need: 2 }      /* DECIDED by the user 2026-11-24: 8 hits with a bullet that had bounced */, gloves: { kind: 'taken', need: 5500 }      /* DECIDED by the user 2026-11-24: damage taken adds up to 3000 (the numbers shown on screen) */,
   samurai: { kind: 'chain', need: 7, gap: 1 }      /* DECIDED by the user 2026-11-24: hit an enemy 8 times in a row (the ultimate counts as ONE hit; the 1 s gap that breaks the chain is TEMP) */, bazooka: { kind: 'skh', need: 6 }      /* DECIDED by the user 2026-11-24: 4 enemies hit by skill rockets */, gardener: { kind: 'bush', need: 1 }      /* DECIDED by the user 2026-11-24: 6 hits on enemies while standing in a planted bush */,
-  herbal: { kind: 'heal', need: 2100 }      /* DECIDED by the user 2026-11-24: 1500 health given to allies and herself in total */, shieldman: { kind: 'skill', need: 4 }      /* DECIDED by the user 2026-11-25: 6 skill uses (the ultimate does not count) */
+  herbal: { kind: 'heal', need: 2100 }      /* DECIDED by the user 2026-11-24: 1500 health given to allies and herself in total */, shieldman: { kind: 'skill', need: 4 }      /* DECIDED by the user 2026-11-25: 6 skill uses (the ultimate does not count) */, chef: { kind: 'ladle', need: 9 }      /* DECIDED by the user 2026-11-25: 9 thrown-ladle hits (the user lets Claude retune it) */
 };
 /* hero id -> what changes while awakened (basic attack / skills / ultimate: movement, effects, not just numbers). EMPTY until decided.
    Hooks a row may have (all optional): start(f), end(f), shot(f, o) -> o   (changes a projectile's options before it is made; o.skill is set for skill shots),
    atk(f, ang)  (after a basic attack), sk(f, i, ang)  (after skill i), ult(f, ang)  (after the ultimate). */
 const AW_BOOST = {
   sword: {}, wizard: {}, magiccard: null, bow: {}, shade: {}, tionis: {}, harald: {}, pistol: {}, rifle: {}, smg: {},
-  shuriken: {}, grenade: {}, shotgun: {}, portalgun: {}, gloves: {}, samurai: {}, bazooka: {}, gardener: {}, herbal: {}, shieldman: {}
+  shuriken: {}, grenade: {}, shotgun: {}, portalgun: {}, gloves: {}, samurai: {}, bazooka: {}, gardener: {}, herbal: {}, shieldman: {}, chef: {}
 };
 const awDmgM = f => f.awT > 0 ? ((awBoost(f) || {}).dmgm || 1) : 1;      // basic attack damage factor while awakened (방패병 +20 %)
 const awRng = f => f.awT > 0 ? ((awBoost(f) || {}).rng || 1) : 1;      // basic attack reach factor while awakened (melee heroes)
@@ -275,7 +275,7 @@ AW_BOOST.pistol = {
   },
   run(f, i, def) {
     if (def.n === 1) { def.f(f, f.aim, i); f.st.awRp = time + 2.2; f.st.awN3 = 0; return true; }      // 속사
-    if (def.n === 3) { buff(f, 'rapid', 1, .5 / 1.15); buff(f, 'akimbo', 1, 1); return true; }      // 양손 권총: fire rate +15 % on top of the 50 % cut
+    if (def.n === 3) { buff(f, 'akimbo', 1.5, 1); return true; }      // 양손 권총 (A안 2026-11-25): no fire rate bonus; both bullets of the pair get the awakened x1.25 + knockback (shot() above sets them on the shared o)
   }
 };
 /* 군인: DECIDED with the user 2026-11-24. Condition 3000 damage dealt; basic = bullet and damage x1.25 + passes through players; 지뢰 = bigger trigger area; 수류탄 = 3 in a fan; 돌격 B = gold afterimage + pushes who it touches;

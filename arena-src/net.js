@@ -13,6 +13,12 @@ const PEER_SERVER = null;
 /* waiting (user 2026-11-15 "로비에 아무도 없으면 3초"): a room waits WAIT_SEC s, or only WAIT_FEW s while nobody is waiting in any other room.
    The server (sa-host.js) counts the people in its other waiting rooms and tells each waiting room through __sad.setWait(sec). A full room starts at once. */
 let waitSec = /[?&]dedicated=1(&|$)/.test(location.search) ? WAIT_FEW : WAIT_SEC;      // a server room starts at 3 s, so the rule holds even on a server whose sa-host.js predates setWait; sa-host raises it to 15 s while someone waits elsewhere
+let srvWait = waitSec;      // what sa-host last said; a server room that already holds 2+ people also counts as 'someone else is waiting' (user 2026-11-25: 2명인데 3초)
+function waitApply() {
+  if (!DED) return;
+  const n = srvWait === WAIT_SEC || NET.members.length >= 2 ? WAIT_SEC : WAIT_FEW; if (n === waitSec) return;
+  const d = (n - waitSec) * 1000; waitSec = n; if (NET.role === 'host' && NET.phase === 'wait' && NET.members.length) NET.waitEnd += d;
+}
 /* Own TURN server (coturn on the Oracle server): no password in this file. Short-lived TURN logins are fetched from TURN_CRED_URL (a Cloudflare
    Worker that signs them with coturn's static-auth-secret) and added to the ICE list below; if that fails the game still runs on STUN + the public relays. */
 const TURN_CRED_URL = 'https://frenchfries777.com/seumarena/turn';
@@ -246,6 +252,7 @@ function hostAccept(c, tok) {
   c.on('data', m => {
     if (tok !== netToken || !m || typeof m !== 'object') return;
     if (m.t === 'peek') {      // a searching screen asks whether this room has a free seat; it is not a member yet
+      if (DED && NET.phase === 'wait' && NET.members.length && hostN() < NET.max) { const now = performance.now(); if (NET.waitEnd - now < 2000) NET.waitEnd = now + 2000; }      // someone is looking right now: do not start under them
       try { c.send(Object.assign({ t: 'info', ok: NET.phase === 'wait' && hostN() < NET.max, n: hostN(), max: NET.max, mode: NET.mode }, netRanked() ? netRankInfo() : null)); } catch (e) { quietErr(e); }
     } else if (m.t === 'hello') {
       if (NET.members.some(x => x.conn === c)) return;
@@ -255,7 +262,7 @@ function hostAccept(c, tok) {
         tok: typeof m.tok === 'string' && m.tok.length < 4000 ? m.tok : '', rp: numIn(m.rp, 0, 1e6, 0), g: numIn(m.g, 0, 1e15, 0), grp: numIn(m.grp, -1, 1e6, -1), at: performance.now() };
       mem.line0 = mem.line;
       if (netRanked() && !mem.tok) { try { c.send({ t: 'busy' }); } catch (e) { quietErr(e); } setTimeout(() => { try { c.close(); } catch (e) { quietErr(e); } }, 500); return; }      // ranked: signed-in players only
-      NET.members.push(mem); NET.conns.push(c);
+      NET.members.push(mem); NET.conns.push(c); waitApply();
       { const now = performance.now(), g = Math.min(5, waitSec) * 1000; if (NET.waitEnd - now < g) NET.waitEnd = now + g; }      // someone just arrived: leave time for the next one to find the room too
       mem.rtok = Math.random().toString(36).slice(2, 12); c.send({ t: 'welcome', room: NET.room, tok: mem.rtok });
       hostLobby();
@@ -354,6 +361,7 @@ function snapFighter(f) {
   if (f.awT > 0) s.aw = r2(f.awT); if (f.human) s.ap = awPct(f);      // (awaken.js)
   if (f.remote) s.cd = cdInfo(f);
   if (f.em != null && f.emT > time) s.em = [f.em, r1(f.emT - time)];
+  if (f.tk) s.tk = f.tk;      // 칠면조 잡기: turkeys this fighter caught
   return s;
 }
 function hostSnap() {
@@ -479,7 +487,7 @@ function applySnap(s) {
     if (!me && s.ts != null) { const h = f.ih || (f.ih = []); if (h.length && s.ts < h[h.length - 1].t) h.length = 0; h.push({ t: s.ts, x: d.x, y: d.y }); while (h.length > 2 && s.ts - h[0].t > 1) h.shift(); if (d.d || (f.dead && !d.d)) h.length = 0, h.push({ t: s.ts, x: d.x, y: d.y }); } if (!me) f.aim = f.aim == null ? d.a : f.aim;
     f.hp = d.hp; f.mhp = d.mh; f.dead = !!d.d; f.respawnT = d.rt; f.form = d.fm || null; f.ghost = f.form === 'gone' || f.form === 'sub' || f.form === 'spirit';
     f.awT = d.aw || 0; f.awP = d.ap;
-    f.swing = d.sw; f.spin = d.sp; f.shield = d.sh; f.inv = d.iv ? .1 : 0; f.kos = d.k; f.deaths = d.de;
+    f.swing = d.sw; f.spin = d.sp; f.shield = d.sh; f.inv = d.iv ? .1 : 0; f.kos = d.k; f.deaths = d.de; f.tk = d.tk | 0;
     f.lastFire = time - d.lf; f.lastHit = time - d.lh;
     f.b = {}; NET_BUFFS.forEach((k, j) => { if (d.bb & (1 << j)) f.b[k] = { t: 1, v: k === 'charm' ? { team: 1 - d.tm } : 1 }; });
     const st = d.st; f.st = { hat: st.hat ? { x: st.hat[0], y: st.hat[1] } : null, orb: st.orb ? { n: st.orb, t: 1, m: st.om || 5 } : null, dr: st.dr, fsh: st.fsh ? { hp: 1 } : null, neck: st.nk != null ? time - st.nk : 0, morph: st.morph ? 1 : null, th: st.th, mk: st.mk, hand: st.hd };
@@ -512,7 +520,7 @@ function replayEvents(es) {
       case 't': texts.push({ x: e[1], y: e[2], txt: e[3], color: e[4], small: !!e[5], life: e[6] }); break;
       case 'p': parts.push({ x: e[1], y: e[2], vx: e[3], vy: e[4], life: e[5], max: e[5], color: e[6], r: e[7] }); break;
       case 'c': showChat(fighters[e[1]], e[2]); break;
-      case 'w': { const o = e[7] >= 0 ? fighters[e[7]] : null, aw = !!e[8], sk = o && !aw ? skinOf(o.cos, e[3]) : null; swings.push({ x: e[1], y: e[2], wid: e[3], swingAngle: e[4], life: e[5], life0: e[5], color: aw ? '#ffd34d' : CONCEPT_COLOR[conceptOfSkin(sk)] || TC(e[6]), vx: 0, vy: 0, dmgless: true, sk: sk || undefined } /* e[8]: awakened = plain gold */); break; }
+      case 'w': { const o = e[7] >= 0 ? fighters[e[7]] : null, aw = !!e[8], sk0 = o ? skinOf(o.cos, e[3]) : null, sk = sk0 && (!aw || conceptOfSkin(sk0) === 'tk') ? sk0 : null; swings.push({ aw, x: e[1], y: e[2], wid: e[3], swingAngle: e[4], life: e[5], life0: e[5], color: aw ? '#ffd34d' : CONCEPT_COLOR[conceptOfSkin(sk)] || TC(e[6]), vx: 0, vy: 0, dmgless: true, sk: sk || undefined } /* e[8]: awakened = plain gold */); break; }
       case 'x': if (FXF[e[1]]) FXF[e[1]](...e.slice(2)); break;
       case 'f': { const o = e[1] >= 0 ? fighters[e[1]] : null, v = fighters[e[2]]; if (v) { addFeed(o, v); if (v === player || o === player) sfx(v === player ? 200 : 600, .3, 'triangle', .07, v === player ? .3 : 1.8); } break; }
     }
@@ -599,6 +607,7 @@ function netTick(dt) {
     if (NET.phase === 'joined') { if (!NET.heard) NET.heard = now; if (now - NET.heard > 8000) hostLost(); }
   }
   if (NET.role === 'host' && NET.phase === 'wait') {
+    waitApply();
     if (DED && !NET.members.length) NET.waitEnd = performance.now() + waitSec * 1000;      // an empty server room waits as long as it takes
     if (NET.mode === 'rank') { NET.waitEnd = performance.now() + 60000; if ((netTick.rk = (netTick.rk || 0) + dt) > 1) { netTick.rk = 0; hostLobby(); } rankDraftTick(); }      // ranked: no bots, so no countdown; the pick screen has its own clock
     const left = (NET.waitEnd - performance.now()) / 1000;
@@ -627,8 +636,7 @@ if (DED) {
       p.on('connection', c => hostAccept(c, tok));
     },
     setWait(sec) {      // sa-host: few people online -> WAIT_FEW, else WAIT_SEC; a room already counting down moves to the new length
-      const n = sec === WAIT_FEW ? WAIT_FEW : WAIT_SEC; if (n === waitSec) return; const d = (n - waitSec) * 1000; waitSec = n;
-      if (NET.role === 'host' && NET.phase === 'wait' && NET.members.length) NET.waitEnd += d;
+      srvWait = sec === WAIT_FEW ? WAIT_FEW : WAIT_SEC; waitApply();
     },
     status() {
       if (NET.phase === 'play' && state === 'play') ded.started = true;

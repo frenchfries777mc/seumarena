@@ -58,6 +58,7 @@ function hslHex(h,sat,l){ h=((h%360)+360)%360; sat/=100; l/=100; const k=n=>(n+h
 function nnPal(cp){      // 네온's colours: the mint of the base figure, or one of its skins
   switch(cp){
     case 'nnpink': return {a:'#ff5ac8', b:'#ffb0ea', d:'#2a0b22'};
+    case 'tk': return TK_AW ? {a:'#ffd34d', b:'#fff3b0', d:'#2a1a04'} : {a:'#ff8a2a', b:'#ffd08a', d:'#2a1206'};
     case 'nnplasma': return {a:'#b28cff', b:'#e0d2ff', d:'#160b2a'};
     case 'nnrain': { const h=(performance.now()/14)%360; return {a:hslHex(h,100,66), b:hslHex(h+40,100,84), d:'#10121c'}; }
     default: return {a:'#7dffd8', b:'#9dffe6', d:'#0b1c1a'};
@@ -73,6 +74,7 @@ function kdPal(cp){      // 카다스's colours: purple, or one of its skins
 }
 function drawWeaponPersona(c,wid,hx,hy,r,shy,tint,concept){
   c.save();
+  if(concept==='tk' && typeof tkPersona==='function' && tkPersona(c,wid,hx,hy,r,shy)){ c.restore(); return; }      // 칠면조 스킨 (art/tkart.js)
   switch(wid){
     case 'guard': drawSpacePersona(c,wid,hx,hy,r,shy,tint); break;
     case 'tionis': drawSpacePersona(c,wid,hx,hy,r,shy,tint);
@@ -309,6 +311,7 @@ function hdArm(c, sx, sy, hx, hy) {                    // a two-bone arm, the el
 }
 function hdAxe(c, x, y, th, f, k) {                    // handle from the hand outwards, the head at the end (the blade on the side it swings towards)
   c.save(); c.translate(x, y); c.rotate(th); c.scale(k, k * f); c.lineCap = 'round'; c.lineJoin = 'round';
+  if (typeof TK_HD !== 'undefined' && TK_HD) { tkHdAxe(c); c.restore(); return; }
   c.strokeStyle = '#7a4a1f'; c.lineWidth = 3.8; c.beginPath(); c.moveTo(-9, 0); c.lineTo(41, 0); c.stroke();
   c.strokeStyle = '#4a2c10'; c.lineWidth = 1; c.beginPath(); c.moveTo(-9, -1.2); c.lineTo(41, -1.2); c.stroke();
   c.fillStyle = '#c9ced6'; c.strokeStyle = '#59616d'; c.lineWidth = 1.4;
@@ -318,6 +321,7 @@ function hdAxe(c, x, y, th, f, k) {                    // handle from the hand o
 }
 function hdShield(c, x, y, rot, rx, ry, rim) {
   c.save(); c.translate(x, y); c.rotate(rot);
+  if (typeof TK_HD !== 'undefined' && TK_HD) { tkHdShield(c, rx, ry); c.restore(); return; }
   c.fillStyle = '#8b5a2b'; c.strokeStyle = '#3a2616'; c.lineWidth = 2; c.beginPath(); c.ellipse(0, 0, rx, ry, 0, 0, 7); c.fill(); c.stroke();
   c.strokeStyle = '#3a2616'; c.lineWidth = 1; c.beginPath(); c.moveTo(-rx * .4, -ry * .85); c.lineTo(-rx * .4, ry * .85); c.moveTo(rx * .4, -ry * .85); c.lineTo(rx * .4, ry * .85); c.stroke();
   c.strokeStyle = rim || '#d8dde6'; c.lineWidth = 1.8; c.beginPath(); c.ellipse(0, 0, rx * .82, ry * .86, 0, 0, 7); c.stroke();
@@ -368,6 +372,7 @@ function drawHaraldAxes(now) {                          // the thrown axe, then 
   }
 }
 function drawHeldWeapon(c, weaponId, ax, ay, hx, hy, swingProg, concept){
+  if(concept==='tk' && typeof tkHeld==='function' && tkHeld(c, weaponId, ax, ay, hx, hy, swingProg)) return;      // 칠면조 스킨 (art/tkart.js)
   if(SPACE_HELD[weaponId]){ drawSpaceHeld(c, weaponId, ax, ay, hx, hy); return; }
   const w = WEAPONS[weaponId] || WEAPONS.pistol;
   if(w.shape==='axe'){ drawHaraldBody(c, ax, ay); return; }

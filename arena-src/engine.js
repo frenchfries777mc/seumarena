@@ -89,8 +89,14 @@ const MAPS = [
   { id:'pitch', name:'초록 구장', desc:'양쪽 골대 사이 넓은 축구장. 가운데 위아래 벽, 골대 옆 기둥, 덤불을 끼고 돌파해요. 골대 앞 길은 탁 트여 있어요.', ball:1,
     th:{ f1:'#3f8f3a', f2:'#46993f', wt:'#eef2f5', ws:'#9aa8b5', b1:'#2a6f2a', b2:'#3c8f39', wa:'#3a7fc4', wa2:'#63a4e0' },
     rows:['#################','##...gg..........','##...gg....##....','##.........##....','##...............','##.....#.....gg..','##.....#.....gg..','#................','#..........##....','#................','#................','#................','#..........##....','#................','##.....#.....gg..','##.....#.....gg..','##...............','##.........##....','##...gg....##....','##...gg..........','#################'] },
+  { id:'tk_hunt', name:'칠면조 사냥', desc:'대각선 벽이 X자로 맵을 가르고, 한가운데 덤불 고리 안에 칠면조가 나타나요. 위아래 끝에는 작은 연못이 있고, 덤불 구석에 숨어 칠면조를 노릴 수 있어요.', tk:1, big:1, full:1,      // 2026-11-26: drawn by the user in the map maker (37 x 37), put in as drawn
+    th:{ f1:'#2a2850', f2:'#2f2d5b', wt:'#f4b942', ws:'#c98a1b', b1:'#1f9d78', b2:'#2fc797', wa:'#3a7fc4', wa2:'#63a4e0' },
+    rows:['#####################################','#...................................#','#..............#.www.#..............#','#.............##.....##.............#','#...##............#............##...#','#....##...........#...........##....#','#.....##.........###.........##.....#','#......##...................##......#','#.......##....##.ggg.##....##.......#','#...##...##....#.ggg.#....##...##...#','#...g#....##.............##....#g...#','#...g#.....##...........##.....#g...#','#...........##...###...##...........#','#............##...#...##............#','#.......#.....#...#...#.....#.......#','#.......##.................##.......#','#...............ggggg...............#','#....#..gg..#...g...g...#..gg..#....#','#..###..gg..###.g...g.###..gg..###..#','#....#..gg..#...g...g...#..gg..#....#','#...............ggggg...............#','#.......##.................##.......#','#.......#.....#...#...#.....#.......#','#............##...#...##............#','#...........##...###...##...........#','#...g#.....##...........##.....#g...#','#...g#....##.............##....#g...#','#...##...##....#.ggg.#....##...##...#','#.......##....##.ggg.##....##.......#','#......##...................##......#','#.....##.........###.........##.....#','#....##...........#...........##....#','#...##............#............##...#','#.............##.....##.............#','#..............#.www.#..............#','#...................................#','#####################################'] },
+  { id:'tk_empty', name:'빈 맵', desc:'칠면조 잡기 전용 맵 자리예요. 새 맵이 들어오기 전까지 쓰는 빈 경기장이에요.', tkOnly:1, big:1, full:1,      // 37 x 37 (user 2026-11-26). full: rows are the whole map (even width cannot be a mirrored half) · 2026-11-25 (user): the turkey mode's own maps were removed; the user makes them in the map maker
+    th:{ f1:'#2a2850', f2:'#2f2d5b', wt:'#f4b942', ws:'#c98a1b', b1:'#1f9d78', b2:'#2fc797', wa:'#3a7fc4', wa2:'#63a4e0' },
+    rows:['#####################################','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#...................................#','#####################################'] }
 ];
-for (const m of MAPS) m.grid = m.rows.map(r => r + [...r.slice(0, r.length - 1)].reverse().join(''));
+for (const m of MAPS) m.grid = m.full ? m.rows.slice() : m.rows.map(r => r + [...r.slice(0, r.length - 1)].reverse().join(''));      // full: the rows already hold the whole map
 let COLS = 25, ROWS = 17, WW = COLS * T, WH = ROWS * T;      // set by loadMap(): the big 원 레프트 maps are larger
 let MAP = MAPS[0].grid, TH = MAPS[0].th, ROAM = [], curMap = 0;
 const tempWalls = new Map();
@@ -109,7 +115,7 @@ let VIEW = 0;      // the team this screen plays for: drawn blue, its score on t
 const TC = t => TEAM[t === VIEW ? 0 : (curMode === 'hot4' || curMode === 'duo' || curMode === 'ko3') && t >= 0 && t < TEAM.length ? (t < VIEW ? t + 1 : t) : 1];      // 4팀 핫존: me blue, the other three teams red, green, yellow in team order
 const evt = a => { if (NET.rec) NET.evs.push(a); };
 function addText(o) { texts.push(o); evt(['t', Math.round(o.x), Math.round(o.y), o.txt, o.color, o.small ? 1 : 0, o.life]); }
-function addPart(p) { if (awCur && p.color) p.color = awGold(p.color); parts.push(p); evt(['p', Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy), +p.life.toFixed(2), p.color, +(p.r || 3).toFixed(1)]); }
+function addPart(p) { if (tkCur && p.color) p.color = tkCol(p.color, !!awCur); else if (awCur && p.color) p.color = awGold(p.color); parts.push(p); evt(['p', Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy), +p.life.toFixed(2), p.color, +(p.r || 3).toFixed(1)]); }
 const OT_MAX = 60;       // sudden-death overtime when the clock runs out level: first kill wins, a draw if nobody scores within this many seconds
 const STAT_X = 10;
 const DMG_RANGED = 1.25;  // 2026-11-14 (user): ranged heroes (every type but melee) deal x1.25 on everything (basic, skills, ult); melee x1
@@ -137,6 +143,7 @@ let state = 'menu', time = 0, timeLeft = MATCH_TIME, score = [0, 0];
    at full health, and the first side to knock out all of the other side's heroes wins. DUEL.line[team] = hero ids, DUEL.li[team] = who is out now,
    DUEL.ent[team] = host-only { hero, lo, cos } per pick. */
 const DUEL_N = 3, DUEL = { line: null, li: [0, 0], ent: null };
+const TK_SEASON_END = Date.UTC(2027, 0, 1);      // the turkey season ends here (placeholder date: the user decides)
 const MODES = [
   { id: 'team', name: '팀 아웃', size: '3v3', teams: 2, per: 3, respawn: true, win: WIN_SCORE, time: MATCH_TIME, rounds: 0, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true },
   { id: 'solo', name: '원 레프트', size: '8명', teams: 8, per: 1, respawn: false, win: 1, time: 150, rounds: 0, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },
@@ -148,6 +155,7 @@ const MODES = [
   { id: 'ko3', name: '라스트 팀', size: '3팀', teams: 3, per: 4, respawn: false, win: 1, time: 0, rounds: 1, fog: 1, maps: [7, 8, 9, 10, 17, 19, 24], ready: true },      // 2026-11-15 (user): knockout 4v4v4, no respawn inside a round, the last team standing takes it; one round only (user 2026-11-15)
   { id: 'hot4', name: '배틀 존', size: '4팀', teams: 4, per: 3, respawn: true, win: 100, time: 150, rounds: 0, maps: MAPS.map((m, i) => m.hot ? i : -1).filter(i => i >= 0), ready: true },
   { id: 'rank', name: '랭크전', size: '1v1', teams: 2, per: 1, respawn: false, win: DUEL_N, time: 0, rounds: DUEL_N, fog: 1, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true, online: 1 },      // 2026-11-17 (user): ranked = 듀얼 배틀 rules, online only, no bots (rank.js)
+  { id: 'turkey', name: '칠면조 잡기', size: '3v3', teams: 2, per: 3, respawn: true, win: 0, time: 180, rounds: 0, maps: MAPS.map((m, i) => m.tk ? i : -1).filter(i => i >= 0).concat(MAPS.some(m => m.tk) ? [] : [MAPS.findIndex(m => m.id === 'tk_empty')]), ready: Date.now() < TK_SEASON_END, event: 1 },      // 2026-11-25 (user): season event "The key of Turkey" (turkey.js). Its own maps only (tk:1 in MAPS, made by the user in the map maker); none yet = the blank arena tk_empty
   { id: 'gw', name: '길드 대항전', size: '3v3', teams: 2, per: 3, respawn: true, win: WIN_SCORE, time: MATCH_TIME, rounds: 0, maps: [0, 1, 2, 3, 4, 5, 6, 18, 23], ready: true, online: 1 }      // 2026-11-17 (user): guild war = 팀 아웃 rules, Fri-Sun only (guild.js)
 ];
 const isDuelMode = id => id === 'duel' || id === 'rank';      // 랭크전 plays exactly like 듀얼 배틀
@@ -326,7 +334,9 @@ function status(e, o) {
 }
 const addDot = (e, d) => { d.src = SRC; e.dots.push(d); };
 let awCur = null;      // (awaken.js) the awakened fighter whose attack/skill/ultimate is running right now: every effect colour made meanwhile turns gold (user 2026-11-25)
-const awOwn = (f, fn) => { if (!f || !(f.awT > 0)) return fn(); const o = awCur; awCur = f; try { return fn(); } finally { awCur = o; } };
+let tkCur = null;      // (tkskin.js) the fighter in a turkey skin whose attack/skill/ultimate is running: its effect colours turn to the turkey ones, with feathers
+const tkOwn = (f, src, fn) => tkOf(f) ? awOwn(f, () => withSrc(src, fn)) : fn();      // (tkskin.js) a turkey skin's skill/ultimate show effects in its colours too
+const awOwn = (f, fn) => { const tk = tkOf(f); if (!f || (!(f.awT > 0) && !tk)) return fn(); const o = awCur, ot = tkCur; if (f.awT > 0) awCur = f; tkCur = tk ? f : null; try { return fn(); } finally { awCur = o; tkCur = ot; } };
 const withSrc = (s, fn) => { const o = SRC; SRC = s; try { return fn(); } finally { SRC = o; } };
 const skName = (d, f) => typeof d.name === 'function' ? d.name(f) : d.name;
 function heal(f, n) { if (f.dead || n <= 0) return; n *= STAT_X; if (f.h.healMul) n *= f.h.healMul(f); const b = f.hp; f.hp = Math.min(f.mhp, f.hp + n); f.healed = (f.healed || 0) + (f.hp - b); if (f.hp - b >= 3 * STAT_X) fx('heal', f.x, f.y - 40, { v: Math.round(f.hp - b) }); }
@@ -561,13 +571,15 @@ function emit(f, ang, o) {
   o = o || {}; if (f.awT > 0) { const ab = awBoost(f); if (ab && ab.shot) o = ab.shot(f, o) || o; }      // (awaken.js)
   const h = f.h, n = o.count || h.count || 1, fan = o.fan != null ? o.fan : (h.fan || 0);
   if (h.pre && !o.skill) o = h.pre(f, Object.assign({}, o)) || o;
-  for (let i = 0; i < n; i++) {
-    const a = ang + (n > 1 ? (i / (n - 1) - .5) * fan : 0) + rnd(-1, 1) * (o.spread != null ? o.spread : (h.spread || 0)), spd = o.spd || h.bspd || 800;
+  const pid = o.pair ? {} : null;      // 양손 권총: one shot = two bullets side by side (same angle, 7 px either side)
+  for (let i = 0; i < (o.pair ? 2 : n); i++) {
+    const a = ang + (!o.pair && n > 1 ? (i / (n - 1) - .5) * fan : 0) + rnd(-1, 1) * (o.spread != null ? o.spread : (h.spread || 0)), spd = o.spd || h.bspd || 800;
     const b = { x: f.x + Math.cos(a) * 24 + (o.ox || 0), y: f.y + BODY + Math.sin(a) * 24 + (o.oy || 0), vx: Math.cos(a) * spd, vy: Math.sin(a) * spd, spd, ang: a,
       src: SRC, life: o.range || h.range || 500, dmg: o.dmg != null ? o.dmg : (h.dmgf ? h.dmgf(f) : h.dmg), team: teamOf(f), owner: f, r: o.r || 5, shape: o.shape || h.w.shape,
       pierce: o.pierce != null ? o.pierce : (h.pierce || 0), splash: o.splash != null ? o.splash : (o.skill ? 0 : (h.splash || 0)), boom: o.boom ? 1 : 0, phase: 0, gold: f.awT > 0 ? 1 : 0, bnc: o.bnc != null ? o.bnc : (o.skill ? 0 : (h.w.bounces || 0)), nb: 0, wp: o.wp != null ? o.wp : (o.shape || h.w.shape) === 'bomb' || !!h.wallPass,      // thrown bombs fly over walls (they arc)
      
       o, hit: new Set(), born: time, basic: !o.skill, x0: f.x, y0: f.y, wid: o.skin ? h.id : o.skill || o.shape ? null : h.id };
+    if (pid) { const sd = i ? 7 : -7; b.x -= Math.sin(a) * sd; b.y += Math.cos(a) * sd; b.pid = pid; }
     if (o.awr) b.r *= o.awr;
     if (o.homing) { b.home = o.homing; b.homeT = o.homeT || 9; }
     if (o.wave) { b.wave = o.wave; b.bx = b.x; b.by = b.y; b.trav = 0; }
@@ -576,7 +588,7 @@ function emit(f, ang, o) {
   }
 }
 function bombFrac(f) { return f.tx == null ? 1 : clamp(Math.hypot(f.tx - f.x, f.ty - f.y) / f.h.range, .25, 1); }
-function zone(o) { if (awCur && o.col) o.col = awGold(o.col); const z = Object.assign({ t: 3, r: 80, col: '#ffffff', acc: 0, src: SRC, team: o.by ? teamOf(o.by) : 0 }, o); zones.push(z); return z; }
+function zone(o) { if (tkCur && o.col) o.col = tkCol(o.col, !!awCur); else if (awCur && o.col) o.col = awGold(o.col); const z = Object.assign({ t: 3, r: 80, col: '#ffffff', acc: 0, src: SRC, team: o.by ? teamOf(o.by) : 0 }, o); zones.push(z); return z; }
 const inZone = (z, e) => Math.hypot(e.x - z.x, e.y - z.y) < z.r + 10;
 function strike(by, x, y, r, delay, fn, col, env) { strikes.push({ by, x, y, r, t: delay, max: delay, fn, col: col || '#ff5d5d', src: SRC, env }); }
 function minion(o) { const m = Object.assign({ minion: true, vx: 0, vy: 0, kx: 0, ky: 0, b: {}, dead: false, hp: 1, t: 5, hit: false, lastFire: -9, lastHit: -9, acc: 0, born: time, src: SRC }, o); if (o.hp) m.hp = o.hp * STAT_X; m.team = o.by ? teamOf(o.by) : o.team; m.max = m.hp; minions.push(m); return m; }
@@ -621,7 +633,7 @@ function loadMap(i) {
 /* humans: [{ hero, lo, local } | { hero, lo, remote }]; they take turns blue / red, the middle slot first; bots fill the rest */
 function setup(withPlayer, humans) {
   curMode = modeOf(modeChoice).id; const MODE = modeNow(); RD = { n: 1, pause: 0, win: -1, out: [] }; SZ.on = false; FLAGS = []; HZ.on = false;
-  loadMap(mapChoice < 0 || !MODE.maps.includes(mapChoice) ? pick(MODE.maps) : mapChoice);
+  loadMap(mapChoice < 0 || !MODE.maps.includes(mapChoice) ? (typeof maNextMap === 'function' ? maNextMap(MODE.maps) : pick(MODE.maps)) : mapChoice);      // (a random map is picked ahead in the lobby, so its picture is already painted: mapart.js maPrepaint)
   fighters = []; bullets = []; parts = []; texts = []; rings = []; zones = []; minions = []; timers = []; strikes = []; score = new Array(MODE.teams).fill(0); timeLeft = MODE.time; overtime = false; otT = 0; player = null; VIEW = 0;
   humans = humans || (withPlayer ? [{ hero: chosen, lo: loadoutOf(chosen), local: true, cos: myCos(chosen), name: PROF.name, line: myDuelLine() }] : []);
   if (isDuelMode(curMode)) for (const h of humans) { const e = duelEntries(h)[0]; Object.assign(h, { hero: e.hero, lo: e.lo, cos: e.cos }); }
@@ -653,7 +665,9 @@ function duelNext(t) {
   const f = fighters.find(g => g.team === t), e = DUEL.ent && DUEL.ent[t] && DUEL.ent[t][DUEL.li[t] + 1]; if (!f || !e) return;
   DUEL.li[t]++;
   const nf = makeFighter(t, f.slot, e.hero, f.isPlayer, e.lo, e.cos || (f.isPlayer ? myCos(e.hero) : null), f.nick);
-  const keep = { human: f.human, remote: f.remote, netIn: f.netIn, kos: f.kos, deaths: f.deaths, dealt: f.dealt, taken: f.taken, healed: f.healed, aim: f.aim };
+  const bank = f.awBank || {}; if (f.h0) bank[f.h0.id] = { G: f.awG || 0, Lt: f.awLt, Dt: f.awDt };      // (awaken.js) each hero keeps its own gauge in a match
+  const ab = bank[e.hero] || { G: 0 };
+  const keep = { human: f.human, remote: f.remote, netIn: f.netIn, kos: f.kos, deaths: f.deaths, dealt: f.dealt, taken: f.taken, healed: f.healed, aim: f.aim, awBank: bank, awG: ab.G, awLt: ab.Lt, awDt: ab.Dt };
   for (const k in f) if (!(k in nf)) delete f[k];
   Object.assign(f, nf, keep);
 }
@@ -687,7 +701,7 @@ function useSkill(f, i) {
   unbuff(f, 'ally'); if (def.k !== 'buff' && def.k !== 'move') unbuff(f, 'stealth');
   if (r !== 'hold') f.scd[i] = skillCd(f, i);
   f.lastFire = def.k === 'buff' ? f.lastFire : time;
-  skillFx(f, def);
+  tkOwn(f, (i + 1) + '스킬: ' + skName(def, f), () => skillFx(f, def));
   awGain(f, 'skill', 1);      // (awaken.js) 방패병: counts a skill use
   if (f.awT > 0) { const ab = awBoost(f); if (ab && ab.sk) ab.sk(f, i, f.aim, def); }      // (awaken.js)
   if (state === 'play' && (f.isPlayer || visibleTo(f, VIEW))) sfx(def.k === 'buff' ? 520 : def.k === 'move' ? 380 : 260, .16, 'triangle', .05, 1.6);
@@ -702,7 +716,7 @@ function useUlt(f) {
   if (r === false) return false;
   unbuff(f, 'ally'); if (!u.quiet) unbuff(f, 'stealth');
   if (r !== 'hold') f.ucd = ULT_CD * (f.h.cdMul ? f.h.cdMul(f) : 1);
-  ultFx(f);
+  tkOwn(f, '궁극기: ' + u.name, () => ultFx(f));
   if (f.awT > 0) { const ab = awBoost(f); if (ab && ab.ult) ab.ult(f, f.aim); }      // (awaken.js)
   if (state === 'play') sfx(220, .35, 'sawtooth', .06, 3);
   return true;
@@ -724,7 +738,7 @@ function kill(e, by) {
   if (e.h.onDeath) e.h.onDeath(e);
   const ki = by && by !== e ? fighters.indexOf(by) : -1, src = e.lastDmg && time - e.lastDmg.t < .6 ? e.lastDmg.src : '패시브';
   e.killer = { i: ki, src }; fxPlay('killinfo', fighters.indexOf(e), ki, src);
-  e.dead = true; e.respawnT = 3; e.deaths++; e.queue = []; e.dash = null; e.hp = 0; e.boomOut = false; e.dots = []; e.b = {}; e.shield = 0; e.form = null; e.ghost = false; e.noAtk = false; e.atkLockT = 0; e.noSkill = false;
+  e.awDt = time; e.dead = true; e.respawnT = 3; e.deaths++; e.queue = []; e.dash = null; e.hp = 0; e.boomOut = false; e.dots = []; e.b = {}; e.shield = 0; e.form = null; e.ghost = false; e.noAtk = false; e.atkLockT = 0; e.noSkill = false;
   if (e.h !== e.h0) { e.h = e.h0; e.sk = e.sk0; }
   for (const b of bullets) if (b.boom && b.owner === e) b.boomGone = 1;      // (removed by updateBullets: replacing the array here, in the middle of its loop, made bullets[i] undefined and stopped the game loop)
   for (const m of minions) if (m.by === e && m.bound) m.dead = true;
@@ -752,7 +766,8 @@ function kill(e, by) {
 function respawn(f) {
   const mt = curMode === 'duo' && state === 'play' ? fighters.find(o => o !== f && o.team === f.team && !o.dead && !o.minion) : null;      // 투 레프트: come back beside the partner
   const p = mt ? freeNear(mt.x + Math.cos(mt.aim || 0) * -.9 * T, mt.y + Math.sin(mt.aim || 0) * -.9 * T) : spawnPos(f.team, f.slot);
-  Object.assign(f, { awT: 0, awG: 0, killer: null, lastDmg: null, ivx: 0, ivy: 0, x: p.x, y: p.y, hp: f.mhp, dead: false, inv: 2, kx: 0, ky: 0, lastHit: -9, lastFire: -9, fireCd: 0, st: {}, b: {}, dots: [], recent: [], shield: 0, form: null, ghost: false, noAtk: false, atkLockT: 0, noSkill: false, boomOut: false });
+  if (f.awLt != null && f.awDt != null) f.awLt += time - f.awDt;      // (awaken.js) user 2026-11-25: the awakening gauge survives death; a hit chain's gap clock is paused while dead
+  Object.assign(f, { awT: 0, killer: null, lastDmg: null, ivx: 0, ivy: 0, x: p.x, y: p.y, hp: f.mhp, dead: false, inv: 2, kx: 0, ky: 0, lastHit: -9, lastFire: -9, fireCd: 0, st: {}, b: {}, dots: [], recent: [], shield: 0, form: null, ghost: false, noAtk: false, atkLockT: 0, noSkill: false, boomOut: false });
   if (f.h.spawn) f.h.spawn(f);
   fx('respawn', f.x, f.y - 20, { color: TC(f.team) });
 }
@@ -810,7 +825,7 @@ function ai0(f, dt) {
   let tgt = null, bd = 1e9;
   if (!B(f, 'blind')) for (const e of foes(f)) {
     if (!visibleTo(e, teamOf(f)) || B(e, 'ally')) continue;
-    const d = dist(f, e) + (e.minion ? 60 : 0);
+    const d = dist(f, e) + (e.minion ? (e.kind === 'turkey' ? -250 : 60) : 0);      // 칠면조 잡기: bots go for the turkey
     if (d < bd) { bd = d; tgt = e; }
   }
   if (B(f, 'taunt')) { const s = f.b.taunt.v; if (s && !s.dead && dist(f, s) < 10 * T) { tgt = s; bd = dist(f, s); } }      // taunted bots go for the shield bearer
@@ -1000,7 +1015,7 @@ function updateFighter(f, dt) {
     if (d.trail) d.trail(f);
     addPart({ x: f.x, y: f.y + BODY, vx: 0, vy: 0, life: .2, max: .2, color: d.col || TC(f.team), r: 9 });
     d.t -= dt;
-    if (d.t <= 0 || (d.skill && Math.hypot(f.x - bx, f.y - by) < d.v * dt * .2)) { f.dash = null; if (d.fly === 2) leapLand(f, d); unstick(f); if (d.end) d.end(f); }
+    if (d.t <= 0 || (d.skill && Math.hypot(f.x - bx, f.y - by) < d.v * dt * .2)) { f.dash = null; if (d.fly === 2) leapLand(f, d); unstick(f); if (d.end) tkOwn(f, d.src || '', () => d.end(f)); }      // (tkOwn: only a turkey skin changes anything here)
     SRC = src0;
   } else {
     let mv = [0, 0];
@@ -1039,7 +1054,7 @@ function updateBullets(dt) {
   const src0 = SRC;
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i]; if (!b) continue; if (b.boomGone) { bullets.splice(i, 1); continue; }
-    const o = b.o, bx0 = b.x, by0 = b.y; let dead = false; SRC = b.src || null; awCur = b.owner && b.owner.awT > 0 ? b.owner : null;
+    const o = b.o, bx0 = b.x, by0 = b.y; let dead = false; SRC = b.src || null; awCur = b.owner && b.owner.awT > 0 ? b.owner : null; tkCur = tkOf(b.owner) ? b.owner : null;
     if (!b.id) b.id = ++bulletSeq;
     for (let s = 0; s < 2 && !dead; s++) {
       if (b.boom && b.phase === 1) {
@@ -1093,7 +1108,7 @@ function updateBullets(dt) {
         if (b.owner.h0 && b.owner.h0.id === 'smg') awGain(b.owner, 'bul', 1);      // (awaken.js) 특수요원: a bullet that landed
         if (b.owner.h0 && b.owner.h0.id === 'gardener' && plantAt(b.owner.x, b.owner.y)) awGain(b.owner, 'bush', 1);      // (awaken.js) 정원사: a hit from inside a planted bush
         if (b.nb > 0 && b.owner.h0 && b.owner.h0.id === 'portalgun') awGain(b.owner, 'bnc', 1);      // (awaken.js) 차원여행자: a bullet that had bounced landed
-        if (b.shape === 'redshot') awGain(b.owner, 'red', 1);      // (awaken.js) 제임스: a red bullet that landed
+        if (b.shape === 'redshot' && !(b.pid && b.pid.hit && b.pid.hit.has(e))) { awGain(b.owner, 'red', 1); if (b.pid) (b.pid.hit = b.pid.hit || new Set()).add(e); }      // (a 양손 권총 pair landing on the same enemy counts once)      // (awaken.js) 제임스: a red bullet that landed
         if (b.owner.h0 && b.owner.h0.id === 'wizard') awGain(b.owner, 'pen', 1);      // (awaken.js) 마법사: a piercing bullet that landed
         if (b.owner.h0 && b.owner.h0.id === 'bow' && Math.hypot(e.x - b.x0, e.y - b.y0) >= 6 * T) awGain(b.owner, 'far', 1);      // (awaken.js) 궁수: an arrow that landed from 6+ tiles away      // (awaken.js) 마술사: a card that landed
         if (b.basic && b.owner.h.onShot && !b.owner.minion) b.owner.h.onShot(b.owner, e, b, done);
@@ -1119,7 +1134,7 @@ function fxStep(dt) {
 }
 function step(dt) {
   time += dt;
-  awCur = null;
+  awCur = null; tkCur = null;
   for (let i = timers.length - 1; i >= 0; i--) { const t = timers[i]; t.t -= dt; if (t.t <= 0) { timers.splice(i, 1); if (!t.f || !t.f.dead) { if (t.auto && t.f.h && !t.f.manAim) t.f.aim = autoAim(t.f); awOwn(t.f, () => withSrc(t.src, t.fn)); } } }
   awStep(dt);      // (awaken.js)
   for (const f of fighters) updateFighter(f, dt);
@@ -1137,6 +1152,7 @@ function step(dt) {
     if (isLeft(MODE.id)) { soloStep(dt); return; }
     if (MODE.id === 'hot4') { hotStep(dt); return; }
     if (MODE.id === 'star') { starStep(dt); return; }
+    if (MODE.id === 'turkey') { turkeyStep(dt); return; }
     if (MODE.id === 'ball' && ballStep(dt)) return;
     if (isFlagMode(MODE.id)) flagStep(dt);
     if (overtime) otT += dt; else timeLeft = Math.max(0, timeLeft - dt);
@@ -1176,6 +1192,7 @@ function modeStart() {
   if (isFlagMode(curMode)) flagsReset();
   for (const f of fighters) f.star = curMode === 'star' ? STAR0 : 0;
   BALL.on = false; if (curMode === 'ball') ballStart();
+  TK.on = false; if (curMode === 'turkey') turkeyStart();
   if (curMode === 'hot4') Object.assign(HZ, { on: true, x: WW / 2, y: WH / 2, r: (MAPS[curMap].hz || 4) * T, own: -1, p: [0, 0, 0, 0], n: [0, 0, 0, 0] });
   if (modeNow().fog) { fogReset(); return; }
   if (!isLeft(curMode)) return;

@@ -2,6 +2,7 @@ let particles=[], lastFxMs=performance.now(), FX_GY=null, FX_NEW=null, FX_WID=nu
 function addP(o){
   if(o.gy===undefined && o.grav>0 && FX_GY!==null) o.gy=FX_GY;
   if(particles.length>700) particles.splice(0,150);
+  if(typeof FX_TK!=='undefined' && FX_TK) o=tkPartOf(o);      // 칠면조 스킨: an effect started by a turkey-skinned fighter (tkskin.js)
   const __q=Object.assign({x:0,y:0,vx:0,vy:0,grav:0,drag:0,size:3,shape:'dot',add:true,rot:0,vr:0,color:'#fff'}, o, {max:o.life});
   if(__q.shape==='ghost' && FX_WID){ __q.wid=FX_WID; __q.cos=FX_COS; __q.ang=FX_ANG; }
   particles.push(__q); if(FX_NEW) FX_NEW.push(__q);
@@ -69,6 +70,7 @@ function drawParticles(){
           ctx.fillStyle='#d62828'; ctx.strokeStyle='#8a1a1a'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI); ctx.closePath(); ctx.fill(); ctx.stroke();
           ctx.fillStyle='#fff1c9'; ctx.beginPath(); ctx.ellipse(0,0,r*0.93,r*0.22,0,0,7); ctx.fill();
           ctx.fillStyle='#5a3a1c'; ctx.beginPath(); ctx.arc(0,r*0.08,1.4,0,7); ctx.fill(); ctx.restore(); break; }
+        case 'tkfeather': case 'tkleaf': tkPart(q,a); break;
         case 'dot': ctx.globalAlpha=a; ctx.fillStyle=q.color; ctx.beginPath(); ctx.arc(q.x,q.y,q.size*(1-0.5*t),0,7); ctx.fill(); break;
         case 'fire': ctx.globalAlpha=Math.min(1,a*1.3); ctx.fillStyle=q.color; ctx.beginPath(); ctx.arc(q.x,q.y,q.size*(1-0.75*t),0,7); ctx.fill(); break;
         case 'streak': ctx.globalAlpha=a; ctx.strokeStyle=q.color; ctx.lineWidth=q.size*(1-0.4*t); ctx.beginPath(); ctx.moveTo(q.x,q.y); ctx.lineTo(q.x-q.vx*0.045,q.y-q.vy*0.045); ctx.stroke(); break;

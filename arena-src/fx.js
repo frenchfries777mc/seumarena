@@ -91,7 +91,7 @@ function drawRoseFx() {
     ctx.restore();
   }
 }
-function fx(type, x, y, ex) { if (awCur && ex && (ex.color || ex.col)) { ex = Object.assign({}, ex); if (ex.color) ex.color = awGold(ex.color); if (ex.col) ex.col = awGold(ex.col); } fxPlay('sp', type, Math.round(x), Math.round(y), ex || {}); }
+function fx(type, x, y, ex) { if (tkCur) { ex = tkFx(type, x, y, ex); } else if (awCur && ex && (ex.color || ex.col)) { ex = Object.assign({}, ex); if (ex.color) ex.color = awGold(ex.color); if (ex.col) ex.col = awGold(ex.col); } fxPlay('sp', type, Math.round(x), Math.round(y), ex || {}); }
 const fxAt = (f, type, ex) => fx(type, f.x, f.y + BODY, Object.assign({ gy: f.y + 16 }, ex));
 /* a line effect from a to b, built pointing right and turned */
 function fxLine(type, x0, y0, x1, y1, ex) { const d = Math.hypot(x1 - x0, y1 - y0) || 1, a = Math.atan2(y1 - y0, x1 - x0); fx(type, x0, y0, Object.assign({ x2: Math.round(x0 + d), y2: Math.round(y0), rot: +a.toFixed(3), dir: 1 }, ex)); }
@@ -100,7 +100,7 @@ const themeCol = id => (ULT_THEMES[id] || ULT_THEMES._).c[0];
 /* melee swings: the original weapon arcs (drawProjectileBase with a swing angle), drawn where the arm swings */
 function addSwing(f, ang) {
   const life = Math.min(.28, Math.max(.12, f.h.cd || .3));
-  const sk = skinOf(f.cos, f.h.id), s = { x: f.x + Math.cos(ang) * 26, y: f.y + BODY + Math.sin(ang) * 26, wid: f.h.id, swingAngle: ang, life, life0: life, color: f.awT > 0 ? '#ffd34d' : CONCEPT_COLOR[conceptOfSkin(sk)] || TC(f.team), vx: 0, vy: 0, dmgless: true, sk: f.awT > 0 ? undefined : sk || undefined };      // an awakened swing is plain gold (user 2026-11-25)
+  const sk = skinOf(f.cos, f.h.id), s = { x: f.x + Math.cos(ang) * 26, y: f.y + BODY + Math.sin(ang) * 26, wid: f.h.id, swingAngle: ang, life, life0: life, color: f.awT > 0 ? '#ffd34d' : CONCEPT_COLOR[conceptOfSkin(sk)] || TC(f.team), vx: 0, vy: 0, dmgless: true, sk: f.awT > 0 && conceptOfSkin(sk) !== 'tk' ? undefined : sk || undefined, aw: f.awT > 0, src: SRC };      // (칠면조 스킨 keeps its own swing when awakened: the gold roast one)      // an awakened swing is plain gold (user 2026-11-25)
   swings.push(s); evt(['w', Math.round(s.x), Math.round(s.y), s.wid, +ang.toFixed(2), +life.toFixed(2), f.team, fighters.indexOf(f), f.awT > 0 ? 1 : 0]);
 }
 const SHAPE_WID = {}; for (const id in WEAPONS) { const sh = WEAPONS[id].shape; if (sh && !SHAPE_WID[sh] && WEAPONS[id].kind !== 'melee') SHAPE_WID[sh] = id; }
@@ -169,7 +169,7 @@ function bombArc(b) {
   b._tr = tr;
   return { k, h: H * 4 * k * (1 - k), dh: H * 4 * (1 - 2 * k) / Math.max(1, b._tot), H };
 }
-function bombFrame() { bombPrev = []; for (const b of bullets) if ((b.shape === 'bomb' || b.shape === 'redball') && b._sx !== undefined) bombPrev.push({ x: b.x, y: b.y, sx: b._sx, sy: b._sy, tot: b._tot, tr: b._tr || 0, team: b.team }); }
+function bombFrame() { bombPrev = []; for (const b of bullets) if ((b.shape === 'bomb' || b.shape === 'redball' || b.shape === 'tklob') && b._sx !== undefined) bombPrev.push({ x: b.x, y: b.y, sx: b._sx, sy: b._sy, tot: b._tot, tr: b._tr || 0, team: b.team }); }
 /* ---------- 더블 킬 · 트리플 킬 (Stickseum's showMultiKillBig): kills within 6 s of each other add up; everybody sees it, bigger when it is mine ---------- */
 const MK_WIN = 6, MK_NAMES = ['', '', '더블 킬', '트리플 킬', '쿼드라 킬', '펜타 킬'];
 const MK_TIERS = { 2: { c: '#ffd34d', px: 64, n: 22 }, 3: { c: '#ff9f43', px: 84, n: 34 }, 4: { c: '#ff5d5d', px: 104, n: 48 }, 5: { c: '#d58bff', px: 124, n: 64 } };
@@ -277,8 +277,8 @@ function drawShot(b) {          // a projectile in the original art, turned alon
     ctx.save(); ctx.globalAlpha = .28 + .2 * s; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(b.x, b.y + 30, 11 * s, 4.5 * s, 0, 0, 7); ctx.fill(); ctx.restore();
     y = b.y - A.h; vy -= A.dh * sp;                             // (the bomb turns along the arc: nose up, then down)
   }
-  const sk = red || b.gold ? null : shotSkin(b), cp = sk ? conceptOfSkin(sk) : '';
-  const o = { x: b.x, y, vx: vx || Math.cos(b.ang), vy: vy || Math.sin(b.ang), wid, life: 1, life0: 1, color: red ? '#e8222b' : b.gold ? '#ffd34d' : (CONCEPT_COLOR[cp] || TC(b.team)), big: red, ult: b.r > 8, scale: b.r > 8 ? b.r / 6 : 1, owner: 'x', sk: sk || undefined, sx: Math.round((b.ang || 0) * 100), sy: 0 };
+  const sk0 = red ? null : shotSkin(b), sk = sk0 && (!b.gold || conceptOfSkin(sk0) === 'tk') ? sk0 : null, cp = sk ? conceptOfSkin(sk) : '';
+  const o = { x: b.x, y, vx: vx || Math.cos(b.ang), vy: vy || Math.sin(b.ang), wid, life: 1, life0: 1, color: red ? '#e8222b' : b.gold ? '#ffd34d' : (CONCEPT_COLOR[cp] || TC(b.team)), big: red, ult: b.r > 8, scale: b.r > 8 ? b.r / 6 : 1, owner: 'x', src: b.src, aw: (b.owner && b.owner.awT > 0) || (b.oi != null && fighters[b.oi] && fighters[b.oi].awT > 0), sk: sk || undefined, sx: Math.round((b.ang || 0) * 100), sy: 0 };
   ctx.save();
   try { if (!(cp && drawConceptProjectile(o, cp))) { drawProjectileBase(o); if (sk) { ctx.restore(); ctx.save(); drawBulletSkinFx(o); } } } catch (e) { ctx.restore(); return false; }
   ctx.restore();
@@ -456,6 +456,7 @@ function drawSmokeCloud(z) {
 }
 function drawZoneArt(z, menu) {       // tail.js asks this for every zone first; true = drawn here
   if (z.kind && z.kind.startsWith('hb') && typeof drawHerbZone === 'function' && drawHerbZone(z)) return true;      // (약초꾼: herbshield.js)
+  if ((z.kind === 'soup' || z.kind === 'oil') && typeof drawChefZone === 'function') return drawChefZone(z);      // (셰프: chef.js)
   if ((z.kind === 'sprout' || z.kind === 'vine') && typeof drawGardenZone === 'function') return drawGardenZone(z);      // (정원사: gardener.js)
   if (z.col === '#9a4cff' && !z.kind) { drawDarkLump(z); return true; }
   if (z.kind === 'circle') { drawWizCircle(z); return true; }

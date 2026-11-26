@@ -12,6 +12,7 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   PERSONA_FACE = face;
   c.save();
   if (lux >= 3) { c.save(); try { drawSkinLux(c, lux, tint, now, 7, 'back'); } catch (e) { quietErr(e); } c.restore(); }
+  if (cp === 'tk') { c.save(); try { tkBack(c, id, now / 1000, face, TK_DRAW_AW); } catch (e) { quietErr(e); } c.restore(); }
   if (spec) { try { const mo = skinMotion(sid, now / 1000); c.translate(mo.dx, mo.dy); c.rotate(mo.rot); } catch (e) { quietErr(e); } }
   const body = () => { c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 5; c.lineCap = 'round'; c.lineJoin = 'round'; };
   body();
@@ -30,7 +31,8 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   if (id === 'pistol' && pistolDual) { c.save(); try {      // 양손 권총: the off hand holds the same gun, a little below and behind, aimed the same way
     const b = ang + .38 * face, ox = -face * 3, bx = ox + Math.cos(b) * (reach - 4), by = SH + 7 + Math.sin(b) * (reach - 4);
     body(); c.globalAlpha *= .82; c.beginPath(); c.moveTo(ox, SH + 7); c.lineTo(bx, by); c.stroke(); c.globalAlpha /= .82; drawHeldWeapon(c, id, ax, ay, bx, by, swing, cp); } catch (e) { quietErr(e); } c.restore(); }
-  c.save(); try { if (id === 'herbal' && typeof drawHerbal === 'function') drawHerbal(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'shieldman' && typeof drawShieldman === 'function') drawShieldman(c, { face, ax, ay, hx, hy, swing, t: now / 1000, HEADCY, HEADR, SH, HIP, tint, raise: 0 }); else if (id === 'gardener' && typeof drawGardener === 'function') drawGardener(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) { quietErr(e); } c.restore();      // (정원사's hat, slingshot and pouch: gardener.js)
+  if (cp === 'tk' && (id === 'herbal' || id === 'shieldman' || id === 'gardener')) { c.save(); try { tkPersona(c, id, 0, HEADCY, HEADR, SH); tkHeld(c, id, ax, ay, hx, hy, swing); } catch (e) { quietErr(e); } c.restore(); } else
+  c.save(); try { if (id === 'herbal' && typeof drawHerbal === 'function') drawHerbal(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'shieldman' && typeof drawShieldman === 'function') drawShieldman(c, { face, ax, ay, hx, hy, swing, t: now / 1000, HEADCY, HEADR, SH, HIP, tint, raise: 0 }); else if (id === 'gardener' && typeof drawGardener === 'function') drawGardener(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'chef' && typeof drawChef === 'function') drawChef(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) { quietErr(e); } c.restore();      // (정원사's hat, slingshot and pouch: gardener.js)
   if (it && it.fx) { c.save(); try { drawSkinFx(c, lux >= 4 ? 'sparkle' : it.fx, lux >= 4 ? auroraHex(now / 1000 * .9, 1) : tint, 0, HEADCY, HEADR * 1.3, now); } catch (e) { quietErr(e); } c.restore(); }
   if (cos && cos.col && COSMETICS[cos.col] && COSMETICS[cos.col].shine) { c.save(); try { drawShineGlints(c, now, 0); } catch (e) { quietErr(e); } c.restore(); }
   c.restore();
@@ -86,7 +88,7 @@ function drawFighter0(f, alpha) {
   if (typeof haraldCtx === 'function') haraldCtx(f);
   pistolDual = f.h.id === 'pistol' && B(f, 'akimbo');
   samHand = f.h.id === 'samurai' && f.st ? (f.st.hand != null ? f.st.hand : 1) : 1;
-  drawStick(ctx, f.h.id, awCol(f, col), f.aim, f.bob, f.swing > 0 ? 1 - f.swing / .22 : 0, time, f.cos);
+  TK_DRAW_AW = TK_AW = f.awT > 0; try { drawStick(ctx, f.h.id, awCol(f, col), f.aim, f.bob, f.swing > 0 ? 1 - f.swing / .22 : 0, time, f.cos); } finally { TK_DRAW_AW = TK_AW = false; }
   pistolDual = false;
   ctx.restore(); ctx.globalAlpha = alpha;
   if (st.orb && st.orb.n > 0) for (let i = 0; i < st.orb.n; i++) { const a = time * 3 + i * 6.283 / (st.orb.m || 5); ctx.fillStyle = '#ff8a2a'; ctx.beginPath(); ctx.arc(Math.cos(a) * 54, Math.sin(a) * 54 - 16, 7, 0, 6.3); ctx.fill(); }
@@ -136,6 +138,7 @@ function drawBars(f) {
 function drawMinion(m) {
   const col = TC(m.team), k = m.kind;
   ctx.save(); ctx.translate(m.x, m.y);
+  if (k === 'turkey') { drawTurkeyMinion(m); ctx.restore(); return; }
   if (k === 'clone') {
     ctx.translate(0, 16); ctx.scale(1.15, 1.15);
     drawStick(ctx, 'tionis', col, m.aim || 0, m.bob || 0, m.sw && time - m.sw < .22 ? (time - m.sw) / .22 : 0, time);
@@ -233,6 +236,7 @@ function render() {
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.fillStyle = '#0c0e13'; ctx.fillRect(0, 0, W, H);
   const menu = state === 'menu', me = driven();
+  if (menu && !DED && typeof drawLobbyArt === 'function' && drawLobbyArt(ctx)) return;      // (lobbybg.js: the season picture, no map)
   if (menu || !player) { cam.s = Math.max(W / WW, H / WH); cam.x = WW / 2; cam.y = WH / 2; }
   else {
     cam.s = Math.min(W, H) / (10.5 * T) * ((H > W * 1.15 && W <= 600) || (W > H && H <= 520 && touchUi()) ? 1.2 : 1);   // phones (upright or sideways): zoom in a little so the fighters are bigger
@@ -278,13 +282,14 @@ function render() {
   if (me && state === 'play') { if (!drawPreviews(me)) drawBasicGuide(me); }      // previews over the bush tiles, so a bush never hides them
   for (const f of inBush) drawFighter(f, f.team === VIEW ? .6 : .85);
   drawRopes();      // (awaken.js / 보안관 올가미)
-  for (const b of bullets) if (!(b.shape === 'potion' && typeof drawPotionShot === 'function' && drawPotionShot(b)) && !(b.shape === 'seed' && typeof drawSeedShot === 'function' && drawSeedShot(b)) && !drawShot(b)) drawBullet(b);      // shots and swings over walls and bushes, so nothing hides them
+  for (const b of bullets) if (!(b.shape === 'potion' && typeof drawPotionShot === 'function' && drawPotionShot(b)) && !(b.shape === 'seed' && typeof drawSeedShot === 'function' && drawSeedShot(b)) && !(typeof drawChefShot === 'function' && drawChefShot(b)) && !drawShot(b)) drawBullet(b);      // shots and swings over walls and bushes, so nothing hides them
   { const now = performance.now(); drawSwings(Math.min(.05, (now - (render.last || now)) / 1000)); render.last = now; }
   for (const m of minions) if (m.kind === 'dragon' || m.kind === 'crow') drawMinion(m);
   for (const p of parts) { ctx.globalAlpha = clamp(p.life / p.max, 0, 1); ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.3); ctx.fill(); }
   if (typeof drawWallMarks === 'function') drawWallMarks(ctx);
   drawParticles();
-  if (typeof drawGardenTop === 'function') drawGardenTop();      // (gardener.js: leaves, pollen, forest burst, vines round the feet)
+  if (typeof drawGardenTop === 'function') drawGardenTop();
+  if (typeof drawChefTop === 'function') drawChefTop();      // (chef.js: sweeps, feathers, sprinkles)      // (gardener.js: leaves, pollen, forest burst, vines round the feet)
   for (const g of rings) { const k = 1 - g.life / g.max; ctx.globalAlpha = 1 - k; ctx.strokeStyle = g.color; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(g.x, g.y, g.r * (.4 + .6 * k), 0, 6.3); ctx.stroke(); }
   drawRoseFx();
   ctx.globalAlpha = 1;
@@ -333,6 +338,7 @@ const nameOf = (d, f) => typeof d.name === 'function' ? d.name(f || { st: {} }) 
 let lastHud = '', ovtSeen = false, ovtUntil = 0;
 function updateHud() {
   const p = player; if (!p) return;
+  tkHudUpd(p);
   soloOutCheck(); if (soloOutShown) return;
   const tl = Math.max(0, Math.ceil(timeLeft)), c = cdInfo(p), pc = (v, m) => Math.round(clamp(1 - v / (m || 1), 0, 1) * 100);
   const up = pc(c.u, c.uM), dp = pc(c.d, c.dM), sp = [0, 1].map(i => pc(c.s[i], c.sM[i])), sn = c.sn;
@@ -460,7 +466,7 @@ if (!DEVICE && $('devPick')) {
 /* game modes: the engine's MODES registry ({id,name,size,maps,ready}) when it exists; until then the same four, with only the current rules playable */
 const MODE_FALLBACK = [{ id: 'team', name: '팀 아웃', size: '3v3' }, { id: 'solo', name: '원 레프트', size: '8명', ready: false }, { id: 'flag', name: '캡쳐 플래그', size: '3v3', ready: false }, { id: 'duel', name: '듀얼 배틀', size: '1v1', ready: false }];
 const MODE_LIST = typeof MODES !== 'undefined' && Array.isArray(MODES) && MODES.length ? MODES : MODE_FALLBACK;
-const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'], rank: ['mi-m-rank', '#ffcc33'], gw: ['mi-m-gw', '#3ddbb4'], hot4: ['mi-m-hot', '#ff8a3d'], ball: ['mi-m-ball', '#5fd36a'], duo: ['mi-m-last', '#c77dff'], star: ['mi-star', '#ffd34d'], ko3: ['mi-m-team', '#ff6b8a'] };
+const MODE_LOOK = { team: ['mi-m-team', '#ff5d5d'], solo: ['mi-m-last', '#ffd34d'], last: ['mi-m-last', '#ffd34d'], flag: ['mi-m-flag', '#3ddbb4'], flag5: ['mi-m-flag5', '#4aa6ff'], duel: ['mi-m-duel', '#b48cff'], rank: ['mi-m-rank', '#ffcc33'], gw: ['mi-m-gw', '#3ddbb4'], hot4: ['mi-m-hot', '#ff8a3d'], ball: ['mi-m-ball', '#5fd36a'], turkey: ['mi-m-turkey', '#e8892e'], duo: ['mi-m-last', '#c77dff'], star: ['mi-star', '#ffd34d'], ko3: ['mi-m-team', '#ff6b8a'] };
 let modeSel = typeof modeChoice === 'string' ? modeChoice : MODE_LIST[0].id, modeView = modeSel;
 const modeOk = m => !!m && m.ready !== false && (typeof modeOpen !== 'function' || modeOpen(m.id)) && (typeof modeExtraOk !== 'function' || modeExtraOk(m));      // + 랭크전 / 길드 대항전 conditions (rank.js, guild.js)      // ready, and drawn for today (engine.js MODE_GROUPS)
 const modeCur = () => MODE_LIST.find(m => m.id === modeSel && modeOk(m)) || MODE_LIST.find(modeOk) || MODE_LIST[0];
@@ -630,6 +636,7 @@ function buildChars() {
     const k = document.createElement('div'); k.className = 'wk'; k.textContent = h.wname + ' · ' + KIND_LABEL[h.type];
     const m = document.createElement('div'), mb = document.createElement('span'), mf = document.createElement('i'); m.className = 'wm'; mb.className = 'wmBar'; mb.append(mf); m.append(document.createElement('b'), mb);
     b.append(cvs, n, k, m);
+    if (typeof heroLocked === 'function' && heroLocked(id)) { b.classList.add('heroLock'); const lk = document.createElement('div'); lk.className = 'hLock'; lk.textContent = '🔒 ' + (typeof tkOn === 'function' && tkOn() ? '시즌 뽑기' : '잠김'); b.append(lk); }      // (셰프: chef.js / season.js)
     b.addEventListener('click', () => openDetail(id));
     grid.append(b);
   }
@@ -684,6 +691,7 @@ function openDetail(id) {
   renderLoadout(id);
   renderDuelLine();
   $('weaponLockBtn').textContent = id === (isDuelMode(modeSel) ? duelIds()[DSLOT] : chosen) ? '확인' : '이 캐릭터로 정하기'; $('weaponLockBtn').disabled = false;
+  if (typeof heroLocked === 'function' && heroLocked(id)) chefLockUi(id);
   $('weaponScreen').scrollTop = 0;
 }
 function closeDetail() { viewing = null; $('weaponScreen').classList.remove('wDetail'); }
@@ -692,6 +700,7 @@ $('weaponSearch').addEventListener('input', e => {
   for (const el of $('weaponGrid').children) { const h = HEROES[el.dataset.wid]; el.style.display = (!q || (h.name + ' ' + h.wname + ' ' + h.id).toLowerCase().includes(q)) ? '' : 'none'; }
 });
 $('weaponLockBtn').addEventListener('click', () => {
+  if (typeof heroLocked === 'function' && heroLocked(viewing)) return;
   if (isDuelMode(modeSel)) { duelPut(DSLOT, viewing); savePrefs(); markSel(); const k = duelIds().indexOf(null); if (k >= 0) { DSLOT = k; closeDetail(); renderDuelLine(); return; } }
   else chosen = viewing;
   savePrefs(); markSel(); closeDetail(); showScreen('menuScreen'); });
@@ -721,9 +730,9 @@ $('mapPickBtn').addEventListener('click', () => { mapChoice = mapList[mapIdx]; s
 
 /* mode picker. PC: a row of event cards, tap one to look at it, the button below (or a double click) confirms.
    touch or small screens: big posters, a tap picks the mode right away. Each card: mode art, headcount, two rules, the mode's current map */
-const MODE_DARK = { team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a', rank: '#5a4210', gw: '#0f4a44', hot4: '#7a3510', ball: '#1f5a26', duo: '#55207a', star: '#6a5208', ko3: '#6e1c33' };
+const MODE_DARK = { turkey: '#5a2410', team: '#7a1f2a', solo: '#7a5a10', last: '#7a5a10', flag: '#0f5a4b', flag5: '#173f7a', duel: '#47307a', rank: '#5a4210', gw: '#0f4a44', hot4: '#7a3510', ball: '#1f5a26', duo: '#55207a', star: '#6a5208', ko3: '#6e1c33' };
 const MODE_ART = { team: 0, solo: 7, last: 7, flag: 4, duel: 1, rank: 1, gw: 0, hot4: MAPS.findIndex(m => m.hot), ball: MAPS.findIndex(m => m.ball), duo: 8, star: 9, ko3: 11 };      // map drawn behind the figures while the mode's map is random
-const MODE_TOP = { rank: 2, gw: 1 };
+const MODE_TOP = { turkey: 3, rank: 2, gw: 1 };
 const MODE_FFA = ['#4d9dff', '#ff5d5d', '#ffd34d', '#3ddbb4', '#b48cff', '#ff9a3d'];
 const RULE_ICO = {
   kill: '<circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>',
@@ -732,6 +741,7 @@ const RULE_ICO = {
   flag: '<path d="M6 21V4M6 5h12l-3 4 3 4H6"/>',
   zone: '<circle cx="12" cy="12" r="9" stroke-dasharray="4 3"/><circle cx="12" cy="12" r="3.5"/>',
   ball: '<circle cx="12" cy="12" r="9"/><path d="M12 8.5l3.3 2.4-1.3 3.9h-4l-1.3-3.9z" fill="currentColor"/>',
+  turkey: '<path d="M12 4a8 8 0 0 0-8 8M12 4a8 8 0 0 1 8 8M12 7a5 5 0 0 0-5 5M12 7a5 5 0 0 1 5 5"/><circle cx="12" cy="15" r="4" fill="currentColor"/>',
   rounds: '<circle cx="5" cy="12" r="3" fill="currentColor"/><circle cx="12" cy="12" r="3" fill="currentColor"/><circle cx="19" cy="12" r="3"/>'
 };
 const mmss = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
@@ -744,6 +754,7 @@ function modeRules(m) {
   else if (m.id === 'star') r.push(['crown', '별 1위']);
   else if (m.id === 'hot4') r.push(['zone', (m.win || 100) + '%']);
   else if (m.id === 'ball') r.push(['ball', m.win + '골']);
+  else if (m.id === 'turkey') r.push(['turkey', '칠면조 수']);
   else if (m.win) r.push(['kill', m.win + '킬']);
   if (m.time) r.push(['clock', (m.rounds ? '판당 ' : '') + mmss(m.time)]); else if (m.fog) r.push(['zone', '좁혀지는 안개']);
   return r;
@@ -794,6 +805,10 @@ function modeScene(cv, m, mi, cx) {
     g.save(); g.fillStyle = 'rgba(255,138,61,.22)'; g.beginPath(); g.ellipse(zx, zy, zr, zr * .45, 0, 0, 7); g.fill();
     g.strokeStyle = '#ffb36b'; g.lineWidth = 3 * k; g.setLineDash([10 * k, 6 * k]); g.beginPath(); g.ellipse(zx, zy, zr, zr * .45, 0, 0, 7); g.stroke(); g.restore();
     [['sword', -1.25, 4, 1], ['bow', -.55, -26, 1], ['rifle', .55, -26, -1], ['harald', 1.25, 4, -1]].forEach(([id, dx, dy, face], t) => fig(id, TEAM[t], zx + dx * 70 * s, base + dy * s, s * .95, face, .4));
+  } else if (m.id === 'turkey') {      // the turkey in the middle, one fighter of each side going for it
+    fig('sword', B, x0 - 80 * s, base, s * 1.1, 1, .5); fig('bow', B, x0 - 140 * s, base - 22 * s, s * .9, 1, .3);
+    fig('harald', R, x0 + 90 * s, base - 4 * s, s * 1.05, -1, .4); fig('rifle', R, x0 + 150 * s, base - 26 * s, s * .9, -1, .3);
+    g.save(); g.translate(x0 + 4 * s, base - 30 * s); drawTurkeyArt(g, 46 * s, 0, false); g.restore();
   } else if (m.id === 'ball') {      // a ball in the middle, one side running at it
     const bx = x0 + 6 * s, by = base - 8 * s, br = 13 * s;
     fig('sword', B, x0 - 50 * s, base, s * 1.1, 1, .5); fig('bow', B, x0 - 120 * s, base - 22 * s, s * .9, 1, .3);
@@ -991,13 +1006,14 @@ function endGame(keepRunning) {
     const sk = pay ? streakStep(first, draw, oc.place >= 2 && oc.place <= (curMode === 'solo' || curMode === 'star' ? 3 : curMode === 'duo' || curMode === 'hot4' ? 2 : 0)) : null;      // 원 레프트 2-3등, 투 레프트 / 4팀 핫존 2등 keep the win streak
     if (sk) { pay.karma += sk.karma; pay.gold = Math.round(pay.gold * sk.gm); }
     { const e = $('streakGain'); e.hidden = !(sk && sk.st); if (sk && sk.st) { e.className = sk.st; e.textContent = sk.st === 'up' ? '🔥 ' + sk.ws + '연승' : sk.st === 'keep' ? '🔥 ' + sk.ws + '연승 유지' : '연승 끊김'; } }
-    $('goldGain').hidden = !pay; $('crGain').hidden = true; $('mpCard').hidden = true;
+    $('goldGain').hidden = !pay; $('crGain').hidden = true; $('tlGain').hidden = true; $('mpCard').hidden = true;
     if (pay) {
       const m0 = masteryOf(hid); COS.gold += pay.gold; if (win && !draw) COS.cr = (COS.cr | 0) + WIN_CR;      // 승리마다 크리스탈 +3 (user 2026-11-16)
        COS.karma += pay.karma; COS.xp += pay.xp; addMp(hid, pay.mp);
+       if (curMode === 'turkey') COS.tl = (COS.tl | 0) + (player.tk | 0);      // 칠면조 다리: one per turkey this player caught
        if (isDuelMode(curMode) && DUEL.line && DUEL.line[player.team]) { const li = DUEL.li[player.team] | 0; new Set(DUEL.line[player.team].slice(0, li + 1)).forEach(id => { if (id && id !== hid) addMp(id, pay.mp); }); }      // 듀얼: every character that came out gets the mastery, not only the last one (user 2026-11-23)
        dqMatch({ mode: curMode, win, kills: player.kos || 0, place: solo ? oc.place : 0, hero: hid, dealt: player.dealt || 0 }); achMatch({ mode: curMode, win, first: oc.win, kills: player.kos || 0, deaths: player.deaths || 0, hero: hid, n: fighters.length, mvp: matchMvp(first, draw) === player }); saveCos(); goldUi();
-      $('goldGainN').textContent = '+' + pay.gold; $('crGain').hidden = !(win && !draw); $('karmaGain').hidden = !pay.karma; $('karmaGainN').textContent = '+' + pay.karma; $('mpGainN').textContent = '+' + pay.mp; $('xpGainN').textContent = '+' + pay.xp;
+      $('goldGainN').textContent = '+' + pay.gold; $('tlGain').hidden = curMode !== 'turkey'; $('tlGainN').textContent = '+' + (player.tk | 0); $('crGain').hidden = !(win && !draw); $('karmaGain').hidden = !pay.karma; $('karmaGainN').textContent = '+' + pay.karma; $('mpGainN').textContent = '+' + pay.mp; $('xpGainN').textContent = '+' + pay.xp;
       $('mpGain').style.color = masteryOf(hid).col;
       { /* mastery card: logo, rank, bar (old part solid, this match lighter), rank-up line */
         const m1 = masteryOf(hid), up = m1.i > m0.i, c = m1.col; drawMasteryLogo($('mpLogo'), m1.i);
@@ -1065,7 +1081,7 @@ cv.addEventListener('pointerdown', e => {
     const atk = e.clientX >= W / 2, hm = stickHome(atk), grab = Math.hypot(e.clientX - hm.x, e.clientY - hm.y) < STICK_R * 1.5;      // a touch on or near the drawn stick uses its centre; anywhere else on that half the stick comes to the thumb
     const s = { id: e.pointerId, ox: grab ? hm.x : e.clientX, oy: grab ? hm.y : e.clientY, dx: 0, dy: 0, sx: e.clientX, sy: e.clientY, t0: performance.now() };
     if (!document.body.classList.contains('touchUi')) touchUiSync();
-    if (!atk) { if (!stickM) { stickM = s; if (grab) setStick(s, e); } } else if (!stickA) stickA = s;      // the attack stick does not aim until the thumb actually moves, so an off-centre tap stays an auto-aim shot
+    if (!atk) { if (!stickM || stickM.id !== e.pointerId) { stickM = s; if (grab) setStick(s, e); } } else if (!stickA || stickA.id !== e.pointerId) stickA = s;      // a new thumb always takes the stick: a stick whose release never came (system gesture, app switch) can no longer lock the player in one direction (user 2026-11-25)      // the attack stick does not aim until the thumb actually moves, so an off-centre tap stays an auto-aim shot
   } else {
     touchMode = false; mouse.x = e.clientX; mouse.y = e.clientY;
     if (e.button === 0) { mouse.down = true; mouseRel = false; } else if (e.button === 2) { if (mouse.down) { mouse.down = false; mouseRel = false; } else if (pvAny()) pvCancelAll(); else wantUlt = true; }      // right click while aiming a basic attack cancels it
@@ -1089,6 +1105,12 @@ function pointerEnd(e) {
   } else if (e.button === 0 || e.type === 'pointercancel') { if (mouse.down && e.type === 'pointerup' && e.button === 0 && state === 'play') mouseRel = true; mouse.down = false; }
 }
 cv.addEventListener('pointerup', pointerEnd); cv.addEventListener('pointercancel', pointerEnd);
+/* a release that does not reach the canvas still ends the stick, and with no finger on the screen at all neither stick stays held */
+for (const t of ['pointerup', 'pointercancel']) addEventListener(t, e => { if (e.pointerType === 'touch' && e.target !== cv) pointerEnd(e); }, true);
+cv.addEventListener('lostpointercapture', e => { if (e.pointerType === 'touch' && ((stickM && stickM.id === e.pointerId) || (stickA && stickA.id === e.pointerId))) pointerEnd({ pointerType: 'touch', pointerId: e.pointerId, type: 'pointercancel', clientX: e.clientX, clientY: e.clientY }); });
+for (const t of ['touchend', 'touchcancel']) addEventListener(t, e => { if (!e.touches.length) { stickM = null; if (stickA) pointerEnd({ pointerType: 'touch', pointerId: stickA.id, type: 'pointercancel', clientX: 0, clientY: 0 }); } }, true);
+const sticksOff = () => { stickM = null; stickA = null; };
+addEventListener('blur', sticksOff); addEventListener('pagehide', sticksOff); document.addEventListener('visibilitychange', () => { if (document.hidden) sticksOff(); });
 for (const [b, t] of [[ultBtn, ['u']], [dashBtn, ['d']], [skBtn[0], ['s', 0]], [skBtn[1], ['s', 1]]]) {
   b.addEventListener('pointerdown', e => { e.preventDefault(); if (e.pointerType === 'touch') touchMode = true; pvTouchStart(t, b, e); });
   b.addEventListener('pointermove', e => { const p = PV.touch, k = SET.aim / 100; if (p && k !== 1 && p.id === e.pointerId) pvTouchMove({ pointerId: e.pointerId, clientX: p.ox + (e.clientX - p.ox) * k, clientY: p.oy + (e.clientY - p.oy) * k }); else pvTouchMove(e); }); b.addEventListener('pointerup', pvTouchEnd); b.addEventListener('pointercancel', pvTouchEnd);
@@ -1176,7 +1198,7 @@ window.__fxac = () => ac ? ac.state : 'not made yet';
 buildChars(); updatePick(); setup(false); loadAccount(); if (achScan()) saveCos(); setTimeout(() => achSync(true), 2500);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => lobbyCharPlace());
 setTimeout(lobbyCharPlace, 60);
-for (let i = 0; i < 90; i++) step(.033);
+(() => { let n = 90; const go = () => { if (state !== 'menu') return; step(.033); n--; if (n > 0) setTimeout(go, 65); }; go(); })();      // the lobby's background match is run ahead one step every 0.065 s (user; all 90 steps at once froze the first lobby, user 2026-11-26)
 requestAnimationFrame(frame);
 /* 듀얼 배틀: both sides' picks beside the clock (mine on the left), in place of the two score boxes */
 function duelHud() {
