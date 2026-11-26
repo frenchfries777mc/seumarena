@@ -74,7 +74,7 @@ function tuneUi() {
     const off = document.createElement('button'); off.className = 'btn-plain'; off.type = 'button'; off.textContent = '끄기';
     const msg = document.createElement('div'); msg.style.cssText = 'width:100%;font-size:12px;opacity:.8';
     const say = () => { msg.textContent = TUNE_ON ? '켜짐: 이 기기에서만 바뀐 수치로 혼자 하기(봇 경기)를 할 수 있어요.' : '꺼짐: 원래 수치예요.'; };
-    on.onclick = () => { const n = tuneSet(inp.value); if (n < 0) msg.textContent = '코드가 맞지 않아요. 개발자 도구에서 다시 복사해 주세요.'; else { say(); msg.textContent += ' (' + n + '명 바뀜)'; } };
+    on.onclick = () => { const n = tuneSet(inp.value); if (n < 0) msg.textContent = '코드가 맞지 않아요. 개발자 도구에서 다시 복사해 주세요.'; else { say(); msg.textContent += ' (' + n + '가지 바뀜)'; } };
     off.onclick = () => { tuneSet(''); inp.value = ''; say(); };
     row.append(lb, inp, on, off, msg); title.insertAdjacentElement('afterend', row); say();
   });

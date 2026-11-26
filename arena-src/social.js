@@ -890,6 +890,7 @@ function winScreen(won, draw) {
 
 /* more emotes: Stickseum's shop emotes, then SeumArena's own (the thumbs down first). Only ever add at the END: an emote travels over the network as its number */
 for (const [em, nm] of [...SHOP_EMOTES, ['👎', '역따봉'], ['❤', '하트'], ['👻', '유령'], ['💪', '근육'], ['🤣', '빵 터짐'], ['🙌', '만세'], ['💢', '빠직'], ['✨', '반짝'], ...(typeof MORE_EMOTES !== 'undefined' ? MORE_EMOTES : [])]) { const i = EMOTES.length; EMOTES.push(em); COSMETICS['emo_' + i] = { cat: 'emo', name: nm, price: 0, free: true, em, emIdx: i }; }
+{ const i = EMOTES.length; EMOTES.push('🖕'); COSMETICS['emo_' + i] = { cat: 'emo', name: '쓰지 마세요', price: 0, free: true, em: '🖕', emIdx: i }; }      // user 2026-11-26 (developer tool): added at the END (emotes travel as numbers)
 /* the 치장품 screen */
 const COS_TABS = [['skin', '스킨'], ['bcol', '캐릭터 색'], ['name', '이름 색'], ['kfx', '킬 이펙트'], ['pose', '승리 포즈'], ['emo', '이모트']];
 let cosTab = 'skin', cosBuy = null;      // cosBuy: the skin tapped once, waiting for the second tap that buys it
