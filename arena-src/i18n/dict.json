@@ -1606,5 +1606,7 @@
 "켜짐: 이 기기에서만 바뀐 수치로 혼자 하기(봇 경기)를 할 수 있어요.": ["On: you can play solo (bot matches) with the changed numbers on this device only.","Activé : vous pouvez jouer en solo (contre des bots) avec les valeurs modifiées, sur cet appareil uniquement.","Activado: puedes jugar solo (contra bots) con los valores cambiados, solo en este dispositivo.","オン: この端末でだけ、変えた数値でひとりプレイ（ボット戦）ができます。","开启：仅在本设备上可用修改后的数值单人游戏（机器人对战）。"],
 "꺼짐: 원래 수치예요.": ["Off: original numbers.","Désactivé : valeurs d'origine.","Desactivado: valores originales.","オフ: 元の数値です。","关闭：原始数值。"],
 "코드가 맞지 않아요. 개발자 도구에서 다시 복사해 주세요.": ["The code doesn't match. Copy it again from the developer tool.","Le code ne correspond pas. Recopiez-le depuis l'outil développeur.","El código no es válido. Cópialo de nuevo desde la herramienta de desarrollo.","コードが合いません。開発者ツールからもう一度コピーしてください。","代码不正确。请从开发者工具重新复制。"],
-"명 바뀜)": [" changed)"," modifiés)"," cambiados)","人変更)","人已更改)"]
+"명 바뀜)": [" changed)"," modifiés)"," cambiados)","人変更)","人已更改)"],
+"가지 바뀜)": [" changed)"," modifiés)"," cambiados)","件変更)","项已更改)"],
+"쓰지 마세요": ["Don't use it","Ne l'utilise pas","No lo uses","使わないで","别用"]
 }
