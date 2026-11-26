@@ -1529,5 +1529,13 @@
 "오븐 차원여행자": ["Oven Dimension Traveller","Voyageur dimensionnel four","Viajero dimensional horno","オーブン次元旅行者","烤箱次元旅行者"],
 "호박밭 정원사": ["Pumpkin Patch Gardener","Jardinier du potager","Jardinero del calabazar","カボチャ畑の庭師","南瓜田园丁"],
 "크랜베리 약초꾼": ["Cranberry Herbalist","Herboriste canneberge","Herbolaria de arándano","クランベリー薬草師","蔓越莓药草师"],
-"파이 방패병": ["Pie Shieldbearer","Porte-bouclier tarte","Escudero de tarta","パイの盾兵","派盾兵"]
+"파이 방패병": ["Pie Shieldbearer","Porte-bouclier tarte","Escudero de tarta","パイの盾兵","派盾兵"],
+"연습장": ["Practice Range","Terrain d'entraînement","Campo de práctica","練習場","练习场"],
+"튼튼한 허수아비": ["Sturdy Dummy","Mannequin robuste","Muñeco resistente","頑丈なカカシ","结实的稻草人"],
+"나가기": ["Leave","Quitter","Salir","退出","退出"],
+"셰프 (새 캐릭터)": ["Chef (new character)","Chef (nouveau personnage)","Chef (nuevo personaje)","シェフ (新キャラクター)","厨师 (新角色)"],
+"셰프 스킬 해금 (": ["Chef skill unlock (","Déblocage de compétence du Chef (","Desbloqueo de habilidad del Chef (","シェフのスキル解放 (","解锁厨师技能 ("],
+"개 중 #개)": [" left, get #)"," restantes, # obtenue)"," restantes, obtienes #)","個中#個)","个中#个)"],
+"로그인 창을 여는 중이에요…": ["Opening the sign-in window…","Ouverture de la fenêtre de connexion…","Abriendo la ventana de inicio de sesión…","ログイン画面を開いています…","正在打开登录窗口…"],
+"로그인 서버에 연결할 수 없어요. 잠시 뒤 다시 눌러 주세요.": ["Can't reach the sign-in server. Please tap again in a moment.","Impossible de joindre le serveur de connexion. Réessayez dans un instant.","No se puede conectar con el servidor de inicio de sesión. Vuelve a pulsar en un momento.","ログインサーバーに接続できません。しばらくしてからもう一度押してください。","无法连接登录服务器。请稍后再点一次。"]
 }

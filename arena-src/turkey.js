@@ -14,18 +14,21 @@ function turkeySpawn() {
   addText({ x: p.x, y: p.y - 70, txt: '칠면조 등장!', life: 1.4, color: '#ffd08a' }); sfx(520, .25, 'triangle', .07);
 }
 /* wanders near the middle; runs from the nearest fighter that comes close */
-function turkeyUpd(m, dt) {
-  let near = null, nd = TK_FLEE * T;
-  for (const f of fighters) if (!f.dead && !f.minion) { const d = Math.hypot(f.x - m.x, f.y - m.y); if (d < nd) { nd = d; near = f; } }
+function turkeyUpd(m, dt) {      // 2026-11-26 (user: it moved in jerks): it now steers smoothly (velocity eases toward the wanted direction), keeps fleeing the same fighter for a while, and faces where it really moves
+  let near = m.fr && !m.fr.dead && m.frT > time && Math.hypot(m.fr.x - m.x, m.fr.y - m.y) < TK_FLEE * T * 1.3 ? m.fr : null;
+  if (!near) { let nd = TK_FLEE * T; for (const f of fighters) if (!f.dead && !f.minion) { const d = Math.hypot(f.x - m.x, f.y - m.y); if (d < nd) { nd = d; near = f; } } if (near) { m.fr = near; m.frT = time + .8; } }
   let dx, dy, sp = TK_SPD;
-  if (near) { dx = m.x - near.x; dy = m.y - near.y; sp = TK_SPD * 1.15; if (Math.hypot(m.x - m.cx, m.y - m.cy) > TK_ROAM * T) { dx += (m.cx - m.x) * .8; dy += (m.cy - m.y) * .8; } }
+  if (near) { dx = m.x - near.x; dy = m.y - near.y; const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l; sp = TK_SPD * 1.15; const ox = m.cx - m.x, oy = m.cy - m.y, od = Math.hypot(ox, oy); if (od > TK_ROAM * T * .6) { const k = Math.min(1.5, (od - TK_ROAM * T * .6) / (TK_ROAM * T * .4)); dx += ox / od * k; dy += oy / od * k; } }
   else { m.wt -= dt; if (m.wt <= 0 || Math.hypot(m.wx - m.x, m.wy - m.y) < 12) { m.wt = 1.2 + Math.random() * 1.6; const a = Math.random() * 6.283, r = Math.random() * TK_ROAM * T * .7; m.wx = m.cx + Math.cos(a) * r; m.wy = m.cy + Math.sin(a) * r; } dx = m.wx - m.x; dy = m.wy - m.y; sp = TK_SPD * .55; }
   if (B(m, 'slow')) sp *= .55;
-  const d = Math.hypot(dx, dy); if (d < 1) return;
-  const vx = dx / d * sp * dt, vy = dy / d * sp * dt, ok = (x, y) => ![[-14, -10], [14, -10], [-14, 12], [14, 12]].some(([ox, oy]) => blockedAt(x + ox, y + oy));
-  if (ok(m.x + vx, m.y)) m.x += vx; else m.wt = 0;
-  if (ok(m.x, m.y + vy)) m.y += vy; else m.wt = 0;
-  m.x = clamp(m.x, T * 1.4, WW - T * 1.4); m.y = clamp(m.y, T * 1.4, WH - T * 1.4); m.a = Math.atan2(dy, dx); m.bob = (m.bob || 0) + dt * (near ? 14 : 7);
+  const d = Math.hypot(dx, dy), tx = d < 1 ? 0 : dx / d * sp, ty = d < 1 ? 0 : dy / d * sp, e = 1 - Math.exp(-dt * 6);
+  m.svx = (m.svx || 0) + (tx - (m.svx || 0)) * e; m.svy = (m.svy || 0) + (ty - (m.svy || 0)) * e;
+  const vx = m.svx * dt, vy = m.svy * dt, ok = (x, y) => ![[-14, -10], [14, -10], [-14, 12], [14, 12]].some(([ox, oy]) => blockedAt(x + ox, y + oy));
+  if (ok(m.x + vx, m.y)) m.x += vx; else { m.svx *= -.3; m.wt = 0; }
+  if (ok(m.x, m.y + vy)) m.y += vy; else { m.svy *= -.3; m.wt = 0; }
+  m.x = clamp(m.x, T * 1.4, WW - T * 1.4); m.y = clamp(m.y, T * 1.4, WH - T * 1.4);
+  if (Math.abs(m.svx) > 20) m.a = Math.atan2(m.svy, m.svx);      // facing follows the real movement, so it does not flip back and forth
+  m.bob = (m.bob || 0) + dt * (near ? 14 : 7);
 }
 function turkeyHit(m, dmg, by) {
   const ow = by && (by.minion ? by.by : by); if (ow && ow.h) m.last = ow;

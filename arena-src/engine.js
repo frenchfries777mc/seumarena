@@ -120,6 +120,8 @@ const OT_MAX = 60;       // sudden-death overtime when the clock runs out level:
 const STAT_X = 10;
 const DMG_RANGED = 1.25;  // 2026-11-14 (user): ranged heroes (every type but melee) deal x1.25 on everything (basic, skills, ult); melee x1
 // STAT_X:       // every hp and every damage/heal/shield number written in the kits is multiplied by this (damage() and heal() do it, so kit code keeps the original small numbers)
+/* 2026-11-26 (user: low win rate -> a little more hp, high win rate -> a little less damage). TEMP values from bot sims; hero id -> factor */
+const BAL_HP = {}, BAL_DMG = {};
 const HP_SCALE = .5;      // 2026-11-13 (developer): every fighter's hp is halved (damage, heals and shields stay as written) so fights end sooner
 const WIN_SCORE = 10, MATCH_TIME = 150, MAX_HP = 600, ULT_CD = 45, ULT_KILL = 10, CD1 = 5, CD2 = 10, DASH_D = 3.2 * T, SPEED = 205;
 
@@ -500,7 +502,7 @@ function damage(e, dmg, by, o) {
   o = o || {};
   if (e.dead || !(dmg > 0)) return 0;
   if (e.st && e.st.awCv && e.st.awCv.t > time && !o.cvr && by && by !== e && by.team !== e.team) { const g = e.st.awCv.by; if (g && !g.dead && g !== e) { const r = damage(g, dmg, by, Object.assign({}, o, { cvr: 1 })); g.st.awAbs = (g.st.awAbs || 0) + r; return 0; } }      // (awaken.js) 방패병 아군 엄호 B: the shield bearer takes the hit instead and stores it
-  if (!o.px) { dmg *= STAT_X; const ow = by && (by.minion ? by.by : by); if (ow && ow.h && ow.h.xm) dmg *= ow.h.xm; if (ow && ow.h && ow.h.type !== 'melee') dmg *= DMG_RANGED; }   // o.px: already in scaled units (re-entry from onDmg / onDeal) · h.xm = per-hero damage multiplier (balance knob, kits2.js DMG_MUL)
+  if (!o.px) { dmg *= STAT_X; const ow = by && (by.minion ? by.by : by); if (ow && ow.h && ow.h.xm) dmg *= ow.h.xm; if (ow && ow.h && ow.h.type !== 'melee') dmg *= DMG_RANGED; if (ow && ow.h0 && BAL_DMG[ow.h0.id]) dmg *= BAL_DMG[ow.h0.id]; }   // o.px: already in scaled units (re-entry from onDmg / onDeal) · h.xm = per-hero damage multiplier (balance knob, kits2.js DMG_MUL)
   if (by && !by.minion && !o.raw) dmg *= V(by, 'dmg', 1);
   { const ow = by && (by.minion ? by.by : by); if (ow && B(ow, 'taunt') && ow.b.taunt.v !== e) dmg *= .5; }      // 방패병 도발 표식: a marked fighter deals half to anyone but the shield bearer (herbshield.js)
   if (e.minion) { if (e.onDmg) return e.onDmg(e, dmg, by, o); e.hp -= dmg; if (e.hp <= 0) { e.dead = true; burst(e.x, e.y + BODY, '#cfd3dc', 10, 200); } return dmg; }
@@ -515,7 +517,7 @@ function damage(e, dmg, by, o) {
   if (by !== e && !e.minion) awGain(e, 'taken', dmg);      // (awaken.js) 복서: damage taken
   e.hp -= dmg; e.lastHit = time; e.recent.push([time, dmg / STAT_X]); e.taken = (e.taken || 0) + dmg;
   ultCharge(by, e, o);
-  { const ow = by && (by.minion ? by.by : by); if (ow && ow !== e && ow.h && ow.team !== e.team) e.lastAtk = { f: ow, t: time }; }
+  { const ow = by && (by.minion ? by.by : by); if (ow && ow !== e && ow.h && ow.team !== e.team) { e.lastAtk = { f: ow, t: time }; (e.hitBy || (e.hitBy = new Map())).set(ow, time); } }
   e.lastDmg = { src: o.src || SRC || (o.basic ? '기본 공격' : '패시브'), t: time };
   if (by && by !== e) { by.dealt = (by.dealt || 0) + dmg; if (!by.minion && by.h.onDeal) by.h.onDeal(by, e, dmg, o); }
   if (by && by !== e && !e.minion && by.team !== e.team) { awGain(by, 'dmg', dmg); if (!o.quiet) awGain(by, 'hit', 1); if (o.basic) awGain(by, 'basic', 1); }      // (awaken.js) the awakening gauge
@@ -603,9 +605,9 @@ function lunge(f, ang, d, dur, o) { f.dash = Object.assign({ t: dur, dx: Math.co
 function makeFighter(team, slot, id, isPlayer, lo0, cos, nick) {
   const h = HEROES[id], p = spawnPos(team, slot);
   const f = { team, slot, h, h0: h, isPlayer, x: p.x, y: p.y, tx: p.x, ty: p.y, vx: 0, vy: 0, kx: 0, ky: 0, mv: [0, 0], aim: team === 0 ? 0 : Math.PI,
-    hp: h.hp * HP_SCALE, mhp: h.hp * HP_SCALE, dead: false, respawnT: 0, inv: 1.5, lastHit: -9, lastFire: -9, lastMove: 0, fireCd: 0, ucd: 6, dcd: 0, scd: [0, 0], sk: [null, null],
+    hp: h.hp * HP_SCALE * (BAL_HP[h.id] || 1), mhp: h.hp * HP_SCALE * (BAL_HP[h.id] || 1), dead: false, respawnT: 0, inv: 1.5, lastHit: -9, lastFire: -9, lastMove: 0, fireCd: 0, ucd: 6, dcd: 0, scd: [0, 0], sk: [null, null],
     queue: [], dash: null, swing: 0, spin: 0, shield: 0, onShieldBreak: null, dots: [], recent: [], b: {}, x_: 0, st: {}, acc: 0, dealt: 0, hold: false, washold: false, tapT: 0, form: null, ghost: false,
-    kos: 0, deaths: 0, taken: 0, healed: 0, killer: null, lastDmg: null, bob: Math.random() * 6, infTick: 0,
+    kos: 0, ast: 0, deaths: 0, taken: 0, healed: 0, killer: null, lastDmg: null, bob: Math.random() * 6, infTick: 0,
     ai: { pers: pick(AI_PERS_IDS), fside: Math.random() < .5 ? 1 : -1, cool: rnd(.3, 1), strafeT: 0, sdir: Math.random() < .5 ? 1 : -1, roamT: 0, rx: 0, ry: 0, dist: null, pathNext: 0, gc: -1, gr: -1, sx: p.x, sy: p.y, stT: 0, thr: .7 } };
   const lo = lo0 ? loadoutValid(h, lo0[0], lo0[1]) : isPlayer ? loadoutOf(id) : botLoadout(h);
   f.human = !!isPlayer; f.cos = cos ? cleanCos(cos, id) : botCos(id); f.nick = nick || null; if (f.nick) I18N.keep(f.nick);
@@ -734,6 +736,7 @@ function kill(e, by) {
   // 2026-11-12 (user): a death with no enemy killer (safe zone, lava, vents, self) goes to the last enemy who hit them within 5 s
   if ((!by || by === e || !by.h) && e.lastAtk && time - e.lastAtk.t <= 5 && fighters.includes(e.lastAtk.f)) by = e.lastAtk.f;
   e.lastAtk = null;
+  if (e.hitBy) { for (const [ow, t] of e.hitBy) if (ow !== by && time - t <= 3 && fighters.includes(ow) && by && by !== e && by.h && ow.team === by.team) ow.ast = (ow.ast || 0) + 1; e.hitBy = null; }      // user 2026-11-26: assist = enemy who hit within 3 s before the death (not the killer), once per death
   if (by && by !== e && by.awT > 0) { const ab = awBoost(by); if (ab && ab.kill) ab.kill(by, e); }      // (awaken.js) a kill made while awakened
   if (e.h.onDeath) e.h.onDeath(e);
   const ki = by && by !== e ? fighters.indexOf(by) : -1, src = e.lastDmg && time - e.lastDmg.t < .6 ? e.lastDmg.src : '패시브';
@@ -824,12 +827,14 @@ function ai0(f, dt) {
   if (a.stT <= 0) { if (Math.hypot(f.x - a.sx, f.y - a.sy) < 8) { a.roamT = 0; a.sdir *= -1; } a.sx = f.x; a.sy = f.y; a.stT = .7; }
   let tgt = null, bd = 1e9;
   if (!B(f, 'blind')) for (const e of foes(f)) {
-    if (!visibleTo(e, teamOf(f)) || B(e, 'ally')) continue;
-    const d = dist(f, e) + (e.minion ? (e.kind === 'turkey' ? -250 : 60) : 0);      // 칠면조 잡기: bots go for the turkey
+    const tky = e.minion && e.kind === 'turkey';      // 칠면조 잡기: bots always know where the turkey is (it may stand in the middle bushes)
+    if ((!tky && !visibleTo(e, teamOf(f))) || B(e, 'ally')) continue;
+    const d = dist(f, e) + (e.minion ? (tky ? -9 * T : 60) : 0);      // 칠면조 잡기: bots go for the turkey (2026-11-26: much stronger pull; was -250 px)
     if (d < bd) { bd = d; tgt = e; }
   }
   if (B(f, 'taunt')) { const s = f.b.taunt.v; if (s && !s.dead && dist(f, s) < 10 * T) { tgt = s; bd = dist(f, s); } }      // taunted bots go for the shield bearer
-  if (tgt && bd > (L.aggro || 13) * T && !(a.eng > time) && time - f.lastHit > 2) { tgt = null; bd = 1e9; }      // 2026-11-15: a bot that is not in a fight only notices foes within aggro tiles
+  if (tgt && !(tgt.minion && tgt.kind === 'turkey') && bd > (L.aggro || 13) * T && !(a.eng > time) && time - f.lastHit > 2) { tgt = null; bd = 1e9; }      // 2026-11-15: a bot that is not in a fight only notices foes within aggro tiles
+  if (tgt && tgt.minion && tgt.kind === 'turkey') bd = dist(f, tgt);      // the pull above only picks the turkey; ranges below need the real distance (a negative one made bots stand still)
   if (tgt) a.eng = time + 3;
   a.bd = tgt ? bd : 1e9;
   if (tgt && !tgt.minion) a.mem = { e: tgt, x: tgt.x, y: tgt.y, vx: tgt.vx || 0, vy: tgt.vy || 0, t: 0 };      // 2026-11-15: remember the last place a foe was seen (bush hiding)
@@ -846,7 +851,7 @@ function ai0(f, dt) {
       }
     }
   }
-  if (tgt && bd < 13 * T) {
+  if (tgt && (bd < 13 * T || tgt.kind === 'turkey')) {
     const see = los(f.x, f.y, tgt.x, tgt.y), ang = angTo(f, tgt), close = h.type !== 'shot';
     f.aim = ang; f.tx = tgt.x; f.ty = tgt.y;
     const reach = h.rangef ? h.rangef(f) : h.range, inRange = bd < (close ? reach + 6 : reach * .95);
@@ -1025,7 +1030,7 @@ function updateFighter(f, dt) {
       if (ch) mv = (ch.isPlayer && !AUTO) ? playerInput(f) : ai(f, dt);
       else if (f.isPlayer && !AUTO) mv = driven() === f ? playerInput(f) : [0, 0];
       else if (f.remote) mv = applyInput(f, f.netIn);
-      else mv = f.dummy ? [0, 0] : ai(f, dt);      // (tut.js) the tutorial's dummy stands still
+      else mv = f.dummy ? (f.walk ? f.walk(f, dt) : [0, 0]) : ai(f, dt);      // (tut.js/practice.js) dummies stand still or walk their line
       if (B(f, 'puppet')) { const m = f.b.puppet.v.mv; mv = [m[0], m[1]]; if (!mv[0] && !mv[1]) mv = norm(f.b.puppet.v.x - f.x, f.b.puppet.v.y - f.y); }
     }
     f.mv = mv;
@@ -1146,6 +1151,7 @@ function step(dt) {
   fxStep(dt);
   if (state === 'play') {
     if (TUT.on) { tutStep(dt); return; }      // (tut.js) the tutorial runs no mode, clock or map event
+    if (typeof PRAC !== 'undefined' && PRAC.on) { prStep(dt); return; }      // (practice.js) nor does the practice range
     envStep(dt);
     const MODE = modeNow();
     if (MODE.rounds) { roundStep(dt); return; }
