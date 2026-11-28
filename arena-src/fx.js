@@ -295,25 +295,13 @@ function drawSwings(dt) {
 
 /* what each skill adds on top of its own work, when it is used (the original's per-skill effects) */
 const SKILL_FX = {
-  'sword:3': f => fxAt(f, 'skillring', { color: '#dfe6f0', r: 110 }),
   'sword:4': f => fxAt(f, 'blink', { color: '#ffd34d' }),
   'shotgun:1': f => fxAt(f, 'gust', { r: 120 }),
-  'shotgun:5': f => fxAt(f, 'skillring', { color: '#c9a36a' }),
-  'rifle:3': f => fxAt(f, 'skillring', { color: '#7be86a' }),
   'rifle:5': f => fxAt(f, 'shieldup'),
   'smg:3': f => fxAt(f, 'dash', { dir: 1, rot: +f.aim.toFixed(2) }),
   'gloves:2': f => fxAt(f, 'shieldup'),
   'wizard:1': f => fxAt(f, 'gust', { r: 130 }),
-  'wizard:5': f => fxAt(f, 'skillring', { color: '#9d7bff' }),
-  'magiccard:4': f => fxAt(f, 'skillring', { color: '#ff9ad0' }),
-  'samurai:4': f => fxAt(f, 'skillring', { color: '#dfe9ff' }),
-  'harald:1': f => fxAt(f, 'skillring', { color: '#ff5a3a' }),
   'harald:4': f => fxAt(f, 'shieldup'),
-  'shade:3': f => fxAt(f, 'skillring', { color: '#7dffd8' }),
-  'tionis:2': f => fxAt(f, 'skillring', { color: '#4ddb7a' }),
-  'pistol:1': f => fxAt(f, 'skillring', { color: '#ffd34d' }),
-  'pistol:3': f => fxAt(f, 'skillring', { color: '#ffd34d' }),
-  'pistol:4': f => fxAt(f, 'skillring', { color: '#7bf3ff' }),
   /* skills that used to show only the plain ring */
   'sword:2': f => fxPlay('leap', fighters.indexOf(f), .3, 90),
   'grenade:1': f => fxPlay('leap', fighters.indexOf(f), .45, 150, 1),
@@ -326,7 +314,6 @@ const SKILL_FX = {
 function skillFx(f, def) {
   fx('skill', f.x, f.y - 66, { name: typeof def.name === 'function' ? def.name(f) : def.name, color: TC(f.team) });
   const g = SKILL_FX[f.h.id + ':' + def.n]; if (g) g(f);
-  else fxAt(f, 'skillring', { color: themeCol(f.h.id), r: 90 });
   syncAuras(def.k === 'buff' ? f : null, themeCol(f.h.id));
 }
 function ultFx(f) {

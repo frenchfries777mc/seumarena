@@ -25,7 +25,7 @@ const HEROES = [
   ['grenade', '폭발광', '집속탄', ['폭발 점프', '폭격', '끈끈이 폭탄', '강력한 폭탄']],
   ['shotgun', '보안관', '삼연발', ['충격파', '올가미 줄', '집속 발사', '분노의 질주', '무법자']],
   ['portalgun', '차원여행자', '포탈 연결', ['포탈 파괴', '차원 도약', '반사 구체', '차원 균열', '차원 이탈']],
-  ['gardener', '정원사', '숲 폭발', ['덤불 심기', '가시 넝쿨', '해바라기 포탑']]
+  ['gardener', '정원사', '숲 폭발', ['덤불 심기', '가시 넝쿨', '해바라기 포탑']],["gloves","복서","연타 러시",["어퍼컷","가드","잽 연타","클린치","훅 돌진"]],["samurai","사무라이","쌍검 난무",["십자 베기","거합","검 던지기","흘려 베기"]],["bazooka","중화기병","유도탄",["3연발","연막 로켓","화염 로켓","전기 로켓"]],["chef","셰프","거대 뒤집개",["후라이팬","간 보기","서빙","데코레이션"]],["herbal","약초꾼","생명의 정원",["치유 안개","독 안개","응급 붕대","물약 소나기","해독 물약"]],["shieldman","방패병","철벽 반격",["방패 세우기","방패 돌진","도발 표식","진지 구축","아군 엄호"]]
 ].map(([id, name, ult, skills]) => ({ id, name, ult, skills, img: 'img/' + id + '.png' }));
 /* heroes.js (made from the game by tools/gen-tips.js) has the current skills and guide; the list above is the fallback */
 if (typeof HERO_DATA !== 'undefined') for (const h of HEROES) { const d = HERO_DATA.find(x => x.id === h.id); if (d) Object.assign(h, { ult: d.ult.name, skills: d.skills.map(s => s.name), data: d }); }
@@ -36,34 +36,30 @@ function siteChrome(page) {
   const h = document.createElement('header'); h.className = 'top';
   h.innerHTML = '<div class="wrap"><a class="brand" href="index.html">' + NAME_HTML + '</a><nav aria-label="사이트 메뉴">' +
     nav.map(n => '<a href="' + n[0] + '"' + (n[2] === page ? ' class="on" aria-current="page"' : '') + '>' + n[1] + '</a>').join('') +
-    '</nav><select class="langSel" id="langSel" aria-label="Language" data-noi18n hidden></select><button type="button" class="codeBtn" id="codeBtn">코드 입력</button><span class="acct" id="acct"></span><a class="toGame" href="' + SITE.game + '">게임으로 돌아가기</a></div>';
+    '</nav><select class="langSel" id="langSel" aria-label="Language" data-noi18n hidden></select><span class="acct" id="acct"></span></div>';
   document.body.prepend(h);
   if (window.I18N) {      // languages: the same list as the game's 설정 (i18n.js keeps the choice in localStorage 'seum_lang', shared with the game)
     const sel = h.querySelector('#langSel'); sel.hidden = false;
     for (const c of ['auto', 'en', 'ko', 'fr', 'es', 'ja', 'zh']) { const o = document.createElement('option'); o.value = c; o.textContent = c === 'auto' ? 'Auto' : I18N.NAMES[c]; sel.append(o); }
     sel.value = I18N.choice; sel.addEventListener('change', () => I18N.set(sel.value));
   }
-  h.querySelector('#codeBtn').onclick = codeDialog;
   const f = document.createElement('footer'); f.className = 'foot';
   f.innerHTML = '<div class="wrap"><div><b style="color:#eef1f6;font-size:18px">' + NAME_HTML.replace('<b>', '<b style="color:#ff5266">') + '</b><br>Frenchfries777이 만든 Stickseum의 캐릭터들이 나오는 게임이에요.</div>' +
-    '<nav aria-label="바깥 링크"><a href="' + SITE.game + '">게임</a><a href="https://frenchfries777.com/">Frenchfries777 허브</a><a href="https://frenchfries777.com/community/">허브 커뮤니티</a></nav>' +
+    '<nav aria-label="바깥 링크"><a href="' + SITE.game + '" target="_blank" rel="noopener">게임</a><a href="https://frenchfries777.com/">Frenchfries777 허브</a><a href="https://frenchfries777.com/community/">허브 커뮤니티</a></nav>' +
     '<p class="cr">음악: "Just Nasty", "Pixelland" Kevin MacLeod (incompetech.com) · CC BY 4.0</p></div>';
   document.body.append(f);
   document.querySelectorAll('[data-name]').forEach(e => { e.innerHTML = NAME_HTML; });
   document.title = document.title.replace('SeumArena', SITE.name.join(''));
 }
 
-/* 게임으로 돌아가기: when this tab was opened from the game, close it and go back to the game tab instead of loading a second game */
-document.addEventListener('click', e => {
-  const a = e.target.closest && e.target.closest('a[href="' + SITE.game + '"]');
-  if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return;
-  let op = null; try { op = window.opener; } catch (er) {}
-  if (!op || op.closed) return;
-  e.preventDefault();
-  try { op.focus(); } catch (er) {}
-  window.close();
-  setTimeout(() => { location.href = SITE.game; }, 300);
-});
+/* play buttons: the game always opens in a new tab (games card -> this site -> 플레이 -> game tab) */
+function playLinks() {
+  document.querySelectorAll('[data-play]').forEach(a => { a.href = SITE.game; a.target = '_blank'; a.rel = 'noopener'; });
+  const sel = $('#verSel'), go = $('#verGo');
+  if (sel && go) go.onclick = () => { const v = VERSIONS.find(x => x.v === sel.value) || VERSIONS[0]; window.open(v.url || SITE.game, '_blank', 'noopener'); };
+}
+/* version list: only 1.0.0 for now. Add an entry (newest first) with url = that version's own game file when an older build is kept. */
+const VERSIONS = [{ v: '1.0.0', date: '2026-11-23', url: '' }];
 
 /* login state in the header (FFAuth from frenchfries777.com; missing = guest, the site still works) */
 function siteAuth(onChange) {

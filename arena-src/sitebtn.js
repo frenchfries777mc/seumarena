@@ -1,4 +1,4 @@
-/* ---------- site button: a globe tile left of the news tile; opens the intro / tips / community site in a new window ---------- */
+/* ---------- site button: a globe tile left of the news tile; this game tab goes to the intro / tips / community site (user 2026-11-28; the site opens the game again in a new tab) ---------- */
 (function () {
   const URL_SITE = 'https://frenchfries777.com/seumarena/site/';
   const st = document.createElement('style');
@@ -7,10 +7,8 @@
     '@media (max-width:520px){#topRight #siteBtn{width:48px;height:48px;border-radius:12px}#topRight #siteBtn svg{width:24px;height:24px}}';
   document.head.append(st);
   const a = document.createElement('a');
-  a.id = 'siteBtn'; a.href = URL_SITE; a.target = 'seumarena_site'; a.setAttribute('aria-label', '공식 사이트');
+  a.id = 'siteBtn'; a.href = URL_SITE; a.setAttribute('aria-label', '공식 사이트');
   a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>';
-  /* open by script so the site tab can close itself and come back here (게임으로 돌아가기); same name = reuse one site tab */
-  a.onclick = e => { try { const w = window.open(URL_SITE, 'seumarena_site'); if (w) { e.preventDefault(); w.focus(); } } catch (er) {} };
   const place = () => { const tr = document.getElementById('topRight'), nb = document.getElementById('newsBtn'); if (!tr) return; if (nb && nb.parentNode) { const rev = getComputedStyle(nb.parentNode).flexDirection.includes('reverse'); nb.parentNode.insertBefore(a, rev ? nb.nextSibling : nb); } else tr.append(a); };
   place(); setTimeout(place, 0);
 })();

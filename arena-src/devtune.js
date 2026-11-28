@@ -9,15 +9,15 @@ function tuneParse(code) {
   try { const t = JSON.parse(decodeURIComponent(escape(atob(code.slice(3))))); return t && typeof t === 'object' ? t : null; } catch (e) { return null; }
 }
 function tuneApply(t) {
-  for (const id in TUNE0) { const h = HEROES[id], o = TUNE0[id]; if (!h) continue; h.hp = o.hp; h.dmg = o.dmg; h.cd = o.cd; h.spd = o.spd; }
+  for (const id in TUNE0) { const h = HEROES[id], o = TUNE0[id]; if (!h) continue; h.hp = o.hp; h.dmg = o.dmg; h.cd = o.cd; h.spd = o.spd; h.range = o.range; }
   tuneMisc(null);
   if (!t) return 0;
   let n = tuneMisc(t);
   if (!t.hero) return n;
   for (const id in t.hero) {
     const h = HEROES[id], v = t.hero[id]; if (!h || !v) continue;
-    if (!TUNE0[id]) TUNE0[id] = { hp: h.hp, dmg: h.dmg, cd: h.cd, spd: h.spd };
-    if (v.hp > 0) h.hp = +v.hp; if (v.dmg > 0) h.dmg = +v.dmg; if (v.cd > 0) h.cd = +v.cd;
+    if (!TUNE0[id]) TUNE0[id] = { hp: h.hp, dmg: h.dmg, cd: h.cd, spd: h.spd, range: h.range };
+    if (v.hp > 0) h.hp = +v.hp; if (v.dmg > 0) h.dmg = +v.dmg; if (v.cd > 0) h.cd = +v.cd; if (v.range > 0) h.range = +v.range;      // range: user 2026-11-28
     if (v.spd > 0) { const s = +v.spd; h.spd = () => s; }
     n++;
   }

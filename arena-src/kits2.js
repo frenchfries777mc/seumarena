@@ -5,7 +5,7 @@ hero('samurai', { p: ['검무', '두 손의 검으로 번갈아 4연타(220 ×3 
   dmgf(f) { return (samIdx(f) === 3 ? 50 : 22) * (1 + .03 * Math.min(5, samStreak(f))); },
   mo(f) { return samIdx(f) === 3 ? { kb: 140 } : null; },
   onSwing(f, hits, ang) { const i = samIdx(f); f.st.lh = f.st.lh === 1 ? 0 : 1; f.st.hand = i === 3 ? 2 : f.st.lh;      // hands always alternate swing to swing (also when the combo dropped and starts over)
-    f.st.cb = i + 1; f.st.la = time; if (f.st.cb % 4 === 0) fxAt(f, 'skillring', { color: '#dfe9ff' }); },
+    f.st.cb = i + 1; f.st.la = time; },
   onDeal(f, e, d, o) { if (e.minion) return; if (f.st.tg === e && time - (f.st.lt || -9) < 1) f.st.sk = (f.st.sk || 0) + 1; else f.st.sk = 0; f.st.tg = e; f.st.lt = time; },
   onHurt(f, d, by) { if (!B(f, 'parry') && time - (f.st.la || -9) < 1) return d * .85; if (B(f, 'parry') && by && by !== f && !by.dead && dist(f, by) < 2.4 * T) { unbuff(f, 'parry'); say(f, '흘려 베기', '#dfe9ff'); f.aim = angTo(f, by); seq(f, 4, .08, i => { f.swing = .14; f.st.hand = i === 3 ? 2 : i % 2 ? 0 : 1; arc(f, angTo(f, by), f.h.range * 1.15, f.awT > 0 ? Math.PI : .9, i === 3 ? 50 : 22, i === 3 ? { kb: 200 } : {}); }); return 0; } },
   ult: ['쌍검 난무', '가장 가까운 적(4칸 안)에게 붙어 1.5초 동안 12번 베기 (11번 45 + 마지막 X자 405, 합 900, 마지막에 밀쳐냄) · 그동안 기본 공격은 나가지 않음 · 그동안 상대는 30% 느려지고, 멀어지면 순간이동으로 따라붙음 · 무적 아님, 기절하면 끊김', [0, 4 * T], f => {

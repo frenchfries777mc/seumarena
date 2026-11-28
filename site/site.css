@@ -176,3 +176,22 @@ footer.foot nav{display:flex;flex-wrap:wrap;gap:6px 18px}
 /* language list in the header */
 .langSel{background:#161a23;color:#e8eaf0;border:1px solid #2a3142;border-radius:8px;padding:7px 8px;font:inherit;font-size:14px;min-height:36px}
 .langSel:focus-visible{outline:2px solid #6aa6ff;outline-offset:2px}
+
+/* 플레이 버튼 + 버전 (2026-11-28) */
+.cd.play{background:none;border:0;padding:0;align-items:stretch;gap:12px}
+.playBig{display:flex;align-items:center;justify-content:center;gap:12px;height:68px;border-radius:14px;border:0;background:linear-gradient(90deg,var(--blue),var(--red));color:#fff;font:900 26px 'Noto Sans KR',sans-serif;letter-spacing:1px;cursor:pointer;box-shadow:0 6px 24px rgba(255,77,97,.25);text-decoration:none}
+.playBig svg{width:26px;height:26px}
+.playBig.small{align-self:flex-start;height:54px;font-size:19px;padding:0 28px}
+.cd.play .sub{display:flex;justify-content:space-between;color:var(--dim);font-size:14px}.cd.play .sub b{color:var(--text)}
+#ver{display:flex;flex-direction:column;gap:18px}
+#ver h2{margin:0;font-size:clamp(28px,4vw,40px);font-weight:900}
+.vBar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+.vBar label{color:var(--dim);font-size:14px}
+.vSel{flex:1 1 260px;height:48px;padding:0 16px;border-radius:10px;border:1.5px solid var(--gold);background:var(--bg);color:var(--text);font:700 16px inherit;font-family:inherit}
+.vGo{height:48px;padding:0 22px;border-radius:10px;border:0;background:var(--mint);color:#06231f;font-weight:900;font-size:16px;display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;cursor:pointer;font-family:inherit}
+.vGo svg{width:16px;height:16px;flex:none}
+.vLatest{padding:22px;border-radius:16px;background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.vBadge{align-self:flex-start;background:var(--gold);color:#241a00;font-weight:800;font-size:12px;padding:3px 10px;border-radius:99px}
+.vLatest .vh{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}.vLatest .vh b{font-size:40px;font-weight:900}.vLatest .vh span{color:var(--dim)}
+.vLatest h3{margin:0;font-size:18px}.vLatest ul{margin:0;padding-left:20px;color:var(--soft);display:flex;flex-direction:column;gap:4px}
+@media (max-width:600px){.playBig{height:60px;font-size:22px}.vGo{width:100%}}

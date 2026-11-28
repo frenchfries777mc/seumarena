@@ -991,7 +991,7 @@ function endGame(keepRunning) {
   if (isLeft(curMode) && player && player.dead && (curMode === 'solo' || RD.out.includes(player.team))) soloOutShown = true;
   showPlayUi(false);
   const oc = modeOutcome(), solo = isLeft(curMode) || curMode === 'star', mine = oc.a, theirs = oc.b;
-  const draw = oc.draw, first = oc.win || (!oc.draw && oc.place === 2 && isLeft(curMode)), win = first || ((curMode === 'solo' || curMode === 'star') && !draw && oc.place >= 2 && oc.place <= 3), rt = $('resultText');      // 원 레프트: 1-3등 are wins (user 2026-11-15); first = really the last one standing
+  const draw = oc.draw, first = oc.win, win = first || ((curMode === 'solo' || curMode === 'star') && !draw && oc.place >= 2 && oc.place <= 3), rt = $('resultText');      // 원 레프트: 1-3등 are wins (user 2026-11-15); first = really the last one standing
   const kept = !draw && !win && oc.place === 2 && (curMode === 'duo' || curMode === 'hot4');      // 투 레프트 / 4팀 핫존 2등: the streak is kept, so the place instead of 패배
   rt.textContent = draw ? '무승부' : win ? (first ? '승리' : oc.place + '등') : kept ? '2등' : '패배';      // 원 레프트 / 리워드 헌터 2-3등: the place instead of 승리
   document.querySelector('#overScreen .final').classList.toggle('solo', solo);
