@@ -126,13 +126,11 @@ Object.assign(PVS, {
 });
 
 /* ================= art ================= */
-function chefLadle(c, a, s, gold, mono) {      // handle along +x, the bowl at the end (mono: one flat colour, used as a shadow)
+function chefLadle(c, a, s, gold, mono) {      // user 2026-11-28 picked design A: steel, same thickness/size as the other weapons (flat, no outline)
   c.save(); c.rotate(a); c.scale(s, s); c.lineCap = 'round';
-  if (mono) { c.strokeStyle = c.fillStyle = mono; c.lineWidth = 3.4; c.beginPath(); c.moveTo(-4, 0); c.lineTo(18, 0); c.stroke(); c.beginPath(); c.arc(22, 1, 6.5, 0, 7); c.fill(); c.restore(); return; }
-  c.strokeStyle = gold ? '#e8c15a' : '#b9c1cb'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(-4, 0); c.lineTo(18, 0); c.stroke();
-  c.fillStyle = gold ? '#c99a2a' : '#8f98a3'; c.beginPath(); c.arc(22, 1, 5.5, 0, Math.PI * 1.05); c.fill();
-  c.fillStyle = gold ? '#ffe28a' : '#d5dbe2'; c.fillRect(16, -.6, 12, 1.8);
-  c.fillStyle = '#e0662a'; c.beginPath(); c.ellipse(22, 2.5, 3.6, 1.6, 0, 0, 7); c.fill();      // a little soup in the bowl
+  c.strokeStyle = gold ? '#ffd34d' : '#e6eaf2'; c.lineWidth = 4; c.beginPath(); c.moveTo(0, 0); c.lineTo(20, 0); c.stroke();
+  c.fillStyle = gold ? '#ffd34d' : '#e6eaf2'; c.beginPath(); c.arc(25, 0, 6.5, 0, 7); c.fill();
+  c.fillStyle = gold ? '#b8860b' : '#aab3c4'; c.beginPath(); c.arc(25, 0, 4, 0, 7); c.fill();
   c.restore();
 }
 function chefSpatulaArt(c, a, s) {
@@ -169,15 +167,7 @@ function drawChef(c, o) {
 /* projectiles */
 function drawChefShot(b) {
   const t = performance.now() / 1000;
-  if (b.shape === 'ladle') {      // user 2026-11-26: the thrown ladle was hard to see -> bigger, a pale halo, a soup-drop + steam trail
-    const tr = b.ctr || (b.ctr = []); tr.push([b.x, b.y, t]); while (tr.length && t - tr[0][2] > .22) tr.shift();
-    for (let i = 0; i < tr.length - 1; i++) { const [x, y, tt] = tr[i], k = 1 - (t - tt) / .22; ctx.globalAlpha = k * .5; ctx.fillStyle = '#eef3f8'; ctx.beginPath(); ctx.arc(x, y, 7 + (1 - k) * 8, 0, 7); ctx.fill(); ctx.globalAlpha = k; ctx.fillStyle = b.gold ? '#ffcf5a' : '#ff8a2c'; ctx.beginPath(); ctx.arc(x + Math.sin(tt * 40) * 4, y + Math.cos(tt * 33) * 4, 2.6 * k + 1, 0, 7); ctx.fill(); }
-    ctx.globalAlpha = 1;
-    const g = ctx.createRadialGradient(b.x, b.y, 4, b.x, b.y, 30); g.addColorStop(0, b.gold ? 'rgba(255,236,170,.75)' : 'rgba(255,246,226,.7)'); g.addColorStop(1, 'rgba(255,246,226,0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(b.x, b.y, 30, 0, 7); ctx.fill();
-    ctx.save(); ctx.translate(b.x + 2, b.y + 3); ctx.globalAlpha = .45; chefLadle(ctx, t * 16, 2, b.gold, '#1d1410'); ctx.restore();      // a dark shadow copy for contrast
-    ctx.save(); ctx.translate(b.x, b.y); chefLadle(ctx, t * 16, 2, b.gold); ctx.restore(); return true;
-  }
+  if (b.shape === 'ladle') { ctx.save(); ctx.translate(b.x, b.y); chefLadle(ctx, t * 16, 1.3, b.gold); ctx.restore(); return true; }      // design A: flies as itself, like the other projectiles
   if (b.shape === 'spatula') { ctx.save(); ctx.translate(b.x, b.y); chefSpatulaArt(ctx, t * 12, 2.4); ctx.restore(); return true; }
   if (b.shape === 'tklob') {
     const A = bombArc(b), s = 1 - .45 * A.h / Math.max(1, A.H);
