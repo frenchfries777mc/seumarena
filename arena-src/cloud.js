@@ -157,7 +157,7 @@ async function clCodes(uid) {
       for (const w of row.rewards) if (Array.isArray(w) && /^(g|px|box|ebox|rx|cx|skin)$/.test(w[0]) && w[1] > 0) { const box = /box$/.test(w[0]); for (let k = box ? Math.min(10, Math.floor(w[1])) : 1; k > 0; k--) gots.push(giveReward(w[0], box ? 1 : Math.floor(w[1]))); }
     }
     if (!gots.length) return;
-    saveCos(); try { goldUi(); accountUi(); } catch (e) { quietErr(e); }
+    saveCos(); try { goldUi(); accountUi(); if (typeof heroLockRefresh === 'function') heroLockRefresh(); } catch (e) { quietErr(e); }
     gots.forEach(g => { try { flyHold(g); } catch (e) { quietErr(e); } });
     gots.forEach((g, i) => setTimeout(() => { try { rewardFx(g); } catch (e) { quietErr(e); } }, i * 4600));
   } catch (e) { quietErr(e); } finally { CL.codeBusy = false; }
