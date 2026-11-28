@@ -467,7 +467,7 @@ function rejoinTry() {
     });
     c.on('close', () => { if (tok === netToken && NET.hostConn === c) guestLink(); });
   };
-  if (p.open) go(); else p.once('open', go);
+  if (p.open) go(); else if (rc.waitP !== p) { rc.waitP = p; p.once('open', () => { if (rc.waitP === p) rc.waitP = null; go(); }); }      // (one wait per peer: every 2.5 s try added another, so many links opened at once)
 }
 function hostLost() {
   NET.rc = null; netBadge(false);

@@ -258,7 +258,7 @@ function streakStep(win, draw, keep) {
 /* gives one reward and says what it was: { kind, n, hero, skin } */
 function giveReward(kind, n) {
   if (kind === 'ebox' && n !== -1) {      // three draws; at most one skin per box (a second skin roll draws again without skins)
-    const list = []; for (let i = 0; i < EBOX_N; i++) { let g = giveReward('ebox', -1); if (g.skin && list.some(x => x.skin)) { const keep = BOX_LOOT.ebox; BOX_LOOT.ebox = keep.filter(l => l[1] !== 'skin'); try { g = giveReward('ebox', -1); } finally { BOX_LOOT.ebox = keep; } } list.push(g); }
+    const list = []; for (let i = 0; i < EBOX_N; i++) { let g; if (list.some(x => x.skin)) { const keep = BOX_LOOT.ebox; BOX_LOOT.ebox = keep.filter(l => l[1] !== 'skin'); try { g = giveReward('ebox', -1); } finally { BOX_LOOT.ebox = keep; } } else g = giveReward('ebox', -1); list.push(g); }      // (no second skin: before, the second one was already given and then hidden by the re-draw)
     const got = list[0]; got.list = list; return got; }
   if (kind === 'box' || kind === 'ebox') { const L = BOX_LOOT[kind].filter(l => l[1] !== 'su' || skShut().length); let r = Math.random() * L.reduce((a, l) => a + l[0], 0), l = L[0]; for (const x of L) { if ((r -= x[0]) < 0) { l = x; break; } } const tr = Math.random(), tier = l[1] === 'skin' || l[1] === 'su' ? 2 : tr < .05 ? 2 : tr < .25 ? 1 : 0;      // a box opens as common, rare or legendary: rare doubles what is inside, legendary gives four times (a skin is always legendary)
     const got = giveReward(l[1], l[1] === 'skin' || l[1] === 'su' ? l[2] : Math.round((l[2] + Math.random() * (l[3] - l[2])) * [1, 2, 4][tier] / 10) * 10); got.box = kind; got.tier = tier; return got; }
@@ -618,7 +618,8 @@ const COS_IDS = cat => Object.keys(COSMETICS).filter(id => COSMETICS[id].cat ===
 /* ---------- free season pass: a season is a game version (GAME_VER). Only change GAME_VER when the user says so; the pass, its season XP and its limited skins follow it.
    SEASONS[ver]: { skins: [mid skin, last skin] } (limited: not sold, not in boxes or deals). A version not listed gets the next unused season skins.
    Season XP from matches (passMatch) and quests; COS.sx[ver] = season XP, COS.sk = taken steps as 'ver:step' ---------- */
-const GAME_VER = '1.0';
+const GAME_VER = '1.0';      // season key (The key of Turkey = 1.0); the release number is APP_VER
+const APP_VER = '1.0.1';      // release number (repo VERSION file, site version list)
 const SEASONS = { '1.0': { skins: ['skin_sword_s1', 'skin_pistol_zeus'], col: ['#e0a82e', '#ffe58a', '#3a2608', '#120a03'] } };
 /* each version's own pass colours are set in SEASONS[ver].col by the user: [main, light, background tint top, bottom] */
 const passCol = () => SEASONS[GAME_VER] && SEASONS[GAME_VER].col || ['#e0a82e', '#ffe58a', '#3a2608', '#120a03'];

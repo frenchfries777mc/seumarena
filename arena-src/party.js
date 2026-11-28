@@ -115,7 +115,7 @@ function ptIn(m) {
     const p = m.pt; if (!p || typeof p.id !== 'string' || p.lead !== from || !Array.isArray(p.mem)) return;
     const mem = p.mem.filter(x => x && isUid(x.uid)).slice(0, PT_MAX).map(x => ({ uid: x.uid, n: typeof x.n === 'string' ? x.n.slice(0, 24) : '' }));
     if (!mem.some(x => x.uid === PTI.me)) { if (PT && PT.id === p.id) ptEnd('파티에서 빠졌어요.'); return; }
-    if (PT && PT.id !== p.id && ptLead() && PT.mem.length > 1) return;      // leading another party
+    if (!PT || PT.id !== p.id || PT.lead !== from) return;      // only the party we accepted (stops a forged 'st' pulling us in)
     PT = { id: p.id, lead: from, mem, mode: typeof p.mode === 'string' ? p.mode : modeSel }; PTI.inv = []; ptToast();
     ptFollowMode(); ptUi();
   } else if (m.t === 'leave') {

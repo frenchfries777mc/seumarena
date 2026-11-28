@@ -228,6 +228,12 @@ function maFind(c) {
     if (back) { MA.main.splice(MA.main.indexOf(e), 1); maFree(e); e = null; }      // a new match on the same map: walls are back, paint again
     else {      // walls knocked down: rubble, no repaint
       for (let r = 0; r < e.rows; r++) for (let cc = 0; cc < e.snap[r].length; cc++) if (e.snap[r][cc] === '#' && MAP[r][cc] !== '#') maRubble(e, cc, r);
+      let cut = false; for (let r = 0; r < e.rows && !cut; r++) for (let cc = 0; cc < e.snap[r].length; cc++) if (e.snap[r][cc] === 'g' && MAP[r][cc] !== 'g' && MAP[r][cc] !== 'G') { cut = true; break; }
+      if (cut) try {      // bushes blown away: paint only the bush layer again (before, they stayed in the picture)
+        const rows = MAP.length, cols = MAP[0].length, at = (cc, r) => (cc < 0 || r < 0 || cc >= cols || r >= rows) ? '#' : MAP[r][cc];
+        const bg = e.b.getContext('2d'); bg.save(); bg.setTransform(1, 0, 0, 1, 0, 0); bg.clearRect(0, 0, e.b.width, e.b.height); bg.restore();
+        bg.setTransform(e.k, 0, 0, e.k, e.P * e.k, e.P * e.k); MAP_ART.bush(bg, { th: e.th, cols, rows, P: e.P, k: e.k, at, isW: (cc, r) => at(cc, r) === '#', hasWater: MAP.some(r => r.includes('w')) });
+      } catch (er) { quietErr(er); }
       e.map = MAP; e.snap = MAP.map(r => typeof r === 'string' ? r : r.join('')); e.ver = NET.mapVer;
     }
   }

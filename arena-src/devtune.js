@@ -15,6 +15,7 @@ function tuneApply(t) {
   let n = tuneMisc(t);
   if (!t.hero) return n;
   for (const id in t.hero) {
+    if (TUNE_BADK(id) || !Object.prototype.hasOwnProperty.call(HEROES, id)) continue;
     const h = HEROES[id], v = t.hero[id]; if (!h || !v) continue;
     if (!TUNE0[id]) TUNE0[id] = { hp: h.hp, dmg: h.dmg, cd: h.cd, spd: h.spd, range: h.range };
     if (v.hp > 0) h.hp = +v.hp; if (v.dmg > 0) h.dmg = +v.dmg; if (v.cd > 0) h.cd = +v.cd; if (v.range > 0) h.range = +v.range;      // range: user 2026-11-28
@@ -26,7 +27,8 @@ function tuneApply(t) {
 /* other numbers, skins and emotes (기타 수치 / 외형·스킨 탭) */
 const TUNE_OBJ = () => ({ pay: PAY_CFG, modePay: MODE_PAY, karma: KARMA_TABLE, tkTix: TK_TIX, tkDraw: TK_DRAW, tkNew: TK_NEW });
 let TUNE_SNAP = null, TUNE_ADDED = { skins: [], emo: 0 };
-function tuneMerge(dst, src) { for (const k in src) { if (src[k] && typeof src[k] === 'object' && dst[k] && typeof dst[k] === 'object') tuneMerge(dst[k], src[k]); else if (k in dst && typeof src[k] === typeof dst[k]) dst[k] = src[k]; } }
+const TUNE_BADK = k => k === '__proto__' || k === 'constructor' || k === 'prototype';      // (a code with these keys could change Object.prototype)
+function tuneMerge(dst, src) { for (const k in src) { if (TUNE_BADK(k) || !Object.prototype.hasOwnProperty.call(src, k)) continue; if (src[k] && typeof src[k] === 'object' && dst[k] && typeof dst[k] === 'object') tuneMerge(dst[k], src[k]); else if (k in dst && typeof src[k] === typeof dst[k]) dst[k] = src[k]; } }
 function tuneMisc(t) {
   const O = TUNE_OBJ();
   if (!TUNE_SNAP) TUNE_SNAP = JSON.parse(JSON.stringify(O));

@@ -112,7 +112,7 @@ function gChat(p) {
   form.append(inp, gBtn('보내기', 'btn-primary gSend', () => form.requestSubmit())); p.append(list, form);
   let last = 0; const add = rows => { for (const m of rows) { if (m.id <= last) continue; last = m.id; const row = gEl('div', 'gMsg' + (m.k ? ' sys' : m.me ? ' me' : '')); if (!m.k) row.append(gEl('b', '', m.n)); row.append(gEl('span', '', m.t)); list.append(row); } list.scrollTop = list.scrollHeight; if (last) { GUILD.seen = last; GUILD.unread = 0; guildTile(); } if (rows.some(m => m.k && m.id > (GUILD.newsAt || 0))) { const fresh = GUILD.newsAt; GUILD.newsAt = last; if (fresh) guildLoad(); } };      // someone joined / left: the member list again
   const pull = async () => { const r = await sbRpc('seumarena_guild_chat_since', { p_id: last }); if (Array.isArray(r)) add(r); };
-  form.addEventListener('submit', async e => { e.preventDefault(); const t = inp.value.trim(); if (!t) return; inp.value = ''; const r = await sbRpc('seumarena_guild_say', { p_txt: t, p_nick: PROF.name }); if (!r || r.r !== 'ok') gToast(gErr(r)); pull(); });
+  form.addEventListener('submit', async e => { e.preventDefault(); const t = inp.value.trim(); if (!t) return; inp.value = ''; const r = await sbRpc('seumarena_guild_say', { p_txt: t, p_nick: PROF.name }); if (!r || r.r !== 'ok') { gToast(gErr(r)); if (!inp.value) inp.value = t; } pull(); });      // (not sent: the text comes back so it is not lost)
   pull(); gChatT = setInterval(() => { if ($('guildScreen').classList.contains('active') && GTAB === 'chat') pull(); else { clearInterval(gChatT); gChatT = 0; } }, 3000);
 }
 function gMembers(p) {
@@ -137,7 +137,7 @@ function gMembers(p) {
   }
   p.append(list);
 }
-async function gAct(fn, args) { const r = await sbRpc(fn, args); if (!r || r.r !== 'ok') gToast(gErr(r)); await guildLoad(); }
+async function gAct(fn, args) { const r = await sbRpc(fn, args), ok = !!(r && r.r === 'ok'); if (!ok) gToast(gErr(r)); await guildLoad(); return ok; }      // (true when it worked)
 function gWar(p) {
   const lg = G_LEAGUES[GW.league] || G_LEAGUES[0], head = gEl('div', 'gWarHead'), lgE = gEl('b', '', lg[0] + ' 리그'); lgE.style.color = lg[1];
   const d = new Date().getUTCDay(), toFri = (5 - d + 7) % 7;
@@ -155,7 +155,7 @@ function gWar(p) {
   }
   if (GW.off) {
     const box = gEl('div', 'gClaim'); box.append(gEl('b', '', '2주 연속 0점이라 조 짜기에서 빠졌어요'));
-    if (GUILD.role >= 1) box.append(gBtn('다시 참가하기', 'btn-primary gBig', () => gAct('seumarena_gw_rejoin', {}).then(() => gToast('다음 월요일 조 짜기에 들어가요'))));
+    if (GUILD.role >= 1) box.append(gBtn('다시 참가하기', 'btn-primary gBig', () => gAct('seumarena_gw_rejoin', {}).then(ok => { if (ok) gToast('다음 월요일 조 짜기에 들어가요'); })));
     p.append(box);
   }
   if (GW.grp) {

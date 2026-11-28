@@ -372,7 +372,7 @@ function drawDarkVeil(dt) {            // trapped in an enemy's lump: the pictur
   const c = kdVeilCv.getContext('2d'); c.globalCompositeOperation = 'source-over'; c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cw, ch);
   c.fillStyle = 'rgba(6,0,14,' + (.66 * kdVeilA) + ')'; c.fillRect(0, 0, cw, ch);
   c.globalCompositeOperation = 'destination-out';
-  const sx = (me.x - cam.x) * cam.s + cw / 2, sy = (me.y + BODY - cam.y) * cam.s + ch / 2, r = 190 * cam.s, g = c.createRadialGradient(sx, sy, 10 * cam.s, sx, sy, r);
+  const ks = cam.s * (DPR || 1), sx = (me.x - cam.x) * ks + cw / 2, sy = (me.y + BODY - cam.y) * ks + ch / 2, r = 190 * ks, g = c.createRadialGradient(sx, sy, 10 * ks, sx, sy, r);      // (device pixels: the hole was off and half size on phones)
   g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(.6, 'rgba(0,0,0,.7)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(sx, sy, r, 0, 7); c.fill();
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(kdVeilCv, 0, 0); ctx.restore();
 }

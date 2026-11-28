@@ -23,7 +23,7 @@ function newsOk(d) { return d && Array.isArray(d.news) ? d : null; }
 }
 function newsLive() {
   const now = Date.now(), t = s => { const v = Date.parse(s); return isNaN(v) ? null : v; };
-  return (newsData ? newsData.news : []).filter(n => n && n.id && n.title && !(n.start && t(n.start) > now) && !(n.end && t(n.end) <= now))
+  return (newsData ? newsData.news : []).filter(n => n && n.id && n.title && !(n.start && t(n.start) > now) && !(n.end && (t(n.end) ?? Infinity) <= now))
     .sort((a, b) => (!!b.pin - !!a.pin) || String(b.date || '').localeCompare(String(a.date || '')));
 }
 function newsSeen() { const s = newsLoad(NEWS_SEEN_KEY, []); return Array.isArray(s) ? s : []; }

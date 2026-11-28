@@ -58,8 +58,8 @@ function playLinks() {
   const sel = $('#verSel'), go = $('#verGo');
   if (sel && go) go.onclick = () => { const v = VERSIONS.find(x => x.v === sel.value) || VERSIONS[0]; window.open(v.url || SITE.game, '_blank', 'noopener'); };
 }
-/* version list: only 1.0.0 for now. Add an entry (newest first) with url = that version's own game file when an older build is kept. */
-const VERSIONS = [{ v: '1.0.0', date: '2026-11-23', url: '' }];
+/* version list: only the newest (1.0.1) for now; 1.0.0 had no kept build of its own, so it was replaced. Add an entry (newest first) with url = that version's own game file when an older build is kept. */
+const VERSIONS = [{ v: '1.0.1', date: '2026-11-28', url: '' }];
 
 /* login state in the header (FFAuth from frenchfries777.com; missing = guest, the site still works) */
 function siteAuth(onChange) {

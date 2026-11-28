@@ -558,6 +558,7 @@ function shiftHex(hex, deg){            // the same colour turned round the colo
   const to=(v)=>Math.round((v+mm)*255).toString(16).padStart(2,'0'); return '#'+to(rr)+to(gg)+to(bb);
 }
 function drawAuroraShow(c, t, layer, q){
+  { const tn=performance.now(); if(tn-auroraAt>12) auroraDrawn=0; auroraAt=tn; }      // count per frame (it was never reset, so after two draws every 오로라 stayed lite)
   const lite=(q<1 || auroraDrawn>=2);          // many 오로라 skins on screen (or low graphics): only the ground ring and a few sparks
   if(layer==='back') auroraDrawn++;
   const A=(i,a)=>hexA(auroraHex(t*0.9,i),a), fr=v=>v-Math.floor(v);
@@ -610,7 +611,7 @@ function luxSprite(kind, col, col2, big){
   if(luxSpriteCache.size>200) luxSpriteCache.clear();
   luxSpriteCache.set(key,sp); return sp;
 }
-let auroraDrawn=0;
+let auroraDrawn=0, auroraAt=0;
 function auroraHex(t, i){
   const k=0.5+0.5*(Math.sin(t*0.9+i*1.1)*0.62+Math.sin(t*0.37+i*1.9)*0.38), h=(140+k*185)%360/360, l=0.62+0.1*Math.sin(t*1.7+i*2.3), sa=0.92;
   const a=sa*Math.min(l,1-l), f=n=>{ const kk=(n+h*12)%12; return l-a*Math.max(-1,Math.min(kk-3,9-kk,1)); };
