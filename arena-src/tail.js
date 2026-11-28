@@ -31,8 +31,8 @@ function drawStick(c, id, col, ang, walk, swing, t, cos) {
   if (id === 'pistol' && pistolDual) { c.save(); try {      // 양손 권총: the off hand holds the same gun, a little below and behind, aimed the same way
     const b = ang + .38 * face, ox = -face * 3, bx = ox + Math.cos(b) * (reach - 4), by = SH + 7 + Math.sin(b) * (reach - 4);
     body(); c.globalAlpha *= .82; c.beginPath(); c.moveTo(ox, SH + 7); c.lineTo(bx, by); c.stroke(); c.globalAlpha /= .82; drawHeldWeapon(c, id, ax, ay, bx, by, swing, cp); } catch (e) { quietErr(e); } c.restore(); }
-  if (cp === 'tk' && (id === 'herbal' || id === 'shieldman' || id === 'gardener')) { c.save(); try { tkPersona(c, id, 0, HEADCY, HEADR, SH); tkHeld(c, id, ax, ay, hx, hy, swing); } catch (e) { quietErr(e); } c.restore(); } else
-  c.save(); try { if (id === 'herbal' && typeof drawHerbal === 'function') drawHerbal(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'shieldman' && typeof drawShieldman === 'function') drawShieldman(c, { face, ax, ay, hx, hy, swing, t: now / 1000, HEADCY, HEADR, SH, HIP, tint, raise: 0 }); else if (id === 'gardener' && typeof drawGardener === 'function') drawGardener(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'chef' && typeof drawChef === 'function') drawChef(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id !== 'plain') drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) { quietErr(e); } c.restore();      // (정원사's hat, slingshot and pouch: gardener.js)
+  if (cp === 'tk' && (id === 'herbal' || id === 'shieldman' || id === 'gardener')) { c.save(); try { tkPersona(c, id, 0, HEADCY, HEADR, SH); tkHeld(c, id, ax, ay, hx, hy, swing); } catch (e) { quietErr(e); } c.restore(); } else {
+  c.save(); try { if (id === 'herbal' && typeof drawHerbal === 'function') drawHerbal(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'shieldman' && typeof drawShieldman === 'function') drawShieldman(c, { face, ax, ay, hx, hy, swing, t: now / 1000, HEADCY, HEADR, SH, HIP, tint, raise: 0 }); else if (id === 'gardener' && typeof drawGardener === 'function') drawGardener(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id === 'chef' && typeof drawChef === 'function') drawChef(c, { face, ax, ay, hx, hy, swing, t, HEADCY, HEADR, SH, HIP, tint }); else if (id !== 'plain') drawHeldWeapon(c, id, ax, ay, hx, hy, swing, cp); } catch (e) { quietErr(e); } c.restore(); }      // (정원사's hat, slingshot and pouch: gardener.js)
   if (it && it.fx) { c.save(); try { drawSkinFx(c, lux >= 4 ? 'sparkle' : it.fx, lux >= 4 ? auroraHex(now / 1000 * .9, 1) : tint, 0, HEADCY, HEADR * 1.3, now); } catch (e) { quietErr(e); } c.restore(); }
   if (cos && cos.col && COSMETICS[cos.col] && COSMETICS[cos.col].shine) { c.save(); try { drawShineGlints(c, now, 0); } catch (e) { quietErr(e); } c.restore(); }
   c.restore();
@@ -517,7 +517,7 @@ function dmgDesc(h, t) {
   const r = v => String(Math.round(+v * m));
   return t.replace(/(최소\s*)(\d+)(\s*~\s*최대\s*)(\d+)/g, (a, p, x, s, y) => p + r(x) + s + r(y))
     .replace(/(피해가[^()]*\(최대\s*)(\d{2,})(?=\))/g, (a, p, x) => p + r(x))
-    .replace(/(?<![\d.])(\d{2,})(?![\d.%배초칸])(?=\s*피해)(?!\s*피해를\s*막)/g, r)
+    .replace(/(^|[^\d.])(\d{2,})(?![\d.%배초칸])(?=\s*피해)(?!\s*피해를\s*막)/g, (a, p, x) => p + r(x))      // (no lookbehind: older Safari cannot parse it)
     .replace(/((?:피해|데미지)\s*\+?)(\d{2,})(?![\d.%배초칸])/g, (a, p, x) => p + r(x));
 }
 function attackText(h) {
@@ -745,7 +745,7 @@ const RULE_ICO = {
   turkey: '<path d="M12 4a8 8 0 0 0-8 8M12 4a8 8 0 0 1 8 8M12 7a5 5 0 0 0-5 5M12 7a5 5 0 0 1 5 5"/><circle cx="12" cy="15" r="4" fill="currentColor"/>',
   rounds: '<circle cx="5" cy="12" r="3" fill="currentColor"/><circle cx="12" cy="12" r="3" fill="currentColor"/><circle cx="19" cy="12" r="3"/>'
 };
-const mmss = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
+const mmss = s => { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };      // (rounded first: 59.6 s showed 0:60)
 function modeRules(m) {
   const r = [], solo = m.id === 'solo' || m.id === 'last';
   if (solo) r.push(['crown', '최후 1인']);
@@ -852,7 +852,7 @@ function modePick() {
 }
 function showModes() {
   const scr = $('modeScreen'), g = $('modeGrid'), ph = modeTouchLayout(), NS = 'http://www.w3.org/2000/svg';
-  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = ''; const shown = MODE_LIST.filter(m => m.id !== 'gw').filter(m => modeOk(m) || (typeof modeLockText === 'function' && modeLockText(m))).sort((a, b) => (MODE_TOP[b.id] | 0) - (MODE_TOP[a.id] | 0));      // 랭크전 and 길드 대항전 first; they show locked with the reason g.classList.toggle('n5', shown.length === 5);      // modes not drawn today are not shown at all (user 2026-11-15)
+  scr.classList.toggle('ph', ph); scr.classList.toggle('pc', !ph); g.textContent = ''; const shown = MODE_LIST.filter(m => m.id !== 'gw').filter(m => modeOk(m) || (typeof modeLockText === 'function' && modeLockText(m))).sort((a, b) => (MODE_TOP[b.id] | 0) - (MODE_TOP[a.id] | 0));      g.classList.toggle('n5', shown.length === 5);      // 랭크전 and 길드 대항전 first; they show locked with the reason      // modes not drawn today are not shown at all (user 2026-11-15)
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   const icon = (d, cls) => { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); if (cls) s.setAttribute('class', cls); s.innerHTML = d; return s; };
   const arts = [];

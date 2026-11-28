@@ -1,3 +1,5 @@
+/* roundRect for older browsers (Safari < 16, Chrome < 99): a plain arcTo path, radius = a number or the first of a list */
+(function(){ const add=P=>{ if(!P||P.roundRect) return; P.roundRect=function(x,y,w,h,r){ r=Array.isArray(r)?(+r[0]||0):(+r||0); if(w<0){x+=w;w=-w;} if(h<0){y+=h;h=-h;} r=Math.max(0,Math.min(r,w/2,h/2)); this.moveTo(x+r,y); this.arcTo(x+w,y,x+w,y+h,r); this.arcTo(x+w,y+h,x,y+h,r); this.arcTo(x,y+h,x,y,r); this.arcTo(x,y,x+w,y,r); this.closePath(); return this; }; }; try{ add(window.CanvasRenderingContext2D&&CanvasRenderingContext2D.prototype); add(window.OffscreenCanvasRenderingContext2D&&OffscreenCanvasRenderingContext2D.prototype); add(window.Path2D&&Path2D.prototype); }catch(e){} })();
 const COSMETICS={};
 const FLAME_RANGE=400, FLAME_HALF_ANGLE=0.32, FLAME_DIRECT_DPS=31;
 const VAC_SKILL_R=330;

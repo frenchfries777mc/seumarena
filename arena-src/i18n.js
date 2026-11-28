@@ -64,7 +64,7 @@
     if (root.nodeType === 3) { back ? restore(root) : text(root); return; }
     if (root.nodeType !== 1 && root.nodeType !== 9) return;
     const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT); let n = root.nodeType === 1 ? root : w.nextNode();
-    for (; n; n = w.nextNode()) { if (n.nodeType === 3) back ? restore(n) : text(n); else { if (back) { const o = aorig.get(n); if (o) for (const a in o) n.setAttribute(a, o[a]); } attrs(n); } }
+    for (; n; n = w.nextNode()) { if (n.nodeType === 3) back ? restore(n) : text(n); else { if (back) { const o = aorig.get(n); if (o) for (const a in o) n.setAttribute(a, o[a]); } else attrs(n); } }      // (back: restore only; the next walk translates into the new language)
   }
   function restore(node) { const r = orig.get(node); if (r && node.nodeValue === r.t && r.t !== r.o) node.nodeValue = r.o; }
   const mo = new MutationObserver(list => {

@@ -15,7 +15,7 @@ endGame = function (keep) {
   KCAM = { t0: performance.now(), x: by ? (v.x + by.x) / 2 : v.x, y: (by ? (v.y + by.y) / 2 : v.y) + BODY, vx: v.x, vy: v.y + BODY, col: TC(by ? by.team : 1 - v.team), done: false };
   kcamSound();
   try { showPlayUi(false); } catch (e) { quietErr(e); }
-  setTimeout(() => { KCAM = null; FX_TS = 1; endGame0.call(null, keep); }, KC_MS);
+  setTimeout(() => { KCAM = null; FX_TS = 1; if (state !== 'over') return; endGame0.call(null, keep); }, KC_MS);      // (left for the lobby during the slow motion: no result screen afterwards)
 };
 function kcamSound() {      // a deep slowed-down boom with a falling ring over it
   if (!ac || muted) return;

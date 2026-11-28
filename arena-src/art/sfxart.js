@@ -76,7 +76,7 @@ function spawnFx0(e){
       if(FQ>0.3){ samScreen.dimFrom=performance.now(); samScreen.dimUntil=samScreen.dimFrom+2200; }
       for(let r=0;r<RN;r++) addP({x:x,y:y,life:.55+r*0.2,color:['#b45cff','#35e0ff','#ffd23f'][r],shape:'ring',r0:10,r1:300+r*90,lw:9-r*2});
       addP({x:x,y:y,life:.45,color:'#d9b8ff',shape:'flash',size:360});
-      for(let i=0;i<(FQ>0.3?8:4);i++){ const a=i*Math.PI/(FQ>0.3?4:2)+0.2; addP({x:x+Math.cos(a)*40,y:y+Math.sin(a)*40,x2:x+Math.cos(a)*380,y2:y+Math.sin(a)*380,life:.55,color:[['#ffd23f','#ff3d6e','#35e0ff','#b45cff','#ff8a2b','#5dff9a']][i%6],shape:'slash',size:34}); }
+      for(let i=0;i<(FQ>0.3?8:4);i++){ const a=i*Math.PI/(FQ>0.3?4:2)+0.2; addP({x:x+Math.cos(a)*40,y:y+Math.sin(a)*40,x2:x+Math.cos(a)*380,y2:y+Math.sin(a)*380,life:.55,color:['#ffd23f','#ff3d6e','#35e0ff','#b45cff','#ff8a2b','#5dff9a'][i%6],shape:'slash',size:34}); }
       bu(x,y,60,{a0:0,a1:6.28,s0:80,s1:500,l0:1,l1:2,z0:3,z1:6,colors:['#ffd23f','#ff3d6e','#35e0ff','#b45cff','#ff8a2b','#5dff9a'],grav:70,drag:1});
       addP({x:x,y:y-110,vy:-14,drag:1,life:1.2,color:'#35e0ff',shape:'ktext',text:'心眼',size:84});
       if(FQ>0.3) samFlash(0.45*FQ,'200,170,255'); shakeFrom(x,y,12*FQ,1000); break; }
@@ -254,7 +254,7 @@ function spawnFx0(e){
       burst(x,y,30,{a0:-3.3,a1:0.2,s0:80,s1:420,l0:.4,l1:.9,z0:6,z1:16,colors:['#ff5a1f','#ff9b2e','#ffd34d'],grav:260,drag:1.3,shape:'fire'});
       break;
     case 'gust': {
-      const r=e.r||GUST_R;
+      const r=e.r||(typeof GUST_R!=='undefined'?GUST_R:120);
       addP({x:x,y:y,life:.5,color:'#9be8ff',shape:'ring',r0:20,r1:r,lw:7});
       addP({x:x,y:y,life:.7,color:'#d6f6ff',shape:'ring',r0:10,r1:r*0.7,lw:4});
       for(let i=0;i<14;i++){ const a=i*0.9, rr=r*(0.35+(i%5)*0.12); burst(x+Math.cos(a)*rr,y+Math.sin(a)*rr*0.5,2,{a0:a+1.4,a1:a+1.9,s0:260,s1:520,l0:.25,l1:.5,z0:2,z1:4,colors:['#d6f6ff','#9be8ff'],drag:2,shape:'streak'}); }

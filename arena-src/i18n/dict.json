@@ -7,6 +7,8 @@
 "\">초대": ["\">Invite","\">Inviter","\">Invitar","\">招待","\">邀请"],
 "# 정식 출시": ["# official release","Sortie officielle le #","Lanzamiento oficial el #","# 正式リリース","# 正式上线"],
 "#-#-# · 정식 출시": ["#-#-# · Official release","#-#-# · Sortie officielle","#-#-# · Lanzamiento oficial","#-#-# · 正式リリース","#-#-# · 正式发布"],
+"#-#-# · 버그 수정": ["#-#-# · Bug fixes","#-#-# · Corrections de bugs","#-#-# · Corrección de errores","#-#-# · 不具合修正","#-#-# · 错误修复"],
+"여러 버그 수정": ["Various bug fixes","Diverses corrections de bugs","Varias correcciones de errores","いくつかの不具合を修正","多项错误修复"],
 "#~#자": ["#–# characters","#–# caractères","#–# caracteres","#~#文字","#~#个字"],
 "#개": ["#","#","#","#個","#个"],
 "#단계": ["Level #","Niveau #","Nivel #","#段階","#级"],

@@ -314,6 +314,7 @@ function buff(f, k, t, v) {
   if (f.minion && k !== 'stun' && k !== 'slow' && k !== 'root') return;
   const o = f.b[k];
   if (o && o.t > 0 && k === 'slow' && o.v < v && o.t > t) return;
+  if (o && o.t > 0 && (k === 'stun' || k === 'root' || k === 'mute') && o.t >= t) return;      // (a short stun/root/seal no longer cuts a longer one short)
   if (!f.minion && !f.dead && !(o && o.t > 0) && (k === 'stun' || (k === 'slow' && t >= .5)) && typeof fxAt === 'function' && state !== 'menu') fxAt(f, k);
   f.b[k] = { t, v: v === undefined ? 1 : v, src: SRC };
 }
@@ -754,7 +755,7 @@ function kill(e, by) {
     if (!by.human && Math.random() < .3) later(.4, () => doEmote(by, pick([0, 1, 4, 5])), by);
   }
   if (state === 'play') {
-    if (curMode === 'team') score[1 - e.team]++;
+    if (curMode === 'team' || curMode === 'gw') score[1 - e.team]++;      // (길드 대항전 = 팀 아웃 rules: it had no kill score)
     else if (curMode === 'star') { const k = by && by !== e ? (by.minion ? by.by : by) : null; if (k && k.team !== e.team && score[k.team] != null) { score[k.team] += e.star || STAR0; k.star = Math.min(STAR_MAX, (k.star || STAR0) + 1); } e.star = STAR0; }
     else if (curMode === 'duo') {      // 투 레프트: back in DUO_BACK s next to a living partner; nobody left standing = the pair is out
       const k = by && by !== e ? (by.minion ? by.by : by) : null; if (k && k.team !== e.team && score[k.team] != null) score[k.team]++;
@@ -876,7 +877,7 @@ function ai0(f, dt) {
       const melee = tgt.h && tgt.h.type !== 'shot', danger = melee ? Math.max(5 * T, reach * .55) : reach * .42;
       if (bd < danger) {
         const k = kiteStep(f, Math.max(reach, 6 * T));
-        if (k) { if (melee && bd < 2.6 * T && f.dcd <= 0 && Math.random() < (L.kdash ?? 60) * dt) tryDash(f, k[0], k[1]); return k; }
+        if (k) { if (melee && bd < 2.6 * T && f.dcd <= 0 && Math.random() < (L.kdash ?? .6) * dt) tryDash(f, k[0], k[1]); return k; }
       }
     }
     if (!see || bd > reach * .8) {
