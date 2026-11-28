@@ -26,6 +26,7 @@ const PVS = {
   'magiccard:1': R('line', { len: 448, w: 26 }), 'magiccard:3': R('dash', { len: 352, w: 30 }), 'magiccard:5': R('fan', { len: 492, half: .15, n: 3 }), 'magiccard:u': R('ground', { max: 448, r: 155 }),
   'samurai:1': R('dash', { len: 128, w: 60 }), 'samurai:2': R('dash', { len: 258, w: 34 }), 'samurai:3': R('line', { len: 320, w: 30 }), 'samurai:u': R('self', { r: 256, faint: 1 }),
   'harald:2': R('arc', { len: 100, half: .9 }), 'harald:3': R('self', { r: 120 }), 'harald:4': R('arc', { len: 64, half: 1.25 }), 'harald:5': R('dashEnd', { len: 128, r: 100 }), 'harald:u': R('dash', { len: 448, w: 50 }),
+  'chef:u': R('line', { len: 9 * T, w: 44, over: 1 }),      // thrown 거대 뒤집개: breaks walls, so the preview goes through them
   'shade:1': R('line', { len: 448, w: 40 }), 'shade:2': R('dash', { len: 256, w: 44 }), 'shade:4': R('arc', { len: 140, half: .8 }), 'shade:u': R('line', { len: 372, w: 124 }),
   'tionis:1': R('line', { len: 384, w: 32 }), 'tionis:4': R('ground', { max: 448, r: 110 }), 'tionis:3': R('line', { len: 384, w: 32 }), 'tionis:5': R('dash', { len: 192, w: 40 }), 'gardener:4': R('ground', { max: 448, r: 90 }), 'gardener:5': R('arc', { len: 180, half: .6 })
 };

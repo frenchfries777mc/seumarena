@@ -1,8 +1,7 @@
 function drawProjectileBase(b){
   drawTrail(b);
   const w = WEAPONS[b.wid];
-  let shape = w ? w.shape : (b.wid==='rifle_missile' ? 'rocket' : (b.wid==='pirate_ball' ? 'cannonball' : 'bullet'));
-  if(shape==='pitchfork' && !b.dmgless && b.swingAngle===undefined) shape='pitchforkThrow';          // the same weapon: the swing is a harmless picture (dmgless), the thing that flies is the thrown pitchfork
+  const shape = w ? w.shape : 'bullet';
   const ang = (b.swingAngle!==undefined) ? b.swingAngle : Math.atan2(b.vy||0, b.vx||0);
   // a melee swing is drawn as long as the weapon really reaches: the arcs were drawn for the original ranges (sword 85, bat 82, dagger 40, gloves 45)
   const rs = (w && w.range && MELEE_DRAW_RANGE[shape]) ? w.range/MELEE_DRAW_RANGE[shape] : 1;
@@ -11,12 +10,6 @@ function drawProjectileBase(b){
   ctx.rotate(ang);
   if(rs!==1) ctx.scale(rs, rs);
   if(b.scale) ctx.scale(b.scale, b.scale);
-  if(b.wid==='flashbang'){ ctx.fillStyle='#e8ecf2'; ctx.strokeStyle='#8b93a3'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.roundRect(-8,-5,16,10,3); ctx.fill(); ctx.stroke(); ctx.fillStyle='#ffd34d'; ctx.fillRect(-2,-7,4,3); }
-  if(b.wid==='barrel'){ ctx.fillStyle='#8a5a2a'; ctx.strokeStyle='#3b2410'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.ellipse(0,0,12,10,0,0,7); ctx.fill(); ctx.stroke(); ctx.strokeStyle='#d9b27a'; ctx.beginPath(); ctx.moveTo(-5,-9); ctx.lineTo(-5,9); ctx.moveTo(5,-9); ctx.lineTo(5,9); ctx.stroke(); ctx.fillStyle='#ff5a1f'; ctx.fillRect(-1.5,-15,3,6); }
-  if(b.wid==='lasso'){ const ow=players[b.owner]; if(ow && ow.x!==undefined){ const dx=ow.x-b.x, dy=(ow.y-40)-b.y, ca=Math.cos(ang), sa=Math.sin(ang); ctx.strokeStyle='#a8793c'; ctx.lineWidth=2.4; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(dx*ca+dy*sa, -dx*sa+dy*ca); ctx.stroke(); } ctx.strokeStyle='#d9b27a'; ctx.lineWidth=3; ctx.beginPath(); ctx.ellipse(4,0,12,9,0,0,7); ctx.stroke(); }
-  if(b.wid==='kurus_dark'){ const g=ctx.createLinearGradient(-60,0,16,0); g.addColorStop(0,'rgba(20,8,36,0)'); g.addColorStop(1,'rgba(48,18,84,0.95)'); ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(-22,0,44,11,0,0,7); ctx.fill(); ctx.fillStyle='#120820'; ctx.shadowColor='#7b3fd1'; ctx.shadowBlur=14; ctx.beginPath(); ctx.arc(0,0,11,0,7); ctx.fill(); ctx.shadowBlur=0; }
-  if(b.wid==='baseball'){ ctx.fillStyle='#f4f4f4'; ctx.beginPath(); ctx.arc(0,0,8,0,7); ctx.fill(); ctx.strokeStyle='#d33'; ctx.lineWidth=1.2; ctx.beginPath(); ctx.arc(-6,0,6,-1,1); ctx.stroke(); ctx.beginPath(); ctx.arc(6,0,6,Math.PI-1,Math.PI+1); ctx.stroke(); ctx.restore(); return; }
-  if(b.wid==='pizarro_spear'){ ctx.strokeStyle='#8a5a2a'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-24,0); ctx.lineTo(14,0); ctx.stroke(); ctx.fillStyle='#e8ecf2'; ctx.beginPath(); ctx.moveTo(26,0); ctx.lineTo(13,-5); ctx.lineTo(13,5); ctx.closePath(); ctx.fill(); ctx.restore(); return; }
   if(b.lob){      // thrown smoke grenade / molotov: a spinning can or bottle
     ctx.rotate(performance.now()*0.012-ang);
     if(b.lob==='smoke'){ ctx.fillStyle='#8a929e'; ctx.fillRect(-6,-8,12,16); ctx.fillStyle='#d9dee6'; ctx.fillRect(-6,-3,12,5); ctx.fillStyle='#4a505a'; ctx.fillRect(-3,-11,6,4); }
@@ -25,10 +18,6 @@ function drawProjectileBase(b){
   }
   ctx.fillStyle=b.color; ctx.strokeStyle=b.color;
   switch(shape){
-    case 'kdgun': {
-      const K=kdPal(b.sk?conceptOfSkin(b.sk):''); ctx.shadowColor=K.a; ctx.shadowBlur=12; ctx.fillStyle=K.wing; ctx.strokeStyle=K.b; ctx.lineWidth=1.6;
-      ctx.beginPath(); ctx.ellipse(0,0,12,3.8,0,0,7); ctx.fill(); ctx.stroke(); ctx.strokeStyle='#ffffff'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(-4,0); ctx.lineTo(8,0); ctx.stroke(); ctx.shadowBlur=0;
-      break; }
     case 'shsword': {
       const P=nnPal(b.sk?conceptOfSkin(b.sk):''); const ow=players[b.owner];
       if(ow && ow.x!==undefined){ const dx=ow.x-b.x, dy=(ow.y-40)-b.y; ctx.save(); ctx.rotate(-ang); ctx.strokeStyle=hexA(P.a,0.85); ctx.lineWidth=2.2; ctx.setLineDash([5,3]); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(dx,dy); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); }
@@ -36,29 +25,14 @@ function drawProjectileBase(b){
       ctx.beginPath(); ctx.moveTo(-6,-4); ctx.lineTo(26,-5); ctx.lineTo(42,0); ctx.lineTo(26,5); ctx.lineTo(-6,4); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(-2,0); ctx.lineTo(34,0); ctx.stroke(); ctx.lineWidth=2.4; ctx.beginPath(); ctx.moveTo(-6,-8); ctx.lineTo(-6,8); ctx.stroke(); ctx.shadowBlur=0;
       break; }
-    case 'quarrel':
-      ctx.lineCap='round'; ctx.strokeStyle='#8a5a2a'; ctx.lineWidth=2.6; ctx.beginPath(); ctx.moveTo(-12,0); ctx.lineTo(7,0); ctx.stroke();
-      ctx.fillStyle='#d9dde5'; ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(6,-3.2); ctx.lineTo(6,3.2); ctx.closePath(); ctx.fill();
-      ctx.fillStyle='#e63946'; ctx.beginPath(); ctx.moveTo(-12,0); ctx.lineTo(-16,-3); ctx.lineTo(-9,0); ctx.lineTo(-16,3); ctx.closePath(); ctx.fill();
-      break;
-    case 'blowgun':
-      ctx.strokeStyle='#3a2a14'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(6,0); ctx.stroke();
-      ctx.fillStyle='#1faa6a'; ctx.beginPath(); ctx.moveTo(10,0); ctx.lineTo(5,-2.4); ctx.lineTo(5,2.4); ctx.closePath(); ctx.fill();
-      ctx.strokeStyle='#e0334a'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(-12,-2.5); ctx.moveTo(-9,0); ctx.lineTo(-12,2.5); ctx.stroke();
-      break;
     case 'needle':
       ctx.scale(b.ult?3.2:2.1, b.ult?3.2:2.1);
       ctx.strokeStyle='#e8eef8'; ctx.lineWidth=1.8; ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(9,0); ctx.stroke();
       ctx.strokeStyle='#ff9ecb'; ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(-9,0); ctx.quadraticCurveTo(-14,-3,-18,0); ctx.stroke();
       break;
-    case 'soulorb': {
-      ctx.globalCompositeOperation='lighter'; const g=ctx.createRadialGradient(0,0,0,0,0,13); g.addColorStop(0,'rgba(235,250,255,0.95)'); g.addColorStop(0.4,'rgba(150,200,255,0.75)'); g.addColorStop(1,'rgba(140,110,255,0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,13,0,7); ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.arc(0,0,3.4,0,7); ctx.fill(); break; }
     case 'cleonorb': {
       ctx.globalCompositeOperation='lighter'; const g=ctx.createRadialGradient(0,0,0,0,0,13); g.addColorStop(0,'rgba(255,255,255,0.95)'); g.addColorStop(0.35,'rgba(255,95,184,0.8)'); g.addColorStop(1,'rgba(255,95,184,0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,13,0,7); ctx.fill();
       ctx.fillStyle='#ffd34d'; ctx.beginPath(); ctx.arc(-9,0,2.2,0,7); ctx.fill(); break; }
-    case 'dronebolt':
-      ctx.lineCap='round'; ctx.strokeStyle='rgba(87,199,255,0.8)'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(8,0); ctx.stroke(); ctx.strokeStyle='#ffffff'; ctx.lineWidth=1.8; ctx.beginPath(); ctx.moveTo(-7,0); ctx.lineTo(8,0); ctx.stroke(); break;
     case 'syringe':
       ctx.lineCap='round'; ctx.strokeStyle='#cfd8e3'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(6,0); ctx.lineTo(15,0); ctx.stroke();
       ctx.fillStyle='rgba(235,245,255,0.95)'; ctx.strokeStyle='#8c9bb0'; ctx.lineWidth=1; ctx.beginPath(); ctx.rect(-8,-3,14,6); ctx.fill(); ctx.stroke();
@@ -117,16 +91,6 @@ function drawProjectileBase(b){
       ctx.restore();
       ctx.fillStyle='#ffe08a'; ctx.beginPath(); ctx.arc(0,0,3.5,0,7); ctx.fill();
       break;
-    case 'greatsword': break;          // 용살자: the light is drawn along the real arm swing in drawStickman
-    case 'dsfireball': {              // the dragon's fireball: a white-hot core with ragged flame lobes and a long comet tail of fire
-      const tt=performance.now()/1000;
-      ctx.save(); ctx.globalCompositeOperation='lighter';
-      for(let k=0;k<3;k++){ const L=92-k*20, W=17-k*4; const g=ctx.createLinearGradient(0,0,-L,0); g.addColorStop(0,k===2?'rgba(255,250,210,0.95)':(k===1?'rgba(255,170,60,0.8)':'rgba(255,90,20,0.6)')); g.addColorStop(1,'rgba(255,40,10,0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.moveTo(0,-W); for(let i=1;i<=8;i++){ const x=-L*i/8; ctx.lineTo(x,-W*(1-i/8)-Math.sin(tt*26+i*1.7+k)*3.2*(i/8)); } for(let i=8;i>=1;i--){ const x=-L*i/8; ctx.lineTo(x,W*(1-i/8)+Math.sin(tt*24+i*1.3+k*2)*3.2*(i/8)); } ctx.lineTo(0,W); ctx.closePath(); ctx.fill(); }
-      for(let k=0;k<3;k++){ const R=24-k*7; const g=ctx.createRadialGradient(0,0,0,0,0,R); g.addColorStop(0,k===2?'rgba(255,255,235,1)':'rgba(255,200,90,'+(0.8-k*0.1)+')'); g.addColorStop(0.55,'rgba(255,110,30,'+(0.55-k*0.1)+')'); g.addColorStop(1,'rgba(255,40,10,0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,R,0,7); ctx.fill(); }
-      ctx.restore();
-      const ba=ang+Math.PI; addP({x:b.x+Math.cos(ba)*RND(8,40),y:b.y+Math.sin(ba)*RND(8,40)+RND(-8,8),vx:RND(-40,40),vy:RND(-60,-10),life:RND(.3,.6),size:RND(2.2,5),color:Math.random()<.5?'#ff7a2a':'#ffd34d',grav:-80,drag:2});
-      break;
-    }
     case 'axe': {                                                         // 하랄드's blow: a heavy overhead arc that ends in a dust burst
       const prog=b.life0 ? clamp(1-(b.life/b.life0),0,1) : 1;
       const a0=-1.9, a1=a0+2.9*prog, r=38; ctx.lineCap='round';
@@ -149,7 +113,6 @@ function drawProjectileBase(b){
       break;
     }
     case 'katana':
-    case 'lanternstaff':
     case 'blade': {
       const prog=b.life0 ? clamp(1-(b.life/b.life0),0,1) : 1;
       const a0=-1.7, a1=a0+3.4*prog, r=30; ctx.lineCap='round';
@@ -175,56 +138,6 @@ function drawProjectileBase(b){
       if(prog>0 && prog<1) addP({x:b.x+Math.cos(ang)*(20+(reach-20)*ext)*rs,y:b.y+Math.sin(ang)*(20+(reach-20)*ext)*rs,vx:RND(-90,90),vy:RND(-90,90),life:RND(.15,.3),size:RND(1.4,2.6),color:'#eaf6ff',drag:3});
       break;
     }
-    case 'pitchfork': {                                                   // the swing of the pitchfork: a sand-coloured arc in the owner's colour with three little tines at its head
-      const prog=b.life0 ? clamp(1-(b.life/b.life0),0,1) : 1;
-      const a0=-1.6, a1=a0+3.2*prog, r=30; ctx.lineCap='round';
-      ctx.save(); ctx.globalCompositeOperation='lighter';
-      for(let k=0;k<3;k++){ ctx.strokeStyle=hexA(conceptOfSkin(b.sk)==='poseidon'?'#8fe6ff':'#ffd98a',0.26-0.07*k); ctx.lineWidth=22-k*7; ctx.beginPath(); ctx.arc(0,0,r,Math.max(a0,a1-1.4),a1); ctx.stroke(); }
-      ctx.restore();
-      ctx.strokeStyle=hexA(b.color,0.8); ctx.lineWidth=4; ctx.beginPath(); ctx.arc(0,0,r,a0,a1); ctx.stroke();
-      ctx.strokeStyle=conceptOfSkin(b.sk)==='poseidon'?'#e6fbff':'#f3e3b0'; ctx.lineWidth=2; for(let k=-1;k<=1;k++){ const aa=a1+k*0.13; ctx.beginPath(); ctx.moveTo(Math.cos(aa)*(r-5),Math.sin(aa)*(r-5)); ctx.lineTo(Math.cos(aa)*(r+9),Math.sin(aa)*(r+9)); ctx.stroke(); }
-      break;
-    }
-    case 'pitchforkThrow': {                                              // the thrown pitchfork: turning round and round as it flies
-      ctx.rotate(-ang + performance.now()*0.021 + (b.sx||0)*0.013);
-      ctx.lineCap='round'; ctx.strokeStyle='#8a5a2b'; ctx.lineWidth=3.4; ctx.beginPath(); ctx.moveTo(-17,0); ctx.lineTo(11,0); ctx.stroke();
-      ctx.strokeStyle='#e4e7ee'; ctx.lineWidth=2.6; ctx.beginPath(); ctx.moveTo(11,-6.5); ctx.lineTo(11,6.5); ctx.moveTo(11,-6.5); ctx.lineTo(23,-6.5); ctx.moveTo(11,0); ctx.lineTo(25,0); ctx.moveTo(11,6.5); ctx.lineTo(23,6.5); ctx.stroke();
-      ctx.fillStyle='#f2c230'; ctx.fillRect(-5,-2.2,3,4.4);
-      break;
-    }
-    case 'saber': {                                                       // a lightsaber swing: a long bright arc in the owner's colour with a white core, and sparks
-      const prog=b.life0 ? clamp(1-(b.life/b.life0),0,1) : 1;
-      const a0=-1.9, a1=a0+3.8*prog, r=32; ctx.lineCap='round';
-      ctx.save(); ctx.globalCompositeOperation='lighter';
-      for(let k=0;k<4;k++){ ctx.strokeStyle=hexA(b.color,0.30-0.065*k); ctx.lineWidth=26-k*6; ctx.beginPath(); ctx.arc(0,0,r,Math.max(a0,a1-1.6),a1); ctx.stroke(); }
-      ctx.restore();
-      ctx.strokeStyle=hexA(b.color,0.85); ctx.lineWidth=6; ctx.beginPath(); ctx.arc(0,0,r,a0,a1); ctx.stroke();
-      ctx.strokeStyle='#ffffff'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(0,0,r,Math.max(a0,a1-1.0),a1); ctx.stroke();
-      if(prog>0 && prog<1){ const wa=ang+a1; for(let i=0;i<2;i++) addP({x:b.x+Math.cos(wa)*r*rs,y:b.y+Math.sin(wa)*r*rs,vx:RND(-110,110),vy:RND(-110,110),life:RND(.2,.38),size:RND(1.6,3),color:i?b.color:'#ffffff',drag:3}); }
-      break;
-    }
-    case 'club': {
-      const prog=b.life0 ? clamp(1-(b.life/b.life0),0,1) : 1;
-      const a0=-1.0, a1=a0+2.0*prog, r=34; ctx.lineCap='round';
-      ctx.save(); ctx.globalCompositeOperation='lighter';
-      for(let k=0;k<3;k++){ ctx.strokeStyle=hexA('#ffcf7a',0.26-0.07*k); ctx.lineWidth=22-k*7; ctx.beginPath(); ctx.arc(0,0,r,Math.max(a0,a1-1.1),a1); ctx.stroke(); }
-      ctx.restore();
-      ctx.strokeStyle=hexA(b.color,0.6); ctx.lineWidth=8; ctx.beginPath(); ctx.arc(0,0,r,a0,a1); ctx.stroke();
-      ctx.strokeStyle='#fff3d6'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(0,0,r,Math.max(a0,a1-0.7),a1); ctx.stroke();
-      if(prog>0 && prog<1){ const wa=ang+a1; for(let i=0;i<2;i++) addP({x:b.x+Math.cos(wa)*r*rs,y:b.y+Math.sin(wa)*r*rs,vx:RND(-90,90),vy:RND(-90,90),life:RND(.2,.35),size:RND(1.8,3.2),color:i?'#ffcf7a':'#ffffff',drag:3}); }
-      break;
-    }
-    case 'hook':
-    {
-      const prog=b.life0 ? clamp(1-(b.life/b.life0),0,1) : 1; ctx.lineCap='round';
-      ctx.save(); ctx.globalCompositeOperation='lighter';
-      ctx.strokeStyle=hexA('#cfe3ff',0.35); ctx.lineWidth=12; ctx.beginPath(); ctx.moveTo(-6,0); ctx.lineTo(-6+30*prog,0); ctx.stroke();
-      ctx.restore();
-      ctx.strokeStyle=hexA(b.color,0.8); ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(-6,0); ctx.lineTo(-6+26*prog,0); ctx.stroke();
-      ctx.strokeStyle='#ffffff'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-6+10*prog,0); ctx.lineTo(-6+26*prog,0); ctx.stroke();
-      if(prog>0 && prog<1) addP({x:b.x+Math.cos(ang)*(20*prog*rs),y:b.y+Math.sin(ang)*(20*prog*rs),vx:RND(-60,60),vy:RND(-60,60),life:RND(.15,.28),size:RND(1.4,2.4),color:'#ffffff',drag:3});
-      break;
-    }
     case 'fist': {
       const prog=b.life0 ? clamp(1-(b.life/b.life0),0,1) : 1;
       ctx.save(); ctx.globalCompositeOperation='lighter';
@@ -235,21 +148,6 @@ function drawProjectileBase(b){
       ctx.fillStyle=b.color; ctx.beginPath(); ctx.arc(6+10*prog,0,7,0,7); ctx.fill();
       break;
     }
-    case 'chip': {
-      ctx.rotate(performance.now()/60); ctx.scale(b.ult?1.7:1.15,b.ult?1.7:1.15);
-      ctx.fillStyle='#d62839'; ctx.strokeStyle='#fff'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(0,0,8,0,7); ctx.fill(); ctx.stroke();
-      ctx.lineWidth=2; ctx.setLineDash([3,3.2]); ctx.beginPath(); ctx.arc(0,0,5,0,7); ctx.stroke(); ctx.setLineDash([]);
-      break;
-    }
-    case 'redshot': {      // 제임스 strong shot: Stickseum's big red bullet with a hot white core, sized by b.r
-      const r=Math.max(BULLET_R*2.1,(b.r||7)*0.9); ctx.fillStyle='#e8222b'; ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.shadowColor='#ff2d2d'; ctx.shadowBlur=22; ctx.fill(); ctx.shadowBlur=0;
-      ctx.fillStyle='#ffb3a8'; ctx.beginPath(); ctx.arc(0,0,r*0.55,0,7); ctx.fill(); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-r*0.1,0,r*0.25,0,7); ctx.fill();
-      ctx.strokeStyle='#fff'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(0,0,r+1,0,7); ctx.stroke(); break;
-    }
-    case 'cannonball':
-      ctx.fillStyle='#23232b'; ctx.strokeStyle='#8a8a98'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(0,0,8,0,7); ctx.fill(); ctx.stroke();
-      ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.beginPath(); ctx.arc(-2.5,-2.5,2.4,0,7); ctx.fill();
-      break;
     case 'portalbullet':
       ctx.rotate(performance.now()/90);
       ctx.strokeStyle='#a855f7'; ctx.lineWidth=2; ctx.globalCompositeOperation='lighter';
@@ -339,7 +237,7 @@ function drawFireDragon(c,now,face,flap,breath,headOnly){       // a red western
   c.fillStyle='#ffe27a'; c.beginPath(); c.ellipse(12,-6,4.2,3,0.2,0,7); c.fill(); c.fillStyle='#1a0000'; c.fillRect(11,-8,1.8,4.6);                                          // the eye
   c.fillStyle='#2c050c'; c.beginPath(); c.arc(39,-6,1.6,0,7); c.fill();                                                                                                      // the nostril
   c.globalCompositeOperation='lighter'; const g=c.createRadialGradient(46,6,1,46,6,26); g.addColorStop(0,'rgba(255,240,170,0.95)'); g.addColorStop(0.45,'rgba(255,120,30,0.65)'); g.addColorStop(1,'rgba(255,40,10,0)'); c.fillStyle=g; c.beginPath(); c.arc(46,6,26,0,7); c.fill(); c.restore();      // fire at the mouth
-  if(breath>0){ c.save(); c.globalCompositeOperation='lighter'; for(let k=0;k<9;k++){ const f=k/8, d=(1-breath)*0+f, x=hx+40+d*70*(1.4-breath*0.4), y=hy+4+d*22+Math.sin(T*9+k)*3, r=(4+d*16)*(0.5+breath); const g=c.createRadialGradient(x,y,0,x,y,r); g.addColorStop(0,'rgba(255,240,170,'+(0.9*breath)+')'); g.addColorStop(0.5,'rgba(255,110,30,'+(0.6*breath)+')'); g.addColorStop(1,'rgba(255,30,10,0)'); c.fillStyle=g; c.beginPath(); c.arc(x,y,r,0,7); c.fill(); } c.restore(); }
+  if(breath>0){ c.save(); c.globalCompositeOperation='lighter'; for(let k=0;k<9;k++){ const f=k/8, d=f, x=hx+40+d*70*(1.4-breath*0.4), y=hy+4+d*22+Math.sin(T*9+k)*3, r=(4+d*16)*(0.5+breath); const g=c.createRadialGradient(x,y,0,x,y,r); g.addColorStop(0,'rgba(255,240,170,'+(0.9*breath)+')'); g.addColorStop(0.5,'rgba(255,110,30,'+(0.6*breath)+')'); g.addColorStop(1,'rgba(255,30,10,0)'); c.fillStyle=g; c.beginPath(); c.arc(x,y,r,0,7); c.fill(); } c.restore(); }
   if(!headOnly) wing(false);
   c.restore();
 }

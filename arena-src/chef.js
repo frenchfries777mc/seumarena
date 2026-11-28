@@ -66,7 +66,8 @@ function chefSpatula(f, ang, back) {
   emit(f, ang, { skill: 1, count: 1, dmg: 90, range: 9 * T, spd: 760, shape: 'spatula', r: 22, pierce: 99, wb: 1, onEnd: b => {
     if (!back) return;      // 각성: comes back like a boomerang, from where it stopped
     const d = Math.hypot(f.x - b.x, f.y - b.y); if (f.dead || d < 40) return;
-    emit(f, Math.atan2(f.y - b.y, f.x - b.x), { skill: 1, count: 1, dmg: 90, range: d, spd: 820, shape: 'spatula', r: 22, pierce: 99, wb: 1, ox: b.x - f.x - Math.cos(ang) * 24, oy: b.y - (f.y + BODY) - Math.sin(ang) * 24 });
+    const ra = Math.atan2(f.y - b.y, f.x - b.x);      // (the start offset uses the way back, so it starts exactly where it stopped)
+    emit(f, ra, { skill: 1, count: 1, dmg: 90, range: d, spd: 820, shape: 'spatula', r: 22, pierce: 99, wb: 1, ox: b.x - f.x - Math.cos(ra) * 24, oy: b.y - (f.y + BODY) - Math.sin(ra) * 24 });
   } });
 }
 

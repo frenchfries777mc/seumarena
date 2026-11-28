@@ -86,7 +86,7 @@ function tkPersona(c, wid, hx, hy, r, shy) {
       tkLeaf(c, hx + f * 3, shy + 2, .55, .3); tkLeaf(c, hx - f * 4, shy + 3, .45, -.5, P.lf2); return true; }
     case 'shuriken': {      // 단풍 닌자: an orange mask with tails, a maple leaf on the brow
       c.fillStyle = P.rd; c.fillRect(hx - r * 1.05, hy - r * .55, r * 2.1, r * .5);
-      c.save(); c.translate(hx - f * r, hy - r * .3); c.rotate(-f * .4 + Math.sin(t * 6) * .15); c.fillRect(-f * r * 1.5 - (f > 0 ? 0 : 0), -1.5, f * -r * .1 + r * 0, 3); c.restore();
+      c.save(); c.translate(hx - f * r, hy - r * .3); c.rotate(-f * .4 + Math.sin(t * 6) * .15); c.fillRect(-f * r * 1.5, -1.5, f * -r * .1, 3); c.restore();
       c.fillStyle = P.rd; c.beginPath(); c.moveTo(hx - f * r, hy - r * .4); c.quadraticCurveTo(hx - f * r * 2, hy - r * .1 + Math.sin(t * 7) * 2, hx - f * r * 2.6, hy + r * .5); c.lineTo(hx - f * r * 2.3, hy + r * .7); c.quadraticCurveTo(hx - f * r * 1.7, hy, hx - f * r, hy - r * .1); c.fill();
       tkLeaf(c, hx + f * r * .1, hy - r * .35, .38, 0, P.gd); c.fillStyle = P.dk; c.fillRect(hx - r * 1.02, hy + r * .1, r * 2.04, r * .55); return true; }
     case 'shotgun': {      // 옥수수 농부: a straw hat with a corn cob in the band, a checked neckerchief

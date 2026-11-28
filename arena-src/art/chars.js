@@ -10,14 +10,13 @@ const WEAPONS = {
   smg:     {id:'smg',     name:'기관총',   emoji:'🔫', kind:'gun',      dmg:6, cd:2.2, bulletSpeed:900, shape:'bullet', spread:0.06, burst:10, burstDelay:0.04,
             desc:'데미지 6 · 클릭 한 번에 10발 연사 · 쿨타임 2.2초 · 탄이 약간씩 퍼지는 일제사격'},
   bow:     {id:'bow',     name:'활',       emoji:'🏹', kind:'gun',      dmg:35, cd:1.35, bulletSpeed:1100, shape:'arrow', arcs:true,
-            desc:'데미지 30 · 재장전 1.35초 · 중력의 영향을 받아 포물선을 그리는 강력한 원거리 무기'},
+            desc:'데미지 35 · 재장전 1.35초 · 중력의 영향을 받아 포물선을 그리는 강력한 원거리 무기'},
   sword:   {id:'sword',   name:'칼',       emoji:'🗡️', kind:'melee',    dmg:32, cd:0.55, range:100, shape:'blade',
             desc:'데미지 32 · 쿨타임 0.55초 · 사거리 100 · 빠르고 날카로운 근접 베기'},
   shuriken:{id:'shuriken',name:'표창',     emoji:'⭐', kind:'gun',      dmg:14, cd:0.48, bulletSpeed:1050, shape:'star',
             desc:'데미지 14 · 쿨타임 0.48초 · 가볍고 빠르게 연속으로 던지는 투척 무기'},
   shotgun: {id:'shotgun', name:'샷건',     emoji:'💥', kind:'shotgun',  dmg:15, pellets:5, cd:1.2, bulletSpeed:850, shape:'pellet',
-            dmgFalloff:{min:9, maxDist:700},
-            desc:'근거리 펠릿당 최대 13(5발 다 맞으면 65), 멀어질수록 최소 9까지 감소 · 쿨타임 1.2초 · 넓게 퍼지는 산탄'},
+            desc:'펠릿당 데미지 15(5발 다 맞으면 75) · 쿨타임 1.2초 · 넓게 퍼지는 산탄'},
   rifle:   {id:'rifle',   name:'돌격소총', emoji:'🔫', kind:'gun',      dmg:9,  cd:1.2,  bulletSpeed:1000, shape:'bullet', burst:3, burstDelay:0.07,
             desc:'데미지 9(3연발) · 쿨타임 1.2초 · 클릭 한 번에 총알 3발을 빠르게 연사하는 소총'},
   gloves:  {id:'gloves',  name:'권투글러브',emoji:'🥊', kind:'melee',   dmg:17, cd:0.25, range:70, shape:'fist',
@@ -25,7 +24,7 @@ const WEAPONS = {
   grenade: {id:'grenade', name:'수류탄',   emoji:'💣', kind:'explosive',dmg:56, cd:2.0,  bulletSpeed:600, splash:145, shape:'bomb', arcs:true,
             desc:'데미지 56 · 폭발반경 145 · 쿨타임 2.0초 · 중력에 의해 포물선으로 떨어지며 범위 안 전원에게 피해(자신 포함)'},
   bazooka: {id:'bazooka', name:'바주카포', emoji:'🚀', kind:'explosive',dmg:60, cd:2.8,  bulletSpeed:750, splash:150, shape:'rocket', arcs:true,
-            desc:'데미지 68 · 폭발반경 150 · 쿨타임 2.8초 · 중력의 영향을 받는 포물선 궤도, 최고 위력이지만 느린 재장전'},
+            desc:'데미지 60 · 폭발반경 150 · 쿨타임 2.8초 · 중력의 영향을 받는 포물선 궤도, 최고 위력이지만 느린 재장전'},
   wizard:  {id:'wizard',  name:'마법사',   emoji:'🧙', kind:'gun',      dmg:14, cd:0.7,  bulletSpeed:750, shape:'fireball', pierce:true, pierceHits:1, platPierce:1, life:1.4,
             desc:'데미지 14(한 번 거치면 7) · 쿨타임 0.7초 · 사거리 김 · 발판을 한 번만 통과하고, 플레이어 한 명을 관통한 뒤 두 번째로 맞힌 상대에게서 멈추는 화염 마법'},
   magiccard:{id:'magiccard',name:'마술 카드',emoji:'🃏', kind:'cards',    dmg:10,  cd:0.75,  bulletSpeed:820, shape:'card', hitR:26, comboBonus:4, freeVolleys:2,
@@ -55,7 +54,8 @@ const WEAPON_PERSONA_NAME = {
   shuriken:'닌자', shotgun:'보안관', rifle:'군인', gloves:'복서', grenade:'폭발광',
   bazooka:'중화기병', magiccard:'마술사', wizard:'마법사', portalgun:'차원여행자', shade:'네온', samurai:'사무라이'};
 let PERSONA_FACE=1;
-let DS_FLAME_NOW=false, BOW_P=null, TELL_P=null;
+let BOW_P=null;      // the bow drawn right now (its reload pull follows that archer's last shot)
+const hrAge=p=>(typeof time==='number'?time:0)-((p&&typeof p.lastFire==='number')?p.lastFire:-99);      // seconds since that fighter's last shot
 function hslHex(h,sat,l){ h=((h%360)+360)%360; sat/=100; l/=100; const k=n=>(n+h/30)%12, a=sat*Math.min(l,1-l), f=n=>{ const v=l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1))); return Math.round(v*255).toString(16).padStart(2,'0'); }; return '#'+f(0)+f(8)+f(4); }
 function nnPal(cp){      // 네온's colours: the mint of the base figure, or one of its skins
   switch(cp){
@@ -64,14 +64,6 @@ function nnPal(cp){      // 네온's colours: the mint of the base figure, or on
     case 'nnplasma': return {a:'#b28cff', b:'#e0d2ff', d:'#160b2a'};
     case 'nnrain': { const h=(performance.now()/14)%360; return {a:hslHex(h,100,66), b:hslHex(h+40,100,84), d:'#10121c'}; }
     default: return {a:'#7dffd8', b:'#9dffe6', d:'#0b1c1a'};
-  }
-}
-function kdPal(cp){      // 카다스's colours: purple, or one of its skins
-  switch(cp){
-    case 'kdred': return {a:'#ff2a4a', b:'#ffa0ac', wing:'#3a0812', mid:'#6a1020'};
-    case 'kdhell': return {a:'#ff8a2a', b:'#ffd79a', wing:'#3a1606', mid:'#7a2e08'};
-    case 'kdvoid': { const h=250+Math.sin(performance.now()/900)*30; return {a:hslHex(h,95,66), b:hslHex(h,90,88), wing:'#0a0a2a', mid:'#1a1a5a'}; }
-    default: return {a:'#9a4cff', b:'#c9a0ff', wing:'#24083a', mid:'#3a1668'};
   }
 }
 function drawWeaponPersona(c,wid,hx,hy,r,shy,tint,concept){
@@ -231,31 +223,12 @@ function drawWeaponPersona(c,wid,hx,hy,r,shy,tint,concept){
   }
   c.restore();
 }
-function drawHat(c,id,hx,hy,r,tintOverride){
-  const it=COSMETICS[id]; if(!it) return;
-  c.save(); c.fillStyle=tintOverride||it.color; c.strokeStyle=tintOverride||it.color; c.lineWidth=2;
-  if(id==='hat_beanie'){
-    c.beginPath(); c.arc(hx,hy-1,r+1.5,Math.PI,0); c.fill();
-    c.fillStyle='#fff'; c.fillRect(hx-r-1.5,hy-4,(r+1.5)*2,3);
-    c.beginPath(); c.arc(hx,hy-r-3,2.6,0,7); c.fill();
-  } else if(id==='hat_cap'){
-    c.beginPath(); c.arc(hx,hy-1,r+1,Math.PI,0); c.fill();
-    c.fillRect(hx,hy-3,r+9,3);
-  } else if(id==='hat_party'){
-    c.beginPath(); c.moveTo(hx-r*0.75,hy-r*0.55); c.lineTo(hx,hy-r*2.7); c.lineTo(hx+r*0.75,hy-r*0.55); c.closePath(); c.fill();
-    c.fillStyle='#ffe066'; c.beginPath(); c.arc(hx,hy-r*2.7,2.4,0,7); c.fill();
-  } else if(id==='hat_tophat'){
-    c.fillRect(hx-r*1.35,hy-r*0.85,r*2.7,3);
-    c.fillRect(hx-r*0.8,hy-r*2.5,r*1.6,r*1.7);
-    c.fillStyle='#d62839'; c.fillRect(hx-r*0.8,hy-r*1.3,r*1.6,3);
-  } else if(id==='hat_halo'){
-    c.beginPath(); c.ellipse(hx,hy-r-6,r*0.95,3,0,0,7); c.stroke();
-  } else if(id==='hat_crown'){
-    const y0=hy-r*0.6;
-    c.beginPath(); c.moveTo(hx-r,y0); c.lineTo(hx-r,y0-r*1.3); c.lineTo(hx-r*0.5,y0-r*0.6); c.lineTo(hx,y0-r*1.5);
-    c.lineTo(hx+r*0.5,y0-r*0.6); c.lineTo(hx+r,y0-r*1.3); c.lineTo(hx+r,y0); c.closePath(); c.fill();
-    c.fillStyle='#d62839'; c.beginPath(); c.arc(hx,y0-r*0.5,1.8,0,7); c.fill();
-  }
+function drawHat(c,id,hx,hy,r,tintOverride){      // only the top hat is drawn (magiccard)
+  const it=COSMETICS[id]; if(!it || id!=='hat_tophat') return;
+  c.save(); c.fillStyle=tintOverride||it.color;
+  c.fillRect(hx-r*1.35,hy-r*0.85,r*2.7,3);
+  c.fillRect(hx-r*0.8,hy-r*2.5,r*1.6,r*1.7);
+  c.fillStyle='#d62839'; c.fillRect(hx-r*0.8,hy-r*1.3,r*1.6,3);
   c.restore();
 }
 function drawSpacePersona(c, wid, hx, hy, r, shy, tint){       // the looks follow the 0.9 intro picture
@@ -388,7 +361,7 @@ function drawHeldWeapon(c, weaponId, ax, ay, hx, hy, swingProg, concept){
     c.beginPath(); c.arc(0,0,13,-1.15,1.15); c.stroke();
     // reloading: right after the shot the string is slack, then an arrow is nocked, and the other hand draws it back until the next shot is ready
     let pull=1, nock=1, rel=0;
-    if(BOW_P){ const T=w.cd||1.35, age=hrAge(BOW_P); if(age>=0 && age<T){ if(age<0.14){ nock=0; pull=0; rel=1-age/0.14; } else if(age<0.3){ nock=(age-0.14)/0.16; pull=0; } else { const k=Math.min(1,(age-0.3)/(Math.max(0.3,T*0.8-0.3))); nock=1; pull=k*k*(3-2*k); } } }
+    if(BOW_P){ const T=(BOW_P.h&&+BOW_P.h.cd)||w.cd||1.35, age=hrAge(BOW_P); if(age>=0 && age<T){ if(age<0.14){ nock=0; pull=0; rel=1-age/0.14; } else if(age<0.3){ nock=(age-0.14)/0.16; pull=0; } else { const k=Math.min(1,(age-0.3)/(Math.max(0.3,T*0.8-0.3))); nock=1; pull=k*k*(3-2*k); } } }
     const tip=13*Math.cos(1.15), tipY=13*Math.sin(1.15);
     const ux=ax*facing, uy=ay, ul=Math.hypot(ux,uy)||1, dx=ux/ul, dy=uy/ul;      // the arrow points where the player aims (in the bow's mirrored frame)
     const nx=-dx*pull*15 - dx*2*rel, ny=-dy*pull*15 - dy*2*rel;
@@ -405,65 +378,14 @@ function drawHeldWeapon(c, weaponId, ax, ay, hx, hy, swingProg, concept){
     c.restore();
     return;
   }
-  const ang = Math.atan2(ay, ax) + (w.shape==='club' ? ((swingProg||0)-0.5)*1.1 : 0);
+  const ang = Math.atan2(ay, ax);
   c.save();
   c.translate(hx, hy); c.rotate(ang);
   switch(w.shape){
-    case 'kdgun': {      // 카다스: the dark gun (long, low, P90-like: a magazine along the top)
-      const K=kdPal(concept); c.save(); c.lineJoin='round'; c.shadowColor=K.a; c.shadowBlur=8; c.fillStyle='#0a0612'; c.strokeStyle=K.a; c.lineWidth=1.2;
-      c.beginPath(); c.moveTo(-8,-4); c.lineTo(26,-5); c.lineTo(31,-2.5); c.lineTo(31,1); c.lineTo(22,2.6); c.lineTo(10,3.4); c.lineTo(8,11); c.lineTo(2.5,11); c.lineTo(1.5,4); c.lineTo(-8,4); c.closePath(); c.fill(); c.stroke();
-      c.fillStyle=K.mid; c.beginPath(); c.moveTo(1,-5); c.lineTo(2,-9.5); c.lineTo(21,-9.5); c.lineTo(24,-5); c.closePath(); c.fill(); c.stroke();
-      c.fillStyle='#0a0612'; c.beginPath(); c.rect(31,-2.6,6,2.8); c.fill(); c.stroke();
-      c.strokeStyle=K.b; c.lineWidth=1.5; c.beginPath(); c.moveTo(-5,-1.5); c.lineTo(18,-2.4); c.lineTo(29,-1.6); c.stroke();
-      c.restore(); break; }
-    case 'quarrel': {      // 빌헬름 텔: a crossbow, the string is drawn back with the gauge
-      const pg=TELL_P?Math.min(1,TELL_P.tellG||0):0;
-      c.lineCap='round';
-      c.strokeStyle='#6b4423'; c.lineWidth=5; c.beginPath(); c.moveTo(-6,0); c.lineTo(26,0); c.stroke();
-      c.strokeStyle='#4a2f16'; c.lineWidth=3.2; c.beginPath(); c.moveTo(19,-12); c.quadraticCurveTo(28,0,19,12); c.stroke();
-      c.strokeStyle='#e8e2d0'; c.lineWidth=1; c.beginPath(); c.moveTo(19,-12); c.lineTo(19-pg*9,0); c.lineTo(19,12); c.stroke();
-      c.strokeStyle='#8a5a2a'; c.lineWidth=2; c.beginPath(); c.moveTo(19-pg*9,0); c.lineTo(34,0); c.stroke();
-      c.fillStyle='#d9dde5'; c.beginPath(); c.moveTo(41,0); c.lineTo(34,-2.8); c.lineTo(34,2.8); c.closePath(); c.fill();
-      break; }
-    case 'blowgun':
-      c.strokeStyle='#7a4a1f'; c.lineWidth=3.2; c.lineCap='round'; c.beginPath(); c.moveTo(4,0); c.lineTo(30,0); c.stroke();
-      c.strokeStyle='#2fb87a'; c.lineWidth=3.6; c.beginPath(); c.moveTo(24,0); c.lineTo(30,0); c.stroke();
-      break;
-    case 'club':
-      if(concept==='fry'){      // 방망이 대신 감자튀김: a red carton and a fan of golden fries
-        c.fillStyle='#d62839'; c.beginPath(); c.moveTo(-2,-5); c.lineTo(11,-8); c.lineTo(11,8); c.lineTo(-2,5); c.closePath(); c.fill();
-        c.fillStyle='#ffe27a'; c.fillRect(2,-1.4,6,2.8);
-        c.lineCap='round';
-        for(let i=-3;i<=3;i++){ const a=i*0.1, y0=i*2.2; c.strokeStyle=(i%2)?'#ffd34d':'#f2b81c'; c.lineWidth=3.4; c.beginPath(); c.moveTo(10,y0); c.lineTo(10+(26-Math.abs(i))*Math.cos(a), y0+(26-Math.abs(i))*Math.sin(a)); c.stroke(); }
-        break;
-      }
-      c.strokeStyle='#8b5a2b'; c.lineWidth=8; c.lineCap='round';
-      c.beginPath(); c.moveTo(0,0); c.lineTo(22,0); c.stroke();
-      break;
-    case 'chip': {
-      c.fillStyle='#d62839'; c.strokeStyle='#fff'; c.lineWidth=1.4; c.beginPath(); c.arc(14,0,6.5,0,7); c.fill(); c.stroke();
-      c.setLineDash([2.5,2.8]); c.beginPath(); c.arc(14,0,4,0,7); c.stroke(); c.setLineDash([]);
-      break;
-    }
     case 'spear': {                                                       // a long wooden shaft with a steel head
       c.lineCap='round'; c.strokeStyle='#8a5a2b'; c.lineWidth=3; c.beginPath(); c.moveTo(-12,0); c.lineTo(30,0); c.stroke();
       c.fillStyle='#dfe4ec'; c.beginPath(); c.moveTo(30,-4); c.lineTo(43,0); c.lineTo(30,4); c.closePath(); c.fill();
       c.fillStyle='#c9a463'; c.fillRect(26,-2.6,3,5.2);
-      break;
-    }
-    case 'pitchfork': {                                                   // a wooden shaft with a three-pronged iron head
-      if(concept==='poseidon'){ drawTrident(c,1,true); break; }      // 포세이돈: the trident
-      c.lineCap='round'; c.strokeStyle='#8a5a2b'; c.lineWidth=3.2; c.beginPath(); c.moveTo(-8,0); c.lineTo(28,0); c.stroke();
-      c.strokeStyle='#d6dae3'; c.lineWidth=2.4; c.beginPath(); c.moveTo(28,-6.5); c.lineTo(28,6.5); c.stroke();                                 // the crossbar
-      c.beginPath(); c.moveTo(28,-6.5); c.lineTo(40,-6.5); c.moveTo(28,0); c.lineTo(42,0); c.moveTo(28,6.5); c.lineTo(40,6.5); c.stroke();        // the three prongs
-      c.fillStyle='#f2c230'; c.fillRect(10,-2.2,3,4.4);                                                                                          // a golden ring on the shaft (a pharaoh's tool)
-      break;
-    }
-    case 'saber': {                                                       // a glowing blade from a small hilt
-      c.strokeStyle='#6b7280'; c.lineWidth=4; c.lineCap='round'; c.beginPath(); c.moveTo(-3,0); c.lineTo(6,0); c.stroke();
-      c.save(); c.globalCompositeOperation='lighter'; c.strokeStyle='rgba(120,200,255,0.35)'; c.lineWidth=11; c.beginPath(); c.moveTo(6,0); c.lineTo(36,0); c.stroke(); c.restore();
-      c.strokeStyle='#8fdcff'; c.lineWidth=5; c.beginPath(); c.moveTo(6,0); c.lineTo(36,0); c.stroke();
-      c.strokeStyle='#ffffff'; c.lineWidth=2; c.beginPath(); c.moveTo(7,0); c.lineTo(35,0); c.stroke();
       break;
     }
     case 'blade':
@@ -533,38 +455,6 @@ function drawHeldWeapon(c, weaponId, ax, ay, hx, hy, swingProg, concept){
       c.fillStyle='#a07a52'; c.fillRect(9.5,-10,5,2.4);
       c.fillStyle='rgba(196,139,255,0.75)'; c.beginPath(); c.arc(10,1,1.8,0,7); c.fill();
       break;
-    case 'greatsword': { // 용살자: 황금 손잡이의 긴 장검 (불꽃 스킬이면 칼날이 달아오름)
-      const fl=!!DS_FLAME_NOW;
-      if(concept==='manga'){      // 만화가: a long fountain pen (ink skill: a drop of ink hangs on the nib)
-        c.lineCap='round'; c.strokeStyle='#1d2a5a'; c.lineWidth=5; c.beginPath(); c.moveTo(-6,0); c.lineTo(42,0); c.stroke();
-        c.strokeStyle='#ffd34d'; c.lineWidth=5.4; c.beginPath(); c.moveTo(6,0); c.lineTo(8,0); c.moveTo(38,0); c.lineTo(40,0); c.stroke();
-        c.strokeStyle='#c9ccd8'; c.lineWidth=1.6; c.beginPath(); c.moveTo(-3,-3); c.lineTo(18,-3); c.stroke();
-        c.fillStyle='#e8c25a'; c.beginPath(); c.moveTo(42,-2.6); c.lineTo(54,0); c.lineTo(42,2.6); c.closePath(); c.fill();
-        c.strokeStyle='#8a6a22'; c.lineWidth=0.8; c.beginPath(); c.moveTo(43,0); c.lineTo(52,0); c.stroke();
-        if(fl){ c.fillStyle='#15152e'; c.beginPath(); c.ellipse(55,1.5,2.6,3.6,0,0,7); c.fill(); }
-        break;
-      }
-      c.lineCap='round'; c.strokeStyle='#6b4423'; c.lineWidth=4; c.beginPath(); c.moveTo(-5,0); c.lineTo(5,0); c.stroke();
-      c.strokeStyle='#ffd34d'; c.lineWidth=3.4; c.beginPath(); c.moveTo(6,-8); c.lineTo(6,8); c.stroke();
-      c.fillStyle='#ffd34d'; c.beginPath(); c.arc(-6,0,2.6,0,7); c.fill();
-      if(fl){ c.save(); c.globalCompositeOperation='lighter'; c.strokeStyle='rgba(255,120,30,0.55)'; c.lineWidth=9; c.beginPath(); c.moveTo(8,0); c.lineTo(52,0); c.stroke(); c.restore(); }
-      c.strokeStyle=fl?'#ffe2b0':'#eef2f8'; c.lineWidth=4; c.beginPath(); c.moveTo(8,0); c.lineTo(50,0); c.stroke();
-      c.strokeStyle=fl?'#ff9a3d':'#9fb0c8'; c.lineWidth=1.2; c.beginPath(); c.moveTo(10,0); c.lineTo(48,0); c.stroke();
-      c.fillStyle=fl?'#fff4d0':'#eef2f8'; c.beginPath(); c.moveTo(50,-2.6); c.lineTo(58,0); c.lineTo(50,2.6); c.closePath(); c.fill();
-      break;
-    }
-    case 'lanternstaff': { // 역병 의사: the staff always stands square to the arm; the lantern is on the upper side while he faces forward
-      const pu=0.75+0.25*Math.sin(performance.now()/170), sd=-(PERSONA_FACE||1);      // local y: -1 = up for a right-facing figure
-      c.lineCap='round'; c.strokeStyle='#241c16'; c.lineWidth=3.2; c.beginPath(); c.moveTo(0,-sd*24); c.lineTo(0,sd*34); c.stroke();
-      c.strokeStyle='#4a3a2c'; c.lineWidth=1; c.beginPath(); c.moveTo(0,-sd*24); c.lineTo(0,sd*34); c.stroke();
-      c.strokeStyle='#8a8f99'; c.lineWidth=2; c.beginPath(); c.moveTo(0,sd*34); c.lineTo(0,sd*44); c.stroke();
-      c.save(); c.translate(0,sd*44);
-      c.save(); c.globalCompositeOperation='lighter'; const g=c.createRadialGradient(0,0,1,0,0,24*pu); g.addColorStop(0,'rgba(255,224,130,0.85)'); g.addColorStop(1,'rgba(255,190,70,0)'); c.fillStyle=g; c.beginPath(); c.arc(0,0,24*pu,0,7); c.fill(); c.restore();
-      c.fillStyle='#ffe29a'; c.strokeStyle='#6b5a3a'; c.lineWidth=1.4; c.beginPath(); c.roundRect(-6,-5,12,10,2); c.fill(); c.stroke();
-      c.beginPath(); c.moveTo(-6,0); c.lineTo(6,0); c.moveTo(0,-5); c.lineTo(0,5); c.stroke();
-      c.fillStyle='#3a3a44'; c.fillRect(-8.5,-6,3,12); c.fillRect(5,-6,2.4,12);
-      c.restore();
-      break; }
     case 'neon': // 셰이드: 민트색으로 빛나는 네온 대검, 손잡이 끝에 사슬이 달림
       const P=nnPal(concept); c.lineCap='round'; c.save(); c.shadowColor=P.a; c.shadowBlur=10;
       c.strokeStyle='#27323f'; c.lineWidth=4; c.beginPath(); c.moveTo(-7,0); c.lineTo(6,0); c.stroke();
@@ -578,10 +468,6 @@ function drawHeldWeapon(c, weaponId, ax, ay, hx, hy, swingProg, concept){
       c.strokeStyle='#d4af37'; c.lineWidth=3; c.beginPath(); c.moveTo(6,-4); c.lineTo(6,4); c.stroke();
       c.strokeStyle='#eef2f8'; c.lineWidth=2.4; c.beginPath(); c.moveTo(7,0); c.quadraticCurveTo(22,-1,34,-5); c.stroke();
       break;
-    case 'hook': // 해적: 갈고리손
-      c.lineCap='round'; c.strokeStyle='#6b4423'; c.lineWidth=4.5; c.beginPath(); c.moveTo(0,0); c.lineTo(9,0); c.stroke();
-      c.strokeStyle='#d5dae3'; c.lineWidth=2.8; c.beginPath(); c.moveTo(9,0); c.lineTo(19,0); c.arc(19,-6,6,Math.PI/2,-Math.PI*0.4,true); c.stroke();
-      break;
     case 'portalgun': { // 차원여행자: 포탈건 (design B 'portal ring', chosen by the user 2026-11-24): flat body, a cyan stripe, and a purple-and-cyan ring floating at the muzzle
       const t=performance.now()/1000, pul=1+Math.sin(t*5)*.06;
       c.fillStyle='#3a3a4a'; c.beginPath(); c.roundRect(-8,-4,26,9,4); c.fill();
@@ -592,31 +478,6 @@ function drawHeldWeapon(c, weaponId, ax, ay, hx, hy, swingProg, concept){
       c.strokeStyle='#c58bff'; c.lineWidth=3; c.beginPath(); c.arc(0,0,6,t*3,t*3+4.2); c.stroke();
       c.restore();
       break; }
-    case 'claw':
-      c.strokeStyle='#e8eaf0'; c.lineWidth=2.5; c.lineCap='round';
-      c.beginPath(); c.moveTo(2,-6); c.lineTo(15,-3); c.stroke();
-      c.beginPath(); c.moveTo(2,0); c.lineTo(16,0); c.stroke();
-      c.beginPath(); c.moveTo(2,6); c.lineTo(15,3); c.stroke();
-      break;
-    case 'dice':
-      c.save(); c.translate(10,0); c.rotate(0.5);
-      c.fillStyle='#f2f2f2'; c.strokeStyle='#1c1d22'; c.lineWidth=1.5;
-      c.beginPath(); c.rect(-7,-7,14,14); c.fill(); c.stroke();
-      c.fillStyle='#d62839';
-      c.beginPath(); c.arc(-3,-3,1.4,0,7); c.fill();
-      c.beginPath(); c.arc(3,3,1.4,0,7); c.fill();
-      c.beginPath(); c.arc(0,0,1.4,0,7); c.fill();
-      c.restore();
-      break;
-    case 'fireball':
-      c.strokeStyle='#5c4a3a'; c.lineWidth=3; c.lineCap='round';
-      c.beginPath(); c.moveTo(0,0); c.lineTo(24,0); c.stroke();
-      c.save(); c.globalCompositeOperation='lighter';
-      const gg=c.createRadialGradient(26,0,0,26,0,7); gg.addColorStop(0,'rgba(255,150,60,0.9)'); gg.addColorStop(1,'rgba(255,60,20,0)');
-      c.fillStyle=gg; c.beginPath(); c.arc(26,0,7,0,7); c.fill();
-      c.restore();
-      c.fillStyle='#ff4d2e'; c.beginPath(); c.arc(26,0,3.4,0,7); c.fill();
-      break;
     default: {
       if(concept==='zeus' && weaponId==='pistol'){      // 신 중의 신 제임스: a lightning bolt instead of the pistol
         c.save(); c.translate(2,0); drawZeusBoltShape(c,30,performance.now()); c.restore(); break;

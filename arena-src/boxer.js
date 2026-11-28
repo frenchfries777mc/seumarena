@@ -29,7 +29,7 @@ FXF.bxjab = (fi, ang) => {      // 잽 연타: three quick knuckle pops in a row
 FXF.bxclinch = (fi, x, y) => {      // 클린치: red ropes wind tight round the grabbed one
   if (!fxInView(x, y)) return;
   for (let k = 0; k < 3; k++) addP({ x, y, life: .35 + k * .15, color: k % 2 ? '#ffffff' : BX.col, shape: 'ring', r0: 70 - k * 10, r1: 22, lw: 4 });
-  for (let i = 0; i < (fxLow() ? 4 : 8); i++) { const a = i / 8 * 6.28; addP({ x: x + Math.cos(a) * 60, y: y + Math.sin(a) * 60, x2: x + Math.cos(a + .9) * 26, y2: y + Math.sin(a + .9) * 26, life: .3, color: '#c42a2a', shape: 'slash', size: 5 }); }
+  for (let i = 0, N = fxLow() ? 4 : 8; i < N; i++) { const a = i / N * 6.28; addP({ x: x + Math.cos(a) * 60, y: y + Math.sin(a) * 60, x2: x + Math.cos(a + .9) * 26, y2: y + Math.sin(a + .9) * 26, life: .3, color: '#c42a2a', shape: 'slash', size: 5 }); }
   addP({ x, y: y - 50, vy: -30, life: .55, color: '#ffffff', shape: 'ktext', text: '꽉!', size: 22 });
   try { snd({ n: .06, nt: 'lowpass', nf: 700, nd: .2, b: .12, bf: 120, be: 70, bd: .25, bt: 'sine' }); } catch (e) { quietErr(e); }
 };

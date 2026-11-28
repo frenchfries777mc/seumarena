@@ -24,37 +24,6 @@ function ballKick(by, nx, ny, p, aim) {
   const s = Math.hypot(BALL.vx, BALL.vy); if (s > BALL_MAX) { BALL.vx *= BALL_MAX / s; BALL.vy *= BALL_MAX / s; }
   const ow = by && (by.minion ? by.by : by); if (ow && ow.h) BALL.last = ow;
 }
-function ballArc(f, ang, range, half, kb, hits) {
-  return;      // 2026-11-16 (user: like Brawl Ball): attacks do not move the ball; you carry it and shoot it
-  const dx = BALL.x - f.x, dy = BALL.y - f.y, d = Math.hypot(dx, dy);
-  if (d > range + BALL_R + 6) return;
-  let da = Math.atan2(dy, dx) - ang; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) > half + .25 && d > 30) return;
-  if (!los(f.x, f.y, BALL.x, BALL.y)) return;
-  // 2026-11-15 (user: too many goals nobody meant): a swing that only met the ball is a real kick; one that was hitting a fighter just nudges it
-  ballKick(f, Math.cos(ang), Math.sin(ang), hits ? 360 : clamp(820 + (kb || 0) * .4, 820, 950), !hits);
-}
-function ballCirc(by, x, y, r, dmg, o) {
-  return;      // 2026-11-16 (user: like Brawl Ball): attacks do not move the ball; you carry it and shoot it
-  if (!(dmg > 0) && !o.kb) return;
-  const dx = BALL.x - x, dy = BALL.y - y, d = Math.hypot(dx, dy);
-  if (d > r + BALL_R) return;
-  const a = d > 8 ? null : (by && by.aim) || 0;
-  ballKick(by, a === null ? dx : Math.cos(a), a === null ? dy : Math.sin(a), clamp((dmg > 12 || o.kb ? 300 : 160) + (o.kb || 0) * .8 + (dmg || 0), 160, 620));
-}
-function ballPath(f, x0, y0, x1, y1, w) {
-  return;      // 2026-11-16 (user: like Brawl Ball): attacks do not move the ball; you carry it and shoot it
-  const dx = x1 - x0, dy = y1 - y0, l2 = dx * dx + dy * dy || 1, t = clamp(((BALL.x - x0) * dx + (BALL.y - y0) * dy) / l2, 0, 1);
-  if (Math.hypot(BALL.x - (x0 + dx * t), BALL.y - (y0 + dy * t)) > w + BALL_R) return;
-  ballKick(f, dx, dy, 520, 1);
-}
-/* a shot touching the ball: true = the shot stops there */
-function ballShot(b) {
-  return false;      // 2026-11-16: shots fly through the ball (Brawl Ball)
-  if (b.hitBall || Math.hypot(BALL.x - b.x, BALL.y + BODY - b.y) >= BALL_R + (b.r || 5) + 6) return false;
-  b.hitBall = 1; ballKick(b.owner, b.vx, b.vy, clamp(420 + (b.dmg || 0) * 3, 420, 720), 1);
-  if (fxInView(b.x, b.y)) burst(BALL.x, BALL.y + BODY, '#ffffff', 5, 160);
-  return !b.boom && !(b.pierce > 0);
-}
 function ballMove(dt) {
   const s = Math.hypot(BALL.vx, BALL.vy), n = Math.max(1, Math.ceil(s * dt / 10)), h = dt / n;
   for (let i = 0; i < n; i++) {
@@ -147,7 +116,7 @@ function ballBot(f) {
     const gx = f.team === 0 ? WW - 2 * T : 2 * T, gy = clamp(f.y, BALL.gy0 + 40, BALL.gy1 - 40), d = Math.hypot(gx - f.x, gy - f.y);
     if (d < 9 * T && los(f.x, f.y, gx, gy) && Math.abs(gx - f.x) > 1.5 * T) {
       const a = Math.atan2(gy - f.y, gx - f.x) + (Math.random() - .5) * .25;
-      BALL.botKick = 1; fire(f, a); BALL.botKick = 0;
+      BALL.botKick = 1; try { fire(f, a); } finally { BALL.botKick = 0; }
     }
     return pathTo(f, EG.x - (f.team === 0 ? 1 : -1) * 2 * T, EG.y);
   }

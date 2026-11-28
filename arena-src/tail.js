@@ -88,7 +88,7 @@ function drawFighter0(f, alpha) {
   if (typeof haraldCtx === 'function') haraldCtx(f);
   pistolDual = f.h.id === 'pistol' && B(f, 'akimbo');
   samHand = f.h.id === 'samurai' && f.st ? (f.st.hand != null ? f.st.hand : 1) : 1;
-  TK_DRAW_AW = TK_AW = f.awT > 0; try { drawStick(ctx, f.plain ? 'plain' : f.h.id, awCol(f, col), f.aim, f.bob, f.swing > 0 ? 1 - f.swing / .22 : 0, time, f.cos); } finally { TK_DRAW_AW = TK_AW = false; }
+  TK_DRAW_AW = TK_AW = f.awT > 0; BOW_P = f.h && f.h.id === 'bow' && !f.plain ? f : null; try { drawStick(ctx, f.plain ? 'plain' : f.h.id, awCol(f, col), f.aim, f.bob, f.swing > 0 ? 1 - f.swing / .22 : 0, time, f.cos); } finally { BOW_P = null; TK_DRAW_AW = TK_AW = false; }
   pistolDual = false;
   ctx.restore(); ctx.globalAlpha = alpha;
   if (st.orb && st.orb.n > 0) for (let i = 0; i < st.orb.n; i++) { const a = time * 3 + i * 6.283 / (st.orb.m || 5); ctx.fillStyle = '#ff8a2a'; ctx.beginPath(); ctx.arc(Math.cos(a) * 54, Math.sin(a) * 54 - 16, 7, 0, 6.3); ctx.fill(); }
@@ -143,13 +143,9 @@ function drawMinion(m) {
     ctx.translate(0, 16); ctx.scale(1.15, 1.15);
     drawStick(ctx, 'tionis', col, m.aim || 0, m.bob || 0, m.sw && time - m.sw < .22 ? (time - m.sw) / .22 : 0, time);
   } else if (k === 'sunflower' && typeof drawSunflower === 'function') { drawSunflower(m);      // (정원사's turret: gardener.js)
-  } else if (k === 'turret') { ctx.fillStyle = '#3a3f4a'; ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, 18, 0, 6.3); ctx.fill(); ctx.stroke(); ctx.rotate(m.aim || 0); ctx.fillStyle = '#16181f'; ctx.fillRect(0, -7, 34, 14); }
+  }
   else if (k === 'dragon' && typeof drawFireDragon === 'function') { ctx.restore(); drawDragonMinion(m); return; }
-  else if (k === 'dragon') { const w = Math.sin(time * 9) * 16; ctx.fillStyle = '#b3261e'; ctx.strokeStyle = '#ffb347'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(-60, -30 - w); ctx.lineTo(-30, 10); ctx.lineTo(0, 24); ctx.lineTo(30, 10); ctx.lineTo(60, -30 - w); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.arc(0, -8, 16, 0, 6.3); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(-6, -10, 3, 0, 6.3); ctx.arc(6, -10, 3, 0, 6.3); ctx.fill(); }
   else if (k === 'crow') { ctx.restore(); drawCrowMinion(m); return; }
-  else if (k === 'crow-old') { const w = Math.sin(time * 26) * 7; ctx.fillStyle = '#0d0f14'; ctx.strokeStyle = '#8dff7c'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-18, -6 - w); ctx.lineTo(-6, 6); ctx.lineTo(6, 6); ctx.lineTo(18, -6 - w); ctx.closePath(); ctx.fill(); ctx.stroke(); }
-  else if (k === 'drone') { ctx.fillStyle = '#2b3140'; ctx.strokeStyle = '#7df0ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(0, 0, 11, 6, 0, 0, 6.3); ctx.fill(); ctx.stroke(); }
-  else if (k === 'slot') { ctx.fillStyle = '#7a1f2b'; ctx.strokeStyle = '#ffd34d'; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(-20, -52, 40, 60, 6); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#fff'; ctx.fillRect(-14, -40, 28, 14); ctx.fillStyle = '#c4182e'; ctx.font = '700 12px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('7 7 7', 0, -29); }
   ctx.restore();
   if (m.hit && k !== 'body') { ctx.fillStyle = '#0c0e13'; ctx.fillRect(m.x - 17, m.y - 66, 34, 6); ctx.fillStyle = col; ctx.fillRect(m.x - 16, m.y - 65, 32 * clamp(m.hp / m.max, 0, 1), 4); }
 }
@@ -223,12 +219,13 @@ function bushStamp(c, x, y, sd) {
 }
 function renderMapPreview(i, canvas) {
   const c = canvas.getContext('2d'), sm = MAP, st = TH, tw = new Map(tempWalls), sz = [COLS, ROWS, WW, WH];
+  try {
   MAP = MAPS[i].grid; TH = MAPS[i].th; tempWalls.clear();
   ROWS = MAP.length; COLS = MAP[0].length; WW = COLS * T; WH = ROWS * T;      // maps come in two sizes: draw with this map's own size, then put the loaded one back
   c.setTransform(canvas.width / WW, 0, 0, canvas.height / WH, 0, 0);
   for (let p = 0; p < 3; p++) drawTiles(c, 0, COLS - 1, 0, ROWS - 1, p);
   if (!MAPS[i].big) for (let t = 0; t < 2; t++) { c.fillStyle = TC(t); c.globalAlpha = .55; c.beginPath(); c.roundRect((t ? COLS - 2 : 1) * T + 6, 6 * T, T - 12, 5 * T, 16); c.fill(); c.globalAlpha = 1; }
-  MAP = sm; TH = st; for (const [k, v] of tw) tempWalls.set(k, v); [COLS, ROWS, WW, WH] = sz;
+  } finally { MAP = sm; TH = st; tempWalls.clear(); for (const [k, v] of tw) tempWalls.set(k, v); [COLS, ROWS, WW, WH] = sz; }      // (put back even if drawing failed)
 }
 let specT = null;
 function render() {
@@ -1123,52 +1120,17 @@ readSafe(); touchUiSync();
 /* mobile: when a phone can not keep up (frames slower than ~45 a second over 2 s of play) the canvas goes one step down in pixel ratio (1.25 > 1 > .8);
    after about 10 s of smooth play it goes one step back up */
 const RS_STEPS = [2, 1.5, 1.25, 1, .8, .65];
-/* phones: the picture quality settles per device and is remembered (seum_rs: s = step, f = a step that proved too heavy). It only goes DOWN during a match and only goes UP between matches,
-   because every change repaints the map picture, which froze the game for up to a second each time it flipped back and forth mid-match (measured 2026-11-20) */
-/* l: light effects (a phone that already had to lower its sharpness starts with them) */
-let rsMem = { s: 1.5, f: 0 }; try { const m = JSON.parse(localStorage.getItem('seum_rs') || 'null'); if (m && RS_STEPS.includes(m.s)) rsMem = { s: m.s, f: +m.f || 0, l: m.l === undefined ? (+m.f ? 1 : 0) : m.l ? 1 : 0 }; } catch (e) { quietErr(e); }
-function rsSave() { rsMem.s = RSCALE; try { localStorage.setItem('seum_rs', JSON.stringify(rsMem)); } catch (e) { quietErr(e); } }
 /* user 2026-11-25: the picture must never get worse by itself. The automatic steps down (sharpness, light effects) are off: they lowered the graphics and every step repainted the whole map mid-match
    (measured: 4 repaints in the first 26 s of a phone match, 120-300 ms frozen each, ~60 MB of new canvas each time). Every phone starts at the normal sharpness again. 배터리 절약 (the player's own choice) still lowers it. */
 function rsStart() { return 1.5; }
 RSCALE = rsStart(); mobLite = false; try { localStorage.removeItem('seum_rs'); } catch (e) { quietErr(e); }
-let MCAP = false, mcapAt = 0;      // (only 배터리 절약 caps the frame rate now)
-let rsT0 = 0, rsN = 0, rsLast = 0, rsGood = 0, rsAll = 0, rsSmooth = 0;
-function rsWatch(now) {
-  return;      // (off, see rsStart)
-  const mob = mobileMode();
-  if (SET.bat && mob) return;      // 배터리 절약: the lowest step is kept (mobset.js)
-  if (state !== 'play' || (!mob && PCQ !== 'auto') || now - rsLast > 250) {      // (a pause, a hidden tab or the lobby does not count)
-    if (mob && state !== 'play' && rsAll >= 8) {      // a whole match ran smoothly: one step sharper for the next one (never back to a step that already proved too heavy)
-      const i = Math.max(0, RS_STEPS.indexOf(RSCALE));
-      if (rsSmooth >= rsAll * .9 && i > 0 && RS_STEPS[i - 1] !== rsMem.f && RS_STEPS[i - 1] < (rsMem.f || 9)) { RSCALE = RS_STEPS[i - 1]; rsSave(); resize(); }
-      rsAll = rsSmooth = 0;
-    }
-    rsT0 = now; rsN = 0; rsLast = now; return;
-  }
-  rsLast = now; rsN++;
-  const el = now - rsT0; if (el < 2000) return;
-  const ms = el / rsN; rsT0 = now; rsN = 0;
-  if (!mob) {      // computer, 화질 자동: same steps over PC_STEPS; at the bottom and still slow, light effects for good (kept for the next start)
-    const i = Math.max(0, PC_STEPS.indexOf(PCSCALE));
-    if (ms > 22) { rsGood = 0; if (i < PC_STEPS.length - 1) { PCSCALE = PC_STEPS[i + 1]; resize(); pcSave(); } else if (!pcLite) { pcLite = true; pcSave(); } }
-    else if (ms < 18 && i > 0) { if (++rsGood >= 5) { PCSCALE = PC_STEPS[i - 1]; rsGood = 0; resize(); pcSave(); } }
-    else rsGood = 0;
-    return;
-  }
-  const i = Math.max(0, RS_STEPS.indexOf(RSCALE));
-  rsAll++; if (ms < 17.5) rsSmooth++;
-  if (ms > 22 && !mobLite) { if (++rsGood >= 2) { mobLite = true; rsMem.l = 1; rsGood = 0; rsAll = rsSmooth = 0; rsSave(); } }      // too slow: first the light effects (no repaint, no freeze), only then the sharpness
-  else if (ms > 22 && i < RS_STEPS.length - 1) { if (++rsGood >= 2) { rsMem.f = RSCALE; RSCALE = RS_STEPS[i + 1]; rsGood = 0; rsAll = rsSmooth = 0; rsSave(); resize(); } }      // two slow stretches in a row (4 s), so one busy moment does not cost the sharpness
-  else rsGood = 0;
-}
+let mcapAt = 0;      // (배터리 절약 caps the frame rate)
 let last = performance.now(), stillAt = 0, stillW = '';
 function frame(now) {
-  if (((MCAP && state === 'play') || SET.bat) && now - mcapAt < 30) { requestAnimationFrame(frame); return; }
+  if (SET.bat && now - mcapAt < 30) { requestAnimationFrame(frame); return; }
   mcapAt = now;
   lastFrameAt = performance.now();
-  rsWatch(now);
-  const dt = Math.min(MCAP || SET.bat ? .05 : .033, (now - last) / 1000); last = now;
+  const dt = Math.min(SET.bat ? .05 : .033, (now - last) / 1000); last = now;
   const still = state === 'menu' && !DED && mobileMode();      // mobile: the match behind the lobby stands still (drawn again once a second), so the lobby costs a phone almost nothing
   if (NET.role === 'guest' && state === 'play') { if (dt > 0) guestStep(dt); }
   else if (state !== 'over' && dt > 0 && !(performance.now() < hitStopUntil) && !still) { try { if (dt > .034) { step(dt / 2); if (state !== 'over') step(dt / 2); } else step(dt); } catch (e) { quietErr(e); } }      // one failing step must not stop the whole game loop (the screen would freeze for good)

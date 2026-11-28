@@ -268,7 +268,7 @@ FXF.hbdrink = fi => {      // drinks the antidote: bubbles rise, green speed str
 FXF.hbgarden = (x, y) => {      // the garden bursts open: a ring of petals rushes outward, a soft bell
   if (!fxInView(x, y)) return;
   addP({ x, y: y + 14, life: .5, color: '#d8ffd0', shape: 'flash', size: 200 });
-  for (let i = 0; i < (fxLow() ? 12 : 30); i++) { const a = i / 30 * 6.28, s = RND(300, 420); addP({ x, y: y + 14, vx: Math.cos(a) * s, vy: Math.sin(a) * s * .62, drag: 3, life: RND(.6, .9), size: RND(3, 5), color: i % 3 ? '#fff4d6' : '#ffc2d6', shape: 'square' }); }
+  for (let i = 0, N = fxLow() ? 12 : 30; i < N; i++) { const a = i / N * 6.28, s = RND(300, 420); addP({ x, y: y + 14, vx: Math.cos(a) * s, vy: Math.sin(a) * s * .62, drag: 3, life: RND(.6, .9), size: RND(3, 5), color: i % 3 ? '#fff4d6' : '#ffc2d6', shape: 'square' }); }
   hbSnd({ b: .1, bf: 660, be: 880, bd: .6, bt: 'sine' }); try { sfx(990, .4, 'sine', .04, 1.2); } catch (e) { quietErr(e); }
 };
 FXF.hbraise = fi => {      // shield raised: a blue half-ring on the facing side with an arrow, a clank
@@ -324,7 +324,7 @@ FXF.hbironboom = (fi, v) => {      // release: a gold shock ring 3 tiles wide wi
   addP({ x: f.x, y: f.y, life: .3, color: '#ffffff', shape: 'flash', size: 120 });
   addP({ x: f.x, y: f.y + 10, life: .45, color: '#ffd34d', shape: 'ring', r0: 20, r1: 3 * T, lw: 8 });
   addP({ x: f.x, y: f.y + 10, life: .6, color: HB.s, shape: 'ring', r0: 10, r1: 3 * T * .8, lw: 4 });
-  for (let k = 0; k < (fxLow() ? 6 : 16); k++) { const a = k / 16 * 6.28, s = RND(260, 420); addP({ x: f.x, y: f.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * .6, life: .45, size: 3, color: '#ffd27a', shape: 'square' }); }
+  for (let k = 0, N = fxLow() ? 6 : 16; k < N; k++) { const a = k / N * 6.28, s = RND(260, 420); addP({ x: f.x, y: f.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * .6, life: .45, size: 3, color: '#ffd27a', shape: 'square' }); }
   hbSnd({ n: .14, nt: 'lowpass', nf: 900, nd: .35, b: .18, bf: 110, be: 50, bd: .4, bt: 'square' });
   if (typeof shakeFrom === 'function') shakeFrom(f.x, f.y, 8, 450);
 };

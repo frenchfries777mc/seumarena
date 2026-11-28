@@ -110,7 +110,7 @@ const blockedAt = (x, y) => blocked(Math.floor(x / T), Math.floor(y / T));
 const bushAt = (x, y) => { const t = tile(Math.floor(x / T), Math.floor(y / T)); return t === 'g' || t === 'G'; };      // 'G' = a bush planted by 정원사 (gardener.js)
 const TEAM = ['#4d9dff', '#ff5d5d', '#3fcf5a', '#ffd23f', '#c77dff'];      // blue, red; 4팀 핫존 adds green, yellow
 /* online state (net.js): the host runs the match, guests draw what it sends */
-const NET = { role: null, peer: null, conns: [], hostConn: null, members: [], phase: 'idle', rec: false, evs: [], room: -1, me: -1, mapVer: 0 };
+const NET = { role: null, peer: null, hostConn: null, members: [], phase: 'idle', rec: false, evs: [], room: -1, me: -1, mapVer: 0 };
 let VIEW = 0;      // the team this screen plays for: drawn blue, its score on the left
 const TC = t => TEAM[t === VIEW ? 0 : (curMode === 'hot4' || curMode === 'duo' || curMode === 'ko3') && t >= 0 && t < TEAM.length ? (t < VIEW ? t + 1 : t) : 1];      // 4팀 핫존: me blue, the other three teams red, green, yellow in team order
 const evt = a => { if (NET.rec) NET.evs.push(a); };
@@ -253,17 +253,16 @@ const keys = {}, mouse = { x: 0, y: 0, down: false };
 let touchMode = false, mouseRel = false, stickM = null, stickA = null, pendingFire = null, wantUlt = false, wantDash = false, wantSk = [false, false];
 
 /* device: 'mobile' or 'pc', picked on the first start (tail.js) and changed in the settings; net.js reads the same key. Until it is picked, a phone or tablet
-   (coarse pointer) counts as mobile. Mobile is tuned for speed first (2026-11-13, user): the canvas is drawn at a lower pixel ratio (RSCALE: 1.25, lowered to 1 / .8 by tail.js rsWatch while a phone
+   (coarse pointer) counts as mobile. Mobile is tuned for speed first (2026-11-13, user): the canvas is drawn at a lower pixel ratio (RSCALE: 1.25; it used to be lowered by itself while a phone
    can not keep up), no blurred glows (shadowBlur is ignored on the game canvas), far fewer particles (social.js) and a still lobby background (tail.js); pc stays as it was */
 let DEVICE = ''; try { const v = localStorage.getItem('seum_device'); if (v === 'mobile' || v === 'pc') DEVICE = v; } catch (e) { quietErr(e); }
 const devMq = matchMedia('(pointer:coarse)'), deviceGuess = () => devMq.matches ? 'mobile' : 'pc';
 const mobileMode = () => (DEVICE || deviceGuess()) === 'mobile';
 let RSCALE = 1.25;
 /* pc quality (2026-11-13, user: tune a computer too, by how strong it is): PCQ 'auto' | 'high' | 'low' in localStorage seum_pcq (settings row 화질).
-   auto starts from what the machine looks like (few cores or little memory: 1.5 instead of 2) and from what the last session settled on (seum_pcauto),
-   then tail.js rsWatch steps the pixel ratio down while frames are slow (2 > 1.5 > 1.25 > 1); still slow at 1 = pcLite: the phone's light effects (fewer bits, no blur).
+   auto starts from what the machine looks like (few cores or little memory: 1.5 instead of 2)
+   (it used to step down by itself while frames were slow; off since 2026-11-25, the picture never gets worse by itself).
    high = always 2 and full effects, low = 1 and light effects */
-const PC_STEPS = [2, 1.5, 1.25, 1];
 let PCQ = 'auto'; try { const v = localStorage.getItem('seum_pcq'); if (v === 'high' || v === 'low') PCQ = v; } catch (e) { quietErr(e); }
 const pcWeak = () => (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
 let PCSCALE = 2, pcLite = false;
@@ -273,10 +272,9 @@ function pcInit() {
   PCSCALE = pcWeak() ? 1.5 : 2; pcLite = false;
   try { localStorage.removeItem('seum_pcauto'); } catch (e) { quietErr(e); }      // (user 2026-11-25: no automatic steps down any more, so an old remembered lower step is dropped)
 }
-function pcSave() { if (PCQ === 'auto') try { localStorage.setItem('seum_pcauto', JSON.stringify({ s: PCSCALE, l: pcLite })); } catch (e) { quietErr(e); } }
 pcInit();
 /* phones draw the full effects too (glows, all the small bits, the rich skin shots; user 2026-11-21: "모바일에서도 그래픽 좀 좋게"). mobLite = this phone proved too slow for them
-   (tail.js rsWatch turns it on before it lowers the sharpness, and remembers it); mobBat = 배터리 절약 is on */
+   (no longer turned on by itself); mobBat = 배터리 절약 is on */
 let mobLite = false, mobBat = false;
 const liteMode = () => (mobileMode() && (mobLite || mobBat)) || pcLite;      // light effects: a phone that could not keep up (or saves battery), or a computer that could not keep up
 function resize() {
@@ -544,7 +542,6 @@ function arc(f, ang, range, half, dmg, o) {
     o.by = f; status(e, o);
     damage(e, dmg, f, o); if (o.fn) o.fn(e); out.push(e);
   }
-  if (BALL.on) ballArc(f, ang, range, half, o.kb, out.length);
   return out;
 }
 function circ(by, x, y, r, dmg, o) {
@@ -556,7 +553,6 @@ function circ(by, x, y, r, dmg, o) {
     o.by = by; status(e, o);
     if (dmg) damage(e, dmg, by, o); if (o.fn) o.fn(e); out.push(e);
   }
-  if (BALL.on) ballCirc(by, x, y, r, dmg, o);
   return out;
 }
 function boom(by, x, y, r, dmg, o) { if (o && o.col) { fx('skillring', x, y, { color: o.col, r }); burst(x, y, o.col, 12, 260); } else fx(r >= 70 ? 'explosion' : 'bombexplode', x, y, { gy: y + 30 }); const hit = circ(by, x, y, r, dmg, Object.assign({ kb: 160 }, o)); if (by && by.h0 && by.h0.id === 'grenade' && hit.length) awGain(by, 'bomb', hit.length); return hit; }      // (awaken.js) 폭발광: enemies caught by a bomb blast
@@ -567,7 +563,6 @@ function pathHit(f, x0, y0, x1, y1, w, dmg, o) {       // everybody close to the
     if (d > w + 18) continue;
     o.by = f; status(e, o); if (dmg) damage(e, dmg, f, o); if (o.fn) o.fn(e); out.push(e);
   }
-  if (BALL.on && (dmg || o.kb)) ballPath(f, x0, y0, x1, y1, w);
   return out;
 }
 function emit(f, ang, o) {
@@ -777,7 +772,7 @@ function respawn(f) {
 }
 
 /* ---------- AI ---------- */
-function ai(f, dt) { BALL.inAi = 1; const mv = ai0(f, dt); BALL.inAi = 0; const fl = envFlee(f) || zoneFlee(f) || ballBot(f) || flagGoal(f) || hotGoal(f, mv) || duoGoal(f); return fl || mv; }
+function ai(f, dt) { BALL.inAi = 1; let mv; try { mv = ai0(f, dt); } finally { BALL.inAi = 0; } const fl = envFlee(f) || zoneFlee(f) || ballBot(f) || flagGoal(f) || hotGoal(f, mv) || duoGoal(f); return fl || mv; }
 /* ranged bots kite: when an enemy gets close they back off along the safest open direction (away from every nearby enemy, not into walls or
    corners) while still shooting, and dash away from a melee enemy that is about to land a hit */
 let AI_KITE = true;
@@ -925,14 +920,6 @@ function leadAng(f, e) {
   let t = Math.hypot(e.x - f.x, e.y - f.y) / spd; for (let k = 0; k < 2; k++) t = Math.hypot(e.x + vx * t - f.x, e.y + vy * t - f.y) / spd;
   t = Math.min(t, .8) * .85; return Math.atan2(e.y + vy * t - f.y, e.x + vx * t - f.x);
 }
-/* PC aim assist (2026-11-12, user: shooting while moving misses): the camera follows me, so while I walk the cursor slides off the enemy
-   I pointed at. A visible enemy within 52 px of the cursor pulls the aim onto itself (leading it if it moves). */
-function pcAssist(f, wx, wy) {
-  if (f.h.type === 'melee') return null;
-  let best = null, bd = 52;
-  for (const e of fighters) { if (e.dead || e.team === f.team || !visibleTo(e, f.team)) continue; const d = Math.hypot(e.x - wx, e.y - wy); if (d < bd) { bd = d; best = e; } }
-  return best;
-}
 function readLocal(f) {       // what this screen's controls say right now, for the fighter it drives (its own, or a puppet)
   let mx = 0, my = 0;
   if (keys.KeyW || keys.ArrowUp) my -= 1;
@@ -952,8 +939,6 @@ function readLocal(f) {       // what this screen's controls say right now, for 
   } else {
     const wx = (mouse.x - W / 2) / cam.s + cam.x, wy = (mouse.y - H / 2) / cam.s + cam.y;
     aim = Math.atan2(wy - (f.y + BODY), wx - f.x); tx = wx; ty = wy - BODY;
-    const ae = null; if (ae)      // 2026-11-13 (developer): aim assist on phones only, the PC mouse aims exactly at the cursor (pcAssist kept unused)
-     { aim = leadAng(f, ae); const dl = Math.hypot(wx - f.x, wy - BODY - f.y); tx = f.x + Math.cos(aim) * dl; ty = f.y + Math.sin(aim) * dl; }
   }
   if (pendingFire && pendingFire.len != null && f.h.splash && (f.h.w.shape === 'bomb' || f.h.wallPass)) { const dl = clamp(pendingFire.len, .3, 1) * f.h.range; tx = f.x + Math.cos(pendingFire.ang) * dl; ty = f.y + Math.sin(pendingFire.ang) * dl; }      // phone: the drag length sets the bomb's distance
   if (mouseRel) { mouseRel = false; if (!f.h.fireHeld && !touchMode) pendingFire = { ang: aim }; }      // PC: the basic attack goes out when the button is released, towards the cursor
@@ -1016,7 +1001,7 @@ function updateFighter(f, dt) {
     const d = f.dash, src0 = SRC; SRC = d.src || null;
     if (d.inv) f.inv = Math.max(f.inv, .05);
     const bx = f.x, by = f.y;
-    for (let i = 0; i < 4; i++) moveFighter(f, d.dx * d.v * dt / 4, d.dy * d.v * dt / 4);
+    { const st = Math.max(0, Math.min(dt, d.t)); for (let i = 0; i < 4; i++) moveFighter(f, d.dx * d.v * st / 4, d.dy * d.v * st / 4); }      // (only the dash time that is left: the distance no longer depends on the frame rate)
     if (d.onHit || d.dmg) for (const e of foes(f)) { if (d.hit.has(e) || dist(e, f) > 44) continue; d.hit.add(e); if (d.dmg) damage(e, d.dmg, f, d); status(e, Object.assign(d, { by: f })); if (d.onHit && d.onHit(e) === 'stop') { d.t = 0; break; } }
     if (d.trail) d.trail(f);
     addPart({ x: f.x, y: f.y + BODY, vx: 0, vy: 0, life: .2, max: .2, color: d.col || TC(f.team), r: 9 });
@@ -1056,7 +1041,9 @@ function updateFighter(f, dt) {
   f.vx = (f.x - px) / dt; f.vy = (f.y - py) / dt; { const k = Math.min(1, dt * LEAD_K); f.svx = (f.svx || 0) + (f.vx - (f.svx || 0)) * k; f.svy = (f.svy || 0) + (f.vy - (f.svy || 0)) * k; }
   f.bob += Math.hypot(f.vx, f.vy) * dt * .06;
 }
-function updateBullets(dt) {
+function segDist(px, py, x0, y0, x1, y1) { const dx = x1 - x0, dy = y1 - y0, l2 = dx * dx + dy * dy; const t = l2 ? Math.max(0, Math.min(1, ((px - x0) * dx + (py - y0) * dy) / l2)) : 0; return Math.hypot(px - (x0 + dx * t), py - (y0 + dy * t)); }
+function updateBullets(dt) { const s0 = SRC; try { updateBullets0(dt); } catch (e) { quietErr(e); } finally { SRC = s0; awCur = null; tkCur = null; } }      // (one broken bullet no longer stops the rest of the frame)
+function updateBullets0(dt) {
   const src0 = SRC;
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i]; if (!b) continue; if (b.boomGone) { bullets.splice(i, 1); continue; }
@@ -1091,10 +1078,9 @@ function updateBullets(dt) {
           if (b.boom) { b.phase = 1; b.hit.clear(); } else { dead = true; b.wall = b.life > 0; if (!b.splash && fxInView(b.x, b.y) && b.life > 0) { const hx = solidAt(b.x, by0), hy = solidAt(bx0, b.y); fxPlay('wspark', Math.round(b.x), Math.round(b.y), +b.ang.toFixed(2), hx && !hy ? 1 : hy && !hx ? 2 : 0, TC(b.team)); } break; }      // (killfx.js: sparks, chips and a tink off the wall)
         }
       }
-      if (BALL.on && !dead && ballShot(b)) { dead = true; if (!b.splash) b.silent = 1; break; }
       for (const e of foes({ team: b.team, b: {} })) {
         if (e === b.owner || b.hit.has(e)) continue;
-        if (Math.hypot(e.x - b.x, e.y + BODY - b.y) >= 23 + b.r + (o.pad || 0)) continue;      // 2026-11-14: body 20 -> 23 (ranged hit more often)      // o.pad: a more forgiving hitbox (군인)
+        if (segDist(e.x, e.y + BODY, bx0, by0, b.x, b.y) >= 23 + b.r + (o.pad || 0)) continue;      // (along the path flown this frame: a fast bullet on a slow frame no longer skips through)      // 2026-11-14: body 20 -> 23 (ranged hit more often)      // o.pad: a more forgiving hitbox (군인)
         if (!e.minion) {
           if (B(e, 'sand') || e.form === 'sub') continue;
           if (B(e, 'reflect')) { b.vx = -b.vx; b.vy = -b.vy; b.ang += Math.PI; b.team = teamOf(e); b.owner = e; b.hit.clear(); b.life = Math.max(b.life, 300); b.home = null; ring(e.x, e.y + BODY, 40, '#ffffff', .2); if (e.h.onReflect) e.h.onReflect(e); break; }
@@ -1145,8 +1131,8 @@ function step(dt) {
   awStep(dt);      // (awaken.js)
   for (const f of fighters) updateFighter(f, dt);
   updateBullets(dt);
-  for (let i = zones.length - 1; i >= 0; i--) { const z = zones[i]; z.t -= dt; if (z.fn) awOwn(z.by, () => withSrc(z.src, () => z.fn(z, dt))); if (z.t <= 0 || z.dead) { if (z.end) withSrc(z.src, () => z.end(z)); zones.splice(i, 1); } }
-  for (let i = strikes.length - 1; i >= 0; i--) { const s = strikes[i]; s.t -= dt; if (s.t <= 0) { strikes.splice(i, 1); awOwn(s.by, () => withSrc(s.src, () => s.fn(s))); } }
+  for (let i = zones.length - 1; i >= 0; i--) { const z = zones[i]; z.t -= dt; if (z.fn) try { awOwn(z.by, () => withSrc(z.src, () => z.fn(z, dt))); } catch (e) { quietErr(e); z.dead = true; } if (z.t <= 0 || z.dead) { if (z.end) withSrc(z.src, () => z.end(z)); zones.splice(i, 1); } }
+  for (let i = strikes.length - 1; i >= 0; i--) { const s = strikes[i]; s.t -= dt; if (s.t <= 0) { strikes.splice(i, 1); try { awOwn(s.by, () => withSrc(s.src, () => s.fn(s))); } catch (e) { quietErr(e); } } }
   for (let i = minions.length - 1; i >= 0; i--) { const m = minions[i]; m.t -= dt; for (const k in m.b) m.b[k].t -= dt; if (!m.dead && m.upd && !B(m, 'stun')) withSrc(m.src, () => m.upd(m, dt)); if (m.t <= 0 || m.dead || (m.bound && m.by.dead)) { if (m.end) withSrc(m.src, () => m.end(m)); minions.splice(i, 1); } }
   if (typeof gardenStep === 'function') gardenStep();      // (gardener.js: planted bushes wither)
   fxStep(dt);

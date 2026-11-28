@@ -8,7 +8,7 @@ function leaveMark(on) {
   leaveWant = !!on && !DED;
   try {
     if (on && player && !DED) { leaveOn = true; localStorage.setItem(LEAVE_K, JSON.stringify({ tab: TAB_ID, t: Date.now(), mode: curMode, hero: player.h0.id, k: player.kos | 0, d: player.deaths | 0 })); }
-    else if (leaveOn) { leaveOn = false; const m = JSON.parse(localStorage.getItem(LEAVE_K) || 'null'); if (!m || m.tab === TAB_ID) localStorage.removeItem(LEAVE_K); }
+    else if ((!on || DED) && leaveOn) { leaveOn = false;      /* (on with no player for a moment: the mark stays) */ const m = JSON.parse(localStorage.getItem(LEAVE_K) || 'null'); if (!m || m.tab === TAB_ID) localStorage.removeItem(LEAVE_K); }
   } catch (e) { quietErr(e); }
   document.documentElement.classList.toggle('inMatch', leaveOn);
 }

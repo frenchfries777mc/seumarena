@@ -53,13 +53,8 @@ hero('shade', { p: ['네온 강타', '공격은 범위 안의 적 모두에게 �
   ] });
 
 
-const poison = (e, f) => { if (e.minion) return; e.st.pn = Math.min(4, (e.st.pn || 0) + 1); e.st.pt = time + 3; e.st.pby = f; };
 function poisonTick(f, dt) { if (f.st.pn) { if (time > f.st.pt) { f.st.pn = 0; return; } if (f.st.pn >= 4) buff(f, 'slow', .2, .8); f.st.pa = (f.st.pa || 0) + dt; if (f.st.pa >= .5) { f.st.pa -= .5; damage(f, f.st.pn, f.st.pby, { quiet: 1, el: 1, raw: 1 }); } } }
 
-function charm(f, e, sec, bonus) {
-  buff(e, 'charm', sec, f); buff(f, 'root', sec); buff(f, 'dr', sec, .5); f.st.ctrl = e;
-  e.b.charm.end = v => { f.st.ctrl = null; unbuff(f, 'root'); unbuff(f, 'dr'); ring(v.x, v.y, px(220), '#ff7bd9'); damage(v, 60 + bonus, f); for (const o of fighters) if (o !== v && !o.dead && o.team === v.team && dist(o, v) < px(220)) damage(o, 30, f); };
-}
 
 
 
@@ -75,7 +70,7 @@ hero('tionis', { p: ['피의 연극', '채혈 주사기가 맞으면 체력 100 
       emit(f, a, { skill: 1, dmg: 20, spd: 720, range: 6 * T, r: 7, shape: 'needle', onHit: e => { heal(f, 10); if (!e.minion) { f.st.blood = e; later(0, () => { f.scd[i] = 0; }); } } }); }],
     [2, '말솜씨', 'buff', '2.5초 동안 적에게 내 체력바가 아군 색으로 보여, 공격하기 전까지 적이 나를 노리지 않음', [0, 7 * T], f => buff(f, 'ally', 2.5)],
     [3, '마취 주사', 'hit', '주사기를 던져 맞힌 상대에게 300 피해 + 2초 동안 이동속도 40% 감소', [100, 6 * T], (f, a) => emit(f, a, { skill: 1, dmg: 15, spd: 720, range: 6 * T, r: 7, shape: 'syringe', slow: [.6, 2] })],
-    [4, '무대 조명', 'hit', '조준한 바닥에 3초 동안 조명 원을 만듦 · 안에 있는 적은 투명이 풀리고 받는 피해 13% 증가', [100, 7 * T], f => { const p = aimPt(f, 7 * T); zone({ by: f, x: p.x, y: p.y, r: 110, t: 3, col: '#ffe9a8', op: .3, fn: z => { for (const e of foes(f)) if (!e.minion && inZone(z, e)) { buff(e, 'expose', .2); buff(e, 'reveal', .2); unbuff(e, 'stealth'); } } }); }],
+    [4, '무대 조명', 'hit', '조준한 바닥에 3초 동안 조명 원을 만듦 · 안에 있는 적은 투명이 풀리고 받는 피해 10% 증가', [100, 7 * T], f => { const p = aimPt(f, 7 * T); zone({ by: f, x: p.x, y: p.y, r: 110, t: 3, col: '#ffe9a8', op: .3, fn: z => { for (const e of foes(f)) if (!e.minion && inZone(z, e)) { buff(e, 'expose', .2); buff(e, 'reveal', .2); unbuff(e, 'stealth'); } } }); }],
     [5, '퇴장', 'move', '조준 방향으로 3칸 순간이동하고 1초 동안 투명해짐', [0, 6 * T], (f, a) => { const r = blink(f, a, 3 * T); fx('blink', r.x0, r.y0 + BODY, { color: '#ff6b9a', gy: r.y0 + 16 }); if (typeof FXF !== 'undefined' && FXF.exitpuff) fxPlay('exitpuff', Math.round(r.x0), Math.round(r.y0 + BODY), Math.round(f.x), Math.round(f.y + BODY)); buff(f, 'stealth', 1); }]
   ] });
 
