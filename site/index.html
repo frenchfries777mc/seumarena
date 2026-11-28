@@ -23,12 +23,19 @@
 <h1 data-name>SeumArena</h1>
 <p class="lead">Stickseum의 막대인간 16명이 한 판에 붙는 탑다운 온라인 난투예요. 캐릭터 이야기, 공략 팁, 소식, 그리고 같이 노는 사람들의 글이 여기 모여요.</p>
 </div>
-<div class="cd"><p>정식 출시까지</p><div class="g" id="cd"><div><b>-</b><small>일</small></div><div><b>-</b><small>시간</small></div><div><b>-</b><small>분</small></div><div><b>-</b><small>초</small></div></div></div>
+<div class="cd play"><a class="playBig" data-play><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z"/></svg>플레이</a><div class="sub"><span>최신 <b>v1.0.0</b></span></div></div>
 </div>
 </section>
 
+<section class="wrap s" id="ver"><h2>버전</h2>
+<div class="vLatest"><span class="vBadge">최신 버전</span><div class="vh"><b>v1.0.0</b><span>2026-11-23 · 정식 출시</span></div><h3>The key of Turkey</h3>
+<ul><li>새 이벤트 모드 칠면조 잡기, 시즌 뽑기와 칠면조 스킨</li><li>새 캐릭터 셰프</li><li>모든 캐릭터 각성</li><li>연습장, 6개 언어</li></ul>
+<a class="playBig small" data-play><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z"/></svg>지금 플레이</a></div>
+<div class="vBar"><label for="verSel">버전 고르기</label><select class="vSel" id="verSel"><option value="1.0.0">v1.0.0 · 2026-11-23</option></select><button type="button" class="vGo" id="verGo"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z"/></svg>이 버전 플레이</button></div>
+</section>
+
 <div class="wrap stats">
-<div><b>16</b><span>캐릭터</span></div><div><b>4</b><span>모드</span></div><div><b>20</b><span>맵</span></div><div><b>2:30</b><span>한 판</span></div>
+<div><b>21</b><span>캐릭터</span></div><div><b>12</b><span>모드</span></div><div><b>28</b><span>맵</span></div><div><b>2:30</b><span>한 판</span></div>
 </div>
 
 <section class="wrap s" id="chars">
@@ -39,10 +46,18 @@
 <section class="wrap s" id="modes">
 <div class="sh"><h2>모드</h2></div>
 <div class="modes">
-<div class="card mode" style="--c:#8fc3ff"><div><h3>팀 아웃</h3><span class="num">3v3</span></div><p>먼저 10킬을 내는 팀이 이겨요. 쓰러져도 3초 뒤 다시 싸워요.</p></div>
-<div class="card mode" style="--c:#ffcc4d"><div><h3>원 레프트</h3><span class="num">6명</span></div><p>혼자서 싸우는 개인전. 부활 없이 마지막까지 남으면 승리.</p></div>
+<div class="card mode" style="--c:#8fc3ff"><div><h3>팀 아웃</h3><span class="num">3v3</span></div><p>먼저 10킬을 내는 팀이 이겨요. 쓰러져도 다시 싸워요.</p></div>
+<div class="card mode" style="--c:#ffcc4d"><div><h3>원 레프트</h3><span class="num">8명</span></div><p>혼자 싸우는 개인전. 부활 없이 마지막까지 남으면 승리.</p></div>
+<div class="card mode" style="--c:#ffb347"><div><h3>투 레프트</h3><span class="num">2명 4팀</span></div><p>둘이 한 팀. 마지막까지 남은 팀이 이겨요.</p></div>
+<div class="card mode" style="--c:#c9a2ff"><div><h3>라스트 팀</h3><span class="num">3팀</span></div><p>세 팀이 싸워 마지막까지 남은 팀이 이겨요.</p></div>
 <div class="card mode" style="--c:#ff8a98"><div><h3>캡쳐 플래그</h3><span class="num">5v5</span></div><p>상대 깃발을 3번 먼저 가져오는 팀이 이겨요.</p></div>
-<div class="card mode" style="--c:#3fe0c5"><div><h3>듀얼 배틀</h3><span class="num">1v1</span></div><p>일대일 라운드 대결. 실력만으로 붙어요.</p></div>
+<div class="card mode" style="--c:#3fe0c5"><div><h3>듀얼 배틀</h3><span class="num">1v1</span></div><p>캐릭터 3명으로 한 명씩 붙는 1대1 대결.</p></div>
+<div class="card mode" style="--c:#7fd6ff"><div><h3>볼 배틀</h3><span class="num">3v3</span></div><p>공을 상대 골대에 먼저 3번 넣는 팀이 이겨요.</p></div>
+<div class="card mode" style="--c:#ffe28a"><div><h3>리워드 헌터</h3><span class="num">8명</span></div><p>보상을 가장 많이 모은 사람이 이겨요.</p></div>
+<div class="card mode" style="--c:#ff9de2"><div><h3>배틀 존</h3><span class="num">4팀</span></div><p>가운데 구역을 오래 차지한 팀이 이겨요.</p></div>
+<div class="card mode" style="--c:#e6a15c"><div><h3>칠면조 잡기</h3><span class="num">3v3</span></div><p>이벤트 모드. 칠면조를 더 많이 잡은 팀이 이겨요.</p></div>
+<div class="card mode" style="--c:#9fb3ff"><div><h3>랭크전</h3><span class="num">1v1</span></div><p>실력으로 등급을 올리는 1대1 대결.</p></div>
+<div class="card mode" style="--c:#8ff0a4"><div><h3>길드 대항전</h3><span class="num">3v3</span></div><p>길드끼리 붙는 팀 대결.</p></div>
 </div>
 </section>
 
@@ -73,7 +88,7 @@
 <script src="board.js"></script>
 <script>
 siteChrome('home');
-countdown(document.getElementById('cd'));
+playLinks();
 heroDex(document.getElementById('chars'), { extra: h => '<a href="tips.html#' + h.id + '">' + esc(h.name) + ' 공략 보기</a>' });
 loadNews().then(list => {
   const el = document.getElementById('newsList');
