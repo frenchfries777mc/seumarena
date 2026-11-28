@@ -10010,7 +10010,11 @@ const CHEF = {
 const CHEF_PRICE = { cr: 1500, g: 15000 };      // TEMP: price after the season
 const chefOwned = () => Array.isArray(COS.hu) && COS.hu.includes('chef');
 const heroLocked = id => id === 'chef' && !chefOwned();
-function chefGive() { if (!Array.isArray(COS.hu)) COS.hu = []; if (!COS.hu.includes('chef')) COS.hu.push('chef'); }
+function chefGive() { if (!Array.isArray(COS.hu)) COS.hu = []; if (!COS.hu.includes('chef')) COS.hu.push('chef'); heroLockRefresh(); }
+function heroLockRefresh() {      // user 2026-11-28: the 🔒 stayed on the 셰프 card after getting him from the season draw (only buying cleared it) or from the cloud save
+  const card = document.getElementById('char-chef'); if (!card || heroLocked('chef')) return;
+  card.classList.remove('heroLock'); const l = card.querySelector('.hLock'); if (l) l.remove();
+}
 
 /* ---------- puddles (soup / oil): irregular, made of a few blobs that share one damage tick ---------- */
 function chefPuddle(f, pts, kind) {
@@ -11842,7 +11846,7 @@ async function clCodes(uid) {
       for (const w of row.rewards) if (Array.isArray(w) && /^(g|px|box|ebox|rx|cx|skin)$/.test(w[0]) && w[1] > 0) { const box = /box$/.test(w[0]); for (let k = box ? Math.min(10, Math.floor(w[1])) : 1; k > 0; k--) gots.push(giveReward(w[0], box ? 1 : Math.floor(w[1]))); }
     }
     if (!gots.length) return;
-    saveCos(); try { goldUi(); accountUi(); } catch (e) { quietErr(e); }
+    saveCos(); try { goldUi(); accountUi(); if (typeof heroLockRefresh === 'function') heroLockRefresh(); } catch (e) { quietErr(e); }
     gots.forEach(g => { try { flyHold(g); } catch (e) { quietErr(e); } });
     gots.forEach((g, i) => setTimeout(() => { try { rewardFx(g); } catch (e) { quietErr(e); } }, i * 4600));
   } catch (e) { quietErr(e); } finally { CL.codeBusy = false; }

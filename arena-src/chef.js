@@ -17,7 +17,11 @@ const CHEF = {
 const CHEF_PRICE = { cr: 1500, g: 15000 };      // TEMP: price after the season
 const chefOwned = () => Array.isArray(COS.hu) && COS.hu.includes('chef');
 const heroLocked = id => id === 'chef' && !chefOwned();
-function chefGive() { if (!Array.isArray(COS.hu)) COS.hu = []; if (!COS.hu.includes('chef')) COS.hu.push('chef'); }
+function chefGive() { if (!Array.isArray(COS.hu)) COS.hu = []; if (!COS.hu.includes('chef')) COS.hu.push('chef'); heroLockRefresh(); }
+function heroLockRefresh() {      // user 2026-11-28: the 🔒 stayed on the 셰프 card after getting him from the season draw (only buying cleared it) or from the cloud save
+  const card = document.getElementById('char-chef'); if (!card || heroLocked('chef')) return;
+  card.classList.remove('heroLock'); const l = card.querySelector('.hLock'); if (l) l.remove();
+}
 
 /* ---------- puddles (soup / oil): irregular, made of a few blobs that share one damage tick ---------- */
 function chefPuddle(f, pts, kind) {
