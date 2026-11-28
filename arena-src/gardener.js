@@ -63,8 +63,8 @@ hero('gardener', { p: ['초록 손', '내가 심은 덤불(덤불 심기, 숲 �
       const p = aimPt(f, 5 * T), cells = cellsAround(p.x, p.y, 2), keys = cells.map(([c, r]) => c + ',' + r);
       const list = f.st.bush || (f.st.bush = []);
       for (let i = list.length - 1; i >= 0; i--) if (!list[i].some(k => GD.plants.has(k))) list.splice(i, 1);
-      while (list.length >= 2) gdUnplant(list.shift());
-      if (!gdPlant(cells, 10)) return false;
+      if (!gdPlant(cells, 10)) return false;      // (planted first: a failed try no longer withers the oldest bush for nothing)
+      while (list.length >= 2) gdUnplant(list.shift().filter(k => !keys.includes(k)));
       list.push(keys);
       fxPlay('garden', 'grow', Math.round(p.x), Math.round(p.y), 2);
     }, { ok: (f, e, d) => d < 7 * T }],

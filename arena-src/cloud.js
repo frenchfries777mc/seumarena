@@ -78,8 +78,9 @@ async function clToken() {
   CL.tok = (s && s.access_token) || ''; return CL.tok;
 }
 function clFetch(method, q, body, keep) {
+  const txt = body ? JSON.stringify(body) : undefined; if (keep && txt && txt.length > 60000) keep = false;      // (browsers refuse a keepalive body over 64 KB: send it as a normal request then)
   let ctl = null; try { ctl = new AbortController(); setTimeout(() => ctl.abort(), 12000); } catch (e) { quietErr(e); }
-  return fetch(CL_API + q, { method, keepalive: !!keep, cache: 'no-store', signal: ctl && !keep ? ctl.signal : undefined, body: body ? JSON.stringify(body) : undefined,
+  return fetch(CL_API + q, { method, keepalive: !!keep, cache: 'no-store', signal: ctl && !keep ? ctl.signal : undefined, body: txt,
     headers: { apikey: ACH_KEY, Authorization: 'Bearer ' + CL.tok, 'Content-Type': 'application/json', Prefer: method === 'POST' ? 'return=minimal' : 'return=representation' } });
 }
 async function clGet(uid) {
@@ -183,7 +184,8 @@ function clLeave() {
   if (!CL || !CL.live || !CL.ok || CL.busy || !CL.tok || CL.uid !== CL.live) return;
   const loc = clLocal(); if (clSame(loc, CL.base)) return;
   const uid = CL.live, rev = CL.rev; CL.busy = true; clearTimeout(CL.t); CL.first = 0;      // busy: no other write may start until this one is answered
-  const done = () => { CL.busy = false; if (CL.again) { CL.again = false; CL.t = setTimeout(clSync, 1500); } };
+  let over = false; const done = () => { if (over) return; over = true; CL.busy = false; if (CL.again) { CL.again = false; CL.t = setTimeout(clSync, 1500); } };
+  setTimeout(() => { if (!over) { CL.ok = false; done(); } }, 20000);      // (an answer that never comes no longer blocks saving for good)
   try { clPut(uid, loc, rev, true).then(ok => { if (ok) clAgree(uid, rev + 1, loc); else CL.ok = false; done(); }, () => { CL.ok = false; done(); }); } catch (e) { done(); }
 }
 if (!DED) {

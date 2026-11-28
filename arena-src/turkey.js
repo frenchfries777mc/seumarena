@@ -4,13 +4,13 @@
    it rides in the host snapshot like any minion (kind 'turkey'), so guests draw it with no extra net code. Each player keeps their own count as
    칠면조 다리 (season currency, social.js COS.tl) at the end of the match. Numbers here are placeholders the user may change. ===== */
 const TK_TEAM = 9, TK_HP = 300, TK_GAP = 6, TK_FIRST = 3, TK_SPD = 150, TK_FLEE = 4.2, TK_ROAM = 5.5;
-const TK = { on: false, next: 0, n: 0 };
+const TK = { on: false, next: 0 };
 function turkeyStart() { Object.assign(TK, { on: true, next: TK_FIRST, n: 0 }); for (const f of fighters) f.tk = 0; }
 function turkeyAlive() { return minions.find(m => m.kind === 'turkey' && !m.dead); }
 function turkeySpawn() {
   const p = freeNear(WW / 2, WH / 2);
   minion({ kind: 'turkey', team: TK_TEAM, hit: true, both: true, hp: TK_HP, t: 1e9, x: p.x, y: p.y, cx: p.x, cy: p.y, a: 0, wt: 0, wx: p.x, wy: p.y, last: null, upd: turkeyUpd, onDmg: turkeyHit });
-  TK.n++; fx('blink', p.x, p.y + 10, { color: '#f2c14e', gy: p.y + 16 }); burst(p.x, p.y, '#f2c14e', 18, 260);
+  fx('blink', p.x, p.y + 10, { color: '#f2c14e', gy: p.y + 16 }); burst(p.x, p.y, '#f2c14e', 18, 260);
   addText({ x: p.x, y: p.y - 70, txt: '칠면조 등장!', life: 1.4, color: '#ffd08a' }); sfx(520, .25, 'triangle', .07);
 }
 /* wanders near the middle; runs from the nearest fighter that comes close */
@@ -74,7 +74,6 @@ function drawTurkeyMinion(m) {
   ctx.font = "800 12px 'IBM Plex Sans KR',sans-serif"; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.fillText('칠면조', 0, -78);
 }
 /* the drumstick icon (칠면조 다리) as a data URL, for CSS (.ic-leg) and the reward cards */
-const LEG_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><g transform="rotate(-40 24 24)"><rect x="21" y="22" width="6" height="20" rx="3" fill="#f3ead8"/><circle cx="20" cy="42" r="4" fill="#f3ead8"/><circle cx="28" cy="42" r="4" fill="#f3ead8"/><path d="M24 2c9 0 14 7 14 14 0 6-4 10-8 10h-12c-4 0-8-4-8-10 0-7 5-14 14-14z" fill="#b8662e"/><path d="M18 7c3-2 7-2 9-1-4 1-7 4-8 8-2-1-2-5-1-7z" fill="#d98a46"/><rect x="16" y="22" width="16" height="4" rx="2" fill="#8f4a1f"/></g></svg>';
 function turkeyIcon(sz) { const cv = document.createElement('canvas'); cv.width = cv.height = sz * 2; cv.style.width = cv.style.height = sz + 'px'; const g = cv.getContext('2d'); g.translate(sz, sz * 1.08); drawTurkeyArt(g, sz * .62, 0, false); return cv; }
 /* the line under the score bar in 칠면조 잡기: my turkeys and the legs they are worth (head.html #tkHud, inside #hud) */
 function tkHudUpd(p) {

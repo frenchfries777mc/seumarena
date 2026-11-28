@@ -145,7 +145,7 @@ const MS_BUSH = {
     const tiers = [[0, th.b1, 2], [-9, msMix(th.b1, b2, .5), -3], [-18, b2, -9]];
     for (const [oy, col, gr] of tiers) {
       g.fillStyle = col; g.beginPath(); msShape(g, I, isB, 26, gr, oy);
-      msBushes(I, (x, y, cc, r) => { for (let i = 0; i < 4; i++) { const px = x + 8 + i * 16, py = y + oy - gr + (I.at(cc, r - 1) === 'g' ? 0 : 0); if (I.at(cc, r - 1) !== 'g') msEl(g, px, py + 2, 11, 9); } });
+      msBushes(I, (x, y, cc, r) => { for (let i = 0; i < 4; i++) { const px = x + 8 + i * 16, py = y + oy - gr; if (I.at(cc, r - 1) !== 'g') msEl(g, px, py + 2, 11, 9); } });
       g.fill();
     }
     g.fillStyle = msA(msMix(b2, '#fff', .45), .7); g.beginPath(); msBushes(I, (x, y, cc, r) => { for (let i = 0; i < 3; i++) msEl(g, x + 14 + msH(cc * 3 + i, r, 530) * 36, y - 6 + msH(cc * 3 + i, r, 531) * 36, 6, 3.5); }); g.fill();

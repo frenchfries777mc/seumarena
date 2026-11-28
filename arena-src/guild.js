@@ -26,7 +26,7 @@ const gwDayNow = () => { const d = new Date().getUTCDay(); return d === 5 || d =
 function gwBlock() {
   if (!signedIn()) return '로그인 필요';
   if (!GUILD.g) return '길드 가입 필요';
-  if (!gwDayNow()) return '금·토·일에 열려요';
+  if (!gwDayNow()) return '금·토·일(GMT 기준)에 열려요';
   if (GW.off) return '참가 신청 필요';
   if (GW.grp == null) return '상대 길드 부족';
   if ((GW.left | 0) <= 0) return '오늘 표를 다 썼어요';
@@ -141,7 +141,7 @@ async function gAct(fn, args) { const r = await sbRpc(fn, args), ok = !!(r && r.
 function gWar(p) {
   const lg = G_LEAGUES[GW.league] || G_LEAGUES[0], head = gEl('div', 'gWarHead'), lgE = gEl('b', '', lg[0] + ' 리그'); lgE.style.color = lg[1];
   const d = new Date().getUTCDay(), toFri = (5 - d + 7) % 7;
-  head.append(lgE, gEl('span', '', gwDayNow() ? '전투일 · 오늘 남은 표 ' + Math.max(0, GW.left) + '/4' : '금·토·일에 열려요' + (toFri ? ' (' + toFri + '일 뒤)' : '')));
+  head.append(lgE, gEl('span', '', gwDayNow() ? '전투일 · 오늘 남은 표 ' + Math.max(0, GW.left) + '/4' : '금·토·일(GMT 기준)에 열려요' + (toFri ? ' (' + toFri + '일 뒤)' : '')));
   p.append(head);
   if (GW.claim) {
     const c = GW.claim, box = gEl('div', 'gClaim'), rw = GW_REWARD(c.place | 0, c.league | 0);

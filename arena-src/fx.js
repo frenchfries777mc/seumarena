@@ -340,7 +340,7 @@ function syncAuras(caster, col) {
     if (!f || f.dead || f.minion) continue;
     const have = f.fxAura || (f.fxAura = {}), now = performance.now();
     let any = false;
-    for (const k in AURA) { const o = f.b && f.b[k]; if (o && o.t > .25 && (have[k] || 0) < now + 120) { fxPlay('aura', fighters.indexOf(f), k, +o.t.toFixed(2)); any = true; } }
+    for (const k in AURA) { const o = f.b && f.b[k]; if (o && o.t > .25 && (have[k] || 0) < now + o.t * 1000 - 120)      /* (a refreshed buff that lasts longer extends the glow too) */ { fxPlay('aura', fighters.indexOf(f), k, +o.t.toFixed(2)); any = true; } }
     if (f === caster && !any && !(have.gen > now)) fxPlay('aura', fighters.indexOf(f), 'gen', 1.3, col);          // (a skill that only changes how the next shots fly: a short glow so the cast still shows)
   }
 }
@@ -376,7 +376,7 @@ function drawDarkVeil(dt) {            // trapped in an enemy's lump: the pictur
   g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(.6, 'rgba(0,0,0,.7)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(sx, sy, r, 0, 7); c.fill();
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(kdVeilCv, 0, 0); ctx.restore();
 }
-function drawScreenVeil() { const now = performance.now(), dt = Math.min(.05, (now - (drawScreenVeil.last || now)) / 1000); drawScreenVeil.last = now; drawDarkVeil(dt); drawHurtVignette(now); drawUltSparks(now); }
+function drawScreenVeil() { const now = performance.now(), dt = Math.min(.05, (now - (drawScreenVeil.last || now)) / 1000); drawScreenVeil.last = now; drawDarkVeil(dt); drawHurtVignette(now); }
 /* 마법사 궁극기 마법진: a glowing rune circle that opens with a bounce, two rings turning against each other, a star in the middle and motes rising.
    The ring art is painted once into a small canvas per size (cheap on phones: two rotated drawImage calls a frame). */
 const WIZ_ART = {};
@@ -488,7 +488,7 @@ function drawKanWings(now) {           // 칸's ultimate: two wings of quetzal f
 }
 function drawBuffAuras(dt) {
   const now = performance.now(), T = now / 1000, menu = state === 'menu';
-  drawMuzzles(); drawUltRings(now); ultSparkWatch(dt); flagWatch(); drawImpacts(); doveFeathers(dt); predictHits(); deathWatch(); drawHaraldAxes(now); drawLeapCracks(now); bombFrame(); mkCheck(); hatPops();
+  drawMuzzles(); ultSparkWatch(dt); flagWatch(); drawImpacts(); doveFeathers(dt); predictHits(); deathWatch(); drawHaraldAxes(now); drawLeapCracks(now); bombFrame(); mkCheck(); hatPops();
   for (const f of fighters) { if (f && !f.dead && !f.minion && f.st && f.st.pz && (menu || (visibleTo(f, VIEW) && !bushAt(f.x, f.y)))) drawPizarroAura(f, now); }
   for (const f of fighters) {
     const a = f && f.fxAura; if (!a || f.minion) continue;
@@ -786,23 +786,7 @@ function ultPunch(e) {                  // every ultimate: a hard shake and a de
   if (mine) buzz(40);
 }
 
-/* ---------- 궁극기 ready: a turning dotted ring at the feet (mine and my team's), and every hit sends a spark flying into the ultimate button ---------- */
-function drawUltRings(now) {
-  return;      // (2026-11-13: the charge now shows only on the ultimate button, 시안 E 심장 박동)
-  if (state !== 'play') return;
-  for (const f of fighters) {
-    if (!f || f.dead || f.minion || f.ucd > 0 || f.team !== VIEW || f.form === 'gone') continue;
-    if (f !== player && NET.role === 'guest') continue;           // a guest only knows its own charge
-    if (!visibleTo(f, VIEW)) continue;
-    const x = f.x, y = f.y + 16, p = .5 + .5 * Math.sin(now / 160);
-    ctx.save();
-    ctx.globalAlpha = .18 + .1 * p; ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.ellipse(x, y, 34, 13, 0, 0, 7); ctx.fill();
-    ctx.globalAlpha = .95; ctx.strokeStyle = '#ffd34d'; ctx.lineWidth = 3; ctx.setLineDash([7, 6]); ctx.lineDashOffset = -now / 40;
-    ctx.beginPath(); ctx.ellipse(x, y, 34 + p * 2, 13 + p, 0, 0, 7); ctx.stroke();
-    ctx.restore();
-  }
-}
-const USP = []; let uPrev = null, uBtnPulse = 0;
+let uPrev = null, uBtnPulse = 0;
 /* 시안 E 심장 박동: a landed hit makes the ultimate button jump a little and send a gold ripple out; once full it beats (two thumps) and glows */
 (function () {
   const st = document.createElement('style');
@@ -828,21 +812,6 @@ function ultSparkWatch(dt) {           // the charge jumps (a basic attack lande
     }
   }
   uPrev = u;
-}
-function drawUltSparks(now) {
-  if (!USP.length) return;
-  ctx.save(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.globalCompositeOperation = 'lighter';
-  for (let i = USP.length - 1; i >= 0; i--) {
-    const q = USP[i], t = (now - q.t0) / q.d; if (t < 0) continue;
-    if (t >= 1) { USP.splice(i, 1); const b = document.getElementById('ultBtn'); if (b && b.animate && now - uBtnPulse > 90) { uBtnPulse = now; b.animate([{ transform: 'scale(1.14)', filter: 'brightness(1.6)' }, { transform: 'scale(1)', filter: 'brightness(1)' }], { duration: 220, easing: 'ease-out' }); } continue; }
-    const e = t * t * (3 - 2 * t), m = 1 - e;
-    for (let k = 0; k < 4; k++) {          // the spark and a short fading tail
-      const tt = Math.max(0, e - k * .04), mm = 1 - tt, x = mm * mm * q.x0 + 2 * mm * tt * q.cx + tt * tt * q.x1, y = mm * mm * q.y0 + 2 * mm * tt * q.cy + tt * tt * q.y1, r = (6 - k * 1.3) * (q.full ? 1.3 : 1);
-      const g = ctx.createRadialGradient(x, y, 0, x, y, r * 2.2); g.addColorStop(0, 'rgba(255,248,210,' + (1 - k * .22) + ')'); g.addColorStop(.4, 'rgba(255,211,77,' + (.8 - k * .18) + ')'); g.addColorStop(1, 'rgba(255,211,77,0)');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 2.2, 0, 7); ctx.fill();
-    }
-  }
-  ctx.restore();
 }
 /* ---------- 캡쳐 플래그: grabbing the enemy flag or scoring with it gets a big banner with the carrier's name and team-coloured fireworks ---------- */
 let flagPrev = null, flagEl = null;
@@ -871,7 +840,7 @@ function flagShow(f, scored) {
     const x = x0 + RND(-120, 120), y = y0 - RND(40, 160), cols = [c, '#ffffff', c];
     addP({ x, y, life: .25, color: '#ffffff', shape: 'flash', size: 60 });
     addP({ x, y, life: .5, color: c, shape: 'ring', r0: 6, r1: 70, lw: 4 });
-    for (let i = 0; i < (lowFx() ? 10 : 22); i++) { const a = i / 22 * 6.283, sp = RND(160, 300); addP({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: 2.2, grav: 160, life: RND(.6, 1), size: RND(2, 3.4), color: cols[i % 3], shape: 'dot' }); }
+    for (let i = 0, N = lowFx() ? 10 : 22; i < N; i++) { const a = i / N * 6.283, sp = RND(160, 300); addP({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: 2.2, grav: 160, life: RND(.6, 1), size: RND(2, 3.4), color: cols[i % 3], shape: 'dot' }); }
     try { sfx(scored ? 880 : 660, .16, 'triangle', .05, 1.4); } catch (e) { }
   }, k * 160);
 }
@@ -1069,16 +1038,6 @@ function ucStyle() {
   if (ucCss) return; ucCss = true;
   const st = document.createElement('style');
   st.textContent = `
-.ucL{position:fixed;inset:0;pointer-events:none;z-index:5}
-.ucDark{opacity:0;animation:ucDark 1.1s ease-out forwards}
-.ucVig{opacity:0;animation:ucVig .9s ease-out forwards}
-.ucRing{position:fixed;pointer-events:none;z-index:5;border-radius:50%;transform:translate(-50%,-50%) scale(.2);opacity:0;animation:ucRing .6s ease-out forwards}
-.ucRays{position:fixed;pointer-events:none;z-index:5;border-radius:50%;transform:translate(-50%,-50%);opacity:0;animation:ucRays .8s linear forwards;
- background:repeating-conic-gradient(#ffd23f99 0 4deg,transparent 4deg 18deg);-webkit-mask:radial-gradient(circle,transparent 0 30%,#000 32% 60%,transparent 70%);mask:radial-gradient(circle,transparent 0 30%,#000 32% 60%,transparent 70%)}
-.ucStamp{position:fixed;pointer-events:none;z-index:5;display:flex;align-items:center;gap:6px;padding:4px 16px 4px 6px;transform:translate(-50%,-100%) scale(2.4) rotate(-8deg);opacity:0;animation:ucStamp 1.5s cubic-bezier(.3,1.5,.5,1) forwards}
-.ucStamp::before{content:'';position:absolute;inset:0;border-radius:6px 22px 6px 22px;transform:skewX(-14deg);background:var(--uc2);box-shadow:0 0 0 2px #ffd23f,0 3px 0 2px #0006}
-.ucStamp canvas{position:relative;width:38px;height:38px;border-radius:50%;background:var(--uc2);border:2px solid #ffd23f;flex:none}
-.ucStamp b{position:relative;color:#fff;font:italic 900 24px 'IBM Plex Sans KR',sans-serif;white-space:nowrap;text-shadow:2px 2px 0 #000}
 .ucCard{position:fixed;pointer-events:none;z-index:4;height:52px;display:flex;align-items:center;gap:8px;padding:0 26px 0 6px;min-width:190px;transition:top .2s}
 .ucCard.l{left:0;clip-path:polygon(0 0,100% 0,92% 100%,0 100%);animation:ucInL 1.9s cubic-bezier(.2,.9,.2,1) forwards}
 .ucCard.r{right:calc(env(safe-area-inset-right,0px) + 62px);flex-direction:row-reverse;text-align:right;padding:0 6px 0 26px;border-radius:0 26px 26px 0;clip-path:polygon(0 0,100% 0,100% 100%,8% 100%);animation:ucInR 1.9s cubic-bezier(.2,.9,.2,1) forwards}
@@ -1086,11 +1045,6 @@ function ucStyle() {
 .ucCard span{color:#fff;line-height:1.05;text-shadow:0 1px 0 #0007;font-family:'IBM Plex Sans KR',sans-serif}
 .ucCard small{display:block;font-size:11px;font-weight:700;opacity:.92;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ucCard b{font-size:21px;font-weight:900;font-style:italic;white-space:nowrap}
-@keyframes ucDark{0%{opacity:0}12%,55%{opacity:1}100%{opacity:0}}
-@keyframes ucVig{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
-@keyframes ucRing{8%{opacity:1}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}
-@keyframes ucRays{15%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) rotate(40deg)}}
-@keyframes ucStamp{12%{transform:translate(-50%,-100%) scale(1) rotate(-8deg);opacity:1}75%{transform:translate(-50%,-100%) scale(1) rotate(-8deg);opacity:1}100%{transform:translate(-50%,-125%) scale(1.08) rotate(-8deg);opacity:0}}
 @keyframes ucInL{0%{transform:translateX(-105%)}14%,80%{transform:translateX(0)}100%{transform:translateX(-105%)}}
 @keyframes ucInR{0%{transform:translateX(40%);opacity:0}14%,80%{transform:translateX(0);opacity:1}100%{transform:translateX(40%);opacity:0}}
 .ucA{position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden}

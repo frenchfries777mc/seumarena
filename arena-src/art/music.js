@@ -7,12 +7,6 @@
    "소리 켬/끔" button (muted) and has its own volume: window.SeumMusic.setVolume(0..1) / getVolume(), kept in localStorage 'seumArenaMusicVol'. */
 const SeumMusic = (() => {
   const DATA = { lobby: '@@LOBBY@@', battle: '@@BATTLE@@', result: '@@RESULT@@', win: '@@WIN@@' };
-  const CREDIT = {
-    lobby: { title: 'Pixelland' },
-    battle: { title: 'Just Nasty' },
-    result: { title: 'Cruising for Goblins' },
-    win: { title: 'Pixel Peeker Polka - faster' }
-  };
   const LIC = 'Licensed under Creative Commons: By Attribution 4.0 License', LIC_URL = 'http://creativecommons.org/licenses/by/4.0/';
   const KEY = 'seumArenaMusicVol', GAIN = { lobby: .85, battle: .8, result: 1.42, win: 1.42 };   /* win: "Pixel Peeker Polka - faster", the result screen after a win */   /* result: "Cruising for Goblins" (not a win), only while the match result screen is up */   // (both songs were levelled to about the same loudness; this is the headroom under the sound effects)
   let vol = .5, ac = null, started = false, tracks = {}, want = null, lastWant = null, credEl = null, credHide = 0, matchCredAt = 0;
@@ -35,7 +29,7 @@ const SeumMusic = (() => {
       .catch(() => new Promise(r => setTimeout(r, 8000 * (tries + 1))).then(() => tries < 4 && fetchSong(name, tries + 1)));
   }
   let fetching = null;
-  function fetchAll() { if (!fetching) fetching = (async () => { for (const n of NAMES) if (isPath(DATA[n]) && !blobs[n]) await fetchSong(n, 0); })(); return fetching; }
+  function fetchAll() { if (!fetching) fetching = (async () => { for (const n of NAMES) if (isPath(DATA[n]) && !blobs[n]) await fetchSong(n, 0); })().finally(() => { if (NAMES.some(n => isPath(DATA[n]) && !blobs[n])) fetching = null; }); return fetching; }      // (a song still missing after the tries: the next request starts over instead of never again)
   if (isPath(DATA.lobby)) {
     const go = () => setTimeout(fetchAll, 1500);
     if (document.readyState === 'complete') go(); else addEventListener('load', go, { once: true });

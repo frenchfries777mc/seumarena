@@ -143,7 +143,7 @@ function drawBananaShot(b){
   drawTrail(b);
   const sc=b.ult?2.2:1.15, t=performance.now();
   if(Math.random()<0.7) skP({x:b.x+RND(-4,4),y:b.y+RND(-4,4),vx:RND(-50,50)-(b.vx||0)*0.05,vy:RND(-30,60),life:RND(.4,.8),size:RND(2.5,5.5)*(b.ult?1.6:1),color:Math.random()<.5?'#fff3b0':'#ffe27a',shape:Math.random()<.4?'ring':'dot',grav:300,drag:0.8});
-  ctx.save(); ctx.translate(b.x,b.y); ctx.rotate(Math.atan2(b.vy||0,b.vx||0)+t*0.012*0); ctx.scale(sc,sc);
+  ctx.save(); ctx.translate(b.x,b.y); ctx.rotate(Math.atan2(b.vy||0,b.vx||0)); ctx.scale(sc,sc);
   ctx.lineCap='round'; ctx.lineJoin='round';
   ctx.strokeStyle='#e0b800'; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(-9,3); ctx.quadraticCurveTo(0,-7,10,2); ctx.stroke();
   ctx.strokeStyle='#ffe14d'; ctx.lineWidth=6; ctx.beginPath(); ctx.moveTo(-9,3); ctx.quadraticCurveTo(0,-7,10,2); ctx.stroke();

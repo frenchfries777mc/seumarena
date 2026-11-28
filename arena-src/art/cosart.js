@@ -1,5 +1,4 @@
 const COSMETICS={
-  hat_cap:{cat:'_internal',name:'야구 모자',price:0,color:'#3a86ff'},
   hat_tophat:{cat:'_internal',name:'중절모',price:0,color:'#1d1f27'},
   skin_pistol:{cat:'skin',char:'pistol',name:'미드나잇 블루 타이',price:800,tint:'#1a3a6b'},
   skin_smg:{cat:'skin',char:'smg',name:'앰버 고글',price:800,tint:'#ffb347'},
@@ -437,15 +436,15 @@ function drawSkinLux(c, lux, tint, now, seed, layer){
   if(!lux) return;
   if(tint===STAR_TINT){ drawStarlightShow(c, (now||0)/1000+(seed||0)*0.37, layer); return; }      // 별빛 사과
   if(lux>=4){ drawAuroraShow(c, (now||0)/1000+(seed||0)*0.37, layer, fxQuality); return; }
-  const seedNum=Math.floor((seed||0)*37)%1000, t=(now||0)/1000+(seed||0)*0.37, col=(lux>=4)?auroraHex(((now||0)/1000+(seed||0)*0.37)*0.6,0):(tint||'#ffffff'), col2=(lux>=4)?auroraHex(((now||0)/1000+(seed||0)*0.37)*0.6,3):((lux>=2)?shiftHex(tint||'#ffffff',45):(tint||'#ffffff')), big=lux>=2, q=fxQuality;
-  const scol=(lux>=4)?auroraHex(Math.floor(((now||0)/1000+(seed||0)*0.37)*2)/2*0.6,0):col, scol2=(lux>=4)?auroraHex(Math.floor(((now||0)/1000+(seed||0)*0.37)*2)/2*0.6,3):col2;      // (the little cached pictures only change twice a second)
+  const seedNum=Math.floor((seed||0)*37)%1000, t=(now||0)/1000+(seed||0)*0.37, col=(tint||'#ffffff'), col2=((lux>=2)?shiftHex(tint||'#ffffff',45):(tint||'#ffffff')), big=lux>=2, q=fxQuality;
+  const scol=col, scol2=col2;      // (the little cached pictures only change twice a second)
   const fr=(v)=>v-Math.floor(v);
   c.save(); c.lineCap='round'; c.lineJoin='round'; c.globalCompositeOperation='lighter';
   const cross=(x,y,s)=>{ c.fillRect(x-s,y-0.6,2*s,1.2); c.fillRect(x-0.6,y-s*1.5,1.2,3*s); };        // a little twinkle: two thin bars (cheaper than a stroked path)
   const diamond=(x,y,s,fill,rot)=>{ const cs=Math.cos(rot||0), sn=Math.sin(rot||0), px=[0,s,0,-s], py=[-s*1.4,0,s*1.4,0]; c.fillStyle=fill; c.beginPath(); for(let i=0;i<4;i++){ const X=x+px[i]*cs-py[i]*sn, Y=y+px[i]*sn+py[i]*cs; if(i) c.lineTo(X,Y); else c.moveTo(X,Y); } c.closePath(); c.fill(); };
   if(layer==='back'){
     // the aura around the whole body (an upright oval that breathes): a copy of the little picture
-    if(lux>=4 && q>=1){ for(let k=0;k<5;k++){ const bx=(k-2)*13, hgt=118+16*Math.sin(t*1.3+k), g=c.createLinearGradient(0,-hgt-10,0,0); g.addColorStop(0,hexA(auroraHex(t,k),0)); g.addColorStop(0.5,hexA(auroraHex(t,k+1),0.5)); g.addColorStop(1,hexA(auroraHex(t,k+2),0.12)); c.fillStyle=g; c.beginPath(); c.moveTo(bx-8,0); for(let s2=0;s2<=10;s2++) c.lineTo(bx-8+Math.sin(t*2.1+s2*0.6+k*1.5)*(3+s2*0.9), -s2*hgt/10); for(let s2=10;s2>=0;s2--) c.lineTo(bx+8+Math.sin(t*2.1+s2*0.6+k*1.5+0.8)*(3+s2*0.9), -s2*hgt/10); c.closePath(); c.fill(); } }       // 오로라 커튼: 몸 뒤에서 물결치는 빛의 띠 다섯 개
+           // 오로라 커튼: 몸 뒤에서 물결치는 빛의 띠 다섯 개
     { const pulse=1+0.08*Math.sin(t*3), sp=luxSprite('aura',scol,scol2,big);
       if(sp){ c.save(); c.translate(0,-30); c.scale(pulse,pulse); c.drawImage(sp.cv,-sp.W/2,-sp.H/2); c.restore(); }
       else { const rad=(big?64:52)*pulse; c.save(); c.translate(0,-30); c.scale(0.8,1.25); const g=c.createRadialGradient(0,0,2,0,0,rad); g.addColorStop(0,hexA(col,big?0.5:0.4)); g.addColorStop(0.55,hexA(col2,big?0.22:0.16)); g.addColorStop(1,hexA(col,0)); c.fillStyle=g; c.beginPath(); c.arc(0,0,rad,0,7); c.fill(); c.restore(); } }
@@ -459,18 +458,12 @@ function drawSkinLux(c, lux, tint, now, seed, layer){
     c.restore();
     // the 4000 sC tier (lux 3): a counter-rotating second sunburst, a pulsing ground glow and waves that spread over the floor
     if(lux>=3 && q>=1){
-      c.save(); c.translate(0,-32); c.rotate(-t*0.65); const cA3=hexA(col2,lux>=4?0.22:0.12), cB3=hexA('#ffffff',lux>=4?0.14:0.07);
-      for(let k=0;k<(lux>=4?12:8);k++){ const a=k*Math.PI*2/(lux>=4?12:8), w=0.07+0.02*Math.sin(t*3+k), R=(lux>=4?100:80)+8*Math.sin(t*2.1+k*1.3); c.fillStyle=(k%2)?cA3:cB3; c.beginPath(); c.moveTo(0,0); c.arc(0,0,R,a-w,a+w); c.closePath(); c.fill(); }
+      c.save(); c.translate(0,-32); c.rotate(-t*0.65); const cA3=hexA(col2,0.12), cB3=hexA('#ffffff',0.07);
+      for(let k=0;k<(8);k++){ const a=k*Math.PI*2/(8), w=0.07+0.02*Math.sin(t*3+k), R=(80)+8*Math.sin(t*2.1+k*1.3); c.fillStyle=(k%2)?cA3:cB3; c.beginPath(); c.moveTo(0,0); c.arc(0,0,R,a-w,a+w); c.closePath(); c.fill(); }
       c.restore();
-      const gl=0.5+0.5*Math.sin(t*2.6); c.save(); c.translate(0,2); c.scale(1,0.26); const gg=c.createRadialGradient(0,0,2,0,0,58); gg.addColorStop(0,hexA(col,lux>=4?0.55+0.25*gl:0.32+0.14*gl)); gg.addColorStop(1,hexA(col2,0)); c.fillStyle=gg; c.beginPath(); c.arc(0,0,58,0,7); c.fill(); c.restore();
-      { const nw=(lux>=4?3:2); for(let k=0;k<nw;k++){ const ph=fr(t*0.55+k/nw); c.strokeStyle=hexA(k%2?col:'#ffffff',(1-ph)*(lux>=4?0.6:0.4)); c.lineWidth=(lux>=4?3:2.2)*(1-ph)+0.8; c.beginPath(); c.ellipse(0,1,20+(lux>=4?70:56)*ph,5+(lux>=4?17:13)*ph,0,0,7); c.stroke(); } }
-      if(lux>=4){      // 그랜드 마스터 only (back): a pillar of light, a huge slow sunburst and a heavy shock ring that rolls over the floor
-        const pw=11+4*Math.sin(t*3.2), pg=c.createLinearGradient(0,-170,0,0); pg.addColorStop(0,hexA(col,0)); pg.addColorStop(0.55,hexA(col2,0.2)); pg.addColorStop(1,hexA('#ffffff',0.38));
-        c.fillStyle=pg; c.fillRect(-pw,-170,pw*2,170); c.fillStyle=hexA('#ffffff',0.22); c.fillRect(-pw*0.35,-170,pw*0.7,170);
-        c.save(); c.translate(0,-34); c.rotate(t*0.22); for(let k=0;k<16;k++){ const a=k*Math.PI/8, w=0.045; c.fillStyle=hexA((k%2)?col:col2,0.16); c.beginPath(); c.moveTo(0,0); c.arc(0,0,150+14*Math.sin(t*1.7+k),a-w,a+w); c.closePath(); c.fill(); } c.restore();
-        const ph=fr(t*0.45); c.strokeStyle=hexA('#ffffff',(1-ph)*0.8); c.lineWidth=5*(1-ph)+1; c.beginPath(); c.ellipse(0,1,24+120*ph,6+30*ph,0,0,7); c.stroke();
-        c.strokeStyle=hexA(col2,(1-ph)*0.5); c.lineWidth=2; c.beginPath(); c.ellipse(0,1,12+90*ph,3+22*ph,0,0,7); c.stroke();
-      }
+      const gl=0.5+0.5*Math.sin(t*2.6); c.save(); c.translate(0,2); c.scale(1,0.26); const gg=c.createRadialGradient(0,0,2,0,0,58); gg.addColorStop(0,hexA(col,0.32+0.14*gl)); gg.addColorStop(1,hexA(col2,0)); c.fillStyle=gg; c.beginPath(); c.arc(0,0,58,0,7); c.fill(); c.restore();
+      { const nw=(2); for(let k=0;k<nw;k++){ const ph=fr(t*0.55+k/nw); c.strokeStyle=hexA(k%2?col:'#ffffff',(1-ph)*(0.4)); c.lineWidth=(2.2)*(1-ph)+0.8; c.beginPath(); c.ellipse(0,1,20+(56)*ph,5+(13)*ph,0,0,7); c.stroke(); } }
+      
     }
     // the gems that are behind the body
     if(big && q>=2){ for(let k=0;k<3;k++){ const a=t*1.7+k*Math.PI*2/3; if(Math.sin(a)>0) continue; diamond(Math.cos(a)*27, -30+Math.sin(a)*9, 2.4, hexA(k%2?col:col2,0.55), a); } }
@@ -485,13 +478,10 @@ function drawSkinLux(c, lux, tint, now, seed, layer){
     if(big && q>=2){ for(let k=0;k<2;k++){ c.strokeStyle=hexA(k?col2:col,0.8-k*0.25); c.lineWidth=2.2-k*0.7; c.beginPath(); c.ellipse(0,-72-k*5,15+k*5,4.2+k*1.4,0,0,7); c.stroke(); } }
     // lux 3 in front: a comet with a long tail circling the body, little flames at the head, and sparks that burst outward
     if(lux>=3 && q>=1){
-      { const nc=(lux>=4?3:1); for(let k=0;k<nc;k++){ for(let j=0;j<14;j++){ const a=t*(lux>=4?2.8:2.4)+k*Math.PI*2/nc-j*0.09, fade=1-j/14; if(Math.sin(a)<=0) continue; c.fillStyle=hexA(j===0?'#ffffff':(k%2?col:col2),fade*(lux>=4?0.95:0.7)); const rr=(3.2*fade+0.6); c.beginPath(); c.arc(Math.cos(a)*(lux>=4?38:34), -30+Math.sin(a)*14, rr, 0, 7); c.fill(); } } }
-      { const nb=(lux>=4?9:3); for(let k=0;k<nb;k++){ const ph=fr(t*1.3+k/nb), a=k*2.399+t*0.5, d=10+(lux>=4?62:46)*ph; c.fillStyle=hexA((k%2)?'#ffffff':col2,(1-ph)*(lux>=4?0.95:0.7)); cross(Math.cos(a)*d, -34+Math.sin(a)*d*0.8, 2.6*(1-ph)+0.8); } }
-      if(q>=2 && lux<4){ for(let k=0;k<3;k++){ const fl=0.6+0.4*Math.sin(t*9+k*2); c.fillStyle=hexA(k===1?'#ffffff':col,(lux>=4?0.7:0.45)*fl); c.beginPath(); c.moveTo(-8+k*8,-80); c.quadraticCurveTo(-11+k*8,-90-8*fl,-8+k*8+3,-98-10*fl); c.quadraticCurveTo(-6+k*8,-88,-8+k*8,-80); c.fill(); } }
-      if(lux>=4){      // 그랜드 마스터 only (front): 오로라 빛줄기 (불꽃과 번개는 없앴어요) and a white flash ring that pulses out
-        for(let k=0;k<4;k++){ const sw=Math.sin(t*1.6+k*1.7), bx=-20+k*13+sw*4, hgt=26+10*Math.sin(t*2.3+k); const g=c.createLinearGradient(0,-70,0,-70-hgt); g.addColorStop(0,hexA(auroraHex(t,k),0.55)); g.addColorStop(1,hexA(auroraHex(t,k+2),0)); c.fillStyle=g; c.beginPath(); c.moveTo(bx-4,-70); c.quadraticCurveTo(bx-3+sw*3,-70-hgt*0.6,bx+sw*5,-70-hgt); c.quadraticCurveTo(bx+3+sw*3,-70-hgt*0.6,bx+4,-70); c.closePath(); c.fill(); }
-        const fp=fr(t*0.55+0.2); c.strokeStyle=hexA('#ffffff',(1-fp)*0.55); c.lineWidth=3.5*(1-fp)+0.6; c.beginPath(); c.ellipse(0,-34,14+70*fp,20+95*fp,0,0,7); c.stroke();
-      }
+      { const nc=(1); for(let k=0;k<nc;k++){ for(let j=0;j<14;j++){ const a=t*(2.4)+k*Math.PI*2/nc-j*0.09, fade=1-j/14; if(Math.sin(a)<=0) continue; c.fillStyle=hexA(j===0?'#ffffff':(k%2?col:col2),fade*(0.7)); const rr=(3.2*fade+0.6); c.beginPath(); c.arc(Math.cos(a)*(34), -30+Math.sin(a)*14, rr, 0, 7); c.fill(); } } }
+      { const nb=(3); for(let k=0;k<nb;k++){ const ph=fr(t*1.3+k/nb), a=k*2.399+t*0.5, d=10+(46)*ph; c.fillStyle=hexA((k%2)?'#ffffff':col2,(1-ph)*(0.7)); cross(Math.cos(a)*d, -34+Math.sin(a)*d*0.8, 2.6*(1-ph)+0.8); } }
+      if(q>=2){ for(let k=0;k<3;k++){ const fl=0.6+0.4*Math.sin(t*9+k*2); c.fillStyle=hexA(k===1?'#ffffff':col,(0.45)*fl); c.beginPath(); c.moveTo(-8+k*8,-80); c.quadraticCurveTo(-11+k*8,-90-8*fl,-8+k*8+3,-98-10*fl); c.quadraticCurveTo(-6+k*8,-88,-8+k*8,-80); c.fill(); } }
+      
     }
     // the gems in front of the body
     if(big && q>=2){ for(let k=0;k<3;k++){ const a=t*1.7+k*Math.PI*2/3; if(Math.sin(a)<=0) continue; const sc=0.9+0.4*Math.sin(a), gx=Math.cos(a)*27, gy=-30+Math.sin(a)*9; diamond(gx, gy, 2.6*sc, hexA(k%2?col:col2,0.95), a); c.fillStyle=hexA('#ffffff',0.8); c.fillRect(gx-0.8,gy-0.8,1.6,1.6); } }
@@ -532,7 +522,7 @@ function drawItemPreview(cv,id,nowMs){
   }
 }
 function conceptOfSkin(sid){ const c=sid&&COSMETICS[sid]; return (c&&c.concept)||''; }
-const EMOTES=['👍','😂','😡','😭','🔥','👋','❓','💀'], EMOTE_SEC=2.6, EMOTE_CD=1.2;
+const EMOTES=['👍','😂','😡','😭','🔥','👋','❓','💀'], EMOTE_SEC=2.6;
 const SHOP_EMOTES=[
   ['😎','선글라스',300], ['🤡','광대',300], ['🥶','꽁꽁',300], ['🫡','경례',300],
   ['🤯','머리 폭발',500], ['😈','악마 미소',500], ['🐔','겁쟁이 치킨',500], ['💯','백점',500],
@@ -582,10 +572,6 @@ function drawAuroraShow(c, t, layer, q){
     for(let k=0;k<1;k++){ const ph=fr(t*0.5+k/3); c.strokeStyle=A(k*2,(1-ph)*0.8); c.lineWidth=4*(1-ph)+1; c.beginPath(); c.ellipse(0,1,18+110*ph,5+28*ph,0,0,7); c.stroke(); }          // ripples over the ground
     c.setLineDash([9,6]); c.lineDashOffset=-t*40; c.strokeStyle=A(1,0.95); c.lineWidth=2.4; c.beginPath(); c.ellipse(0,1,36,9,0,0,7); c.stroke(); c.setLineDash([]);
   } else {
-    if(false){ for(let k=0;k<3;k++){                              // three strands of light that spiral round the body
-      c.strokeStyle=A(k*2,0.6); c.lineWidth=2; c.beginPath();
-      for(let s2=0;s2<=36;s2++){ const f=s2/36, a=t*2.6+k*2.094+f*9, y=-2-f*88, r=15+8*Math.sin(f*6+t*1.5); const x=Math.cos(a)*r; if(Math.sin(a)<-0.2){ continue; } if(s2===0||Math.sin(a-0.25)<-0.2) c.moveTo(x,y); else c.lineTo(x,y); }
-      c.stroke(); } }
     for(let k=0;k<2;k++){                                        // orbs with a long glowing tail
       for(let j=0;j<6;j++){ const a=t*(2.1+0.25*k)+k*1.047-j*0.15, f=1-j/6, rx=44+8*Math.sin(t+k), ry=11+3*k;
         if(Math.sin(a)<=0) continue; c.fillStyle=(j===0)?hexA('#ffffff',0.95):A(k+j*0.3,f*0.85); const rr=(j===0?4:3.4*f+0.6); c.beginPath(); c.arc(Math.cos(a)*rx, -14-k*11+Math.sin(a)*ry, rr, 0, 7); c.fill(); } }
@@ -675,7 +661,7 @@ function drawZeusBoltShape(c,len,t){      // a lightning bolt pointing +x, the t
 }
 function mythLaurel(c,hx,hy,r){      // 월계수 관
   for(let i=0;i<10;i++){ const a=Math.PI*(1.02+0.96*i/9), x=hx+Math.cos(a)*(r+0.5), y=hy+Math.sin(a)*(r+0.5), rot=a+Math.PI/2;
-    for(const k of [-1,1]){ c.save(); c.translate(x,y); c.rotate(rot+k*0.6); c.fillStyle=(i+k)%2?'#4fa34a':'#6ec062'; c.strokeStyle='#2c6a2a'; c.lineWidth=0.5; c.beginPath(); c.ellipse(0,-1.2*k*0+ -1.4,1.3,2.9,0,0,7); c.fill(); c.stroke(); c.restore(); } }
+    for(const k of [-1,1]){ c.save(); c.translate(x,y); c.rotate(rot+k*0.6); c.fillStyle=(i+k)%2?'#4fa34a':'#6ec062'; c.strokeStyle='#2c6a2a'; c.lineWidth=0.5; c.beginPath(); c.ellipse(0,-1.4,1.3,2.9,0,0,7); c.fill(); c.stroke(); c.restore(); } }
   c.fillStyle='#e8b923'; for(const q of [0.2,0.5,0.8]){ const a=Math.PI*(1.1+0.8*q); c.beginPath(); c.arc(hx+Math.cos(a)*(r+1.3),hy+Math.sin(a)*(r+1.3),0.9,0,7); c.fill(); }
 }
 function mythWings(c,hx,hy,r,fill,edge,dy){      // a pair of feathered wings on both sides of a helmet / hat

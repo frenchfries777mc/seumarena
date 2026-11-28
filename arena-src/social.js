@@ -494,10 +494,10 @@ const ACH_PAY = [['g', 100], ['g', 300], ['box'], ['ebox']];
 const ACH_CR = { mk4: 20, modes: 20, nd1: 30, silver: 30, lv10: 30, allhero: 50, dia: 50, karma1k: 50 };      // about 3 achievements in 10 pay crystals instead (user 2026-11-21)
 const achPay = a => (ACH_CR[a.id] ? ['cr', ACH_CR[a.id]] : ACH_PAY[a.t]);
 const ACHS = [
-  ['k10', 0, '킬 10번', 10, s => s.k], ['g5', 0, '5판 하기', 5, s => s.g], ['w1', 0, '1승', 1, s => s.w], ['mk4', 0, '한 게임에서 4킬', 4, s => s.mk], ['modes', 0, '모든 모드 1판씩', 4, s => ['team', 'solo', 'flag', 'duel'].filter(m => s.mg[m]).length],
+  ['k10', 0, '킬 10번', 10, s => s.k], ['g5', 0, '5판 하기', 5, s => s.g], ['w1', 0, '1승', 1, s => s.w], ['mk4', 0, '한 게임에서 4킬', 4, s => s.mk], ['modes', 0, '팀 아웃·원 레프트·깃발·듀얼 1판씩', 4, s => ['team', 'solo', 'flag', 'duel'].filter(m => s.mg[m]).length],
   ['k100', 1, '킬 100번', 100, s => s.k], ['w10', 1, '10승', 10, s => s.w], ['mk7', 1, '한 게임에서 7킬', 7, s => s.mk], ['nd1', 1, '팀 아웃에서 죽지 않고 승리', 1, s => s.nd], ['solo1', 1, '원 레프트 1등', 1, s => s.s1 | 0], ['duel5', 1, '듀얼 배틀 5승', 5, s => s.mw.duel | 0], ['flag5', 1, '캡쳐 플래그 5승', 5, s => s.mw.flag | 0],
   ['silver', 1, '한 캐릭터 실버 I', 3, () => achTopRank()], ['lv10', 1, '레벨 10', 10, () => levelOf().lv],
-  ['k1000', 2, '킬 1,000번', 1000, s => s.k], ['w100', 2, '100승', 100, s => s.w], ['mk10', 2, '한 게임에서 10킬', 10, s => s.mk], ['solo10', 2, '원 레프트 1등 10번', 10, s => s.mw.solo | 0], ['allhero', 2, '모든 캐릭터로 1승', 0, s => Object.keys(HEROES).filter(h => s.hw[h]).length],
+  ['k1000', 2, '킬 1,000번', 1000, s => s.k], ['w100', 2, '100승', 100, s => s.w], ['mk10', 2, '한 게임에서 10킬', 10, s => s.mk], ['solo10', 2, '원 레프트 1등 10번', 10, s => s.s1 | 0], ['allhero', 2, '모든 캐릭터로 1승', 0, s => Object.keys(HEROES).filter(h => s.hw[h]).length],
   ['dia', 2, '한 캐릭터 다이아 I', 12, () => achTopRank()], ['karma1k', 2, '카르마 1,000', 1000, () => COS.karma],
   ['k10000', 3, '킬 10,000번', 10000, s => s.k], ['w1000', 3, '1,000승', 1000, s => s.w], ['mk15', 3, '한 게임에서 15킬', 15, s => s.mk], ['soloall', 3, '원 레프트에서 나 빼고 모두 처치', 1, s => s.sa], ['champ', 3, '한 캐릭터 챔피언', MASTERY.length - 1, () => achTopRank()]
 ].map(a => ({ id: a[0], t: a[1], txt: a[2], n: a[3] || Object.keys(HEROES).length, v: a[4] }));
@@ -685,7 +685,7 @@ function passUi() { try { { const b = document.getElementById('pass'), c = passC
 /* season quests sit under the pass road: daily on the left, weekly on the right (stacked on a narrow screen) */
 const leftTxt = ms => { const m = Math.max(1, Math.ceil(ms / 60000)), h = Math.floor(m / 60), d = Math.floor(h / 24); return d >= 1 ? d + '일 ' + (h % 24) + '시간' : h >= 1 ? h + '시간 ' + (m % 60) + '분' : m + '분'; };
 function renderPassQ() {
-  const now = new Date(), nd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1), nw = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7 - (now.getDay() + 6) % 7);
+  const now = new Date(), nd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1)),      /* (daily quests change at 0:00 GMT, so the countdown runs to that) */ nw = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7 - (now.getDay() + 6) % 7);
   for (const [wk, id, st, list, until] of [[0, 'passQd', sqState(), sqList, nd], [1, 'passQw', swState(), swList, nw]]) {
     const sec = document.getElementById(id); if (!sec) continue;
     const box = sec.querySelector('.pqL'), tm = sec.querySelector('em'); box.textContent = ''; if (tm) tm.textContent = leftTxt(until - now);

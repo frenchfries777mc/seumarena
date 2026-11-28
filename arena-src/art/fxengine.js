@@ -82,8 +82,9 @@ function drawParticles(){
         case 'square': case 'card': ctx.save(); ctx.translate(q.x,q.y); ctx.rotate(q.rot); ctx.globalAlpha=Math.min(1,a*1.6); ctx.fillStyle=q.color;
           if(q.shape==='card'){ ctx.fillRect(-q.size*0.6,-q.size,q.size*1.2,q.size*2); } else ctx.fillRect(-q.size/2,-q.size/2,q.size,q.size); ctx.restore(); break;
         case 'text': ctx.globalAlpha=Math.min(1,a*2.2); ctx.font='800 '+Math.round(q.size)+'px Rajdhani'; ctx.textAlign='center';
-          if(typeof stampText==='function' && stampText(ctx,q.text,ctx.font,q.color,'rgba(0,0,0,0.75)',4,q.x,q.y)) break;
-          ctx.lineWidth=4; ctx.strokeStyle='rgba(0,0,0,0.75)'; ctx.strokeText(q.text,q.x,q.y); ctx.fillStyle=q.color; ctx.fillText(q.text,q.x,q.y); break;
+          { const ol=q.outline||'rgba(0,0,0,0.75)';      // (each effect's own outline colour)
+          if(typeof stampText==='function' && stampText(ctx,q.text,ctx.font,q.color,ol,4,q.x,q.y)) break;
+          ctx.lineWidth=4; ctx.strokeStyle=ol; } ctx.strokeText(q.text,q.x,q.y); ctx.fillStyle=q.color; ctx.fillText(q.text,q.x,q.y); break;
         case 'warn': { const blink=0.35+0.5*Math.abs(Math.sin(t*16)); ctx.globalAlpha=blink; ctx.strokeStyle=q.color; ctx.lineWidth=3;
           ctx.beginPath(); ctx.arc(q.x,q.y,34,0,7); ctx.stroke(); ctx.beginPath(); ctx.arc(q.x,q.y,16,0,7); ctx.stroke(); if(q.hw){ ctx.beginPath(); ctx.ellipse(q.x,q.y,q.hw,14,0,0,7); ctx.stroke(); }
           ctx.setLineDash([8,10]); ctx.beginPath(); ctx.moveTo(q.x,q.y-460); ctx.lineTo(q.x,q.y); ctx.stroke(); ctx.setLineDash([]); break; }

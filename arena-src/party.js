@@ -183,7 +183,7 @@ function ptWaitLead() {      // the leader pressed start: this screen waits for 
   NET.phase = 'ptwait'; showScreen('roomScreen'); roomUi('파티', '파티장이 방을 찾고 있어요');
   const tk = netToken; setTimeout(() => { if (tk === netToken && NET.phase === 'ptwait') { NET.phase = 'idle'; showScreen('menuScreen'); ptNote('파티장이 방을 찾지 못했어요.'); } }, 60000);
 }
-function ptFollow(k, mode) {
+function ptFollow(k, mode, tries = 0) {
   if (NET.role === 'guest' || state === 'play') return;
   if (state !== 'menu') { VIEW = 0; state = 'menu'; setup(false); }
   netReset(); netFriends();
@@ -191,7 +191,7 @@ function ptFollow(k, mode) {
   NET.mode = mode && modeEntry(mode) ? mode : lobbyMode(); NET.max = modeMax(NET.mode); useMode(NET.mode);
   showScreen('roomScreen'); roomUi('파티', '파티장이 있는 방으로 들어가요');
   const tk = netToken, fail = why => { if (tk !== netToken) return; netGiveUp(why); };
-  if (typeof Peer === 'undefined') { if (window.__peerLoad) { Promise.race([window.__peerLoad(), new Promise(r => setTimeout(r, 8000))]).then(() => { if (tk === netToken) ptFollow(k, mode); }); return; } return fail('온라인 모듈을 불러오지 못했어요.'); }
+  if (typeof Peer === 'undefined') { if (window.__peerLoad) { if (tries >= 2) return fail('온라인 모듈을 불러오지 못했어요.'); Promise.race([window.__peerLoad(), new Promise(r => setTimeout(r, 8000))]).then(() => { if (tk === netToken) ptFollow(k, mode, tries + 1); }); return; } return fail('온라인 모듈을 불러오지 못했어요.'); }      // (gives up after 3 tries instead of forever)
   let p; try { p = newPeer(undefined); } catch (e) { return fail('온라인에 연결할 수 없어요.'); }
   NET.peer = p; NET.phase = 'search'; keepAlive(p);
   const to = setTimeout(() => { if (tk === netToken && NET.phase === 'search') fail('파티장 방에 들어가지 못했어요.'); }, 9000);
@@ -337,6 +337,7 @@ body.mob #ptToast{padding:8px 12px;gap:10px}body.mob #ptToast .ptAv{width:34px;h
     if (ptLead()) { for (const u in PTI.sent) if (PTI.sent[u] <= Date.now()) delete PTI.sent[u]; ptCleanSolo(); }
     if (ptIsMem() && state === 'menu' && NET.phase === 'idle') ptFollowMode();
     if (++n % 30 === 0 && !ptEl('ptPanel').hidden) ptFriends().then(ptList, ptList);
+    if (PT && Object.keys(ptGoneAt).length) ptPres();      // (the 15 s leave check also runs when no presence news comes in)
     ptUi(); ptToast(); ptList();
   }, 1000);
 })();
