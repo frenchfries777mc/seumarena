@@ -5,9 +5,9 @@
    서빙 throws 3 turkeys in a fan; 데코레이션 also raises allies' damage; the thrown 거대 뒤집개 comes back like a boomerang.
    Unlock: the season draw (low odds) while the season runs, crystals or gold after it (CHEF_PRICE).
    EVERY NUMBER MARKED TEMP IS A PLACEHOLDER the user has not decided. ===== */
-WEAPONS.chef = { id: 'chef', name: '국자', kind: 'gun', dmg: 24, cd: .7, bulletSpeed: 820, life: 1.05, shape: 'ladle', desc: '던지기도 하고 휘두르기도 하는 국자' };
+WEAPONS.chef = { id: 'chef', name: '국자', kind: 'gun', dmg: 24, cd: .7, bulletSpeed: 820, life: 1.3, shape: 'ladle', desc: '던지기도 하고 휘두르기도 하는 국자' };      // user 2026-11-28: longer reach (throw life 1.05 -> 1.3; swing kept at 2.3 tiles)
 const CHEF = {
-  near: 2.5 * T,      // TEMP: an enemy closer than this (and roughly in front) -> swing instead of throw
+  near: 2.5 * T,    // TEMP: an enemy closer than this (and roughly in front) -> swing instead of throw
   swR: 2.3 * T, swHalf: 1.05, swDmg: 30,      // TEMP swing reach / half angle / damage (x STAT_X)
   soupT: 3, soupDps: 12, soupSlow: .7,      // TEMP soup puddle: seconds, damage per second (x STAT_X), speed factor
   oilT: 3, oilDps: 14,      // TEMP oil puddle (awakened 후라이팬)
@@ -115,6 +115,7 @@ hero('chef', { p: ['맛보기 감각', '앞쪽 가까이(2.5칸 안)에 상대�
   ] });
 HEROES.chef.name = '셰프';
 HEROES.chef.hp = 660 * STAT_X;      // TEMP: a little more than the usual 600
+HEROES.chef.range = 8 * T;      // user 2026-11-28: thrown ladle reaches further (was about 6.7 tiles, 430); TEMP
 if (!ACTIVE_HEROES.includes('chef')) ACTIVE_HEROES.push('chef');
 if (!ROSTER.includes('chef')) ROSTER.push('chef');
 Object.assign(PVS, {

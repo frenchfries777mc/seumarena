@@ -34,7 +34,7 @@ function pvSpec(f, kind, slot) {       // kind: 's' skill (slot 0/1), 'u' ultima
   const h = f.h, def = kind === 'u' ? h.ult : f.sk[slot];
   if (!def) return null;
   const key = h.id + ':' + (kind === 'u' ? 'u' : def.n), s = PVS[key];
-  if (s) return s;
+  if (s) return pvBreaks(f, key) ? Object.assign({}, s, { over: 1 }) : s;
   const r = def.r || [0, 300], k = kind === 'u' ? 'hit' : def.k;
   if (k === 'move') return R('dash', { len: Math.min(r[1], 8 * T), w: 44 });
   if (k === 'buff') return R('ring', {});
@@ -51,7 +51,7 @@ function basicSpec(f) {
   if (h.type === 'cone') return R('arc', { len: h.range, half: h.half, suck: 1 });
   if (w.bounces) return R('bounce', { len: h.range, n: w.bounces, w: 14 });      // 차원 여행자: the path with its wall bounces
   if (h.boom) return R('boom', { len: h.range, w: 26 });
-  if (h.splash && h.w && h.w.shape === 'rocket' && !h.wallPass) return R('rocket', { len: h.range, r: h.splash });
+  if (h.splash && h.w && h.w.shape === 'rocket' && !h.wallPass) return R('rocket', { len: h.range, r: h.splash, over: pvBreaks(f, h.id + ':basic') ? 1 : 0 });
   if (h.splash) return R('lob', { len: h.range * (w.shape === 'bomb' || h.wallPass ? bombFrac(f) : 1), r: h.splash, over: h.w && (h.w.shape === 'bomb' || h.wallPass) ? 1 : 0 });      // over: thrown bombs fly over walls
   if (h.count > 1) return R('fan', { len: h.range, half: h.fan / 2, n: h.count });
   if (h.burst > 1 && h.spread > 0) return R('spray', { len: h.range, half: h.spread, w: 26, dots: h.burst });      // 특수요원 등: fan as wide as the widest random spread, each edge stopping at walls
@@ -59,6 +59,13 @@ function basicSpec(f) {
   return R('line', { len: h.range, w: 26, over: h.wallPass ? 1 : 0 });
 }
 
+/* attacks that break the walls on their way keep their whole range, so their picture must not stop at a wall either (user 2026-11-28):
+   제임스 강화탄 (wb), 셰프 거대 뒤집개 (wb), and while awakened 보안관 삼연발 / 집속 발사 and 중화기병's rocket (awaken.js awBreak) */
+function pvBreaks(f, key) {
+  if (key === 'pistol:u' || key === 'chef:u') return true;
+  const aw = f.awT > 0 && f.h0 && f.h0.id === f.h.id;
+  return aw && (key === 'shotgun:u' || key === 'shotgun:3' || key === 'bazooka:basic');
+}
 function rayLen(x, y, a, max, blk) {      // how far a ray from (x, y) goes before a wall
   const ax = Math.cos(a), ay = Math.sin(a);
   let d = 24;
@@ -91,7 +98,7 @@ function drawSpec(f, s, a, tx, ty, col, ready, move) {
       if (s.t === 'rect') arrowHead(x + Math.cos(a) * d, y + Math.sin(a) * d, a, 9);
       break;
     }
-    case 'rocket': { const d = rayLen(x, y, a, s.len), ex = x + Math.cos(a) * d, ey = y + Math.sin(a) * d; capsule(x, y, a, 20, d, s.w || 28); arrowHead(ex, ey, a, 11); break; }      // straight rocket: wide lane that stops at walls, no blast circle (user)
+    case 'rocket': { const d = s.over ? s.len : rayLen(x, y, a, s.len), ex = x + Math.cos(a) * d, ey = y + Math.sin(a) * d; capsule(x, y, a, 20, d, s.w || 28); arrowHead(ex, ey, a, 11); break; }      // straight rocket: wide lane that stops at walls, no blast circle (user)
     case 'multi': { const n = s.n, d = rayLen(x, y, a, s.len); for (let i = 0; i < n; i++) { const off = (i - (n - 1) / 2) * 16, nx = -Math.sin(a) * off, ny = Math.cos(a) * off; ctx.save(); ctx.translate(nx, ny); capsule(x, y, a, 20, d, 8); ctx.restore(); } break; }
     case 'boom': { const d = rayLen(x, y, a, s.len), c = Math.cos(a), sn = Math.sin(a); ctx.save(); ctx.translate(x + c * (20 + d) / 2, y + sn * (20 + d) / 2); ctx.rotate(a); ctx.beginPath(); ctx.ellipse(0, 0, (d - 20) / 2, s.w * .7, 0, 0, 6.3); ctx.fill(); ctx.stroke(); ctx.restore(); break; }
     case 'arc': {

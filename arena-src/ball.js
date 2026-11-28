@@ -70,7 +70,7 @@ function ballMove(dt) {
 /* 2026-11-16 (user: "브롤처럼"): Brawl Ball possession. Walking into a loose ball picks it up; the carrier's basic attack shoots it where
    they aim (the ultimate = a super shot), skills are off while carrying; dying, being stunned or turning into something drops it.
    Whoever shot it cannot pick it up again for .5 s, anyone else can catch it in flight. */
-const BALL_SHOT = 1000, BALL_SUPER = 1150;
+const BALL_SHOT = 700, BALL_SUPER = 850;      // 2026-11-28 (user: goals came too fast): was 1000 / 1150
 function ballFire(f, ang) {
   if (BALL.inAi && !BALL.botKick) return false;      // bots shoot only when ballBot means it
   if (f.fireCd > 0 || B(f, 'stun') || f.dead) return false;
